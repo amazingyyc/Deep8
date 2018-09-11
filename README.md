@@ -1,2 +1,2 @@
 # Deep8
-A head-only, dynamic Deep Learning framework
+Deep8 is a head-only dynamic Deep Learning framework like Chainer and DyNet.

@@ -1,0 +1,140 @@
+#ifndef DEEP8_EXPTEST_H
+#define DEEP8_EXPTEST_H
+
+#include <cmath>
+#include "Exp.h"
+
+namespace Deep8 {
+
+TEST(Exp, forwardCPU) {
+    auto device = new CPUDevice();
+
+    auto input  = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+    auto output = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+
+    auto inputVar1 = createFakeVariable<CPUDevice, long double>(device);
+
+    std::vector<Node*> inputs = {&inputVar1};
+    Exp<long double> expFunc(inputs);
+
+    std::vector<const Tensor<long double>*> inputTensor = {&input};
+
+    expFunc.forwardCPU(inputTensor, &output);
+
+    for (int i = 0; i < 10 * 400 * 200; ++i) {
+        ASSERT_TRUE(abs(exp(input.data()[i]) - output.data()[i]) < 1e-6);
+    }
+
+    freeTensor(device, input);
+    freeTensor(device, output);
+
+    freeFakeVariable(inputVar1);
+
+    delete device;
+}
+
+TEST(Exp, backwardCPU) {
+    auto device = new CPUDevice();
+
+	auto inputValue = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+	auto inputGrad = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+
+    auto outputValue = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+    auto outputGrad  = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+
+    /**create fake Add Function*/
+    auto inputVar = createFakeVariable<CPUDevice, long double>(device);
+
+    std::vector<Node*> inputs = {&inputVar};
+    Exp<long double> expFunc(inputs);
+
+    zeroTensor(device, inputGrad);
+
+    std::vector<const Tensor<long double>*> inputValues = {&inputValue};
+
+    expFunc.forwardCPU(inputValues, &outputValue);
+    expFunc.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+
+    for (int i = 0; i < 10 * 400 * 200; ++i) {
+        long double temp = exp(inputValue.data()[i]) * outputGrad.data()[i];
+
+        ASSERT_TRUE(abs(temp - inputGrad.data()[i]) < 1e-6);
+    }
+
+    freeTensor(device, inputValue);
+    freeTensor(device, inputGrad);
+    freeTensor(device, outputValue);
+    freeTensor(device, outputGrad);
+
+    freeFakeVariable(inputVar);
+
+    delete device;
+}
+
+#ifdef HAVE_CUDA
+
+TEST(Exp, GPU_double) {
+    typedef double real;
+
+    auto device = new GPUDevice();
+
+    int dim0 = 10, dim1 = 400, dim2 = 200;
+
+    auto inputPtr = (real*)malloc(sizeof(real) * dim0 * dim1 * dim2);
+    auto inputGradPtr = (real*)malloc(sizeof(real) * dim0 * dim1 * dim2);
+
+    auto outputPtr = (real*)malloc(sizeof(real) * dim0 * dim1 * dim2);
+    auto outputGradPtr = (real*)malloc(sizeof(real) * dim0 * dim1 * dim2);
+
+    auto input = createTensorGPU<real>(device, inputPtr, dim0, dim1, dim2);
+	auto inputGrad  = createTensorGPU<real>(device, inputGradPtr, dim0, dim1, dim2);
+
+	auto output = createTensorGPU<real>(device, outputPtr, dim0, dim1, dim2);
+	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, dim0, dim1, dim2);
+
+    /**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+    zeroTensor(device, inputGrad);
+
+    std::vector<Node*> inputs = {&inputVar};
+    Exp<real> expFunc(inputs);
+
+    std::vector<const Tensor<real>*> inputValues = {&input};
+
+	expFunc.forwardGPU(inputValues, &output);
+	expFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+
+    device->copyToCPU(output.pointer, outputPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+
+    for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
+        ASSERT_TRUE(abs(exp(inputPtr[i]) - outputPtr[i]) < 1e-6);
+    }
+
+    for (int i = 0; i < 10 * 400 * 200; ++i) {
+		real temp = exp(inputPtr[i]) * outputGradPtr[i];
+
+		ASSERT_TRUE(abs(temp - inputGradPtr[i]) < 1e-4);
+    }
+
+    free(inputPtr);
+    free(inputGradPtr);
+    free(outputPtr);
+    free(outputGradPtr);
+
+    freeTensor(device, input);
+	freeTensor(device, inputGrad);
+	freeTensor(device, output);
+	freeTensor(device, outputGrad);
+
+	freeFakeVariable(inputVar);
+
+	delete device;
+}
+
+#endif
+
+}
+
+#endif //DEEP8_EXPTEST_H
