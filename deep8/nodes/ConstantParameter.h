@@ -16,16 +16,13 @@ public:
 		this->outputShape = value.shape;
     }
 
-    ~ConstantParameter() override {
-    	this->value.free();
-    }
-
     void zeroGradient() override {
     }
 
 	bool isScalar() override {
 		return this->value.isScalar();
 	}
+
 };
 
 

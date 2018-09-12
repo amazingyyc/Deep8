@@ -22,11 +22,6 @@ public:
         check();
     }
 
-    ~Parameter() override {
-        this->value.free();
-        this->gradient.free();
-    }
-
 protected:
     void check() override {
         DEEP8_ARGUMENT_CHECK(this->value.device->type == this->gradient.device->type, "the values and gradient must be the same type");

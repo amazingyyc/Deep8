@@ -17,9 +17,6 @@ public:
     }
 
 public:
-    ~InputParameter() override {
-        this->value.free();
-    }
 
     /**
      * feed the data into the InputParameter Node

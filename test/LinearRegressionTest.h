@@ -36,7 +36,6 @@ TEST(LinearRegression, test) {
         y[i] = x[i] * 3.f + normal(rng) * 0.33f;
     }
 
-    // for (int j = 0; j < 5000; ++j) {
     for (int i = 0; i < 100; ++i) {
         inputP->feed(&x[i]);
         outputP->feed(&y[i]);
@@ -48,8 +47,6 @@ TEST(LinearRegression, test) {
 
         std::cout << i << "->" << wParameter->value.scalar() << std::endl;
     }
-    // }
-
 
     std::cout << "the result should be around 3.0:" << wParameter->value.scalar() << std::endl;
 

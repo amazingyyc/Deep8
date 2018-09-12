@@ -114,11 +114,14 @@ protected:
     }
 
 public:
-	~Variable() {
-    	if (!this->shared) {
-    		value.free();
-    		gradient.free();
-    	}
+	~Variable() override {
+		if (false == this->shared) {
+			value.free();
+
+			if (true == this->updateGradient) {
+				gradient.free();
+			}
+		}
     }
 
 	/**
