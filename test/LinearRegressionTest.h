@@ -5,25 +5,24 @@
 #include <random>
 
 #include "DefaultExecutor.h"
-#include "Trainer.h"
+#include "Expression.h"
 
 namespace Deep8 {
 
 TEST(LinearRegression, test) {
-    auto *trainer = new SGDTrainer<float>();
-    auto *graph   = new DefaultExecutor(trainer);
+    auto *graph   = new DefaultExecutor<float>();
 
-    auto wParameter = graph->addParameter<float>({1, 1});
-    Expression W(graph, wParameter);
+    auto wParameter = graph->addParameter({1, 1});
+    Expression<float> W(graph, wParameter);
 
     float *wptr = (float*) (wParameter->value.pointer);
     wptr[0] = 20.0;
 
-    auto inputP = graph->addInputParameter<float>({1, 1});
-    Expression input(graph, inputP);
+    auto inputP = graph->addInputParameter({1, 1});
+    Expression<float> input(graph, inputP);
 
-    auto outputP = graph->addInputParameter<float>({1, 1});
-    Expression output(graph, outputP);
+    auto outputP = graph->addInputParameter({1, 1});
+    Expression<float> output(graph, outputP);
 
     std::vector<float> x(100);
     std::vector<float> y(100);
@@ -40,17 +39,15 @@ TEST(LinearRegression, test) {
         inputP->feed(&x[i]);
         outputP->feed(&y[i]);
 
-        auto t1 = multiply<float>(W, input);
-        auto t2 = square<float>(minus<float>(t1, output));
+		auto t = square(W * input - output);
 
-        graph->backward(t2);
+        graph->backward(t);
 
         std::cout << i << "->" << wParameter->value.scalar() << std::endl;
     }
 
     std::cout << "the result should be around 3.0:" << wParameter->value.scalar() << std::endl;
 
-    delete trainer;
     delete graph;
 }
 

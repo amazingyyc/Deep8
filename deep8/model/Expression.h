@@ -35,212 +35,255 @@
 
 namespace Deep8 {
 
-/**
- * the Expression class to build the Executor is reference from dynet
- * a Expression represent a Node (Parameter, Variable) it used to build mathematical expression;
- */
-class Expression {
-public:
-    /**
-     * @brief the compute executor
-     */
-    Executor *executor;
-
-    /**
-     * @brief the Node pointer that contacted to this Expression
-     */
-    Node *node;
-
-    explicit Expression(): executor(nullptr), node(nullptr) {
-    }
-
-    explicit Expression(Executor *exe, Node *n): executor(exe), node(n) {
-    }
-};
 
 template <typename T>
-Expression parameter(Executor *executor, std::initializer_list<size_t> list) {
-    return Expression(executor, executor->addParameter<T>(list));
+Expression<T> parameter(Executor<T> *executor, std::initializer_list<size_t> list) {
+    return Expression<T>(executor, executor->addParameter(list));
 }
 
 template <typename T>
-Expression parameter(Executor *executor, Shape &shape) {
-    return Expression(executor, executor->addParameter<T>(shape));
+Expression<T> parameter(Executor<T> *executor, Shape &shape) {
+    return Expression<T>(executor, executor->addParameter(shape));
 }
 
 template <typename T>
-Expression inputParameter(Executor *executor, std::initializer_list<size_t> list) {
-    return Expression(executor, executor->addInputParameter<T>(list));
+Expression<T> inputParameter(Executor<T> *executor, std::initializer_list<size_t> list) {
+    return Expression<T>(executor, executor->addInputParameter(list));
 }
 
 template <typename T>
-Expression inputParameter(Executor *executor, Shape &shape) {
-    return Expression(executor, executor->addInputParameter<T>(shape));
+Expression<T> inputParameter(Executor<T> *executor, Shape &shape) {
+    return Expression<T>(executor, executor->addInputParamete(shape));
+}
+
+/**add operator*/
+template <typename T>
+Expression<T> operator + (const Expression<T> &x, const Expression<T> &y) {
+	return Expression<T>(x.executor, x.executor->addFunction<Add<T>>({ x.node, y.node }));
 }
 
 template <typename T>
-Expression add(const Expression &x, const Expression &y) {
-    return Expression(x.executor, x.executor->addFunction<T, Add<T>>({x.node, y.node}));
+Expression<T> operator + (const Expression<T> &x, T scalar) {
+	return Expression<T>(x.executor, x.executor->addFunction<AddScalar<T>>({ x.node }, scalar));
 }
 
 template <typename T>
-Expression add(const Expression &x, T scalar) {
-    return Expression(x.executor, x.executor->addFunction<T, AddScalar<T>>({x.node}, scalar));
+Expression<T> operator + (T scalar, const Expression<T> &x) {
+	return Expression<T>(x.executor, x.executor->addFunction<AddScalar<T>>({ x.node }, scalar));
+}
+
+/**minus operator*/
+template <typename T>
+Expression<T> operator - (const Expression<T> &x, const Expression<T> &y) {
+	return Expression<T>(x.executor, x.executor->addFunction<Minus<T>>({ x.node, y.node }));
 }
 
 template <typename T>
-Expression add(T scalar, const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, AddScalar<T>>({x.node}, scalar));
+Expression<T> operator - (const Expression<T> &x, T scalar) {
+	return Expression<T>(x.executor, x.executor->addFunction<MinusScalar<T>>({ x.node }, scalar));
 }
 
 template <typename T>
-Expression minus(const Expression &x, const Expression &y) {
-    return Expression(x.executor, x.executor->addFunction<T, Minus<T>>({x.node, y.node}));
+Expression<T> operator - (T scalar, const Expression<T> &x) {
+	return Expression<T>(x.executor, x.executor->addFunction<ScalarMinus<T>>({ x.node }, scalar));
+}
+
+/**multiply operator*/
+template <typename T>
+Expression<T> operator * (const Expression<T> &x, const Expression<T> &y) {
+	return Expression<T>(x.executor, x.executor->addFunction<Multiply<T>>({ x.node, y.node }));
 }
 
 template <typename T>
-Expression minus(const Expression &x, T scalar) {
-    return Expression(x.executor, x.executor->addFunction<T, MinusScalar<T>>({x.node}, scalar));
+Expression<T> operator * (const Expression<T> &x, T scalar) {
+	return Expression<T>(x.executor, x.executor->addFunction<MultiplyScalar<T>>({ x.node }, scalar));
 }
 
 template <typename T>
-Expression minus(T scalar, const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, ScalarMinus<T>>({x.node}, scalar));
+Expression<T> operator * (T scalar, const Expression<T> &x) {
+	return Expression<T>(x.executor, x.executor->addFunction<MultiplyScalar<T>>({ x.node }, scalar));
+}
+
+/**divide operator*/
+template <typename T>
+Expression<T> operator / (const Expression<T> &x, const Expression<T> &y) {
+	return Expression<T>(x.executor, x.executor->addFunction<Divide<T>>({ x.node, y.node }));
 }
 
 template <typename T>
-Expression multiply(const Expression &x, const Expression &y) {
-    return Expression(x.executor, x.executor->addFunction<T, Multiply<T>>({x.node, y.node}));
+Expression<T> operator / (const Expression<T> &x, T scalar) {
+	return Expression<T>(x.executor, x.executor->addFunction<DivideScalar<T>>({ x.node }, scalar));
 }
 
 template <typename T>
-Expression multiply(const Expression &x, T scalar) {
-    return Expression(x.executor, x.executor->addFunction<T, MultiplyScalar<T>>({x.node}, scalar));
+Expression<T> operator / (T scalar, const Expression<T> &x) {
+	return Expression<T>(x.executor, x.executor->addFunction<ScalarDivide<T>>({ x.node }, scalar));
+}
+
+/**function*/
+template <typename T>
+Expression<T> add(const Expression<T> &x, const Expression<T> &y) {
+    return Expression<T>(x.executor, x.executor->addFunction<Add<T>>({x.node, y.node}));
 }
 
 template <typename T>
-Expression multiply(T scalar, const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, MultiplyScalar<T>>({x.node}, scalar));
+Expression<T> add(const Expression<T> &x, T scalar) {
+    return Expression<T>(x.executor, x.executor->addFunction<AddScalar<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression divide(const Expression &x, const Expression &y) {
-    return Expression(x.executor, x.executor->addFunction<T, Divide<T>>({x.node, y.node}));
+Expression<T> add(T scalar, const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<AddScalar<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression divide(const Expression &x, T scalar) {
-    return Expression(x.executor, x.executor->addFunction<T, DivideScalar<T>>({x.node}, scalar));
+Expression<T> minus(const Expression<T> &x, const Expression<T> &y) {
+    return Expression<T>(x.executor, x.executor->addFunction<Minus<T>>({x.node, y.node}));
 }
 
 template <typename T>
-Expression divide(T scalar, const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, ScalarDivide<T>>({x.node}, scalar));
+Expression<T> minus(const Expression<T> &x, T scalar) {
+    return Expression<T>(x.executor, x.executor->addFunction<MinusScalar<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression abs(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, Abs<T>>({x.node}));
+Expression<T> minus(T scalar, const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<ScalarMinus<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression avgPooling2d(const Expression &x, bool covered = false, size_t filterHeight = 1, size_t filterWidth = 1, size_t strideY = 1, size_t strideX = 1) {
-    return Expression(x.executor, x.executor->addFunction<T, AvgPooling2d<T>>({x.node}, covered, filterHeight, filterWidth, strideY, strideX));
+Expression<T> multiply(const Expression<T> &x, const Expression<T> &y) {
+    return Expression<T>(x.executor, x.executor->addFunction<Multiply<T>>({x.node, y.node}));
 }
 
 template <typename T>
-Expression conv2d(const Expression &x, const Expression &y, bool covered = false, size_t strideH = 1, size_t strideW = 1, size_t dilationY = 1, size_t dilationX = 1) {
-    return Expression(x.executor, x.executor->addFunction<T, Conv2d<T>>({x.node, y.node}, covered, strideH, strideW, dilationY, dilationX));
+Expression<T> multiply(const Expression<T> &x, T scalar) {
+    return Expression<T>(x.executor, x.executor->addFunction<MultiplyScalar<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression deConv2d(const Expression &x, const Expression &y, bool covered = false, size_t strideY = 1, size_t strideX = 1) {
-    return Expression(x.executor, x.executor->addFunction<T, DeConv2d<T>>({x.node, y.node}, covered, strideY, strideX));
+Expression<T> multiply(T scalar, const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<MultiplyScalar<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression exp(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, Exp<T>>({x.node}));
+Expression<T> divide(const Expression<T> &x, const Expression<T> &y) {
+    return Expression<T>(x.executor, x.executor->addFunction<Divide<T>>({x.node, y.node}));
 }
 
 template <typename T>
-Expression l1Norm(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, L1Norm<T>>({x.node}));
+Expression<T> divide(const Expression<T> &x, T scalar) {
+    return Expression<T>(x.executor, x.executor->addFunction<DivideScalar<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression l2Norm(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, L2Norm<T>>({x.node}));
+Expression<T> divide(T scalar, const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<ScalarDivide<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression linear(const Expression &x, T a, T b) {
-    return Expression(x.executor, x.executor->addFunction<T, Linear<T>>({x.node}, a, b));
+Expression<T> abs(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<Abs<T>>({x.node}));
 }
 
 template <typename T>
-Expression log(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, Log<T>>({x.node}));
+Expression<T> avgPooling2d(const Expression<T> &x, bool covered = false, size_t filterHeight = 1, size_t filterWidth = 1, size_t strideY = 1, size_t strideX = 1) {
+    return Expression<T>(x.executor, x.executor->addFunction<AvgPooling2d<T>>({x.node}, covered, filterHeight, filterWidth, strideY, strideX));
 }
 
 template <typename T>
-Expression lReLu(const Expression &x, T a) {
-    return Expression(x.executor, x.executor->addFunction<T, LReLu<T>>({x.node}, a));
+Expression<T> conv2d(const Expression<T> &x, const Expression<T> &y, bool covered = false, size_t strideH = 1, size_t strideW = 1, size_t dilationY = 1, size_t dilationX = 1) {
+    return Expression<T>(x.executor, x.executor->addFunction<Conv2d<T>>({x.node, y.node}, covered, strideH, strideW, dilationY, dilationX));
 }
 
 template <typename T>
-Expression matrixMultiply(const Expression &x, const Expression &y) {
-    return Expression(x.executor, x.executor->addFunction<T, MatrixMultiply<T>>({x.node, y.node}));
+Expression<T> deConv2d(const Expression<T> &x, const Expression<T> &y, bool covered = false, size_t strideY = 1, size_t strideX = 1) {
+    return Expression<T>(x.executor, x.executor->addFunction<DeConv2d<T>>({x.node, y.node}, covered, strideY, strideX));
 }
 
 template <typename T>
-Expression maxPooling2d(const Expression &x, bool covered = false, size_t filterHeight = 1, size_t filterWidth = 1, size_t strideY = 1, size_t strideX = 1) {
-    return Expression(x.executor, x.executor->addFunction<T, MaxPooling2d<T>>({x.node}, covered, filterHeight, filterWidth, strideY, strideX));
+Expression<T> exp(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<Exp<T>>({x.node}));
 }
 
 template <typename T>
-Expression pow(const Expression &x, T scalar) {
-    return Expression(x.executor, x.executor->addFunction<T, Pow<T>>({x.node}, scalar));
+Expression<T> l1Norm(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<L1Norm<T>>({x.node}));
 }
 
 template <typename T>
-Expression reLu(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, ReLu<T>>({x.node}));
+Expression<T> l2Norm(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<L2Norm<T>>({x.node}));
 }
 
 template <typename T>
-Expression reShape(const Expression &x, Shape &shape) {
-    return Expression(x.executor, x.executor->addFunction<T, ReShape<T>>({x.node}, shape));
+Expression<T> linear(const Expression<T> &x, T a, T b) {
+    return Expression<T>(x.executor, x.executor->addFunction<Linear<T>>({x.node}, a, b));
 }
 
 template <typename T>
-Expression reShape(const Expression &x, std::initializer_list<size_t> list) {
-    return Expression(x.executor, x.executor->addFunction<T, ReShape<T>>({x.node}, list));
+Expression<T> log(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<Log<T>>({x.node}));
 }
 
 template <typename T>
-Expression sigmoid(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, Sigmoid<T>>({x.node}));
+Expression<T> lReLu(const Expression<T> &x, T a) {
+    return Expression<T>(x.executor, x.executor->addFunction<LReLu<T>>({x.node}, a));
 }
 
 template <typename T>
-Expression softmax(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, Softmax<T>>({x.node}));
+Expression<T> matrixMultiply(const Expression<T> &x, const Expression<T> &y) {
+    return Expression<T>(x.executor, x.executor->addFunction<MatrixMultiply<T>>({x.node, y.node}));
 }
 
 template <typename T>
-Expression square(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, Square<T>>({x.node}));
+Expression<T> maxPooling2d(const Expression<T> &x, bool covered = false, size_t filterHeight = 1, size_t filterWidth = 1, size_t strideY = 1, size_t strideX = 1) {
+    return Expression<T>(x.executor, x.executor->addFunction<MaxPooling2d<T>>({x.node}, covered, filterHeight, filterWidth, strideY, strideX));
 }
 
 template <typename T>
-Expression sumElements(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, SumElements<T>>({x.node}));
+Expression<T> pow(const Expression<T> &x, T scalar) {
+    return Expression<T>(x.executor, x.executor->addFunction<Pow<T>>({x.node}, scalar));
 }
 
 template <typename T>
-Expression tanH(const Expression &x) {
-    return Expression(x.executor, x.executor->addFunction<T, TanH<T>>({x.node}));
+Expression<T> reLu(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<ReLu<T>>({x.node}));
+}
+
+template <typename T>
+Expression<T> reShape(const Expression<T> &x, Shape &shape) {
+    return Expression<T>(x.executor, x.executor->addFunction<ReShape<T>>({x.node}, shape));
+}
+
+template <typename T>
+Expression<T> reShape(const Expression<T> &x, std::initializer_list<size_t> list) {
+    return Expression<T>(x.executor, x.executor->addFunction<ReShape<T>>({x.node}, list));
+}
+
+template <typename T>
+Expression<T> sigmoid(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<Sigmoid<T>>({x.node}));
+}
+
+template <typename T>
+Expression<T> softmax(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<Softmax<T>>({x.node}));
+}
+
+template <typename T>
+Expression<T> square(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<Square<T>>({x.node}));
+}
+
+template <typename T>
+Expression<T> sumElements(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<SumElements<T>>({x.node}));
+}
+
+template <typename T>
+Expression<T> tanH(const Expression<T> &x) {
+    return Expression<T>(x.executor, x.executor->addFunction<TanH<T>>({x.node}));
 }
 
 

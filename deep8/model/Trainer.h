@@ -18,23 +18,8 @@ enum class TrainerType {
     Momentum,
 };
 
-/**
- * a Trainer class for taining the parameter of a ComputeGraph
- */
-class Trainer {
-protected:
-    explicit Trainer() {
-    }
-
-public:
-    /**train the parameter*/
-    virtual void training(std::unordered_set<VariableBase*> &parameters) = 0;
-
-    virtual ~Trainer() = default;
-};
-
 template <typename T>
-class TrainerBase: public Trainer {
+class Trainer {
 protected:
     /**the learning rate*/
     T learningRate;
@@ -48,11 +33,13 @@ protected:
     /**the count of train*/
     int64_t times;
 
-    explicit TrainerBase(T lr = 0.1, bool cg = false, T ct = 5.0):
+    explicit Trainer(T lr = 0.1, bool cg = false, T ct = 5.0):
             learningRate(lr), clipGradient(cg), clipThreshold(ct), times(0) {
     }
 
-    T clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unordered_set<VariableBase*> &parameters, T clipThreshold) {
+	virtual ~Trainer() = default;
+
+    T clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
         std::vector<T> l2NormVec;
 
         for (auto node : parameters) {
@@ -60,7 +47,7 @@ protected:
                 continue;
             }
 
-			auto parameter = static_cast<Parameter<T>*>(node);
+			auto parameter = node;
 			auto gradient  = parameter->gradient;
 
             l2NormVec.push_back(T(0));
@@ -87,7 +74,7 @@ protected:
     }
 
 #ifdef HAVE_CUDA
-	float clipGradientScaleGPU(GPUDevice *device, std::unordered_set<VariableBase*> &parameters, float clipThreshold) {
+	float clipGradientScaleGPU(GPUDevice *device, std::unordered_set<Parameter<float>*> &parameters, float clipThreshold) {
 		std::vector<float> l2NormVec;
 
 		for (auto node : parameters) {
@@ -95,7 +82,7 @@ protected:
 				continue;
 			}
 
-			auto parameter = static_cast<Parameter<float>*>(node);
+			auto parameter = node;
 			auto gradient  = parameter->gradient;
 
 			l2NormVec.push_back(float(0));
@@ -119,7 +106,7 @@ protected:
 		return scale;
 	}
 
-	double clipGradientScaleGPU(GPUDevice *device, std::unordered_set<VariableBase*> &parameters, double clipThreshold) {
+	double clipGradientScaleGPU(GPUDevice *device, std::unordered_set<Parameter<double>*> &parameters, double clipThreshold) {
 		std::vector<double> l2NormVec;
 
 		for (auto node : parameters) {
@@ -127,8 +114,8 @@ protected:
 				continue;
 			}
 
-			auto parameter = static_cast<Parameter<double>*>(node);
-			auto gradient = parameter->gradient;
+			auto parameter = node;
+			auto gradient  = parameter->gradient;
 
 			l2NormVec.push_back(double(0));
 
@@ -155,12 +142,12 @@ protected:
     /**
      * calculate the L2Norm of Parameter to void the exploding gradient problem
      */
-    T clipGradientScale(std::unordered_set<VariableBase*> &parameters, T clipThreshold) {
+    T clipGradientScale(std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
         if (parameters.empty()) {
             return T(1);
         }
 
-		auto variable   = static_cast<Variable<T>*>(*parameters.begin());
+		auto variable   = *parameters.begin();
 		auto device     = variable->value.device;
 		auto deviceType = device->type;
 
@@ -175,14 +162,15 @@ protected:
 		}
     }
 
-    virtual void trainingCPU(Variable<T> *parameter, T scale) {
+	/**the sub class implement the function*/
+    virtual void trainingCPU(Parameter<T> *parameter, T scale) {
     }
 
-    virtual void trainingGPU(Variable<T> *parameter, T scale) {
+    virtual void trainingGPU(Parameter<T> *parameter, T scale) {
     }
 
 public:
-    void training(std::unordered_set<VariableBase*> &parameters) override {
+    void training(std::unordered_set<Parameter<T>*> &parameters) {
         if (parameters.empty()) {
             return;
         }
@@ -196,33 +184,28 @@ public:
         }
 
         for (auto node : parameters) {
-            if (node->type != NodeType::Variable) {
+
+            if (!node->updateGradient) {
                 continue;
             }
 
-            auto variable = static_cast<Variable<T>*>(node);
-
-            if (!variable->updateGradient) {
-                continue;
-            }
-
-            if (DeviceType::CPU == variable->value.device->type) {
-                trainingCPU(variable, scale);
+            if (DeviceType::CPU == node->value.device->type) {
+                trainingCPU(node, scale);
             } else {
-                trainingGPU(variable, scale);
+                trainingGPU(node, scale);
             }
         }
     }
 };
 
 template <typename T>
-class SGDTrainer: public TrainerBase<T> {
+class SGDTrainer: public Trainer<T> {
 public:
-    explicit SGDTrainer(T lr = 0.1, bool cg = false, T ct = 5.0): TrainerBase<T>(lr, cg, ct) {
+    explicit SGDTrainer(T lr = 0.1, bool cg = false, T ct = 5.0): Trainer<T>(lr, cg, ct) {
     }
 
 protected:
-    void trainingCPU(Variable<T> *parameter, T scale) override {
+    void trainingCPU(Parameter<T> *parameter, T scale) override {
         auto value    = parameter->value;
         auto gradient = parameter->gradient;
 
@@ -233,13 +216,13 @@ protected:
 };
 
 template <typename T>
-class AdagradTrainer: public TrainerBase<T> {
+class AdagradTrainer: public Trainer<T> {
 public:
     T epsilon;
-    std::unordered_map<Variable<T>*, Tensor<T>> accumulate;
+    std::unordered_map<Parameter<T>*, Tensor<T>> accumulate;
 
     explicit AdagradTrainer(T learningRate = 0.1, T epsilon = 1e-8, bool clipGradient = false, T clipThreshold = 5.0)
-            :TrainerBase<T>(learningRate, clipGradient, clipThreshold), epsilon(epsilon) {
+            :Trainer<T>(learningRate, clipGradient, clipThreshold), epsilon(epsilon) {
         DEEP8_ARGUMENT_CHECK(0 != epsilon, "epsilon can not be 0");
     }
 
@@ -252,7 +235,7 @@ public:
     }
 
 protected:
-    void trainingCPU(Variable<T> *parameter, T scale) override {
+    void trainingCPU(Parameter<T> *parameter, T scale) override {
         auto value    = parameter->value;
         auto gradient = parameter->gradient;
 
@@ -277,17 +260,17 @@ protected:
 };
 
 template <typename T>
-class AdamTrainer: public TrainerBase<T> {
+class AdamTrainer: public Trainer<T> {
 public:
     T beta1;
     T beta2;
     T epsilon;
 
-    std::unordered_map<Variable<T>*, Tensor<T>> m;
-    std::unordered_map<Variable<T>*, Tensor<T>> v;
+    std::unordered_map<Parameter<T>*, Tensor<T>> m;
+    std::unordered_map<Parameter<T>*, Tensor<T>> v;
 
     explicit AdamTrainer(T learningRate = 0.1, T beta1 = 0.9, T beta2 = 0.999, T epsilon = 1e-8, bool clipGradient = false, T clipThreshold = 5.0):
-            TrainerBase<T>(learningRate, clipGradient, clipThreshold), beta1(beta1), beta2(beta2), epsilon(epsilon) {
+		Trainer<T>(learningRate, clipGradient, clipThreshold), beta1(beta1), beta2(beta2), epsilon(epsilon) {
     }
 
     ~AdamTrainer() override {
@@ -304,7 +287,7 @@ public:
     }
 
 protected:
-    void trainingCPU(Variable<T> *parameter, T scale) override {
+    void trainingCPU(Parameter<T> *parameter, T scale) override {
         auto value    = parameter->value;
         auto gradient = parameter->gradient;
 
@@ -336,22 +319,22 @@ protected:
         eTVec(mt).device(*eigenDevice) = eTVec(mt) * beta1 + eTVec(gradient) * (1 - beta1);
         eTVec(vt).device(*eigenDevice) = eTVec(vt) * beta2 + eTVec(gradient).square() * (1 - beta2);
 
-        auto realLearningRate = this->learningRate * sqrt(1 - pow(beta2, T(this->times))) / (1 - pow(beta1, T(this->times)));
+        auto realLearningRate = this->learningRate * sqrt(1 - std::pow(beta2, T(this->times))) / (1 - std::pow(beta1, T(this->times)));
 
         eTVec(value).device(*eigenDevice) -= eTVec(mt) / (eTVec(vt).sqrt() + epsilon) * realLearningRate;
     }
 };
 
 template <typename T>
-class RMSPropTrainer: public TrainerBase<T> {
+class RMSPropTrainer: public Trainer<T> {
 public:
     T decay;
     T epsilon;
 
-    std::unordered_map<Variable<T>*, Tensor<T>> v;
+    std::unordered_map<Parameter<T>*, Tensor<T>> v;
 
     explicit RMSPropTrainer(T learningRate = 0.1, T decay = 0.9, T epsilon = 1e-8, bool clipGradient = false, T clipThreshold = 5.0):
-            TrainerBase<T>(learningRate, clipGradient, clipThreshold), decay(decay), epsilon(epsilon) {
+		Trainer<T>(learningRate, clipGradient, clipThreshold), decay(decay), epsilon(epsilon) {
     }
 
     ~RMSPropTrainer() {
@@ -363,7 +346,7 @@ public:
     }
 
 protected:
-    void trainingCPU(Variable<T> *parameter, T scale) override {
+    void trainingCPU(Parameter<T> *parameter, T scale) override {
         auto value    = parameter->value;
         auto gradient = parameter->gradient;
 
@@ -387,14 +370,14 @@ protected:
 };
 
 template <typename T>
-class MomentumTrainer: public TrainerBase<T> {
+class MomentumTrainer: public Trainer<T> {
 public:
     T alpha;
 
-    std::unordered_map<Variable<T>*, Tensor<T>> momentum;
+    std::unordered_map<Parameter<T>*, Tensor<T>> momentum;
 
     explicit MomentumTrainer(T learningRate = 0.1, T alpha = 0.9, bool clipGradient = false, T clipThreshold = 5.0):
-            TrainerBase<T>(learningRate, clipGradient, clipThreshold), alpha(alpha) {
+		Trainer<T>(learningRate, clipGradient, clipThreshold), alpha(alpha) {
     }
 
     ~MomentumTrainer() {
@@ -406,7 +389,7 @@ public:
     }
 
 protected:
-    void trainingCPU(Variable<T> *parameter, T scale) override {
+    void trainingCPU(Parameter<T> *parameter, T scale) override {
         auto value    = parameter->value;
         auto gradient = parameter->gradient;
 

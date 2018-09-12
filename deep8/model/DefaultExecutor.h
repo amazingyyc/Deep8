@@ -4,7 +4,6 @@
 #include <iostream>
 #include <queue>
 
-#include "Expression.h"
 #include "Executor.h"
 
 namespace Deep8 {
@@ -17,7 +16,8 @@ namespace Deep8 {
  * Than create a Function Add and the Variable Z.
  * When create the Function Add DefaultExecutor will calculate the result put it into Z immediately.
  */
-class DefaultExecutor : public Executor {
+template <typename T>
+class DefaultExecutor : public Executor<T> {
 protected:
 	/**
 	 * @brief if the Executor will delete the Function and Variable after the backward process.
@@ -36,8 +36,8 @@ protected:
 	bool clearFlag;
 
 public:
-	explicit DefaultExecutor(Trainer *trainer, DeviceType deviceType = DeviceType::CPU, bool flag = true) :
-		Executor(trainer, deviceType), clearFlag(flag) {
+	explicit DefaultExecutor(TrainerType trainerType = TrainerType::SGD, DeviceType deviceType = DeviceType::CPU, bool flag = true) :
+		Executor<T>(trainerType, deviceType), clearFlag(flag) {
 	}
 
 protected:
@@ -57,11 +57,11 @@ public:
 		nonParameterCollection.clear();
 	}
 
-	void forward(Expression &e) override {
+	void forward(Expression<T> &e) {
 		DEEP8_RUNTIME_ERROR("the DefaultExecutor can not call the forward");
 	}
 
-	void backward(Expression &e) override {
+	void backward(Expression<T> &e) {
 		backward(e.node);
 	}
 
