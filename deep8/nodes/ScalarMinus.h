@@ -90,12 +90,12 @@ protected:
 
 	void backwardGPUImpl(cublasHandle_t &cublasHandle, float *inGrad, const float *outGrad, const int N) {
 		float alpha = -1;
-		CUBLAS_CHECK(cublasSaxpy(handle, N, &alpha, outGrad, 1, inGrad, 1));
+		CUBLAS_CHECK(cublasSaxpy(cublasHandle, N, &alpha, outGrad, 1, inGrad, 1));
 	}
 
 	void backwardGPUImpl(cublasHandle_t &cublasHandle, double *inGrad, const double *outGrad, const int N) {
 		double alpha = -1;
-		CUBLAS_CHECK(cublasSaxpy(handle, N, &alpha, outGrad, 1, inGrad, 1));
+		CUBLAS_CHECK(cublasDaxpy(cublasHandle, N, &alpha, outGrad, 1, inGrad, 1));
 	}
 
 #endif

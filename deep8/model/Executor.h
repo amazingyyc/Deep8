@@ -184,31 +184,11 @@ public:
 		return inputParameter;
 	}
 
-	template <typename FunctionType>
-	Node *addFunction(std::vector<Node*> inputs) {
-		auto function = new FunctionType(inputs);
+	Node *addFunction(FunctionBase *function) {
 		auto variable = createVariableByFunction(function);
 
 		function->output = variable;
-
-		nodeCollection.insert(function);
-		nodeCollection.insert(variable);
-
-		nonParameterCollection.insert(function);
-		nonParameterCollection.insert(variable);
-
-		afterAddFunctionNode(function, variable);
-
-		return variable;
-	}
-
-	template <typename FunctionType, typename... Args>
-	Node *addFunction(std::vector<Node*> inputs, Args&&... arguments) {
-		auto function = new FunctionType(inputs, std::forward<Args>(arguments)...);
-		auto variable = createVariableByFunction(function);
-
-		function->output = variable;
-
+		
 		nodeCollection.insert(function);
 		nodeCollection.insert(variable);
 

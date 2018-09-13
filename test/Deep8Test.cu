@@ -14,17 +14,17 @@
 
 #include "TestUtils.h"
 
-#include "AbsTest.h"
-#include "AddTest.h"
-#include "AddScalarTest.h"
-#include "AvgPooling2dTest.h"
-#include "Conv2dTest.h"
-#include "DeConv2dTest.h"
-#include "DivideTest.h"
-#include "DivideScalarTest.h"
-#include "ExpTest.h"
-#include "L1NormTest.h"
-#include "L2NormTest.h"
+//#include "AbsTest.h"
+//#include "AddTest.h"
+//#include "AddScalarTest.h"
+//#include "AvgPooling2dTest.h"
+//#include "Conv2dTest.h"
+//#include "DeConv2dTest.h"
+//#include "DivideTest.h"
+//#include "DivideScalarTest.h"
+//#include "ExpTest.h"
+//#include "L1NormTest.h"
+//#include "L2NormTest.h"
 //#include "LinearTest.h"
 //#include "LogTest.h"
 //#include "LReLuTest.h"
@@ -42,7 +42,7 @@
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
 
-//#include "LinearRegressionTest.h"
+#include "LinearRegressionTest.h"
 //#include "CPUMemoryPoolTest.h"
 
 using namespace Deep8;

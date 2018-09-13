@@ -46,7 +46,7 @@ TEST(LinearRegression, test) {
         std::cout << i << "->" << wParameter->value.scalar() << std::endl;
     }
 
-    std::cout << "the result should be around 3.0:" << wParameter->value.scalar() << std::endl;
+    std::cout << "the result should be around 3.0: " << wParameter->value.scalar() << std::endl;
 
     delete graph;
 }

@@ -84,10 +84,10 @@ protected:
 	}
 
 	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-		const Tensor<T> *output,
-		const Tensor<T> *outputGradient,
-		size_t index,
-		Tensor<T> *iGradient) override {
+					const Tensor<T> *output,
+					const Tensor<T> *outputGradient,
+					size_t index,
+					Tensor<T> *iGradient) override {
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
 		auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
@@ -101,11 +101,13 @@ protected:
 		int blockSize;
 		int grideSize;
 
+		int N = static_cast<int>(output->size());
+
 		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, ScalarDivideForwardKernel<T>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		ScalarDivideForwardKernel<T> << <grideSize, blockSize >> > (scalar, inputs[0]->data(), output->data(), static_cast<int>(output->size()));
+		ScalarDivideForwardKernel<T> << <grideSize, blockSize >> > (scalar, inputs[0]->data(), output->data(), N);
 
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
@@ -124,11 +126,13 @@ protected:
 		int blockSize;
 		int grideSize;
 
+		int N = static_cast<int>(iGradient->size());
+
 		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, ScalarDivideBackwardKernel<T>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		ScalarDivideBackwardKernel<T> << <grideSize, blockSize >> > (scalar, iGradient->data(), inputs[0]->data(), outputGradient->data(), static_cast<int>(iGradient->size()));
+		ScalarDivideBackwardKernel<T> << <grideSize, blockSize >> > (scalar, iGradient->data(), inputs[0]->data(), outputGradient->data(), N);
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif
