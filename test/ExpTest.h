@@ -105,8 +105,8 @@ TEST(Exp, GPU_double) {
 	expFunc.forwardGPU(inputValues, &output);
 	expFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-    device->copyToCPU(output.pointer, outputPtr, sizeof(real) * dim0 * dim1 * dim2);
-    device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
     for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
         ASSERT_TRUE(abs(exp(inputPtr[i]) - outputPtr[i]) < 1e-6);

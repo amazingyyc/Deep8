@@ -114,8 +114,8 @@ TEST(L2Norm, GPU_float) {
 	l2norm.forwardGPU(inputValues, &output);
 	l2norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-    device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 400);
-    device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
+    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 400);
+    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
 
     for (int i = 0; i < 10; ++i) {
         real temp = 0;

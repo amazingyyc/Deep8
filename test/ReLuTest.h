@@ -106,8 +106,8 @@ TEST(ReLu, GPU_float) {
 	relu.forwardGPU(inputTensor, &output);
 	relu.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
-	device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
+	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		if (inputPtr[i] < 0) {

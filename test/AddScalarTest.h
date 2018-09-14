@@ -98,7 +98,7 @@ TEST(AddScalar, forwardGPU_float) {
 
 	addScalar.forwardGPU(inputTensor, &output);
 
-	device->copyToCPU(output.pointer, cpuOutputPtr, sizeof(float) * dim0 * dim1 * dim2);
+	device->copyFromGPUToCPU(output.pointer, cpuOutputPtr, sizeof(float) * dim0 * dim1 * dim2);
 
 	for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
 		ASSERT_EQ(cpuInputPtr[i] + scalar, cpuOutputPtr[i]);
@@ -149,7 +149,7 @@ TEST(AddScalar, backwardGPU_double) {
 	addScalar.forwardGPU(inputValues, &outputValue);
 	addScalar.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
-    device->copyToCPU(inputGrad.pointer, cpuInputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device->copyFromGPUToCPU(inputGrad.pointer, cpuInputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
     for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
 	    ASSERT_EQ(cpuOutputGradPtr[i], cpuInputGradPtr[i]);

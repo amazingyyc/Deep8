@@ -417,12 +417,12 @@ protected:
 		int *ydimsPtr  = xdimsPtr  + MAX_TENSOR_DIMS;
 		int *zdimsPtr  = ydimsPtr  + MAX_TENSOR_DIMS;
 
-		device->copyToGPU(xshape, xshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(yshape, yshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(zshape, zshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(xdims, xdimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(ydims, ydimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(zdims, zdimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(xshape, xshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(yshape, yshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(zshape, zshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(xdims, xdimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(ydims, ydimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(zdims, zdimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
 
 		forwardGPUImpl(x->data(), xshapePtr, xdimsPtr, y->data(), yshapePtr, ydimsPtr, z->data(), zshapePtr, zdimsPtr, static_cast<int>(z->shape.size()));
 
@@ -504,13 +504,13 @@ protected:
 		int *yDimsPtr = xDimsPtr  + MAX_TENSOR_DIMS;
 		int *zDimsPtr = yDimsPtr  + MAX_TENSOR_DIMS;
 
-		device->copyToGPU(xShape, xShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(yShape, yShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(zShape, zShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(xShape, xShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(yShape, yShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(zShape, zShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
 
-		device->copyToGPU(xDims, xDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(yDims, yDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(zDims, zDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(xDims, xDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(yDims, yDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(zDims, zDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
 
 		if (0 == index) {
 			backwardGPUImplX(iGradient->data(), xShapePtr, xDimsPtr,

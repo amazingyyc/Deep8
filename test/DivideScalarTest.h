@@ -106,8 +106,8 @@ TEST(DivideScalar, GPU_double) {
 	divideScalar.forwardGPU(inputValues, &output);
 	divideScalar.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-    device->copyToCPU(output.pointer, outputPtr, sizeof(real) * dim0 * dim1 * dim2);
-    device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {

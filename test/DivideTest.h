@@ -150,7 +150,7 @@ TEST(Divide, GPU_float) {
 		}
 	}
 
-	device->copyToGPU(input2Ptr, input2.pointer, sizeof(float) * 200);
+	device->copyFromCPUToGPU(input2Ptr, input2.pointer, sizeof(float) * 200);
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
     Divide<float> divide(inputs);
@@ -164,9 +164,9 @@ TEST(Divide, GPU_float) {
     divide.backwardGPU(inputValues, &output, &outputGrad, 0, &input1Grad);
     divide.backwardGPU(inputValues, &output, &outputGrad, 1, &input2Grad);
 
-    device->copyToCPU(output.pointer, outputPtr, sizeof(float) * 10 * 100 * 200);
-    device->copyToCPU(input1Grad.pointer, input1GradPtr, sizeof(float) * 10 * 100 * 200);
-    device->copyToCPU(input2Grad.pointer, input2GradPtr, sizeof(float) * 1 * 200);
+    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(float) * 10 * 100 * 200);
+    device->copyFromGPUToCPU(input1Grad.pointer, input1GradPtr, sizeof(float) * 10 * 100 * 200);
+    device->copyFromGPUToCPU(input2Grad.pointer, input2GradPtr, sizeof(float) * 1 * 200);
 
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 100; ++j) {

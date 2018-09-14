@@ -100,6 +100,15 @@ public:
 	/**cuBlas handle*/
 	cublasHandle_t cublasHandle;
 
+	/**the GPU memroy contains 1, 0, -1*/
+	float *floatOne;
+	float *floatZero;
+	float *floatMinusOne;
+
+	double *doubleOne;
+	double *doubleZero;
+	double *doubleMinusOne;
+
 #ifdef HAVE_CUDNN
 
 	/**cudnn handle*/
@@ -120,9 +129,27 @@ public:
 #ifdef HAVE_CUDNN
 		CUDNN_CHECK(cudnnCreate(&cudnnHandle));
 #endif
+
+		void *ptr = gpuMemoryAllocator->malloc(sizeof(float) * 3 + sizeof(double) * 3);
+
+		floatOne = (float*) ptr;
+		floatZero = floatOne + 1;
+		floatMinusOne = floatZero + 1;
+
+		doubleOne = (double*)(floatMinusOne + 1);
+		doubleZero = doubleOne + 1;
+		doubleMinusOne = doubleZero + 1;
+
+		float numberF[3] = { 1, 0, -1 };
+		float numberD[3] = { 1, 0, -1 };
+
+		gpuMemoryAllocator->copyFromCPUToGPU(&numberF[0], floatOne, sizeof(float) * 3);
+		gpuMemoryAllocator->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
 	}
 
 	~GPUDevice() {
+		gpuMemoryAllocator->free(floatOne);
+
 		delete gpuMemoryAllocator;
 		cublasDestroy(cublasHandle);
 
@@ -147,13 +174,63 @@ public:
 		gpuMemoryAllocator->copy(from, to, size);
 	}
 
-	void copyToGPU(const void *from, void *to, size_t size) {
-		gpuMemoryAllocator->copyToGPU(from, to, size);
+	void copyFromCPUToGPU(const void *from, void *to, size_t size) {
+		gpuMemoryAllocator->copyFromCPUToGPU(from, to, size);
 	}
 
-	void copyToCPU(const void *from, void *to, size_t size) {
-		gpuMemoryAllocator->copyToCPU(from, to, size);
+	void copyFromGPUToCPU(const void *from, void *to, size_t size) {
+		gpuMemoryAllocator->copyFromGPUToCPU(from, to, size);
 	}
+
+	void copyFromGPUToGPU(const void *from, void *to, size_t size) {
+		gpuMemoryAllocator->copyFromGPUToGPU(from, to, size);
+	}
+
+	template<typename T>
+	void *gpuOne() {
+		DEEP8_RUNTIME_ERROR("get GPU number error");
+	}
+
+	template <>
+	void *gpuOne<float>() {
+		return floatOne;
+	}
+
+	template <>
+	void *gpuOne<double>() {
+		return doubleOne;
+	}
+
+	template<typename T>
+	void *gpuZero() {
+		DEEP8_RUNTIME_ERROR("get GPU number error");
+	}
+
+	template <>
+	void *gpuZero<float>() {
+		return floatZero;
+	}
+
+	template <>
+	void *gpuZero<double>() {
+		return doubleZero;
+	}
+
+	template<typename T>
+	void *gpuMinusOne() {
+		DEEP8_RUNTIME_ERROR("get GPU number error");
+	}
+
+	template <>
+	void *gpuMinusOne<float>() {
+		return floatMinusOne;
+	}
+
+	template <>
+	void *gpuMinusOne<double>() {
+		return doubleMinusOne;
+	}
+
 };
 
 #endif

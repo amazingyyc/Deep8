@@ -61,7 +61,7 @@ TEST(Linear, GPU_float) {
 
 	linear.forwardGPU(inputTensor, &output);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		ASSERT_EQ(inputPtr[i] * a + b, outputPtr[i]);

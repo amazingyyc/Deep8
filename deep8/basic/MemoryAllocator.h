@@ -144,7 +144,7 @@ public:
 	/**
 	 * copy memory from host to GPU
 	 */
-	void copyToGPU(const void *from, void *to, size_t size) {
+	void copyFromCPUToGPU(const void *from, void *to, size_t size) {
 		CUDA_CHECK(cudaSetDevice(deviceId));
 		CUDA_CHECK(cudaMemcpy(to, from, size, cudaMemcpyHostToDevice));
 	}
@@ -152,9 +152,14 @@ public:
 	/**
 	 * copy memory from GPU to Host
 	 */
-	void copyToCPU(const void *from, void *to, size_t size) {
+	void copyFromGPUToCPU(const void *from, void *to, size_t size) {
 		CUDA_CHECK(cudaSetDevice(deviceId));
 		CUDA_CHECK(cudaMemcpy(to, from, size, cudaMemcpyDeviceToHost));
+	}
+
+	void copyFromGPUToGPU(const void *from, void *to, size_t size) {
+		CUDA_CHECK(cudaSetDevice(deviceId));
+		CUDA_CHECK(cudaMemcpy(to, from, size, cudaMemcpyDeviceToDevice));
 	}
 };
 

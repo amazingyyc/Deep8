@@ -312,7 +312,7 @@ TEST(DeConv2d, forwarGPU_float) {
 
 	transposeConv2d.forwardGPU(inputTensor, &output);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
 
 	int64_t padH = std::max<int64_t>(0, outputHeight + filterH - (inputHeight - 1) * static_cast<int64_t>(strideY) - 2);
 	int64_t padW = std::max<int64_t>(0, outputWidth + filterW - (inputWidth - 1) * static_cast<int64_t>(strideX) - 2);
@@ -425,8 +425,8 @@ TEST(DeConv2d, backwarGPU_float) {
 	transposeConv2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 	transposeConv2d.backwardGPU(inputTensor, &output, &outputGrad, 1, &filterGrad);
 
-	device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
-	device->copyToCPU(filterGrad.pointer, filterGradPtr, sizeof(float) * outputChannel * filterH * filterW * inputChannel);
+	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+	device->copyFromGPUToCPU(filterGrad.pointer, filterGradPtr, sizeof(float) * outputChannel * filterH * filterW * inputChannel);
 
 	int64_t padH = std::max<int64_t>(0, outputHeight + filterH - (inputHeight - 1) * static_cast<int64_t>(strideH) - 2);
 	int64_t padW = std::max<int64_t>(0, outputWidth + filterW - (inputWidth - 1) * static_cast<int64_t>(strideW) - 2);

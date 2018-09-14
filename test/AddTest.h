@@ -122,7 +122,7 @@ TEST(Add, forwardGPU_float) {
 
 	add.forwardGPU(inputTensor, &t3);
 
-	device->copyToCPU(t3.pointer, t3Ptr, sizeof(float) * 10 * 500 * 200);
+	device->copyFromGPUToCPU(t3.pointer, t3Ptr, sizeof(float) * 10 * 500 * 200);
 
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 500; ++j) {
@@ -180,8 +180,8 @@ TEST(Add, backwardGPU_float) {
 	add.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
 	add.backwardGPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad2);
 
-	device->copyToCPU(inputGrad1.pointer, inputGrad1CPU, sizeof(float) * 10 * 500 * 200);
-	device->copyToCPU(inputGrad2.pointer, inputGrad2CPU, sizeof(float) * 1 * 200);
+	device->copyFromGPUToCPU(inputGrad1.pointer, inputGrad1CPU, sizeof(float) * 10 * 500 * 200);
+	device->copyFromGPUToCPU(inputGrad2.pointer, inputGrad2CPU, sizeof(float) * 1 * 200);
 
 	for (int i = 0; i < 10 * 500 * 200; ++i) {
 		ASSERT_EQ(inputGrad1CPU[i], outputGradCPU[i]);

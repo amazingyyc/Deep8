@@ -100,7 +100,7 @@ TEST(Abs, forwardGPU_double) {
 
 	absFunc.forwardGPU(inputTensor, &output);
 
-	device->copyToCPU(output.pointer, cpuOuputPtr, sizeof(double) * dim0 * dim1 * dim2);
+	device->copyFromGPUToCPU(output.pointer, cpuOuputPtr, sizeof(double) * dim0 * dim1 * dim2);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		ASSERT_EQ(abs(cpuInputPtr[i]), cpuOuputPtr[i]);
@@ -150,7 +150,7 @@ TEST(Abs, backwardGPU_double) {
 	absFunc.forwardGPU(inputValues, &outputValue);
 	absFunc.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
-	device->copyToCPU(inputGrad.pointer, cpuInputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+	device->copyFromGPUToCPU(inputGrad.pointer, cpuInputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 	    real temp;

@@ -286,12 +286,12 @@ protected:
 		int *ydimsPtr  = xdimsPtr  + MAX_TENSOR_DIMS;
 		int *zdimsPtr  = ydimsPtr  + MAX_TENSOR_DIMS;
 
-		device->copyToGPU(xshape, xshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(yshape, yshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(zshape, zshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(xdims, xdimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(ydims, ydimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(zdims, zdimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(xshape, xshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(yshape, yshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(zshape, zshapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(xdims, xdimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(ydims, ydimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(zdims, zdimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
 
 		forwardGPUImpl(x->data(), xshapePtr, xdimsPtr, y->data(), yshapePtr, ydimsPtr, z->data(), zshapePtr, zdimsPtr, static_cast<int>(z->shape.size()));
 
@@ -353,10 +353,10 @@ protected:
 		int *inDimsPtr   = outShapePtr + MAX_TENSOR_DIMS;
 		int *outDimsPtr  = inDimsPtr   + MAX_TENSOR_DIMS;
 
-		device->copyToGPU(inShape,   inShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(outShape, outShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(inDims,   inDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
-		device->copyToGPU(outDims, outDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(inShape,   inShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(outShape, outShapePtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(inDims,   inDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
+		device->copyFromCPUToGPU(outDims, outDimsPtr, sizeof(int) * MAX_TENSOR_DIMS);
 
 		backwardGPUImpl(iGradient->data(), inShapePtr, inDimsPtr, 
 						outputGradient->data(), outShapePtr, outDimsPtr, static_cast<int>(iGradient->size()));

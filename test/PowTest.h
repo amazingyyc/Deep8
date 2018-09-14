@@ -104,8 +104,8 @@ TEST(Pow, GPU_float) {
 	powFunc.forwardGPU(inputTensor, &output);
 	powFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 500 * 200);
-	device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 500 * 200);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 500 * 200);
+	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 500 * 200);
 
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 500; ++j) {

@@ -294,7 +294,7 @@ TEST(Conv2d, forwardGPU_float) {
 
     conv2d.forwardGPU(inputTensor, &output);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
 
     int64_t padY = std::max<int64_t>(0, (outputHeight - 1) * static_cast<int64_t>(strideH) + realFilterH - inputHeight);
     int64_t padX = std::max<int64_t>(0, (outputWidth  - 1) * static_cast<int64_t>(strideW) + realFilterW - inputWidth);
@@ -412,8 +412,8 @@ TEST(Conv2d, backwardGPU_float) {
 	int64_t padTop = -padY / 2;
 	int64_t padLeft = -padX / 2;
 
-    device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
-	device->copyToCPU(filterGrad.pointer, filterGradPtr, sizeof(float) * outputChannel * filterH * filterW * inputChannel);
+    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+	device->copyFromGPUToCPU(filterGrad.pointer, filterGradPtr, sizeof(float) * outputChannel * filterH * filterW * inputChannel);
 
     auto *inputMat = (float*)malloc(sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
     auto *inputGradTemp = (float*)malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);

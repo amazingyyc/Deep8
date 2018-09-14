@@ -319,9 +319,9 @@ TEST(MatrixMultiply, GPU1_float) {
 	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
 	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * batch * m * n);
-	device->copyToCPU(input0Grad.pointer, input0GradPtr, sizeof(real) * batch * m * k);
-	device->copyToCPU(input1Grad.pointer, input1GradPtr, sizeof(real) * 1 * k * n);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * batch * m * n);
+	device->copyFromGPUToCPU(input0Grad.pointer, input0GradPtr, sizeof(real) * batch * m * k);
+	device->copyFromGPUToCPU(input1Grad.pointer, input1GradPtr, sizeof(real) * 1 * k * n);
 
 	/**test output*/
 	for (int b = 0; b < batch; ++b) {
@@ -447,9 +447,9 @@ TEST(MatrixMultiply, GPU2_float) {
 	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
 	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
 
-	device->copyToCPU(input0Grad.pointer, input0GradPtr, sizeof(real) * 1 * m * k);
-	device->copyToCPU(input1Grad.pointer, input1GradPtr, sizeof(real) * batch * k * n);
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * batch * m * n);
+	device->copyFromGPUToCPU(input0Grad.pointer, input0GradPtr, sizeof(real) * 1 * m * k);
+	device->copyFromGPUToCPU(input1Grad.pointer, input1GradPtr, sizeof(real) * batch * k * n);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * batch * m * n);
 
 	/**test output*/
 	for (int b = 0; b < batch; ++b) {

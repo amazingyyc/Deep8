@@ -52,7 +52,7 @@ Tensor<T> createTensorGPU(GPUDevice *device, T *cpuPtr, size_t dim0, size_t dim1
 	std::generate(cpuPtr, cpuPtr + shape.size(), generator);
 
 	/**copy to GPU*/
-	device->copyToGPU(cpuPtr, gpuPtr, sizeof(T) * shape.size());
+	device->copyFromCPUToGPU(cpuPtr, gpuPtr, sizeof(T) * shape.size());
 
 	return Tensor<T>(gpuPtr, shape, device);
 }
@@ -70,7 +70,7 @@ Tensor<T> createTensorGPU(GPUDevice *device, T *cpuPtr, size_t dim0, size_t dim1
 	std::generate(cpuPtr, cpuPtr + shape.size(), generator);
 
 	/**copy to GPU*/
-	device->copyToGPU(cpuPtr, gpuPtr, sizeof(T) * shape.size());
+	device->copyFromCPUToGPU(cpuPtr, gpuPtr, sizeof(T) * shape.size());
 
 	return Tensor<T>(gpuPtr, shape, device);
 }
@@ -88,7 +88,7 @@ Tensor<T> createTensorGPU(GPUDevice *device, T *cpuPtr, size_t dim0, size_t dim1
 	std::generate(cpuPtr, cpuPtr + shape.size(), generator);
 
 	/**copy to GPU*/
-	device->copyToGPU(cpuPtr, gpuPtr, sizeof(T) * shape.size());
+	device->copyFromCPUToGPU(cpuPtr, gpuPtr, sizeof(T) * shape.size());
 
 	return Tensor<T>(gpuPtr, shape, device);
 }

@@ -28,7 +28,7 @@ public:
         if (this->value.device->type == DeviceType::CPU) {
             this->value.device->copy(ptr, this->value.pointer, sizeof(T) * this->value.size());
         } else {
-            DEEP8_RUNTIME_ERROR("the feed does not support the GPU for now");
+			static_cast<GPUDevice*>(this->value.device)->copyFromCPUToGPU(ptr, this->value.pointer, sizeof(T) * this->value.size());
         }
     }
 

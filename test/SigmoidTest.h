@@ -103,8 +103,8 @@ TEST(Sigmoid, GPU_float) {
 	sigmoid.forwardGPU(inputTensor, &output);
 	sigmoid.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
-	device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
+	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		float temp = 1.f / (1.f + exp(-1.f * inputPtr[i]));

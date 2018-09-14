@@ -140,8 +140,8 @@ TEST(Softmax, GPU_float) {
 	softmax.forwardGPU(inputTensor, &output);
 	softmax.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 400 * 200);
-	device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 400 * 200);
+	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
 
 	auto temp = (real*)malloc(sizeof(real) * 200);
 

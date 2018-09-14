@@ -147,7 +147,9 @@ public:
 		if (DeviceType::CPU == gradient.device->type) {
 			(static_cast<T*>(gradient.pointer))[0] = T(1);
 		} else {
-			DEEP8_RUNTIME_ERROR("GPU not supported for now");
+			auto device = static_cast<GPUDevice*>(gradient.device);
+
+			device->copyFromGPUToGPU(device->gpuOne<T>(), gradient.pointer, sizeof(T));
 		}
 	}
 

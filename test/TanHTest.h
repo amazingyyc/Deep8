@@ -103,8 +103,8 @@ TEST(TanH, GPU_float) {
 	tanhFunc.forwardGPU(inputTensor, &output);
 	tanhFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
-	device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
+	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		ASSERT_EQ(tanh(inputPtr[i]), outputPtr[i]);

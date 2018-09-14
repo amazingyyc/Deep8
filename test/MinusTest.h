@@ -136,9 +136,9 @@ TEST(Minus, GPU_float) {
 	minus.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
 	minus.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 500 * 200);
-	device->copyToCPU(input0Grad.pointer, input0GradPtr, sizeof(real) * 10 * 500 * 200);
-	device->copyToCPU(input1Grad.pointer, input1GradPtr, sizeof(real) * 200);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 500 * 200);
+	device->copyFromGPUToCPU(input0Grad.pointer, input0GradPtr, sizeof(real) * 10 * 500 * 200);
+	device->copyFromGPUToCPU(input1Grad.pointer, input1GradPtr, sizeof(real) * 200);
 
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 500; ++j) {

@@ -146,8 +146,8 @@ TEST(MaxPooling2d, GPU_float) {
 	maxPooling2d.forwardGPU(inputTensor, &output);
 	maxPooling2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 1 * 15 * 15 * 64);
-	device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 1 * 32 * 32 * 64);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 1 * 15 * 15 * 64);
+	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 1 * 32 * 32 * 64);
 
 	for (int i = 0; i < 15; ++i) {
 		for (int j = 0; j < 15; ++j) {

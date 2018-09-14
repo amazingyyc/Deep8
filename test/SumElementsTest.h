@@ -113,8 +113,8 @@ TEST(SumElements, GPU_float) {
 	sumElements.forwardGPU(inputTensor, &output);
 	sumElements.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyToCPU(output.pointer, outputPtr, sizeof(real) * 400 * 1);
-	device->copyToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
+	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 400 * 1);
+	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
 
 
 	for (int i = 0; i < 400; ++i) {
