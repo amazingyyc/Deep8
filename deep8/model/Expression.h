@@ -2,39 +2,8 @@
 #define DEEP8_EXPRESSION_H
 
 #include "Executor.h"
-#include "Abs.h"
-#include "Add.h"
-#include "AddScalar.h"
-#include "AvgPooling2d.h"
-#include "Conv2d.h"
-#include "DeConv2d.h"
-#include "Divide.h"
-#include "DivideScalar.h"
-#include "Exp.h"
-#include "L1Norm.h"
-#include "L2Norm.h"
-#include "Linear.h"
-#include "Log.h"
-#include "LReLu.h"
-#include "MatrixMultiply.h"
-#include "MaxPooling2d.h"
-#include "Minus.h"
-#include "MinusScalar.h"
-#include "Multiply.h"
-#include "MultiplyScalar.h"
-#include "Pow.h"
-#include "ReLu.h"
-#include "ReShape.h"
-#include "ScalarDivide.h"
-#include "ScalarMinus.h"
-#include "Sigmoid.h"
-#include "Softmax.h"
-#include "Square.h"
-#include "SumElements.h"
-#include "TanH.h"
 
 namespace Deep8 {
-
 
 template <typename T>
 Expression<T> parameter(Executor<T> *executor, std::initializer_list<size_t> list) {
@@ -53,7 +22,7 @@ Expression<T> inputParameter(Executor<T> *executor, std::initializer_list<size_t
 
 template <typename T>
 Expression<T> inputParameter(Executor<T> *executor, Shape &shape) {
-    return Expression<T>(executor, executor->addInputParamete(shape));
+    return Expression<T>(executor, executor->addInputParameter(shape));
 }
 
 /**add operator*/
@@ -94,11 +63,13 @@ Expression<T> operator - (T scalar, const Expression<T> &x) {
 	return Expression<T>(x.executor, x.executor->addFunction(new ScalarMinus<T>(inputs, scalar)));
 }
 
-/**multiply operator*/
+/**
+ * the * operator will be a Matrix Multiply not a CWise Multiply
+ */
 template <typename T>
 Expression<T> operator * (const Expression<T> &x, const Expression<T> &y) {
 	std::vector<Node*> inputs = { x.node, y.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new Multiply<T>(inputs)));
+	return Expression<T>(x.executor, x.executor->addFunction(new MatrixMultiply<T>(inputs)));
 }
 
 template <typename T>

@@ -31,14 +31,11 @@ TEST(LinearRegression, test) {
     auto outputP = executor->addInputParameter({1, 2});
     Expression<float> output(executor, outputP);
 
-    /**init the parameter*/
-    TensorInit::gaussian<float>(wP->value);
+    inputP->feed(x);
+    outputP->feed(y);
 
     for (int i = 0; i < 500; ++i) {
-        inputP->feed(x);
-        outputP->feed(y);
-
-        auto t3 = l1Norm(matrixMultiply(input, W) - output);
+        auto t3 = (input * W - output).l1Norm();
 
         std::cout << "loss=>" << ((Variable<float>*)t3.node)->value.scalar() << std::endl;
 

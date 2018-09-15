@@ -12,6 +12,36 @@
 #include "Function.h"
 #include "Trainer.h"
 #include "TensorInit.h"
+#include "Abs.h"
+#include "Add.h"
+#include "AddScalar.h"
+#include "AvgPooling2d.h"
+#include "Conv2d.h"
+#include "DeConv2d.h"
+#include "Divide.h"
+#include "DivideScalar.h"
+#include "Exp.h"
+#include "L1Norm.h"
+#include "L2Norm.h"
+#include "Linear.h"
+#include "Log.h"
+#include "LReLu.h"
+#include "MatrixMultiply.h"
+#include "MaxPooling2d.h"
+#include "Minus.h"
+#include "MinusScalar.h"
+#include "Multiply.h"
+#include "MultiplyScalar.h"
+#include "Pow.h"
+#include "ReLu.h"
+#include "ReShape.h"
+#include "ScalarDivide.h"
+#include "ScalarMinus.h"
+#include "Sigmoid.h"
+#include "Softmax.h"
+#include "Square.h"
+#include "SumElements.h"
+#include "TanH.h"
 
 namespace Deep8 {
 
@@ -34,6 +64,82 @@ public:
 	}
 	
 	explicit Expression(Executor<T> *exe, Node *n): executor(exe), node(n) {
+	}
+
+	/**one operand function*/
+	Expression<T> abs() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Abs<T>(inputs)));
+	}
+
+	Expression<T> exp() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Exp<T>(inputs)));
+	}
+
+	Expression<T> l1Norm() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new L1Norm<T>(inputs)));
+	}
+
+	Expression<T> l2Norm() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new L2Norm<T>(inputs)));
+	}
+
+	Expression<T> linear(T a, T b) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Linear<T>(inputs, a, b)));
+	}
+
+	Expression<T> log() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Log<T>(inputs)));
+	}
+
+	Expression<T> lReLu(T a) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new LReLu<T>(inputs, a)));
+	}
+
+	Expression<T> reLu() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new ReLu<T>(inputs)));
+	}
+
+	Expression<T> reShape(Shape &shape) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new ReShape<T>(inputs, shape)));
+	}
+
+	Expression<T> reShape(std::initializer_list<size_t> list) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new ReShape<T>(inputs, list)));
+	}
+
+	Expression<T> sigmoid() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Sigmoid<T>(inputs)));
+	}
+
+	Expression<T> softmax() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Softmax<T>(inputs)));
+	}
+
+	Expression<T> square() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Square<T>(inputs)));
+	}
+
+	Expression<T> sumElements() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new SumElements<T>(inputs)));
+	}
+
+	Expression<T> tanH() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new TanH<T>(inputs)));
 	}
 };
 
@@ -134,7 +240,7 @@ public:
 		parameterCollection.insert(parameter);
 
 		/**init the parameter*/
-		TensorInit::uniform(value);
+		TensorInit::gaussian(value);
 
 		return parameter;
 	}
