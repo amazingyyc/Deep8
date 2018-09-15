@@ -6,49 +6,52 @@
 
 #include "DefaultExecutor.h"
 #include "Expression.h"
+#include "TensorInit.h"
 
 namespace Deep8 {
 
 TEST(LinearRegression, test) {
-    auto *graph   = new DefaultExecutor<float>();
+    /**
+     * |4,  -1|   |a|   |10|
+     * |      | * | | = |  | ====> a = 3, b = 2
+     * |2,   1|   |b|   |8 |
+     */
+    float x[4] = {4, -1, 2, 1};
+    float y[2] = {10, 8};
 
-    auto wParameter = graph->addParameter({1, 1});
-    Expression<float> W(graph, wParameter);
+    auto *trainer  = new AdagradTrainer<float>();
+    auto *executor = new DefaultExecutor<float>(trainer);
 
-    float *wptr = (float*) (wParameter->value.pointer);
-    wptr[0] = 20.0;
+    auto wP = executor->addParameter({1, 2});
+    Expression<float> W(executor, wP);
 
-    auto inputP = graph->addInputParameter({1, 1});
-    Expression<float> input(graph, inputP);
+    auto inputP = executor->addInputParameter({1, 2, 2});
+    Expression<float> input(executor, inputP);
 
-    auto outputP = graph->addInputParameter({1, 1});
-    Expression<float> output(graph, outputP);
+    auto outputP = executor->addInputParameter({1, 2});
+    Expression<float> output(executor, outputP);
 
-    std::vector<float> x(100);
-    std::vector<float> y(100);
+    /**init the parameter*/
+    TensorInit::gaussian<float>(wP->value);
 
-    std::default_random_engine rng;
-    std::normal_distribution<float> normal(0.0f, 1.0f);
+    for (int i = 0; i < 500; ++i) {
+        inputP->feed(x);
+        outputP->feed(y);
 
-    for (int i = 0; i < 100; ++i) {
-        x[i] = 2.f;
-        y[i] = x[i] * 3.f + normal(rng) * 0.33f;
+        auto t3 = l1Norm(matrixMultiply(input, W) - output);
+
+        std::cout << "loss=>" << ((Variable<float>*)t3.node)->value.scalar() << std::endl;
+
+        executor->backward(t3);
+
+        auto ptr = wP->value.data();
+
+        std::cout << i + 1 << "=>" << "[" << ptr[0] << "," << ptr[1] << "]" << std::endl;
     }
 
-    for (int i = 0; i < 100; ++i) {
-        inputP->feed(&x[i]);
-        outputP->feed(&y[i]);
+    std::cout << "the result should be around: [3, 2]" << std::endl;
 
-		auto t = square(W * input - output);
-
-        graph->backward(t);
-
-        std::cout << i << "->" << wParameter->value.scalar() << std::endl;
-    }
-
-    std::cout << "the result should be around 3.0: " << wParameter->value.scalar() << std::endl;
-
-    delete graph;
+    delete executor;
 }
 
 }

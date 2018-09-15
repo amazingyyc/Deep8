@@ -147,9 +147,13 @@ public:
 		if (DeviceType::CPU == gradient.device->type) {
 			(static_cast<T*>(gradient.pointer))[0] = T(1);
 		} else {
+#ifdef HAVE_CUDA
 			auto device = static_cast<GPUDevice*>(gradient.device);
 
 			device->copyFromGPUToGPU(device->gpuOne<T>(), gradient.pointer, sizeof(T));
+#else
+			DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
+#endif
 		}
 	}
 

@@ -28,7 +28,11 @@ public:
         if (this->value.device->type == DeviceType::CPU) {
             this->value.device->copy(ptr, this->value.pointer, sizeof(T) * this->value.size());
         } else {
-			static_cast<GPUDevice*>(this->value.device)->copyFromCPUToGPU(ptr, this->value.pointer, sizeof(T) * this->value.size());
+#ifdef HAVE_CUDA
+            static_cast<GPUDevice*>(value.device)->copyFromCPUToGPU(ptr, value.pointer, sizeof(T) * value.size());
+#else
+            DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
+#endif
         }
     }
 

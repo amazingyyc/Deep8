@@ -8,6 +8,7 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <cuda_fp16.h>
+#include <curand.h>
 
 #ifdef HAVE_CUDNN
 #include <cudnn.h>
@@ -51,12 +52,15 @@ class CPUDevice: public Device {
 public:
     CPUMemoryPool *memoryPool;
 
+    std::random_device randomDevice;
+    std::mt19937 randGenerator;
+
     /**the Eigen device for using Eigen Tensor*/
     Eigen::NonBlockingThreadPool *eigenThreadPool;
     Eigen::ThreadPoolDevice *eigenDevice;
 
 public:
-    explicit CPUDevice(): Device(DeviceType::CPU) {
+    explicit CPUDevice(): Device(DeviceType::CPU), randGenerator(randomDevice()) {
         memoryPool = new CPUMemoryPool();
 
         auto threadNum  = getDeviceThreadNum();
@@ -94,11 +98,20 @@ public:
 	/**the GPU memory allocator*/
 	GPUMemoryAllocator *gpuMemoryAllocator;
 
+
 	/**the GPU device id*/
 	int deviceId;
 
 	/**cuBlas handle*/
 	cublasHandle_t cublasHandle;
+
+    /**cuRand generator*/
+    curandGenerator_t curandGenerator;
+
+#ifdef HAVE_CUDNN
+	/**cudnn handle*/
+	cudnnHandle_t cudnnHandle;
+#endif
 
 	/**the GPU memroy contains 1, 0, -1*/
 	float *floatOne;
@@ -109,13 +122,6 @@ public:
 	double *doubleZero;
 	double *doubleMinusOne;
 
-#ifdef HAVE_CUDNN
-
-	/**cudnn handle*/
-	cudnnHandle_t cudnnHandle;
-
-#endif
-
 	explicit GPUDevice() : GPUDevice(0) {
 	}
 
@@ -125,6 +131,9 @@ public:
 		gpuMemoryAllocator = new GPUMemoryAllocator(deviceId);
 		
 		CUBLAS_CHECK(cublasCreate(&cublasHandle));
+
+		CURAND_CHECK(curandCreateGenerator(&curandGenerator, CURAND_RNG_PSEUDO_DEFAULT));
+		CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(curandGenerator, (unsigned long long)time(nullptr)));
 
 #ifdef HAVE_CUDNN
 		CUDNN_CHECK(cudnnCreate(&cudnnHandle));
@@ -151,10 +160,12 @@ public:
 		gpuMemoryAllocator->free(floatOne);
 
 		delete gpuMemoryAllocator;
-		cublasDestroy(cublasHandle);
+
+		CUBLAS_CHECK(cublasDestroy(cublasHandle));
+		CURAND_CHECK(curandDestroyGenerator(curandGenerator));
 
 #ifdef HAVE_CUDNN
-		cudnnDestroy(cudnnHandle);
+		CUDNN_CHECK(cudnnDestroy(cudnnHandle));
 #endif
 	}
 

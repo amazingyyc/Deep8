@@ -1,2 +1,4 @@
 /cmake-build-debug
 .vs/
+.idea/
+/.idea/workspace.xml

@@ -11,6 +11,7 @@
 #include "ConstantParameter.h"
 #include "Function.h"
 #include "Trainer.h"
+#include "TensorInit.h"
 
 namespace Deep8 {
 
@@ -25,8 +26,8 @@ public:
 	Executor<T> *executor;
 	
 	/**
-	    * @brief the Node pointer that contacted to this Expression
-	    */
+	 * @brief the Node pointer that contacted to this Expression
+	 */
 	Node *node;
 	
 	explicit Expression(): executor(nullptr), node(nullptr) {
@@ -63,8 +64,8 @@ protected:
 	/**trainer to train the parameter*/
 	Trainer<T> *trainer;
 
-    explicit Executor(TrainerType trainerType = TrainerType::SGD, DeviceType deviceType = DeviceType::CPU): 
-		nodeCollection(), parameterCollection(), nonParameterCollection() {
+    explicit Executor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU):
+			trainer(tr), nodeCollection(), parameterCollection(), nonParameterCollection() {
         if (deviceType == DeviceType::CPU) {
             device = new CPUDevice();
 		} else {
@@ -74,36 +75,9 @@ protected:
 			DEEP8_RUNTIME_ERROR("not find a GPU");
 #endif
 		}
-
-		switch (trainerType) {
-		case Deep8::TrainerType::SGD:
-			trainer = new SGDTrainer<T>();
-			break;
-		case Deep8::TrainerType::Adagrad:
-			trainer = new AdagradTrainer<T>();
-			break;
-		case Deep8::TrainerType::Adam:
-			trainer = new AdamTrainer<T>();
-			break;
-		case Deep8::TrainerType::RMSProp:
-			trainer = new RMSPropTrainer<T>();
-			break;
-		case Deep8::TrainerType::Momentum:
-			trainer = new MomentumTrainer<T>();
-			break;
-		default:
-			DEEP8_RUNTIME_ERROR("the tainer type is error")
-			break;
-		}
     }
 
 protected:
-
-	/**
-	 * the sub class to implements some special operater
-	 */
-	virtual void afterAddFunctionNode(Node *function, Node *variable) {
-	}
 
 	Tensor<T> createTensorWithShape(Shape &shape) {
 		auto ptr = device->malloc(sizeof(T) * shape.size());
@@ -159,6 +133,9 @@ public:
 		nodeCollection.insert(parameter);
 		parameterCollection.insert(parameter);
 
+		/**init the parameter*/
+		TensorInit::uniform(value);
+
 		return parameter;
 	}
 
@@ -184,7 +161,7 @@ public:
 		return inputParameter;
 	}
 
-	Node *addFunction(FunctionBase *function) {
+	virtual Node *addFunction(FunctionBase *function) {
 		auto variable = createVariableByFunction(function);
 
 		function->output = variable;
@@ -194,8 +171,6 @@ public:
 
 		nonParameterCollection.insert(function);
 		nonParameterCollection.insert(variable);
-
-		afterAddFunctionNode(function, variable);
 
 		return variable;
 	}

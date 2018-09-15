@@ -36,37 +36,38 @@ protected:
 	bool clearFlag;
 
 public:
-	explicit DefaultExecutor(TrainerType trainerType = TrainerType::SGD, DeviceType deviceType = DeviceType::CPU, bool flag = true) :
-		Executor<T>(trainerType, deviceType), clearFlag(flag) {
+	explicit DefaultExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true) :
+		Executor<T>(tr, deviceType), clearFlag(flag) {
 	}
 
-protected:
-	void afterAddFunctionNode(Node *function, Node *variable) override {
-		/**calculate the result immediate*/
+	Node *addFunction(FunctionBase *function) override {
+		auto variable = Executor<T>::addFunction(function);
+
 		function->forward();
+
+		return variable;
 	}
 
-public:
 	void clearIntermediaryNodes() {
-		for (auto item : nonParameterCollection) {
-			nodeCollection.erase(item);
+		for (auto item : this->nonParameterCollection) {
+			this->nodeCollection.erase(item);
 
 			delete item;
 		}
 
-		nonParameterCollection.clear();
+		this->nonParameterCollection.clear();
 	}
 
-	void forward(Expression<T> &e) {
+	void forward(Expression<T> &e) override {
 		DEEP8_RUNTIME_ERROR("the DefaultExecutor can not call the forward");
-	}
-
-	void backward(Expression<T> &e) {
-		backward(e.node);
 	}
 
 	void forward(Node *) override {
 		DEEP8_RUNTIME_ERROR("the DefaultExecutor can not call the forward");
+	}
+
+	void backward(Expression<T> &e) override {
+		backward(e.node);
 	}
 
 	void backward(Node *last) override {
@@ -121,7 +122,7 @@ public:
 		}
 
 		/**update the parameter*/
-		trainer->training(parameterCollection);
+		this->trainer->training(this->parameterCollection);
 
 		/**clear the function and variable*/
 		if (clearFlag) {

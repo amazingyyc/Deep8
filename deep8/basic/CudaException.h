@@ -35,6 +35,16 @@ namespace Deep8 {
 	}													 \
 };														 \
 
+#define CURAND_CHECK(cudaExecute)						 \
+{														 \
+	auto ret = cudaExecute;								 \
+	if (ret != CURAND_STATUS_SUCCESS) {					 \
+		DEEP8_RUNTIME_ERROR("the cuRand get a error: "	 \
+			<< #cudaExecute								 \
+			<< ".");								     \
+	}													 \
+};														 \
+
 #ifdef HAVE_CUDNN
 
 #define CUDNN_CHECK(cudnnExecute)						 \

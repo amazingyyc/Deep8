@@ -100,11 +100,15 @@ public:
 		if (DeviceType::CPU == device->type) {
 			return (static_cast<T*>(pointer))[0];
 		} else {
+#ifdef HAVE_CUDA
 			T scalarValue;
 
 			static_cast<GPUDevice*>(device)->copyFromGPUToCPU(pointer, &scalarValue, sizeof(T));
 
 			return scalarValue;
+#else
+			DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
+#endif
 		}
 	}
 

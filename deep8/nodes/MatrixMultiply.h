@@ -34,7 +34,11 @@ public:
          DEEP8_ARGUMENT_CHECK((2 == xShape.nDims() || 3 == xShape.nDims()) && (2 == yShape.nDims() || 3 == yShape.nDims()), "the inputs dimensions is error");
          DEEP8_ARGUMENT_CHECK(xShape.col() == yShape.row(), "the col of input1 must same to the row of input2");
 
-         this->outputShape = Shape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row(), xShape.col()});
+         if (1 == yShape.col()) {
+             this->outputShape = Shape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row()});
+         } else {
+             this->outputShape = Shape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row(), yShape.col()});
+         }
     }
 
 protected:
