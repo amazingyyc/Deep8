@@ -37,13 +37,11 @@ TEST(LinearRegression, test) {
     for (int i = 0; i < 500; ++i) {
         auto t3 = (input * W - output).l1Norm();
 
-        std::cout << "loss=>" << ((Variable<float>*)t3.node)->value.scalar() << std::endl;
-
         executor->backward(t3);
 
+        /**print the W*/
         auto ptr = wP->value.data();
-
-        std::cout << i + 1 << "=>" << "[" << ptr[0] << "," << ptr[1] << "]" << std::endl;
+        std::cout << i + 1 << " => " << "[" << ptr[0] << "," << ptr[1] << "]" << std::endl;
     }
 
     std::cout << "the result should be around: [3, 2]" << std::endl;
@@ -53,4 +51,4 @@ TEST(LinearRegression, test) {
 
 }
 
-#endif //DEEP8_LINEARREGRESSIONTESRT_H
+#endif
