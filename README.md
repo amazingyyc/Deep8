@@ -3,7 +3,7 @@ Deep8 is a head-only dynamic Deep Learning framework like Chainer and DyNet.
 
 ## A simple Demo
 
-```
+```C
 /**
  * |4,  -1|   |a|   |10|
  * |      | * | | = |  | ====> a = 3, b = 2
