@@ -12,46 +12,41 @@ namespace Deep8 {
 #ifdef HAVE_CUDA
 
 TEST(LinearRegression, GPU_Test) {
-	auto *graph = new DefaultExecutor<float>(TrainerType::SGD, DeviceType::GPU);
+	/**
+     * |4,  -1|   |a|   |10|
+     * |      | * | | = |  | ====> a = 3, b = 2
+     * |2,   1|   |b|   |8 |
+     */
+    float x[4] = {4, -1, 2, 1};
+    float y[2] = {10, 8};
 
-	auto wParameter = graph->addParameter({ 1, 1 });
-	Expression<float> W(graph, wParameter);
+	auto *trainer  = new AdagradTrainer<float>();
+    auto *executor = new DefaultExecutor<float>(trainer, DeviceType::GPU);
 
-	auto device = (GPUDevice*)(wParameter->value.device);
+	auto wP = executor->addParameter({1, 2});
+    Expression<float> W(executor, wP);
 
-	auto inputP = graph->addInputParameter({ 1, 1 });
-	Expression<float> input(graph, inputP);
+    auto inputP = executor->addInputParameter({1, 2, 2});
+    Expression<float> input(executor, inputP);
 
-	auto outputP = graph->addInputParameter({ 1, 1 });
-	Expression<float> output(graph, outputP);
+    auto outputP = executor->addInputParameter({1, 2});
+    Expression<float> output(executor, outputP);
 
-	float wValue = 20.0;
+	inputP->feed(x);
+    outputP->feed(y);
 
-	device->copyFromCPUToGPU(&wValue, wParameter->value.pointer, sizeof(float));
-
-	std::vector<float> x(100);
-	std::vector<float> y(100);
-
-	std::default_random_engine rng;
-	std::normal_distribution<float> normal(0.0f, 1.0f);
-
-	for (int i = 0; i < 100; ++i) {
-		x[i] = 2.f;
-		y[i] = x[i] * 3.f + normal(rng) * 0.33f;
-	}
+	float wPtr[2];
 
 	for (int i = 0; i < 100; ++i) {
-		inputP->feed(&x[i]);
-		outputP->feed(&y[i]);
+		auto t3 = (input * W - output).l1Norm();
 
-		auto t = square(W * input - output);
+        executor->backward(t3);
 
-		graph->backward(t);
-
-		std::cout << i << "->" << wParameter->value.scalar() << std::endl;
+		(GPUDevice*)(wP->value.device)->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(float) * 2);
+        std::cout << i + 1 << " => " << "[" << wPtr[0] << "," << wPtr[1] << "]" << std::endl;
 	}
 
-	std::cout << "the result should be around 3.0: " << wParameter->value.scalar() << std::endl;
+	std::cout << "the result should be around: [3, 2]" << std::endl;
 
 	delete graph;
 }
