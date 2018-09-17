@@ -37,18 +37,18 @@ TEST(LinearRegression, GPU_Test) {
 
 	float wPtr[2];
 
-	for (int i = 0; i < 100; ++i) {
+	for (int i = 0; i < 5000; ++i) {
 		auto t3 = (input * W - output).l1Norm();
 
         executor->backward(t3);
 
-		(GPUDevice*)(wP->value.device)->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(float) * 2);
+		((GPUDevice*)(wP->value.device))->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(float) * 2);
         std::cout << i + 1 << " => " << "[" << wPtr[0] << "," << wPtr[1] << "]" << std::endl;
 	}
 
 	std::cout << "the result should be around: [3, 2]" << std::endl;
 
-	delete graph;
+	delete executor;
 }
 
 #endif

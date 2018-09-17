@@ -177,7 +177,7 @@ private:
 
         uniformGPU(tensor);
 
-        float sum = 0;
+        double sum = 0;
 
         CUBLAS_CHECK(cublasDasum(device->cublasHandle, N, tensor.data(), 1, &sum));
 
