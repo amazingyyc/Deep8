@@ -12,7 +12,7 @@
 #endif
 
 #ifdef HAVE_CUDA
-#define DEEP8_CUDA_FUNC __host__ __device__
+#define DEEP8_CUDA_FUNC __device__
 
 #if _MSC_VER || __INTEL_COMPILER
 #define DEEP8_CUDA_INLINE __forceinline

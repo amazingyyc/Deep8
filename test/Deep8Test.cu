@@ -10,7 +10,7 @@
 
 #include "TestUtils.h"
 
-//#include "AbsTest.h"
+#include "AbsTest.h"
 //#include "AddTest.h"
 //#include "AddScalarTest.h"
 //#include "AvgPooling2dTest.h"
@@ -38,7 +38,7 @@
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
 //#include "LinearRegressionTest.h"
-#include "LinearRegressionGPUTest.h"
+//#include "LinearRegressionGPUTest.h"
 
 using namespace Deep8;
 
