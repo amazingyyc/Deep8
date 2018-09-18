@@ -1,19 +1,6 @@
 #ifndef DEEP8_MEMORYALLOCATOR_H
 #define DEEP8_MEMORYALLOCATOR_H
 
-#include <cstddef>
-
-#ifdef __GUNC__
-#include <mm_malloc.h>
-#endif
-
-#ifdef HAVE_CUDA
-#include <cuda_runtime.h>
-#endif
-
-#include "Exception.h"
-#include "CudaException.h"
-
 namespace Deep8 {
 
 #define DEFAULT_ALIGN 32

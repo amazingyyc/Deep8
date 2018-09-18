@@ -1,11 +1,6 @@
 #ifndef DEEP8_EXP_H
 #define DEEP8_EXP_H
 
-#include "Macro.h"
-#include "Node.h"
-#include "Function.h"
-#include "CudaMathUtils.h"
-
 namespace Deep8 {
 
 /**

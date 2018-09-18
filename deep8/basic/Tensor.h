@@ -1,13 +1,6 @@
 #ifndef DEEP8_TENSOR_H
 #define DEEP8_TENSOR_H
 
-#include <Eigen/Dense>
-#include <unsupported/Eigen/CXX11/Tensor>
-
-#include "Device.h"
-#include "Shape.h"
-#include "basic/Exception.h"
-
 namespace Deep8 {
 
 class TensorBase {

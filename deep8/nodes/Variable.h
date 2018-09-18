@@ -1,10 +1,6 @@
 #ifndef DEEP8_VARIABLE_H
 #define DEEP8_VARIABLE_H
 
-#include "Tensor.h"
-#include "Device.h"
-#include "Node.h"
-
 namespace Deep8 {
 
 class VariableBase : public Node {

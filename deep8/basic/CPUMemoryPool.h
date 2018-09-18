@@ -1,15 +1,6 @@
 #ifndef DEEP8_MEMORYPOOL_H
 #define DEEP8_MEMORYPOOL_H
 
-#include <iostream>
-#include <vector>
-#include <unordered_set>
-#include <string>
-
-#include "MathUtils.h"
-#include "Exception.h"
-#include "MemoryAllocator.h"
-
 namespace Deep8 {
 
 /**

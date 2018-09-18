@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU false)
+set(HAVE_GPU true)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -113,7 +113,6 @@ set ( DEEP8_HEAD_FILES
         deep8/basic/Shape.h
 		deep8/basic/Tensor.h
 		deep8/basic/CudaException.h
-		deep8/basic/Type.h
 
 		deep8/model/Executor.h
 		deep8/model/DefaultExecutor.h
@@ -154,7 +153,6 @@ set ( DEEP8_HEAD_FILES
 
 		deep8/utils/CudaMathUtils.h
 		deep8/utils/MathUtils.h
-		deep8/utils/QuantizeUtils.h
 		deep8/utils/ShapeUtils.h
 		deep8/utils/TensorUtils.h
 		deep8/utils/Utils.h

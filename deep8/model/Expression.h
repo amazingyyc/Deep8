@@ -1,8 +1,6 @@
 #ifndef DEEP8_EXPRESSION_H
 #define DEEP8_EXPRESSION_H
 
-#include "Executor.h"
-
 namespace Deep8 {
 
 template <typename T>

@@ -1,8 +1,6 @@
 #ifndef DEEP8_PARAMETER_H
 #define DEEP8_PARAMETER_H
 
-#include "Variable.h"
-
 namespace Deep8 {
 
 /**

@@ -1,48 +1,6 @@
 #ifndef DEEP8_EXECUTOR_H
 #define DEEP8_EXECUTOR_H
 
-#include <unordered_set>
-
-#include "Device.h"
-#include "Node.h"
-#include "Variable.h"
-#include "Parameter.h"
-#include "InputParameter.h"
-#include "ConstantParameter.h"
-#include "Function.h"
-#include "Trainer.h"
-#include "TensorInit.h"
-#include "Abs.h"
-#include "Add.h"
-#include "AddScalar.h"
-#include "AvgPooling2d.h"
-#include "Conv2d.h"
-#include "DeConv2d.h"
-#include "Divide.h"
-#include "DivideScalar.h"
-#include "Exp.h"
-#include "L1Norm.h"
-#include "L2Norm.h"
-#include "Linear.h"
-#include "Log.h"
-#include "LReLu.h"
-#include "MatrixMultiply.h"
-#include "MaxPooling2d.h"
-#include "Minus.h"
-#include "MinusScalar.h"
-#include "Multiply.h"
-#include "MultiplyScalar.h"
-#include "Pow.h"
-#include "ReLu.h"
-#include "ReShape.h"
-#include "ScalarDivide.h"
-#include "ScalarMinus.h"
-#include "Sigmoid.h"
-#include "Softmax.h"
-#include "Square.h"
-#include "SumElements.h"
-#include "TanH.h"
-
 namespace Deep8 {
 
 template <class T> class Executor;

@@ -1,10 +1,6 @@
 #ifndef DEEP8_DIVIDE_H
 #define DEEP8_DIVIDE_H
 
-#include "ShapeUtils.h"
-#include "TensorUtils.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 #ifdef HAVE_CUDA

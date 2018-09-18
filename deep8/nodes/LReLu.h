@@ -1,9 +1,6 @@
 #ifndef DEEP8_LRELU_H
 #define DEEP8_LRELU_H
 
-#include "TensorUtils.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 template <typename T>

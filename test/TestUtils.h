@@ -1,14 +1,7 @@
 #ifndef DEEP8_TESTUTILS_H
 #define DEEP8_TESTUTILS_H
 
-#ifdef HAVE_CUDA
-#include <cuda_runtime.h>
-#endif
 #include <stdarg.h>
-
-#include "Tensor.h"
-#include "Variable.h"
-#include "Parameter.h"
 
 namespace Deep8 {
 

@@ -1,24 +1,6 @@
 #ifndef DEEP8_ADD_H
 #define DEEP8_ADD_H
 
-#include <iostream>
-
-#ifdef HAVE_CUDA
-
-#include <cuda_runtime.h>
-#include <cuda_occupancy.h>
-#include <cuda_fp16.h>
-#include <math_functions.h>
-#include <cublas_v2.h>
-
-#include "CudaMathUtils.h"
-
-#endif
-
-#include "ShapeUtils.h"
-#include "TensorUtils.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 /**

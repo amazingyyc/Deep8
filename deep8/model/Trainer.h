@@ -1,13 +1,6 @@
 #ifndef DEEP8_TRAINER_H
 #define DEEP8_TRAINER_H
 
-#include <unordered_map>
-
-#include "TensorUtils.h"
-#include "Executor.h"
-#include "Node.h"
-#include "Tensor.h"
-
 namespace Deep8 {
 
 enum class TrainerType {
@@ -20,6 +13,9 @@ enum class TrainerType {
 
 template <typename T>
 class Trainer {
+public:
+	virtual ~Trainer() = default;
+
 protected:
     /**the learning rate*/
     T learningRate;
@@ -36,8 +32,6 @@ protected:
     explicit Trainer(T lr = 0.1, bool cg = false, T ct = 5.0):
             learningRate(lr), clipGradient(cg), clipThreshold(ct), times(0) {
     }
-
-	virtual ~Trainer() = default;
 
     T clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
         std::vector<T> l2NormVec;

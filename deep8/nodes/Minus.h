@@ -1,10 +1,6 @@
 #ifndef DEEP8_MINUS_H
 #define DEEP8_MINUS_H
 
-#include <utils/ShapeUtils.h>
-#include "Node.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 /**

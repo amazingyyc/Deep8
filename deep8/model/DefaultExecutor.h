@@ -1,11 +1,6 @@
 #ifndef DEEP8_DEFAULTEXECUTOR_H
 #define DEEP8_DEFAULTEXECUTOR_H
 
-#include <iostream>
-#include <queue>
-
-#include "Executor.h"
-
 namespace Deep8 {
 
 /**

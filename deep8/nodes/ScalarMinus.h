@@ -1,10 +1,6 @@
 #ifndef DEEP8_SCALARMINUS_H
 #define DEEP8_SCALARMINUS_H
 
-#include <utils/ShapeUtils.h>
-#include "Node.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 /*****************************************************************************************************************/

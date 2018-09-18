@@ -1,10 +1,6 @@
 #ifndef DEEP8_DIVIDESCALAR_H
 #define DEEP8_DIVIDESCALAR_H
 
-#include "ShapeUtils.h"
-#include "TensorUtils.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 /*****************************************************************************/

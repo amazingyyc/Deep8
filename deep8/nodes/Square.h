@@ -1,8 +1,6 @@
 #ifndef DEEP8_SQUARE_H
 #define DEEP8_SQUARE_H
 
-#include "Function.h"
-
 namespace Deep8 {
 
 /**

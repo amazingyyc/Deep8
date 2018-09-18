@@ -1,9 +1,6 @@
 #ifndef DEEP8_LOG_H
 #define DEEP8_LOG_H
 
-#include "Node.h"
-#include "CudaMathUtils.h"
-#include "Function.h"
 
 namespace Deep8 {
 

@@ -1,12 +1,6 @@
 #ifndef DEEP8_LINEARREGRESSIONGPUTEST_H
 #define DEEP8_LINEARREGRESSIONGPUTEST_H
 
-#include <iostream>
-#include <random>
-
-#include "DefaultExecutor.h"
-#include "Expression.h"
-
 namespace Deep8 {
 
 #ifdef HAVE_CUDA

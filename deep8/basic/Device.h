@@ -1,27 +1,6 @@
 #ifndef DEEP8_DEVICE_H
 #define DEEP8_DEVICE_H
 
-#include <unsupported/Eigen/CXX11/Tensor>
-
-#ifdef HAVE_CUDA
-
-#include <cuda_runtime.h>
-#include <cublas_v2.h>
-#include <cuda_fp16.h>
-#include <curand.h>
-
-#ifdef HAVE_CUDNN
-#include <cudnn.h>
-#endif
-
-#endif
-
-#include "Utils.h"
-#include "Exception.h"
-#include "CudaException.h"
-#include "MemoryAllocator.h"
-#include "CPUMemoryPool.h"
-
 namespace Deep8 {
 
 /**

@@ -1,19 +1,6 @@
 #ifndef DEEP8_ABS_H
 #define DEEP8_ABS_H
 
-#ifdef HAVE_CUDA
-
-#include <cuda_runtime.h>
-#include <cuda_occupancy.h>
-#include <cuda_fp16.h>
-#include <math_functions.h>
-#include "CudaMathUtils.h"
-
-#endif
-
-#include "Node.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 /**

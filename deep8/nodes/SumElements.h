@@ -1,9 +1,6 @@
 #ifndef DEEP8_SUMELEMENTS_H
 #define DEEP8_SUMELEMENTS_H
 
-#include "Node.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 

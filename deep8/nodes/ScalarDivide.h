@@ -1,10 +1,6 @@
 #ifndef DEEP8_SCALARDIVIDE_H
 #define DEEP8_SCALARDIVIDE_H
 
-#include "ShapeUtils.h"
-#include "TensorUtils.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 /*****************************************************************************/

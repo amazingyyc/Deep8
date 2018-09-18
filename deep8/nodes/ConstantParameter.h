@@ -1,8 +1,6 @@
 #ifndef DEEP8_CONSTANTPARAMETER_H
 #define DEEP8_CONSTANTPARAMETER_H
 
-#include "Parameter.h"
-
 namespace Deep8 {
 
 /**

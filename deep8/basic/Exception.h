@@ -5,10 +5,6 @@
 #ifndef DEEP8_EXCEPTION_H
 #define DEEP8_EXCEPTION_H
 
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
-
 namespace Deep8 {
 
 #define DEEP8_ASSERT(condition, message)        \

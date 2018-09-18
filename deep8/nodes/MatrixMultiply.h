@@ -1,10 +1,6 @@
 #ifndef DEEP8_MATRIXMULTIPLY_H
 #define DEEP8_MATRIXMULTIPLY_H
 
-#include "Tensor.h"
-#include "Shape.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 template <typename T>

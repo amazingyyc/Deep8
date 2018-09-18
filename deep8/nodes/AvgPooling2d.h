@@ -1,8 +1,6 @@
 #ifndef DEEP8_AVGPOOLING2D_H
 #define DEEP8_AVGPOOLING2D_H
 
-#include "Function.h"
-
 namespace Deep8 {
 
 #ifdef HAVE_CUDA

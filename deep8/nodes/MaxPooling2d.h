@@ -1,10 +1,6 @@
 #ifndef DEEP8_MAXPOOLING2D_H
 #define DEEP8_MAXPOOLING2D_H
 
-#include <unsupported/Eigen/CXX11/Tensor>
-
-#include "Function.h"
-
 namespace Deep8 {
 
 template <typename T>

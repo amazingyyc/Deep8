@@ -1,25 +1,6 @@
 #ifndef DEEP8_FUNCTION_H
 #define DEEP8_FUNCTION_H
 
-#include <iostream>
-#include <utility>
-#include <typeinfo>
-
-#ifdef HAVE_CUDA
-
-#include <cuda_runtime.h>
-#include <cuda_occupancy.h>
-#include <cuda_fp16.h>
-#include <math_functions.h>
-#include "CudaMathUtils.h"
-
-#endif
-
-#include "TensorUtils.h"
-#include "Shape.h"
-#include "Node.h"
-#include "Variable.h"
-
 namespace Deep8 {
 
 class FunctionBase: public Node {

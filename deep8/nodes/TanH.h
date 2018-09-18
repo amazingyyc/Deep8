@@ -1,11 +1,6 @@
 #ifndef DEEP8_TANH_H
 #define DEEP8_TANH_H
 
-#include <cmath>
-#include <iostream>
-
-#include "Function.h"
-
 namespace Deep8 {
 
 template <typename T>

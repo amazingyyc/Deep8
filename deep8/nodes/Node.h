@@ -1,12 +1,6 @@
 #ifndef DEEP8_NODE_H
 #define DEEP8_NODE_H
 
-#include <utility>
-#include <vector>
-
-#include "Tensor.h"
-#include "Device.h"
-
 namespace Deep8 {
 
 enum class NodeType {

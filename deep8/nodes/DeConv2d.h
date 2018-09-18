@@ -1,12 +1,6 @@
 #ifndef DEEP8_DECONV2D_H
 #define DEEP8_DECONV2D_H
 
-#include <iostream>
-#include <unsupported/Eigen/CXX11/Tensor>
-
-#include "Function.h"
-#include "Conv2d.h"
-
 namespace Deep8 {
 
 /**

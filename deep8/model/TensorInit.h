@@ -1,15 +1,6 @@
 #ifndef DEEP8_TENSORINIT_H
 #define DEEP8_TENSORINIT_H
 
-#include <random>
-
-#include "Tensor.h"
-#include "TensorUtils.h"
-
-#ifdef HAVE_CUDA
-#include <curand.h>
-#endif
-
 namespace Deep8 {
 
 #ifdef HAVE_CUDA

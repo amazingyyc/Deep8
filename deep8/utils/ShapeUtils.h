@@ -1,10 +1,6 @@
 #ifndef DEEP8_SHAPEUTILS_H
 #define DEEP8_SHAPEUTILS_H
 
-#include <unsupported/Eigen/CXX11/Tensor>
-
-#include "Shape.h"
-
 namespace Deep8 {
 
 /**

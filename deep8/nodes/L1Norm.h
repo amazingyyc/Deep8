@@ -1,10 +1,6 @@
 #ifndef DEEP8_L1NORM_H
 #define DEEP8_L1NORM_H
 
-#include "Node.h"
-#include "Function.h"
-#include "CudaMathUtils.h"
-
 namespace Deep8 {
 
 template <typename T>

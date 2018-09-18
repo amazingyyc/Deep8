@@ -1,10 +1,6 @@
 #ifndef DEEP8_TENSORUTILS_H
 #define DEEP8_TENSORUTILS_H
 
-#include <Eigen/Dense>
-#include <unsupported/Eigen/CXX11/Tensor>
-
-#include "Tensor.h"
 
 namespace Deep8 {
 

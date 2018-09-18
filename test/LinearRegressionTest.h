@@ -1,13 +1,6 @@
 #ifndef DEEP8_LINEARREGRESSIONTEST_H
 #define DEEP8_LINEARREGRESSIONTEST_H
 
-#include <iostream>
-#include <random>
-
-#include "DefaultExecutor.h"
-#include "Expression.h"
-#include "TensorInit.h"
-
 namespace Deep8 {
 
 TEST(LinearRegression, test) {
@@ -34,7 +27,7 @@ TEST(LinearRegression, test) {
     inputP->feed(x);
     outputP->feed(y);
 
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < 5000; ++i) {
         auto t3 = (input * W - output).l1Norm();
 
         executor->backward(t3);

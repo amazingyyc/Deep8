@@ -1,9 +1,6 @@
 #ifndef DEEP8_L2NORM_H
 #define DEEP8_L2NORM_H
 
-#include "Node.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 #ifdef HAVE_CUDA

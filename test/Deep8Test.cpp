@@ -1,8 +1,3 @@
-#ifdef HAVE_CUDA
-#include <cuda_runtime.h>
-#include <math_constants.h>
-#endif
-
 #include <iostream>
 #include <gtest/gtest.h>
 
@@ -10,9 +5,10 @@
 #define private public
 #define protected public
 
-#include <cmath>
+#include "Deep8.h"
 
 #include "TestUtils.h"
+
 //#include "AbsTest.h"
 //#include "AddTest.h"
 //#include "AddScalarTest.h"
@@ -39,7 +35,6 @@
 //#include "SquareTest.h"
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
-
 #include "LinearRegressionTest.h"
 
 using namespace Deep8;

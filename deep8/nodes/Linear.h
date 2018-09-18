@@ -1,8 +1,6 @@
 #ifndef DEEP8_LINEAR_H
 #define DEEP8_LINEAR_H
 
-#include "Function.h"
-
 namespace Deep8 {
 
 /**

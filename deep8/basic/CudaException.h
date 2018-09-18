@@ -3,15 +3,6 @@
 
 #ifdef HAVE_CUDA
 
-#include <cuda_runtime.h>
-#include <cublas_v2.h>
-
-#ifdef HAVE_CUDNN
-#include <cudnn.h>
-#endif
-
-#include "Exception.h"
-
 namespace Deep8 {
 
 #define CUDA_CHECK(cudaExecute)							\

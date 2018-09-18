@@ -1,10 +1,6 @@
 #ifndef DEEP8_SOFTMAX_H
 #define DEEP8_SOFTMAX_H
 
-#include "Node.h"
-#include "CudaMathUtils.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 #ifdef HAVE_CUDA

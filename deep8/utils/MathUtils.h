@@ -1,8 +1,6 @@
 #ifndef DEEP8_MATHUTILS_H
 #define DEEP8_MATHUTILS_H
 
-#include <iostream>
-
 namespace Deep8 {
 
 inline bool isPowerOf2(size_t size) {

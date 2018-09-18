@@ -1,13 +1,6 @@
 #ifndef DEEP8_MULTIPLYSCALAR_H
 #define DEEP8_MULTIPLYSCALAR_H
 
-#include <iostream>
-
-#include "ShapeUtils.h"
-#include "TensorUtils.h"
-#include "Node.h"
-#include "Function.h"
-
 namespace Deep8 {
 
 /******************************************************************************************/
