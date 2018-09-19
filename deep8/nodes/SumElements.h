@@ -138,37 +138,38 @@ protected:
 
 #ifdef HAVE_CUDA
 
-	void forwardGPUImpl(GPUDevice *device, const T *x, T *y, const int batch, const int size) {
+	template <typename real>
+	void forwardGPUImpl(GPUDevice *device, const real *x, real *y, const int batch, const int size) {
 		int blockSize = 1024;
 
 		if (size < blockSize) {
 			blockSize = prevPowerOf2(size);
 		}
 
-		int sharedSize = sizeof(T) * blockSize;
+		int sharedSize = sizeof(real) * blockSize;
 
 		if (1024 == blockSize) {
-			SumElementsForwardKernel<1024, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<1024, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (512 == blockSize) {
-			SumElementsForwardKernel<512, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<512, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (256 == blockSize) {
-			SumElementsForwardKernel<256, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<256, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (128 == blockSize) {
-			SumElementsForwardKernel<128, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<128, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (64 == blockSize) {
-			SumElementsForwardKernel<64, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<64, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (32 == blockSize) {
-			SumElementsForwardKernel<32, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<32, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (16 == blockSize) {
-			SumElementsForwardKernel<16, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<16, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (8 == blockSize) {
-			SumElementsForwardKernel<8, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<8, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (4 == blockSize) {
-			SumElementsForwardKernel<4, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<4, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (2 == blockSize) {
-			SumElementsForwardKernel<2, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<2, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else if (1 == blockSize) {
-			SumElementsForwardKernel<1, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+			SumElementsForwardKernel<1, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
 		} else {
 			DEEP8_RUNTIME_ERROR("the block size is error");
 		}
@@ -188,6 +189,34 @@ protected:
 #endif
     }
 
+
+#ifdef HAVE_HALF
+
+	template <typename real>
+	void backwardGPUImpl(real *dx, const real *dy, const int size, const int N) {
+		int minGrideSize;
+		int blockSize;
+		int grideSize;
+
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, SumElementsBackwardKernel<real>, 0, N));
+
+		grideSize = (N + blockSize - 1) / blockSize;
+
+		SumElementsBackwardKernel<real> << <grideSize, blockSize >> > (dx, dy, size, N);
+	}
+
+#ifdef HAVE_HALF
+
+	template <>
+	void backwardGPUImpl<half>(half *dx, const half *dy, const int size, const int N) {
+		int minGrideSize;
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		SumElementsBackwardKernel<half> << <grideSize, blockSize >> > (dx, dy, size, N);
+	}
+#endif
+#endif
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 					const Tensor<T> *output,
 					const Tensor<T> *outputGradient,
@@ -199,18 +228,9 @@ protected:
 		auto shape = iGradient->shape;
 		int batch = (int)shape.batch();
 		int size = (int)shape.size() / batch;
-
-		int minGrideSize;
-		int blockSize;
-		int grideSize;
-
 		int N = (int) shape.size();
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, SumElementsBackwardKernel<T>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
-
-		SumElementsBackwardKernel<T> << <grideSize, blockSize >> > (iGradient->data(), outputGradient->data(), size, N);
+		backwardGPUImpl(iGradient->data(), outputGradient->data(), size, N);
 
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
