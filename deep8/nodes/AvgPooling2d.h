@@ -329,9 +329,10 @@ protected:
         barrier.Wait();
     }
 
-#ifdef HAVE_CUDNN
+#ifdef HAVE_CUDA
 
-	void forwardGPUImpl(GPUDevice *device, const float *x, float *y,
+	template <typename real>
+	void forwardGPUImpl(GPUDevice *device, const real *x, real *y,
 		const int batch,
 		const int inputHeight, const int inputWidth,
 		const int outputHeight, const int outputWidth,
@@ -346,11 +347,11 @@ protected:
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AvgPooling2dForwardKernel<float>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AvgPooling2dForwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		AvgPooling2dForwardKernel<float> << <grideSize, blockSize >> > (x, y, 
+		AvgPooling2dForwardKernel<real> << <grideSize, blockSize >> > (x, y,
 			batch, inputHeight, inputWidth,
 			outputHeight, outputWidth, channel,
 			filterHeight, filterWidth,
@@ -358,7 +359,10 @@ protected:
 			strideY, strideX, N);
 	}
 
-	void forwardGPUImpl(GPUDevice *device, const double *x, double *y,
+#ifdef HAVE_HALF
+
+	template <>
+	void forwardGPUImpl<half>(GPUDevice *device, const half *x, half *y,
 		const int batch,
 		const int inputHeight, const int inputWidth,
 		const int outputHeight, const int outputWidth,
@@ -369,23 +373,17 @@ protected:
 
 		int N = batch * outputHeight * outputWidth * channel;
 
-		int minGrideSize;
-		int blockSize;
-		int grideSize;
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AvgPooling2dForwardKernel<double>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
-
-		AvgPooling2dForwardKernel<double> << <grideSize, blockSize >> > (x, y,
+		AvgPooling2dForwardKernel<half> << <grideSize, blockSize >> > (x, y,
 			batch, inputHeight, inputWidth,
 			outputHeight, outputWidth, channel,
 			filterHeight, filterWidth,
 			padTop, padLeft,
 			strideY, strideX, N);
 	}
-
-
+#endif // HAVE_HALF
 #endif
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -402,7 +400,7 @@ protected:
 		auto outputWidth  = static_cast<int>(output->shape.dim(2));
 
 		int padY = std::max<int>(0, (outputHeight - 1) * static_cast<int>(strideY) + static_cast<int>(filterHeight) - inputHeight);
-		int padX = std::max<int>(0, (outputWidth - 1) * static_cast<int>(strideX) + static_cast<int>(filterWidth)  - inputWidth);
+		int padX = std::max<int>(0, (outputWidth  - 1) * static_cast<int>(strideX) + static_cast<int>(filterWidth)  - inputWidth);
 
 		int padTop  = -(padY / 2);
 		int padLeft = -(padX / 2);
@@ -415,9 +413,10 @@ protected:
 #endif
 	}
 
-#ifdef HAVE_CUDNN
+#ifdef HAVE_CUDA
 
-	void backwardGPUImpl(GPUDevice *device, float *dx, const float *dy,
+	template <typename real>
+	void backwardGPUImpl(GPUDevice *device, real *dx, const real *dy,
 		const int batch, const int inputHeight, const int inputWidth,
 		const int outputHeight, const int outputWidth, const int channel,
 		const int filterHeight, const int filterWidth,
@@ -430,11 +429,11 @@ protected:
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AvgPooling2dBackwardKernel<float>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AvgPooling2dBackwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		AvgPooling2dBackwardKernel<float> << <grideSize, blockSize >> > (dx, dy,
+		AvgPooling2dBackwardKernel<real> << <grideSize, blockSize >> > (dx, dy,
 			batch, inputHeight, inputWidth,
 			outputHeight, outputWidth, channel,
 			filterHeight, filterWidth,
@@ -442,7 +441,10 @@ protected:
 			strideY, strideX, N);
 	}
 
-	void backwardGPUImpl(GPUDevice *device, double *dx, const double *dy,
+#ifdef HAVE_HALF
+
+	template <>
+	void backwardGPUImpl<half>(GPUDevice *device, half *dx, const half *dy,
 		const int batch, const int inputHeight, const int inputWidth,
 		const int outputHeight, const int outputWidth, const int channel,
 		const int filterHeight, const int filterWidth,
@@ -451,15 +453,10 @@ protected:
 
 		int N = batch * inputHeight * inputWidth * channel;
 
-		int minGrideSize;
-		int blockSize;
-		int grideSize;
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AvgPooling2dBackwardKernel<double>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
-
-		AvgPooling2dBackwardKernel<double> << <grideSize, blockSize >> > (dx, dy,
+		AvgPooling2dBackwardKernel<half> << <grideSize, blockSize >> > (dx, dy,
 			batch, inputHeight, inputWidth,
 			outputHeight, outputWidth, channel,
 			filterHeight, filterWidth,
@@ -467,6 +464,7 @@ protected:
 			strideY, strideX, N);
 	}
 
+#endif
 #endif
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,

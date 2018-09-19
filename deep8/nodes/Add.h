@@ -213,19 +213,36 @@ protected:
 	
 #ifdef HAVE_CUDA
 
-	void forwardGPUImpl(const T *x, const int *xdims, const int *xstrides,
-						const T *y, const int *ydims, const int *ystrides,
-							  T *z, const int *zdims, const int *zstrides, const int N) {
+	template <typename real>
+	void forwardGPUImpl(const real *x, const int *xdims, const int *xstrides,
+						const real *y, const int *ydims, const int *ystrides,
+							  real *z, const int *zdims, const int *zstrides, const int N) {
 		int minGrideSize;
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AddForwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AddForwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		AddForwardKernel<T> << <grideSize, blockSize >> > (x, xdims, xstrides, y, ydims, ystrides, z, zdims, zstrides, N);
+		AddForwardKernel<real> << <grideSize, blockSize >> > (x, xdims, xstrides, y, ydims, ystrides, z, zdims, zstrides, N);
 	}
+
+#ifdef HAVE_HALF
+
+	template <>
+	void forwardGPUImpl<half>(const half *x, const int *xdims, const int *xstrides,
+						      const half *y, const int *ydims, const int *ystrides,
+									half *z, const int *zdims, const int *zstrides, const int N) {
+		int blockSize = 1024;
+		int grideSize;
+
+		grideSize = (N + blockSize - 1) / blockSize;
+
+		AddForwardKernel<half> << <grideSize, blockSize >> > (x, xdims, xstrides, y, ydims, ystrides, z, zdims, zstrides, N);
+	}
+
+#endif // HAVE_HALF
 
 #endif
 
@@ -286,17 +303,31 @@ protected:
 
 #ifdef HAVE_CUDA
 
-	void backwardGPUImpl(T *inGrad, const int *inShape, const int *inDims, const T *outGrad, const int *outShape, const int *outDims, const int N) {
+	template <typename real>
+	void backwardGPUImpl(real *inGrad, const int *inShape, const int *inDims, const real *outGrad, const int *outShape, const int *outDims, const int N) {
 		int minGrideSize;
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AddBackwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AddBackwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		AddBackwardKernel<T> << <grideSize, blockSize >> > (inGrad, inShape, inDims, outGrad, outShape, outDims, N);
+		AddBackwardKernel<real> << <grideSize, blockSize >> > (inGrad, inShape, inDims, outGrad, outShape, outDims, N);
 	}
+
+#ifdef HAVE_HALF
+	template <>
+	void backwardGPUImpl<half>(half *inGrad, const int *inShape, const int *inDims, const half *outGrad, const int *outShape, const int *outDims, const int N) {
+		int blockSize = 1024;
+		int grideSize;
+
+		grideSize = (N + blockSize - 1) / blockSize;
+
+		AddBackwardKernel<half> << <grideSize, blockSize >> > (inGrad, inShape, inDims, outGrad, outShape, outDims, N);
+	}
+#endif // HAVE_HALF
+
 
 #endif
 

@@ -69,26 +69,73 @@ protected:
     }
 
 
-	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
-		
+
+	template <typename real>
+	void forwardGPUImpl(const real *x, const real a, const real b, real *y, const int N) {
 		int minGrideSize;
 		int blockSize;
 		int grideSize;
 
-		int N = static_cast<int>(output->size());
-
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LinearForwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LinearForwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		LinearForwardKernel<T> << <grideSize, blockSize >> > (inputs[0]->data(), a, b, output->data(), N);
+		LinearForwardKernel<real> << <grideSize, blockSize >> > (x, a, b, y, N);
+	}
 
+
+#ifdef HAVE_HALF
+
+	template <>
+	void forwardGPUImpl<half>(const half *x, const half a, const half b, half *y, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		LinearForwardKernel<half> << <grideSize, blockSize >> > (x, a, b, y, N);
+	}
+
+#endif // HAVE_HALF
+#endif // HAVE_CUDA
+
+
+	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
+#ifdef HAVE_CUDA
+		forwardGPUImpl(inputs[0]->data(), a, b, output->data(), static_cast<int>(output->size()));
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif
 	}
 
+
+
+#ifdef HAVE_CUDA
+
+	template <typename real>
+	void backwardGPUImpl(real *xGrad, const real a, const real *yGrad, const int N) {
+		int minGrideSize;
+		int blockSize;
+		int grideSize;
+
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LinearBackwardKernel<real>, 0, N));
+
+		grideSize = (N + blockSize - 1) / blockSize;
+
+		LinearBackwardKernel<real> << <grideSize, blockSize >> > (xGrad, a, yGrad, N);
+	}
+
+#ifdef HAVE_HALF
+
+	template <>
+	void backwardGPUImpl<half>(half *xGrad, const half a, const half *yGrad, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		LinearBackwardKernel<half> << <grideSize, blockSize >> > (xGrad, a, yGrad, N);
+	}
+
+#endif // HAVE_HALF
+#endif // HAVE_CUDA
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                      const Tensor<T> *output,
@@ -98,17 +145,7 @@ protected:
 #ifdef HAVE_CUDA
         DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-		int minGrideSize;
-		int blockSize;
-		int grideSize;
-
-		int N = static_cast<int>(iGradient->size());
-
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LinearBackwardKernel<T>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
-
-		LinearBackwardKernel<T> << <grideSize, blockSize >> > (iGradient->data(), a, outputGradient->data(), N);
+		backwardGPUImpl(iGradient->data(), a, outputGradient->data(), N);
 #else
         DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif

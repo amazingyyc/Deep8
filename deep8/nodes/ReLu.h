@@ -72,8 +72,31 @@ protected:
     }
 
 #ifdef HAVE_CUDA
-#ifdef HAVE_CUDNN
+	template <typename real>
+	void forwardGPUImpl(const real *x, real *y, const int N) {
+		int minGrideSize;
+		int blockSize;
+		int grideSize;
 
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, ReLuForwardKernel<real>, 0, N));
+
+		grideSize = (N + blockSize - 1) / blockSize;
+
+		ReLuForwardKernel<real> << <grideSize, blockSize >> > (x, y, N);
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void forwardGPUImpl<half>(const half *x, half *y, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		ReLuForwardKernel<half> << <grideSize, blockSize >> > (x, y, N);
+	}
+#endif // HAVE_HALF
+
+
+#ifdef HAVE_CUDNN
 	void forwardGPUCUDNNImpl(GPUDevice *device, const float *X, float *Y, Shape &shape) {
 		float alpha = 1;
 		float beta  = 0;
@@ -124,6 +147,32 @@ protected:
 		CUDNN_CHECK(cudnnDestroyActivationDescriptor(activationDesc));
 	}
 
+#ifdef HAVE_HALF
+	void forwardGPUCUDNNImpl(GPUDevice *device, const half *X, half *Y, Shape &shape) {
+		half alpha = 1;
+		half beta = 0;
+
+		int size = static_cast<int>(shape.size());
+
+		cudnnActivationDescriptor_t activationDesc;
+		CUDNN_CHECK(cudnnCreateActivationDescriptor(&activationDesc));
+		CUDNN_CHECK(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0));
+
+		cudnnTensorDescriptor_t xDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, size, 1, 1, 1));
+
+		cudnnTensorDescriptor_t yDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, size, 1, 1, 1));
+
+		CUDNN_CHECK(cudnnActivationForward(device->cudnnHandle, activationDesc, &alpha, xDesc, X, &beta, yDesc, Y));
+
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(yDesc));
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(xDesc));
+		CUDNN_CHECK(cudnnDestroyActivationDescriptor(activationDesc));
+	}
+#endif // HAVE_HALF
 #endif
 #endif
 
@@ -132,17 +181,7 @@ protected:
 #ifdef HAVE_CUDNN
 		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device), inputs[0]->data(), output->data(), output->shape);
 #else
-		int minGrideSize;
-		int blockSize;
-		int grideSize;
-
-		int N = static_cast<int>(output->size());
-
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, ReLuForwardKernel<T>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
-
-		ReLuForwardKernel<T> << <grideSize, blockSize >> > (inputs[0]->data(), output->data(), N);
+		forwardGPUImpl(inputs[0]->data(), output->data(), static_cast<int>(output->size()));
 #endif
 		
 #else
@@ -152,6 +191,30 @@ protected:
 
 
 #ifdef HAVE_CUDA
+
+	template <typename real>
+	void backwardGPUImpl(real *dx, const real *x, const real *dy, const int N) {
+		int minGrideSize;
+		int blockSize;
+		int grideSize;
+
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, ReLuBackwardKernel<real>, 0, N));
+
+		grideSize = (N + blockSize - 1) / blockSize;
+
+		ReLuBackwardKernel<real> << <grideSize, blockSize >> > (dx, x, dy, N);
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void backwardGPUImpl<half>(half *dx, const half *x, const half *dy, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		ReLuBackwardKernel<half> << <grideSize, blockSize >> > (dx, x, dy, N);
+	}
+#endif // HAVE_HALF
+
 #ifdef HAVE_CUDNN
 
 	void backwardGPUCUDNNImpl(GPUDevice *device, const float *x, float *dx, const float *y, const float *dy, Shape &shape) {
@@ -224,6 +287,42 @@ protected:
 		CUDNN_CHECK(cudnnDestroyActivationDescriptor(activationDesc));
 	}
 
+#ifdef HAVE_HALF
+	void backwardGPUCUDNNImpl(GPUDevice *device, const half *x, half *dx, const half *y, const half *dy, Shape &shape) {
+		half alpha = 1;
+		half beta = 1;
+
+		int size = static_cast<int>(shape.size());
+
+		cudnnActivationDescriptor_t activationDesc;
+		CUDNN_CHECK(cudnnCreateActivationDescriptor(&activationDesc));
+		CUDNN_CHECK(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0));
+
+		cudnnTensorDescriptor_t xDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, size, 1, 1, 1));
+
+		cudnnTensorDescriptor_t dxDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&dxDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(dxDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, size, 1, 1, 1));
+
+		cudnnTensorDescriptor_t yDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, size, 1, 1, 1));
+
+		cudnnTensorDescriptor_t dyDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&dyDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(dyDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, size, 1, 1, 1));
+
+		CUDNN_CHECK(cudnnActivationBackward(device->cudnnHandle, activationDesc, &alpha, yDesc, y, dyDesc, dy, xDesc, x, &beta, dxDesc, dx));
+
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(dyDesc));
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(yDesc));
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(dxDesc));
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(xDesc));
+		CUDNN_CHECK(cudnnDestroyActivationDescriptor(activationDesc));
+	}
+#endif // HAVE_HALF
 #endif
 #endif
 
@@ -245,17 +344,7 @@ protected:
 			iGradient->shape);
 
 #else
-		int minGrideSize;
-		int blockSize;
-		int grideSize;
-
-		int N = static_cast<int>(iGradient->size());
-
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, ReLuBackwardKernel<T>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
-
-		ReLuBackwardKernel<T> << <grideSize, blockSize >> > (iGradient->data(), inputs[0]->data(), outputGradient->data(), N);
+		backwardGPUImpl(iGradient->data(), inputs[0]->data(), outputGradient->data(), static_cast<int>(iGradient->size()));
 #endif
 
 #else

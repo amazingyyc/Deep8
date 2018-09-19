@@ -153,27 +153,40 @@ protected:
 
 #ifdef HAVE_CUDA
 
-	void forwardGPUImpl(GPUDevice *device, const float *x, float *y, Shape &shape) {
-		auto batch = (int)shape.batch();
-		auto size  = (int)shape.size() / batch;
+	template <typename real>
+	void forwardGPUImpl(const real *x, real *y, const int batch, const int size) {
+		int blockSize = 1024;
 
-		for (int b = 0; b < batch; ++b) {
-			CUBLAS_CHECK(cublasSasum(device->cublasHandle, size, x, 1, y));
-
-			x += size;
-			y += 1;
+		if (size < blockSize) {
+			blockSize = prevPowerOf2(size);
 		}
-	}
 
-	void forwardGPUImpl(GPUDevice *device, const double *x, double *y, Shape &shape) {
-		auto batch = (int)shape.batch();
-		auto size = (int)shape.size() / batch;
+		int sharedSize = sizeof(real) * blockSize;
 
-		for (int b = 0; b < batch; ++b) {
-			CUBLAS_CHECK(cublasDasum(device->cublasHandle, size, x, 1, y));
-
-			x += size;
-			y += 1;
+		if (1024 == blockSize) {
+			L1NormForwardKernel<1024, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (512 == blockSize) {
+			L1NormForwardKernel<512, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (256 == blockSize) {
+			L1NormForwardKernel<256, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (128 == blockSize) {
+			L1NormForwardKernel<128, real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (64 == blockSize) {
+			L1NormForwardKernel<64,  real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (32 == blockSize) {
+			L1NormForwardKernel<32,  real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (16 == blockSize) {
+			L1NormForwardKernel<16,  real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (8 == blockSize) {
+			L1NormForwardKernel<8,   real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (4 == blockSize) {
+			L1NormForwardKernel<4,   real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (2 == blockSize) {
+			L1NormForwardKernel<2,   real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else if (1 == blockSize) {
+			L1NormForwardKernel<1,   real> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
+		} else {
+			DEEP8_RUNTIME_ERROR("the block size is error");
 		}
 	}
 
@@ -181,47 +194,45 @@ protected:
 
     void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
+
 		auto shape = inputs[0]->shape;
 		int batch = (int)shape.batch();
 		int size  = (int)shape.size() / batch;
 
-		int blockSize = 1024;
+		forwardGPUImpl(inputs[0]->data(), output->data(), batch, size);
 
-		if (size < blockSize) {
-			blockSize = prevPowerOf2(size);
-		}
-
-		int sharedSize = sizeof(T) * blockSize;
-
-		if (1024 == blockSize) {
-			L1NormForwardKernel<1024, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (512 == blockSize) {
-			L1NormForwardKernel<512, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (256 == blockSize) {
-			L1NormForwardKernel<256, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (128 == blockSize) {
-			L1NormForwardKernel<128, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (64 == blockSize) {
-			L1NormForwardKernel<64, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (32 == blockSize) {
-			L1NormForwardKernel<32, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (16 == blockSize) {
-			L1NormForwardKernel<16, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (8 == blockSize) {
-			L1NormForwardKernel<8, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (4 == blockSize) {
-			L1NormForwardKernel<4, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (2 == blockSize) {
-			L1NormForwardKernel<2, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else if (1 == blockSize) {
-			L1NormForwardKernel<1, T> << <batch, blockSize, sharedSize >> > (inputs[0]->data(), output->data(), batch, size);
-		} else {
-			DEEP8_RUNTIME_ERROR("the block size is error");
-		}
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif
     }
+
+
+#ifdef HAVE_CUDA
+
+	template <typename real>
+	void backwardGPUImpl(const real *x, real *xGrad, const real *yGrad, const int size, const int N) {
+		int minGrideSize;
+		int blockSize;
+		int grideSize;
+
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, L1NormBackwardKernel<real>, 0, N));
+
+		grideSize = (N + blockSize - 1) / blockSize;
+
+		L1NormBackwardKernel<real> << <grideSize, blockSize >> > (x, xGrad, yGrad, size, N);
+	}
+
+#ifdef HAVE_HALF
+
+	template <>
+	void backwardGPUImpl<half>(const half *x, half *xGrad, const half *yGrad, const int size, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		L1NormBackwardKernel<half> << <grideSize, blockSize >> > (x, xGrad, yGrad, size, N);
+	}
+#endif // HAVE_HALF
+#endif // HAVE_CUDA
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 					const Tensor<T> *output,
@@ -235,17 +246,7 @@ protected:
 		int batch  = (int)shape.batch();
 		int size   = (int)shape.size() / batch;
 
-		int minGrideSize;
-		int blockSize;
-		int grideSize;
-
-		int N = (int)shape.size();
-
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, L1NormBackwardKernel<T>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
-
-		L1NormBackwardKernel<T> << <grideSize, blockSize >> > (inputs[0]->data(), iGradient->data(), outputGradient->data(), size, N);
+		backwardGPUImpl<half>(inputs[0]->data(), iGradient->data(), outputGradient->data(), size, N);
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif

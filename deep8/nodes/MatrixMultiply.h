@@ -163,6 +163,40 @@ protected:
         }
     }
 
+
+#ifdef HAVE_HALF
+	void forwardGPUImpl(GPUDevice *device, const half *A, const Shape &aShape, const half *B, const Shape &bShape, half *C, const Shape &cShape) {
+		half alpha = 1;
+		half beta  = 0;
+
+		if (1 == bShape.batch()) {
+			int m = aShape.batch() *aShape.row();
+			int n = bShape.col();
+			int k = aShape.col();
+
+			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, B, n, A, k, &beta, C, n));
+		} else if (1 == aShape.batch() && 1 == bShape.col()) {
+			int row = aShape.row();
+			int col = aShape.col();
+			int b = bShape.batch();
+
+			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, row, b, col, &alpha, A, col, B, col, &beta, C, row));
+		} else {
+			int batch = cShape.batch();
+			int m = aShape.row();
+			int k = aShape.col();
+			int n = bShape.col();
+
+			for (int b = 0; b < batch; ++b) {
+				auto ABatch = A + (b % aShape.batch()) * aShape.batchSize();
+				auto BBatch = B + (b % bShape.batch()) * bShape.batchSize();
+				auto CBatch = C + (b % cShape.batch()) * cShape.batchSize();
+
+				CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, BBatch, n, ABatch, k, &beta, CBatch, n));
+			}
+		}
+	}
+#endif // HAVE_HALF
 #endif
 
     void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -244,6 +278,42 @@ protected:
         }
     }
 
+#ifdef HAVE_HALF
+	void backwardGPUImpl0(GPUDevice* device, half *aGrad, const Shape &aShape, const half *B, const Shape &bShape, const half *cGrad, const Shape &cShape) {
+		half alpha = 1;
+		half beta = 1;
+
+		if (1 == bShape.batch()) {
+			int b = aShape.batch();
+			int m = aShape.row();
+			int k = aShape.col();
+			int n = bShape.col();
+
+			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, b * m, n, &alpha, B, n, cGrad, n, &beta, aGrad, k));
+		} else if (1 == aShape.batch() && 1 == bShape.col()) {
+			int m = aShape.row();
+			int k = aShape.col();
+			int b = bShape.batch();
+
+			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, k, m, b, &alpha, B, k, cGrad, m, &beta, aGrad, k));
+		} else {
+			int batch = cShape.batch();
+			int m = aShape.row();
+			int k = aShape.col();
+			int n = bShape.col();
+
+			for (int b = 0; b < batch; ++b) {
+				auto aGradPtr = aGrad + (b % aShape.batch()) * aShape.batchSize();
+				auto bPtr = B + (b % bShape.batch()) * bShape.batchSize();
+				auto cGradPtr = cGrad + (b % cShape.batch()) * cShape.batchSize();
+
+				CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, m, n, &alpha, bPtr, n, cGradPtr, n, &beta, aGradPtr, k));
+			}
+		}
+	}
+#endif // HAVE_HALF
+
+
     void backwardGPUImpl1(GPUDevice* device, const float *A, const Shape &aShape, float *bGrad, const Shape &bShape, const float *cGrad, const Shape &cShape) {
         float alpha = 1;
         float beta  = 1;
@@ -309,6 +379,41 @@ protected:
             }
         }
     }
+
+#ifdef HAVE_HALF
+	void backwardGPUImpl1(GPUDevice* device, const half *A, const Shape &aShape, half *bGrad, const Shape &bShape, const half *cGrad, const Shape &cShape) {
+		half alpha = 1;
+		half beta = 1;
+
+		if (1 == bShape.batch()) {
+			int b = aShape.batch();
+			int m = aShape.row();
+			int k = aShape.col();
+			int n = bShape.col();
+
+			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m * b, &alpha, cGrad, n, A, k, &beta, bGrad, n));
+		} else if (1 == aShape.batch() && 1 == bShape.col()) {
+			int m = aShape.row();
+			int k = aShape.col();
+			int b = bShape.batch();
+
+			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, k, b, m, &alpha, A, k, cGrad, m, &beta, bGrad, k));
+		} else {
+			int batch = cShape.batch();
+			int m = aShape.row();
+			int k = aShape.col();
+			int n = bShape.col();
+
+			for (int b = 0; b < batch; ++b) {
+				auto aPtr = A + (b % aShape.batch()) * aShape.batchSize();
+				auto bGradPtr = bGrad + (b % bShape.batch()) * bShape.batchSize();
+				auto cGradPtr = cGrad + (b % cShape.batch()) * cShape.batchSize();
+
+				CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m, &alpha, cGradPtr, n, aPtr, k, &beta, bGradPtr, n));
+			}
+		}
+	}
+#endif // HAVE_HALF
 #endif
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,

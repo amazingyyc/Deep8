@@ -348,6 +348,7 @@ protected:
     }
 
 #ifdef HAVE_CUDA
+
     void forwardGPUImpl(GPUDevice *device, const float *x, const float *filter, float *y,
         int batch, int inputHeight, int inputWidth, int inputChannel,
 		int outputHeight, int outputWidth, int outputChannel,
@@ -419,6 +420,40 @@ protected:
 
 		device->free(yMat);
 	}
+
+#ifdef HAVE_HALF
+
+	void forwardGPUImpl(GPUDevice *device, const half *x, const half *filter, half *y,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,
+		int padTop, int padLeft) {
+		int m = batch * inputHeight * inputWidth;
+		int k = inputChannel;
+		int n = outputChannel * filterHeight * filterWidth;
+
+		half alpha = 1;
+		half beta = 0;
+
+		auto yMat = (half*)device->malloc(sizeof(half) * m * n);
+
+		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, n, m, k, &alpha, filter, k, x, k, &beta, yMat, n));
+
+		int size = batch * outputHeight * outputWidth * outputChannel;
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		DeConv2dForwardKernel<half> << <grideSize, blockSize >> > (yMat, y,
+			batch, inputHeight, inputWidth, inputChannel,
+			filterHeight, filterWidth,
+			outputHeight, outputWidth, outputChannel,
+			forwardStrideY, forwardStrideX,
+			padTop, padLeft, size);
+
+		device->free(yMat);
+	}
+#endif
 #endif
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -534,6 +569,42 @@ protected:
 		device->free(dyMat);
 	}
 
+#ifdef HAVE_HALF
+
+	void backwardGPUInputImpl(GPUDevice *device, half *dx, const half *filter, const half *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,
+		int padTop, int padLeft) {
+
+		int size = batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth;
+
+		auto dyMat = (half*)device->malloc(sizeof(half) * size);
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		DeConv2dBackwardKernel<half> << <grideSize, blockSize >> > (dyMat, dy,
+			batch, inputHeight, inputWidth, inputChannel,
+			filterHeight, filterWidth,
+			outputHeight, outputWidth, outputChannel,
+			forwardStrideY, forwardStrideX,
+			padTop, padLeft, size);
+
+
+		int m = batch * inputHeight * inputWidth;
+		int n = outputChannel * filterHeight * filterWidth;
+		int k = inputChannel;
+
+		half alpha = 1;
+		half beta = 1;
+
+		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, k, m, n, &alpha, filter, k, dyMat, n, &beta, dx, k));
+
+		device->free(dyMat);
+	}
+#endif
+
     void backwardGPUFilterImpl(GPUDevice *device, const float *x, float *dw, const float *dy, 
         int batch, int inputHeight, int inputWidth, int inputChannel,
 		int outputHeight, int outputWidth, int outputChannel,
@@ -607,6 +678,41 @@ protected:
 
 		device->free(dyMat);
 	}
+
+#ifdef HAVE_HALF
+	void backwardGPUFilterImpl(GPUDevice *device, const half *x, half *dw, const half *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,
+		int padTop, int padLeft) {
+
+		int size = batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth;
+
+		auto dyMat = (half*)device->malloc(sizeof(half) * size);
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		DeConv2dBackwardKernel<half> << <grideSize, blockSize >> > (dyMat, dy,
+			batch, inputHeight, inputWidth, inputChannel,
+			filterHeight, filterWidth,
+			outputHeight, outputWidth, outputChannel,
+			forwardStrideY, forwardStrideX,
+			padTop, padLeft, size);
+
+		int m = batch * inputHeight * inputWidth;
+		int n = outputChannel * filterHeight * filterWidth;
+		int k = inputChannel;
+
+		half alpha = 1;
+		half beta = 1;
+
+		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, k, n, m, &alpha, x, k, dyMat, n, &beta, dw, k));
+
+		device->free(dyMat);
+	}
+#endif // HAVE_HALF
+
 
 #endif
 
