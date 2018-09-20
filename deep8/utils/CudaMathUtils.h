@@ -7,8 +7,8 @@ namespace Deep8 {
 
 template <typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real cuExp(const real &in) {
-	using ::exp;
-	return exp(in);
+	//using ::exp;
+	//return exp(in);
 }
 
 template <>
@@ -32,8 +32,8 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuExp(const half &in) {
 
 template <typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real cuAbs(const real &in) {
-	using ::abs;
-	return abs(in);
+	//using ::abs;
+	//return abs(in);
 }
 
 template <>
@@ -57,8 +57,8 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuAbs(const half &in) {
 
 template <typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real cuSqrt(const real &in) {
-	using ::sqrt;
-	return sqrt(in);
+	/*using ::sqrt;
+	return sqrt(in);*/
 }
 
 template <>
@@ -82,8 +82,8 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuSqrt(const half &in) {
 
 template <typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real cuLog(const real &in) {
-	using ::log;
-	return log(in);
+	//using ::log;
+	//return log(in);
 }
 
 template <>
@@ -108,8 +108,8 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuLog(const half &in) {
 
 template <typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real cuPow(const real &in, const real &scalar) {
-	using ::pow;
-	return pow(in, scalar);
+	/*using ::pow;
+	return pow(in, scalar);*/
 }
 
 template <>
@@ -123,19 +123,17 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double cuPow(const double &in, const double &s
 }
 
 #ifdef HAVE_HALF
-
 template <>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuPow(const half &in, const half &scalar) {
-	// return hpow(in, scalar);
+	return __float2half(powf(__half2float(in), __half2float(scalar)));
 }
-
 #endif
 
 
 template <typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real cuTanh(const real &in) {
-	using ::tanh;
-	return tanh(in);
+	/*using ::tanh;
+	return tanh(in);*/
 }
 
 template <>
@@ -152,15 +150,15 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double cuTanh(const double &in) {
 
 template <>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuTanh(const half &in) {
-	return tanh(in);
+	return __float2half(tanh(__half2float(in)));
 }
 
 #endif
 
 template <typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real cuMax(const real &i1, const real &i2) {
-	using ::max;
-	return max(i1, i2);
+	/*using ::max;
+	return max(i1, i2);*/
 }
 
 template <>

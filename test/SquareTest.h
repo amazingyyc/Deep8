@@ -24,7 +24,7 @@ TEST(Square, forwardCPU) {
         for (int j = 0; j < 500; ++j) {
             for (int k = 0; k < 200; ++k) {
                 auto temp = input.data()[i * 500 * 200 + j * 200 + k];
-                ASSERT_TRUE(abs(temp * temp - output.data()[i * 500 * 200 + j * 200 + k]) < 1e-6);
+                ASSERT_TRUE(std::abs(temp * temp - output.data()[i * 500 * 200 + j * 200 + k]) < 1e-6);
             }
         }
     }
@@ -59,7 +59,7 @@ TEST(Square, backwardCPU) {
     add.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
 
     for (int i = 0; i < 10 * 500 * 200; ++i) {
-        ASSERT_TRUE(abs(inputGrad1.data()[i] - outputGrad.data()[i] * 2 * inputValue1.data()[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(inputGrad1.data()[i] - outputGrad.data()[i] * 2 * inputValue1.data()[i]) < 1e-6);
     }
 
     freeTensor<CPUDevice, float>(device, inputValue1);
@@ -111,13 +111,13 @@ TEST(Square, GPU_float) {
 		for (int j = 0; j < 500; ++j) {
 			for (int k = 0; k < 200; ++k) {
 				auto temp = inputPtr[i * 500 * 200 + j * 200 + k];
-				ASSERT_TRUE(abs(temp * temp - outputPtr[i * 500 * 200 + j * 200 + k]) < 1e-6);
+				ASSERT_TRUE(std::abs(temp * temp - outputPtr[i * 500 * 200 + j * 200 + k]) < 1e-6);
 			}
 		}
 	}
 
 	for (int i = 0; i < 10 * 500 * 200; ++i) {
-		ASSERT_TRUE(abs(inputGradPtr[i] - outputGradPtr[i] * 2 * inputPtr[i]) < 1e-6);
+		ASSERT_TRUE(std::abs(inputGradPtr[i] - outputGradPtr[i] * 2 * inputPtr[i]) < 1e-6);
 	}
 
 	free(inputPtr);
@@ -133,6 +133,33 @@ TEST(Square, GPU_float) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(Square, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 10, 500, 200);
+	auto inputGrad = createTensorGPU<real>(device, 10, 500, 200);
+
+	auto output = createTensorGPU<real>(device, 10, 500, 200);
+	auto outputGrad = createTensorGPU<real>(device, 10, 500, 200);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar1 };
+	Square<real> square(inputs);
+
+	std::vector<const Tensor<real>*> inputTensor = { &input };
+
+	square.forwardGPU(inputTensor, &output);
+	square.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

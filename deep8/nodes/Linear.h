@@ -145,7 +145,7 @@ protected:
 #ifdef HAVE_CUDA
         DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-		backwardGPUImpl(iGradient->data(), a, outputGradient->data(), N);
+		backwardGPUImpl(iGradient->data(), a, outputGradient->data(), static_cast<int>(iGradient->size()));
 #else
         DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif

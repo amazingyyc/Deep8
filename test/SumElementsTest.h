@@ -149,6 +149,33 @@ TEST(SumElements, GPU_float) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(SumElements, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 400, 200);
+	auto inputGrad = createTensorGPU<real>(device, 400, 200);
+
+	auto output = createTensorGPU<real>(device, 400, 1);
+	auto outputGrad = createTensorGPU<real>(device, 400, 1);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar1 };
+	SumElements<real> sumElements(inputs);
+
+	std::vector<const Tensor<real>*> inputTensor = { &input };
+
+	sumElements.forwardGPU(inputTensor, &output);
+	sumElements.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

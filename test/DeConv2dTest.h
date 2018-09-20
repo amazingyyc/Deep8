@@ -571,6 +571,57 @@ TEST(DeConv2d, backwarGPU_float) {
 	delete device;
 }
 
+
+#ifdef HAVE_HALF
+
+TEST(DeConv2d, half_GPU) {
+	bool isCovered = true;
+
+	size_t strideH = 3;
+	size_t strideW = 3;
+
+	size_t batch = 2;
+	size_t inputHeight = 32;
+	size_t inputWidth = 32;
+	size_t inputChannel = 64;
+
+	size_t filterH = 4;
+	size_t filterW = 4;
+
+	size_t outputHeight = (inputHeight - 1) * strideH + 1 - strideH + filterH;
+	size_t outputWidth = (inputWidth - 1) * strideW + 1 - strideW + filterW;
+	size_t outputChannel = 32;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
+	auto inputGrad = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
+
+	auto filter = createTensorGPU<half>(device, outputChannel, filterH, filterW, inputChannel);
+	auto filterGrad = createTensorGPU<half>(device, outputChannel, filterH, filterW, inputChannel);
+
+	auto output = createTensorGPU<half>(device, batch, outputHeight, outputWidth, outputChannel);
+	auto outputGrad = createTensorGPU<half>(device, batch, outputHeight, outputWidth, outputChannel);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, half>(device, { batch, inputHeight, inputWidth, inputChannel });
+	auto inputVar2 = createFakeVariable<GPUDevice, half>(device, { outputChannel, filterH, filterW, inputChannel });
+
+	zeroTensor(device, inputGrad);
+	zeroTensor(device, filterGrad);
+
+	std::vector<Node*> inputs = { &inputVar1, &inputVar2 };
+	DeConv2d<half> transposeConv2d(inputs, isCovered, size_t(strideH), size_t(strideW));
+
+	std::vector<const Tensor<half>*> inputTensor = { &input, &filter };
+
+	transposeConv2d.forwardGPU(inputTensor, &output);
+	transposeConv2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	transposeConv2d.backwardGPU(inputTensor, &output, &outputGrad, 1, &filterGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

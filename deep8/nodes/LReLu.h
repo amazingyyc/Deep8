@@ -11,7 +11,7 @@ struct LReLuForwardExpr {
     }
 
     inline T operator()(T in) const {
-        return ((in > 0.0) ? in : a * in);
+        return ((in > T(0)) ? in : a * in);
     }
 };
 
@@ -23,9 +23,23 @@ struct LReLuBackwardExpr {
     }
 
     inline T operator()(T outputGrad, T in) const {
-        return outputGrad * (in > 0 ? 1.0 : a);
+        return outputGrad * (in > T(0) ? 1.0 : a);
     }
 };
+
+#ifdef HAVE_HALF
+/**to avoid compile error in CPU*/
+template <>
+struct LReLuBackwardExpr<half> {
+	
+	explicit LReLuBackwardExpr(half p) {
+	}
+
+	inline half operator()(half outputGrad, half in) const {
+		return 0.0;
+	}
+};
+#endif
 
 #ifdef HAVE_CUDA
 

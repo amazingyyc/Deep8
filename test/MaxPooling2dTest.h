@@ -220,6 +220,36 @@ TEST(MaxPooling2d, GPU_float) {
 	delete device;
 }
 
+
+#ifdef HAVE_HALF
+
+TEST(MaxPooling2d, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 1, 32, 32, 64);
+	auto inputGrad = createTensorGPU<real>(device, 1, 32, 32, 64);
+
+	auto output = createTensorGPU<real>(device, 1, 15, 15, 64);
+	auto outputGrad = createTensorGPU<real>(device, 1, 15, 15, 64);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, real>(device, { 1, 32, 32, 64 });
+
+	zeroTensor(device, inputGrad);
+
+	std::vector<Node*> inputs = { &inputVar1 };
+	MaxPooling2d<real> maxPooling2d(inputs, false, 3, 3, 2, 2);
+
+	std::vector<const Tensor<real>*> inputTensor = { &input };
+
+	maxPooling2d.forwardGPU(inputTensor, &output);
+	maxPooling2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

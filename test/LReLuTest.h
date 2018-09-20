@@ -147,6 +147,38 @@ TEST(LReLu, GPU_float) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(LReLu, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 400, 200);
+	auto inputGrad = createTensorGPU<real>(device, 400, 200);
+
+	auto output = createTensorGPU<real>(device, 400, 200);
+	auto outputGrad = createTensorGPU<real>(device, 400, 200);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+	zeroTensor(device, inputGrad);
+
+	real a = 2.3;
+
+	std::vector<Node*> inputs = { &inputVar };
+	LReLu<real> lrelu(inputs, a);
+
+	std::vector<const Tensor<real>*> inputValues = { &input };
+
+	lrelu.forwardGPU(inputValues, &output);
+	lrelu.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

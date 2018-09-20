@@ -6,9 +6,9 @@ namespace Deep8 {
 template <typename T>
 struct L1NormBackwardExpr {
     inline T operator()(T outputGrad, T input) const {
-        if (input > 0) {
+        if (input > T(0)) {
             return outputGrad;
-        } else if (input < 0) {
+        } else if (input < T(0)) {
             return -outputGrad;
         } else {
             return 0;

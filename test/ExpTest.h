@@ -22,7 +22,7 @@ TEST(Exp, forwardCPU) {
     expFunc.forwardCPU(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        ASSERT_TRUE(abs(exp(input.data()[i]) - output.data()[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(std::exp(input.data()[i]) - output.data()[i]) < 1e-6);
     }
 
     freeTensor(device, input);
@@ -56,9 +56,9 @@ TEST(Exp, backwardCPU) {
     expFunc.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        long double temp = exp(inputValue.data()[i]) * outputGrad.data()[i];
+        long double temp = std::exp(inputValue.data()[i]) * outputGrad.data()[i];
 
-        ASSERT_TRUE(abs(temp - inputGrad.data()[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(temp - inputGrad.data()[i]) < 1e-6);
     }
 
     freeTensor(device, inputValue);
@@ -109,13 +109,13 @@ TEST(Exp, GPU_double) {
     device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
     for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
-        ASSERT_TRUE(abs(exp(inputPtr[i]) - outputPtr[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(std::exp(inputPtr[i]) - outputPtr[i]) < 1e-6);
     }
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-		real temp = exp(inputPtr[i]) * outputGradPtr[i];
+		real temp = std::exp(inputPtr[i]) * outputGradPtr[i];
 
-		ASSERT_TRUE(abs(temp - inputGradPtr[i]) < 1e-4);
+		ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) < 1e-4);
     }
 
     free(inputPtr);
@@ -133,6 +133,38 @@ TEST(Exp, GPU_double) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(Exp, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	int dim0 = 10, dim1 = 400, dim2 = 200;
+
+	auto input = createTensorGPU<real>(device, dim0, dim1, dim2);
+	auto inputGrad = createTensorGPU<real>(device, dim0, dim1, dim2);
+
+	auto output = createTensorGPU<real>(device, dim0, dim1, dim2);
+	auto outputGrad = createTensorGPU<real>(device, dim0, dim1, dim2);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+	zeroTensor(device, inputGrad);
+
+	std::vector<Node*> inputs = { &inputVar };
+	Exp<real> expFunc(inputs);
+
+	std::vector<const Tensor<real>*> inputValues = { &input };
+
+	expFunc.forwardGPU(inputValues, &output);
+	expFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

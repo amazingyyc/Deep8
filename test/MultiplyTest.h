@@ -205,6 +205,39 @@ TEST(Multiply, GPU_float) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(Multiply, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input0 = createTensorGPU<real>(device, 10, 100, 200);
+	auto input0Grad = createTensorGPU<real>(device, 10, 100, 200);
+
+	auto input1 = createTensorGPU<real>(device, 1, 200);
+	auto input1Grad = createTensorGPU<real>(device, 1, 200);
+
+	auto output = createTensorGPU<real>(device, 10, 100, 200);
+	auto outputGrad = createTensorGPU<real>(device, 10, 100, 200);
+
+	/**create fake Add Function*/
+	auto inputVar0 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar0, &inputVar1 };
+	Multiply<real> multiply(inputs);
+
+	std::vector<const Tensor<real>*> inputValues = { &input0, &input1 };
+
+	multiply.forwardGPU(inputValues, &output);
+	multiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
+	multiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

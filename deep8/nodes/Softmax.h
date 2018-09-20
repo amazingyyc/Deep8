@@ -253,37 +253,103 @@ public:
     }
 
 protected:
+
+	template <typename real>
+	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
+		auto cpuDevice = static_cast<CPUDevice*>(output->device);
+		auto eigenDevice = cpuDevice->eigenDevice;
+
+		auto shape = output->shape;
+
+		auto maxPtr = static_cast<real*>(cpuDevice->malloc(sizeof(real)));
+		auto sumPtr = static_cast<real*>(cpuDevice->malloc(sizeof(real)));
+
+		Tensor<real> maxValue(maxPtr, { 1 }, cpuDevice);
+		Tensor<real> sumValue(sumPtr, { 1 }, cpuDevice);
+
+		auto batch = shape.batch();
+		auto size = shape.size() / batch;
+
+		Tensor<real> inputRow(inputs[0]->data(), { size }, cpuDevice);
+		Tensor<real> outputRow(output->data(), { size }, cpuDevice);
+
+		for (size_t b = 0; b < batch; ++b) {
+			eTScalar(maxValue).device(*eigenDevice) = eTVec(inputRow).maximum();
+			eTVec(outputRow).device(*eigenDevice) = (eTVec(inputRow) - maxValue.scalar()).exp();
+
+			eTScalar(sumValue).device(*eigenDevice) = eTVec(outputRow).sum();
+			eTVec(outputRow).device(*eigenDevice) = eTVec(outputRow) / sumValue.scalar();
+
+			inputRow.pointer = static_cast<int8_t*>(inputRow.pointer) + size * sizeof(real);
+			outputRow.pointer = static_cast<int8_t*>(outputRow.pointer) + size * sizeof(real);
+		}
+
+		cpuDevice->free(maxPtr);
+		cpuDevice->free(sumPtr);
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void forwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
+	template <typename real>
+	void backwardCPUImpl(const std::vector<const Tensor<real>*> &inputs,
+		const Tensor<real> *output,
+		const Tensor<real> *outputGradient,
+		size_t index,
+		Tensor<real> *iGradient) {
+		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
+
+		auto cpuDevice = static_cast<CPUDevice*>(iGradient->device);
+		auto eigenDevice = cpuDevice->eigenDevice;
+
+		auto shape = outputGradient->shape;
+
+		auto batch = shape.batch();
+		auto size = shape.size() / batch;
+
+		auto sumPtr = static_cast<real*>(cpuDevice->malloc(sizeof(T) * batch));
+
+		Tensor<real> sum(sumPtr, { batch }, cpuDevice);
+
+		Eigen::array<size_t, 1> sumDims = { 1 };
+		Eigen::array<size_t, 2> reShapeDims = { batch, size };
+		Eigen::array<size_t, 1> sumReShapeDims = { batch };
+
+		eTVec(sum).device(*eigenDevice) = (eTVec(outputGradient).reshape(reShapeDims) * eTVec(output).reshape(reShapeDims)).sum(sumDims).reshape(sumReShapeDims);
+
+		Tensor<real> outputGradientRow(outputGradient->data(), { size }, cpuDevice);
+		Tensor<real> outputValueRow(output->data(), { size }, cpuDevice);
+		Tensor<real> iGradientRow(iGradient->data(), { size }, cpuDevice);
+
+		for (size_t b = 0; b < batch; ++b) {
+			eTVec(iGradientRow).device(*eigenDevice) += (eTVec(outputGradientRow) -
+				sum.data()[b]) * eTVec(outputValueRow);
+
+			outputGradientRow.pointer = static_cast<int8_t*>(outputGradientRow.pointer) + size * sizeof(real);
+			outputValueRow.pointer    = static_cast<int8_t*>(outputValueRow.pointer) + size * sizeof(real);
+			iGradientRow.pointer      = static_cast<int8_t*>(iGradientRow.pointer) + size * sizeof(real);
+		}
+
+		cpuDevice->free(sumPtr);
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void backwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs,
+		const Tensor<half> *output,
+		const Tensor<half> *outputGradient,
+		size_t index,
+		Tensor<half> *iGradient) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-        auto cpuDevice   = static_cast<CPUDevice*>(output->device);
-        auto eigenDevice = cpuDevice->eigenDevice;
-
-        auto shape = output->shape;
-
-        auto maxPtr = static_cast<T*>(cpuDevice->malloc(sizeof(T)));
-        auto sumPtr = static_cast<T*>(cpuDevice->malloc(sizeof(T)));
-
-    	Tensor<T> maxValue(maxPtr, {1}, cpuDevice);
-		Tensor<T> sumValue(sumPtr, {1}, cpuDevice);
-
-        auto batch = shape.batch();
-        auto size  = shape.size() / batch;
-
-        Tensor<T> inputRow(inputs[0]->data(), { size }, cpuDevice);
-        Tensor<T> outputRow(output->data(), { size }, cpuDevice);
-
-        for (size_t b = 0; b < batch; ++b) {
-            eTScalar(maxValue).device(*eigenDevice) = eTVec(inputRow).maximum();
-            eTVec(outputRow).device(*eigenDevice)   = (eTVec(inputRow) - maxValue.scalar()).exp();
-
-            eTScalar(sumValue).device(*eigenDevice) = eTVec(outputRow).sum();
-            eTVec(outputRow).device(*eigenDevice)   = eTVec(outputRow) / sumValue.scalar();
-
-			inputRow.pointer  = static_cast<int8_t*>(inputRow.pointer) + size * sizeof(T);
-			outputRow.pointer = static_cast<int8_t*>(outputRow.pointer) + size * sizeof(T);
-        }
-
-        cpuDevice->free(maxPtr);
-        cpuDevice->free(sumPtr);
+		forwardCPUImpl(inputs, output);
     }
 
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
@@ -291,40 +357,7 @@ protected:
 					const Tensor<T> *outputGradient,
 					size_t index,
 					Tensor<T> *iGradient) override {
-		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
-
-        auto cpuDevice   = static_cast<CPUDevice*>(iGradient->device);
-        auto eigenDevice = cpuDevice->eigenDevice;
-
-        auto shape = outputGradient->shape;
-
-        auto batch = shape.batch();
-        auto size  = shape.size() / batch;
-
-        auto sumPtr = static_cast<T*>(cpuDevice->malloc(sizeof(T) * batch));
-
-		Tensor<T> sum(sumPtr, { batch }, cpuDevice);
-
-        Eigen::array<size_t, 1> sumDims = {1};
-        Eigen::array<size_t, 2> reShapeDims = {batch, size};
-        Eigen::array<size_t, 1> sumReShapeDims = {batch};
-
-        eTVec(sum).device(*eigenDevice) = (eTVec(outputGradient).reshape(reShapeDims) * eTVec(output).reshape(reShapeDims)).sum(sumDims).reshape(sumReShapeDims);
-
-        Tensor<T> outputGradientRow(outputGradient->data(), { size }, cpuDevice);
-        Tensor<T> outputValueRow(output->data(), { size }, cpuDevice);
-        Tensor<T> iGradientRow(iGradient->data(), { size }, cpuDevice);
-
-        for (size_t b = 0; b < batch; ++b) {
-            eTVec(iGradientRow).device(*eigenDevice) += (eTVec(outputGradientRow) -
-                    sum.data()[b]) * eTVec(outputValueRow);
-
-			outputGradientRow.pointer = static_cast<int8_t*>(outputGradientRow.pointer) + size * sizeof(T);
-			outputValueRow.pointer = static_cast<int8_t*>(outputValueRow.pointer) + size * sizeof(T);
-			iGradientRow.pointer = static_cast<int8_t*>(iGradientRow.pointer) + size * sizeof(T);
-        }
-
-        cpuDevice->free(sumPtr);
+		backwardCPUImpl(inputs, output, outputGradient, index, iGradient);
     }
 
 #ifdef HAVE_CUDA

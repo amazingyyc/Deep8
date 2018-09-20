@@ -136,7 +136,7 @@ TEST(L2Norm, GPU_float) {
         auto temp = outputGradPtr[i] / outputPtr[i];
 
         for (int j = 0; j < 200; ++j) {
-            ASSERT_TRUE(abs(temp * tempInputPtr[j] - tempInputGradPtr[j]) < 1e-6);
+            ASSERT_TRUE(std::abs(temp * tempInputPtr[j] - tempInputGradPtr[j]) < 1e-6);
         }
     }
 
@@ -154,6 +154,35 @@ TEST(L2Norm, GPU_float) {
 
 	delete device;
 }
+
+#ifdef HAVE_HALF
+
+TEST(L2Norm, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 400, 200);
+	auto inputGrad = createTensorGPU<real>(device, 400, 200);
+
+	auto output = createTensorGPU<real>(device, 400, 1);
+	auto outputGrad = createTensorGPU<real>(device, 400, 1);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar };
+	L2Norm<real> l2norm(inputs);
+
+	std::vector<const Tensor<real>*> inputValues = { &input };
+
+	l2norm.forwardGPU(inputValues, &output);
+	l2norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 
 #endif
 

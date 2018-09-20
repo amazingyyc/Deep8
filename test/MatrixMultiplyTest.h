@@ -142,7 +142,7 @@ TEST(MatrixMultiply, backwardCPU) {
                      temp += outputGradPtr[m * 300 + k] * inputPtr1[n * 300 + k];
                  }
 
-				 ASSERT_TRUE(abs(temp - inputGradPtr0[m * 200 + n]) < 1e-6);
+				 ASSERT_TRUE(std::abs(temp - inputGradPtr0[m * 200 + n]) < 1e-6);
              }
          }
      }
@@ -358,7 +358,7 @@ TEST(MatrixMultiply, GPU1_float) {
 					temp += tempoutputGradPtr[m * 300 + k] * tempinputPtr1[n * 300 + k];
 				}
 
-				ASSERT_TRUE(abs(temp - tempinputGradPtr0[m * 200 + n]) < 1e-6);
+				ASSERT_TRUE(std::abs(temp - tempinputGradPtr0[m * 200 + n]) < 1e-6);
 			}
 		}
 	}
@@ -539,6 +539,47 @@ TEST(MatrixMultiply, GPU2_float) {
 	delete device;
 }
 
+
+#ifdef HAVE_HALF
+
+TEST(MatrixMultiply, half_GPU) {
+	typedef half real;
+
+	int batch = 10;
+	int m = 400;
+	int k = 200;
+	int n = 300;
+
+	auto device = new GPUDevice();
+
+	auto input0 = createTensorGPU<real>(device, batch, m, k);
+	auto input0Grad = createTensorGPU<real>(device, batch, m, k);
+
+	auto input1 = createTensorGPU<real>(device, 1, k, n);
+	auto input1Grad = createTensorGPU<real>(device, 1, k, n);
+
+	auto output = createTensorGPU<real>(device, batch, m, n);
+	auto outputGrad = createTensorGPU<real>(device, batch, m, n);
+
+	auto inputVar0 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar0, &inputVar1 };
+	MatrixMultiply<real> matrixMultiply(inputs);
+
+	zeroTensor(device, input0Grad);
+	zeroTensor(device, input1Grad);
+
+	std::vector<const Tensor<real>*> inputValues = { &input0, &input1 };
+
+	matrixMultiply.forwardGPU(inputValues, &output);
+	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
+	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif // HAVE_CUDA
 
 

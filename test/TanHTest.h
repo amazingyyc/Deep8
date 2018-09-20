@@ -57,7 +57,7 @@ TEST(TanH, backwardCPU) {
     for (int i = 0; i < 10 * 400 * 200; ++i) {
         auto temp = outputGrad.data()[i] * (1.0 - tanh(inputValue.data()[i]) * tanh(inputValue.data()[i]));
 
-        ASSERT_TRUE(abs(temp - inputGrad.data()[i]) <=  1e-6);
+        ASSERT_TRUE(std::abs(temp - inputGrad.data()[i]) <=  1e-6);
     }
 
     freeTensor(device, inputValue);
@@ -113,7 +113,7 @@ TEST(TanH, GPU_float) {
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		auto temp = outputGradPtr[i] * (1.0 - tanh(inputPtr[i]) * tanh(inputPtr[i]));
 
-		ASSERT_TRUE(abs(temp - inputGradPtr[i]) <= 1e-6);
+		ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) <= 1e-6);
 	}
 
 	free(inputPtr);
@@ -129,6 +129,33 @@ TEST(TanH, GPU_float) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(TanH, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 10, 400, 200);
+	auto inputGrad = createTensorGPU<real>(device, 10, 400, 200);
+
+	auto output = createTensorGPU<real>(device, 10, 400, 200);
+	auto outputGrad = createTensorGPU<real>(device, 10, 400, 200);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar1 };
+	TanH<real> tanhFunc(inputs);
+
+	std::vector<const Tensor<real>*> inputTensor = { &input };
+
+	tanhFunc.forwardGPU(inputTensor, &output);
+	tanhFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

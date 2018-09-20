@@ -207,7 +207,7 @@ TEST(AvgPooling2d, backwardGPU_float) {
     }
 
 	for (int i = 0; i < 32 * 32 * 64; ++i) {
-		ASSERT_TRUE(abs(tempinputgradptr[i] - cpuInputGradPtr[i]) < 1e-6);
+		ASSERT_TRUE(std::abs(tempinputgradptr[i] - cpuInputGradPtr[i]) < 1e-6);
 	}
 
 	free(tempinputgradptr);
@@ -227,6 +227,34 @@ TEST(AvgPooling2d, backwardGPU_float) {
     delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(AvgPooling2d, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto inputValue = createTensorGPU<real>(device, 1, 32, 32, 64);
+	auto inputGrad = createTensorGPU<real>(device, 1, 32, 32, 64);
+
+	auto outputValue = createTensorGPU<real>(device, 1, 16, 16, 64);
+	auto outputGrad = createTensorGPU<real>(device, 1, 16, 16, 64);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device, { 1, 32, 32, 64 });
+
+	std::vector<Node*> inputs = { &inputVar };
+	AvgPooling2d<real> vagPooling(inputs, true, 3, 3, 2, 2);
+
+	std::vector<const Tensor<real>*> inputValues = { &inputValue };
+
+	vagPooling.forwardGPU(inputValues, &outputValue);
+	vagPooling.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

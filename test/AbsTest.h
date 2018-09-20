@@ -210,6 +210,8 @@ TEST(Abs, half_GPU) {
 
 	absFunc.forwardGPU(inputValues, &outputValue);
 	absFunc.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+
+	delete device;
 }
 
 #endif

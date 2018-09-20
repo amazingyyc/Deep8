@@ -190,7 +190,7 @@ protected:
     }
 
 
-#ifdef HAVE_HALF
+#ifdef HAVE_CUDA
 
 	template <typename real>
 	void backwardGPUImpl(real *dx, const real *dy, const int size, const int N) {
@@ -217,6 +217,7 @@ protected:
 	}
 #endif
 #endif
+
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 					const Tensor<T> *output,
 					const Tensor<T> *outputGradient,
@@ -226,9 +227,10 @@ protected:
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index of SumElements backwardCPU is error");
 
 		auto shape = iGradient->shape;
-		int batch = (int)shape.batch();
-		int size = (int)shape.size() / batch;
-		int N = (int) shape.size();
+		int N      = (int)shape.size();
+		int batch  = (int)shape.batch();
+		int size   = N / batch;
+		
 
 		backwardGPUImpl(iGradient->data(), outputGradient->data(), size, N);
 

@@ -49,10 +49,23 @@ public:
 	}
 
 protected:
-	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
+	template <typename real>
+	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
 		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
 
 		eTVec(output).device(*device) = eTVec(inputs[0]) - scalar;
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void forwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
+
+	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
+		forwardCPUImpl(inputs, output);
 	}
 
 	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,

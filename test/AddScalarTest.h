@@ -170,6 +170,36 @@ TEST(AddScalar, backwardGPU_double) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(AddScalar, half_GPU) {
+	auto device = new GPUDevice();
+
+	int dim0 = 10, dim1 = 500, dim2 = 200;
+	half scalar = 5.5;
+
+	auto input = createTensorGPU<half>(device, dim0, dim1, dim2);
+	auto inputGrad = createTensorGPU<half>(device, dim0, dim1, dim2);
+
+	auto output = createTensorGPU<half>(device, dim0, dim1, dim2);
+	auto outputGrad = createTensorGPU<half>(device, dim0, dim1, dim2);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, half>(device);
+
+	std::vector<Node*> inputs = { &inputVar1 };
+	AddScalar<half> addScalar(inputs, scalar);
+
+	std::vector<const Tensor<half>*> inputTensor = { &input };
+
+	addScalar.forwardGPU(inputTensor, &output);
+	addScalar.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
+
+
 #endif
 
 }
