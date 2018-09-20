@@ -25,6 +25,17 @@ __global__ void TensorInitPositiveUnitballKernel(real *value, real sum, int N) {
     }
 }
 
+#ifdef HAVE_HALF
+__global__ void TensorInitConvertFloatToHalf(const float *from, half* to, int N) {
+    int start  = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = start; i < N; i += stride) {
+        to[i] = (half) from[i];
+    }
+}
+#endif
+
 #endif
 
 /**
@@ -66,13 +77,8 @@ private:
     static void constantGPU(Tensor<T> &tensor, T v) {
         int N = (int)tensor.size();
 
-        int minGrideSize;
-		int blockSize;
-		int grideSize;
-
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, TensorInitConstantKernel<T>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
 
 		TensorInitConstantKernel<T> << <grideSize, blockSize >> > (tensor.data(), v, N);
     }
@@ -97,6 +103,27 @@ private:
         auto device = static_cast<GPUDevice*>(tensor.device);
         CURAND_CHECK(curandGenerateUniformDouble(device->curandGenerator, tensor.data(), (size_t)tensor.size()));
     }
+
+#ifdef HAVE_HALF
+    static void uniformGPU(Tensor<half> &tensor) {
+        auto device = static_cast<GPUDevice*>(tensor.device);
+
+        auto size = (size_t) tensor.size();
+        auto ptr  = (float*) device->malloc(sizeof(float) * size);
+
+        Tensor<float> tempTensor(ptr, tensor.shape, device);
+
+        uniformGPU(tempTensor);
+
+        int N = (int) size;
+        int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		TensorInitConvertFloatToHalf << <grideSize, blockSize >> > (ptr, tensor.data(), N);
+
+        device->free(ptr);
+    }   
+#endif
 #endif
 
     template <typename T>
@@ -120,6 +147,27 @@ private:
 
         CURAND_CHECK(curandGenerateNormalDouble(device->curandGenerator, tensor.data(), (size_t)tensor.size(), mean, stddev));
     }
+
+#ifdef HAVE_HALF
+    static void gaussianGPU(Tensor<half> &tensor) {
+        auto device = static_cast<GPUDevice*>(tensor.device);
+
+        auto size = (size_t) tensor.size();
+        auto ptr  = (float*) device->malloc(sizeof(float) * size);
+
+        Tensor<float> tempTensor(ptr, tensor.shape, device);
+
+        gaussianGPU(tempTensor);
+
+        int N = (int) size;
+        int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		TensorInitConvertFloatToHalf << <grideSize, blockSize >> > (ptr, tensor.data(), N);
+
+        device->free(ptr);
+    }   
+#endif
 #endif
 
     template <typename T>
@@ -185,7 +233,28 @@ private:
         }
     }
 
+#ifdef HAVE_HALF
+    static void positiveUnitballGPU(Tensor<half> &tensor) {
+        auto device = static_cast<GPUDevice*>(tensor.device);
+
+        auto size = (size_t) tensor.size();
+        auto ptr  = (float*) device->malloc(sizeof(float) * size);
+
+        Tensor<float> tempTensor(ptr, tensor.shape, device);
+
+        positiveUnitballGPU(tempTensor);
+
+        int N = (int) size;
+        int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		TensorInitConvertFloatToHalf << <grideSize, blockSize >> > (ptr, tensor.data(), N);
+
+        device->free(ptr);
+    }   
 #endif
+#endif
+
 public:
     /**set tensor to constant*/
     template <typename T>

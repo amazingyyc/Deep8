@@ -193,7 +193,7 @@ set ( DEEP8_TEST_HEAD_FILES
 		test/SumElementsTest.h
 		test/TanHTest.h
 		test/TestUtils.h
-		)
+        test/LinearRegressionHalfTest.h)
 
 set (DEEP8_TEST_SRC_FILES
 		test/Deep8Test.cpp)

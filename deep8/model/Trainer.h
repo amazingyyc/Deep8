@@ -122,7 +122,6 @@ protected:
 			sum += item;
 		}
 
-
 		auto scale = clipThreshold / std::sqrt(sum);
 
 		if (isnan(scale) || isinf(scale)) {
@@ -209,7 +208,6 @@ protected:
     }
 
 #ifdef HAVE_CUDA
-
 	void trainingGPU(Parameter<float> *parameter, float scale) {
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
@@ -231,7 +229,6 @@ protected:
 
 		CUBLAS_CHECK(cublasDaxpy(device->cublasHandle, (int)value.size(), &alpha, gradient.data(), 1, value.data(), 1));
 	}
-
 #endif
 };
 
@@ -295,7 +292,6 @@ protected:
     }
 
 #ifdef HAVE_CUDA
-
 	void trainingGPU(Parameter<T> *parameter, T scale) override {
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
@@ -325,7 +321,6 @@ protected:
 
 		AdagradTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, square.data(), value.data(), epsilon, learningRate, size);
 	}
-
 #endif // HAVE_CUDA
 
 };
