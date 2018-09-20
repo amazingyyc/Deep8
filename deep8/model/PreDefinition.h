@@ -38,9 +38,14 @@ typedef Softmax<float>			 SoftmaxF;
 typedef Square<float>			 SquareF;
 typedef SumElements<float>		 SumElementsF;
 typedef TanH<float>				 TanHF;
-typedef Trainer<float>			 TrainerF;
+typedef SGDTrainer<float>		 SGDTrainerF;
+typedef AdagradTrainer<float>	 AdagradTrainerF;
+typedef AdamTrainer<float>		 AdamTrainerF;
+typedef RMSPropTrainer<float>    RMSPropTrainerF;
+typedef MomentumTrainer<float>	 MomentumTrainerF;
 typedef Executor<float>			 ExecutorF;
 typedef DefaultExecutor<float>   DefaultExecutorF;
+typedef Expression<float>        ExpressionF;
 
 
 typedef Variable<double>          VariableD;
@@ -77,9 +82,14 @@ typedef Softmax<double>			  SoftmaxD;
 typedef Square<double>			  SquareD;
 typedef SumElements<double>		  SumElementsD;
 typedef TanH<double>			  TanHD;
-typedef Trainer<double>			  TrainerD;
+typedef SGDTrainer<double>		  SGDTrainerD;
+typedef AdagradTrainer<double>	  AdagradTrainerD;
+typedef AdamTrainer<double>		  AdamTrainerD;
+typedef RMSPropTrainer<double>    RMSPropTrainerD;
+typedef MomentumTrainer<double>	  MomentumTrainerD;
 typedef Executor<double>          ExecutorD;
 typedef DefaultExecutor<double>   DefaultExecutorD;
+typedef Expression<double>        ExpressionD;
 
 }
 

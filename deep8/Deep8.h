@@ -119,8 +119,8 @@
 #include "model/TensorInit.h"
 #include "model/Trainer.h"
 #include "model/Executor.h"
-#include "model/DefaultExecutor.h"
 #include "model/Expression.h"
+#include "model/DefaultExecutor.h"
 #include "model/PreDefinition.h"
 
 #endif

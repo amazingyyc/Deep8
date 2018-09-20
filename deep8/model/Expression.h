@@ -4,6 +4,108 @@
 namespace Deep8 {
 
 template <typename T>
+class Expression {
+public:
+	/**
+	 * @brief the compute executor
+	 */
+	Executor<T> *executor;
+
+	/**
+	 * @brief the Node pointer that contacted to this Expression
+	 */
+	Node *node;
+
+	explicit Expression() : executor(nullptr), node(nullptr) {
+	}
+
+	explicit Expression(Executor<T> *exe, Node *n) : executor(exe), node(n) {
+	}
+
+	void backward() {
+		executor->backward(node);
+	}
+
+	/**one operand function*/
+	Expression<T> abs() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Abs<T>(inputs)));
+	}
+
+	Expression<T> exp() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Exp<T>(inputs)));
+	}
+
+	Expression<T> l1Norm() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new L1Norm<T>(inputs)));
+	}
+
+	Expression<T> l2Norm() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new L2Norm<T>(inputs)));
+	}
+
+	Expression<T> linear(T a, T b) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Linear<T>(inputs, a, b)));
+	}
+
+	Expression<T> log() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Log<T>(inputs)));
+	}
+
+	Expression<T> lReLu(T a) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new LReLu<T>(inputs, a)));
+	}
+
+	Expression<T> reLu() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new ReLu<T>(inputs)));
+	}
+
+	Expression<T> reShape(Shape &shape) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new ReShape<T>(inputs, shape)));
+	}
+
+	Expression<T> reShape(std::initializer_list<size_t> list) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new ReShape<T>(inputs, list)));
+	}
+
+	Expression<T> sigmoid() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Sigmoid<T>(inputs)));
+	}
+
+	Expression<T> softmax() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Softmax<T>(inputs)));
+	}
+
+	Expression<T> square() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new Square<T>(inputs)));
+	}
+
+	Expression<T> sumElements() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new SumElements<T>(inputs)));
+	}
+
+	Expression<T> tanH() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new TanH<T>(inputs)));
+	}
+};
+
+
+
+template <typename T>
 Expression<T> parameter(Executor<T> *executor, std::initializer_list<size_t> list) {
     return Expression<T>(executor, executor->addParameter(list));
 }

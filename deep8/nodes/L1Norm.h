@@ -243,10 +243,12 @@ protected:
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
 
 		auto shape = iGradient->shape;
-		int batch  = (int)shape.batch();
-		int size   = (int)shape.size() / batch;
 
-		backwardGPUImpl<half>(inputs[0]->data(), iGradient->data(), outputGradient->data(), size, N);
+		int N = (int)shape.size();
+		int batch  = (int)shape.batch();
+		int size   = N / batch;
+
+		backwardGPUImpl(inputs[0]->data(), iGradient->data(), outputGradient->data(), size, N);
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif
