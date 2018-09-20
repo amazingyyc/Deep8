@@ -27,20 +27,6 @@ struct LReLuBackwardExpr {
     }
 };
 
-#ifdef HAVE_HALF
-/**to avoid compile error in CPU*/
-template <>
-struct LReLuBackwardExpr<half> {
-	
-	explicit LReLuBackwardExpr(half p) {
-	}
-
-	inline half operator()(half outputGrad, half in) const {
-		return 0.0;
-	}
-};
-#endif
-
 #ifdef HAVE_CUDA
 
 template <typename real>
@@ -84,22 +70,44 @@ public:
     }
 
 protected:
-    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-        auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+	template <typename real>
+	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
+		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(LReLuForwardExpr<T>(a));
+	}
 
-        eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(LReLuForwardExpr<T>(a));
+#ifdef HAVE_HALF
+	template <>
+	void forwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
+    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
+		forwardCPUImpl(inputs, output);
     }
+
+	template <typename real>
+	void backwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, const Tensor<real> *output, const Tensor<real> *outputGradient, size_t index, Tensor<real> *iGradient) {
+		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
+
+		auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
+		eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), LReLuBackwardExpr<T>(a));
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void backwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, const Tensor<half> *output, const Tensor<half> *outputGradient, size_t index, Tensor<half> *iGradient) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
 
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
                      const Tensor<T> *output,
                      const Tensor<T> *outputGradient,
                      size_t index,
                      Tensor<T> *iGradient) override {
-        DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
-
-        auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
-
-        eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), LReLuBackwardExpr<T>(a));
+		backwardCPUImpl(inputs, output, outputGradient, index, iGradient);
     }
 
 
