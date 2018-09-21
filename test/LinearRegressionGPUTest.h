@@ -14,7 +14,7 @@ TEST(LinearRegression, GPU_Test) {
     float x[4] = {4, -1, 2, 1};
     float y[2] = {10, 8};
 
-	DefaultExecutorF executor(new AdagradTrainerF(), DeviceType::GPU);
+	DefaultExecutorF executor(new SGDTrainerF(), DeviceType::GPU);
 
 	auto wP = executor.addParameter({1, 2});
     ExpressionF W(&executor, wP);

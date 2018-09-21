@@ -26,6 +26,7 @@ __global__ void TensorInitPositiveUnitballKernel(real *value, real sum, int N) {
 }
 
 #ifdef HAVE_HALF
+
 __global__ void TensorInitConvertFloatToHalf(const float *from, half* to, int N) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
@@ -34,8 +35,8 @@ __global__ void TensorInitConvertFloatToHalf(const float *from, half* to, int N)
         to[i] = (half) from[i];
     }
 }
-#endif
 
+#endif
 #endif
 
 /**
@@ -72,6 +73,15 @@ private:
         barrier.Wait();
     }
 
+
+#ifdef HAVE_HALF
+	template <>
+	static void constantCPU<half>(Tensor<half> &tensor, half v) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
+
 #ifdef HAVE_CUDA
     template <typename T>
     static void constantGPU(Tensor<T> &tensor, T v) {
@@ -92,6 +102,13 @@ private:
 
         std::generate(tensor.data(), tensor.data() + tensor.size(), std::bind(distribution, device->randGenerator));
     }
+
+#ifdef HAVE_HALF
+	template <>
+	static void uniformCPU<half>(Tensor<half> &tensor, half left, half right) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
 
 #ifdef HAVE_CUDA
     static void uniformGPU(Tensor<float> &tensor) {
@@ -119,7 +136,7 @@ private:
         int blockSize = 1024;
 		int grideSize = (N + blockSize - 1) / blockSize;
 
-		TensorInitConvertFloatToHalf << <grideSize, blockSize >> > (ptr, tensor.data(), N);
+		TensorInitConvertFloatToHalf<<<grideSize, blockSize >>>(ptr, tensor.data(), N);
 
         device->free(ptr);
     }   
@@ -135,6 +152,13 @@ private:
         std::generate(tensor.data(), tensor.data() + tensor.size(), std::bind(distribution, device->randGenerator));
     }
 
+#ifdef HAVE_HALF
+	template <>
+	static void gaussianCPU<half>(Tensor<half> &tensor, half mean, half stddev) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
 #ifdef HAVE_CUDA
     static void gaussianGPU(Tensor<float> &tensor, float mean, float stddev) {
         auto device = static_cast<GPUDevice*>(tensor.device);
@@ -149,7 +173,7 @@ private:
     }
 
 #ifdef HAVE_HALF
-    static void gaussianGPU(Tensor<half> &tensor) {
+    static void gaussianGPU(Tensor<half> &tensor, half mean, half stddev) {
         auto device = static_cast<GPUDevice*>(tensor.device);
 
         auto size = (size_t) tensor.size();
@@ -157,13 +181,13 @@ private:
 
         Tensor<float> tempTensor(ptr, tensor.shape, device);
 
-        gaussianGPU(tempTensor);
+		gaussianGPU(tempTensor, __half2float(mean), __half2float(stddev));
 
         int N = (int) size;
         int blockSize = 1024;
 		int grideSize = (N + blockSize - 1) / blockSize;
 
-		TensorInitConvertFloatToHalf << <grideSize, blockSize >> > (ptr, tensor.data(), N);
+		TensorInitConvertFloatToHalf<<<grideSize, blockSize>>>(ptr, tensor.data(), N);
 
         device->free(ptr);
     }   
@@ -185,6 +209,13 @@ private:
 
         eTVec(tensor).device(*device) = eTVec(tensor) / sum;
     }
+
+#ifdef HAVE_HALF
+	template <>
+	static void positiveUnitballCPU<half>(Tensor<half> &tensor) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
 
 #ifdef HAVE_CUDA
     static void positiveUnitballGPU(Tensor<float> &tensor) {
@@ -248,7 +279,7 @@ private:
         int blockSize = 1024;
 		int grideSize = (N + blockSize - 1) / blockSize;
 
-		TensorInitConvertFloatToHalf << <grideSize, blockSize >> > (ptr, tensor.data(), N);
+		TensorInitConvertFloatToHalf<<<grideSize, blockSize>>>(ptr, tensor.data(), N);
 
         device->free(ptr);
     }   
@@ -271,7 +302,7 @@ public:
     }
 
     template <typename T>
-    static void uniform(Tensor<T> &tensor, T left = 0, T right = 1) {
+    static void uniform(Tensor<T> &tensor, T left = 0.0, T right = 1.0) {
         if (DeviceType::CPU == tensor.device->type) {
             uniformCPU(tensor, left, right);
         } else {
@@ -284,9 +315,9 @@ public:
     }
 
     template <typename T>
-    static void gaussian(Tensor<T> &tensor,  T mean = 0, T stddev = 1) {
+    static void gaussian(Tensor<T> &tensor, T mean = 0.0, T stddev = 1.0) {
         if (DeviceType::CPU == tensor.device->type) {
-            gaussianCPU(tensor, mean, stddev);
+            // TensorInit::gaussianCPU(tensor, mean, stddev);
         } else {
 #ifdef HAVE_CUDA
             gaussianGPU(tensor, mean, stddev);

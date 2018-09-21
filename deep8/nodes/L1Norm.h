@@ -231,8 +231,8 @@ protected:
 
 		L1NormBackwardKernel<half> << <grideSize, blockSize >> > (x, xGrad, yGrad, size, N);
 	}
-#endif // HAVE_HALF
-#endif // HAVE_CUDA
+#endif
+#endif
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 					const Tensor<T> *output,

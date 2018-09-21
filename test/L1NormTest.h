@@ -190,6 +190,11 @@ TEST(L1Norm, half_GPU) {
 	l1norm.forwardGPU(inputValues, &output);
 	l1norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
+	freeTensor(device, input);
+	freeTensor(device, inputGrad);
+	freeTensor(device, output);
+	freeTensor(device, outputGrad);
+
 	delete device;
 }
 

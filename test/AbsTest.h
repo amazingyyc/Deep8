@@ -211,6 +211,11 @@ TEST(Abs, half_GPU) {
 	absFunc.forwardGPU(inputValues, &outputValue);
 	absFunc.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
+	freeTensor(device, inputValue);
+	freeTensor(device, inputGrad);
+	freeTensor(device, outputValue);
+	freeTensor(device, outputGrad);
+
 	delete device;
 }
 

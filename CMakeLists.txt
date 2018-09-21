@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU false)
+set(HAVE_GPU true)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
