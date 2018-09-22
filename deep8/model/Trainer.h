@@ -141,7 +141,6 @@ protected:
 	}
 #endif // HAVE_HALF
 
-
     T clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
 		return clipGradientScaleCPUImpl(device, parameters, clipThreshold);
     }
@@ -211,7 +210,6 @@ protected:
 	}
 
 #ifdef HAVE_HALF
-
 	half clipGradientScaleGPU(GPUDevice *device, std::unordered_set<Parameter<half>*> &parameters, half clipThreshold) {
 		int updateCount = 0;
 
@@ -296,7 +294,6 @@ protected:
 
 		return half(scale);
 	}
-
 #endif
 #endif
     
@@ -423,7 +420,6 @@ protected:
 	}
 
 #ifdef HAVE_HALF
-
 	template <>
 	void trainingGPUImpl<half>(Parameter<half> *parameter, half scale) {
 		auto value    = parameter->value;
@@ -435,7 +431,6 @@ protected:
 
 		SGDTrainerKernel<half> << <grideSize, blockSize >> > (gradient.data(), scale, this->learningRate, value.data(), N);
 	}
-
 #endif
 #endif
 };
@@ -529,8 +524,7 @@ protected:
 		auto gradient = parameter->gradient;
 
 		auto device = static_cast<GPUDevice*>(value.device);
-
-		int size = (int) gradient.size();
+		auto size   = (int) gradient.size();
 
 		if (accumulate.find(parameter) == accumulate.end()) {
 			auto ptr = device->malloc(sizeof(T) * size);
@@ -551,324 +545,350 @@ protected:
 #endif // HAVE_CUDA
 
 };
-//
-//
-//#ifdef HAVE_CUDA
-//
-//template <typename real>
-//__global__ void AdamTrainerKernel(real *gradient, real scale, real *mt, real *vt, real *value, real beta1, real beta2, real epsilon, real learningRate, int N) {
-//	int start = blockIdx.x * blockDim.x + threadIdx.x;
-//	int stride = blockDim.x * gridDim.x;
-//
-//	for (int i = start; i < N; i += stride) {
-//		gradient[i] *= scale;
-//		mt[i] = mt[i] * beta1 + (1 - beta1) * gradient[i];
-//		vt[i] = vt[i] * beta2 + gradient[i] * gradient[i] * (1 - beta2);
-//		value[i] -= mt[i] / (cuSqrt(vt[i]) + epsilon) * learningRate;
-//	}
-//}
-//
-//#endif
-//
-//template <typename T>
-//class AdamTrainer: public Trainer<T> {
-//public:
-//    T beta1;
-//    T beta2;
-//    T epsilon;
-//
-//    std::unordered_map<Parameter<T>*, Tensor<T>> m;
-//    std::unordered_map<Parameter<T>*, Tensor<T>> v;
-//
-//    explicit AdamTrainer(T learningRate = 0.1, T beta1 = 0.9, T beta2 = 0.999, T epsilon = 1e-8, bool clipGradient = false, T clipThreshold = 5.0):
-//		Trainer<T>(learningRate, clipGradient, clipThreshold), beta1(beta1), beta2(beta2), epsilon(epsilon) {
-//    }
-//
-//    ~AdamTrainer() override {
-//        for (auto item : m) {
-//            item.second.free();
-//        }
-//
-//        for (auto item : v) {
-//            item.second.free();
-//        }
-//
-//        m.clear();
-//        v.clear();
-//    }
-//
-//protected:
-//#ifdef HAVE_CUDA
-//
-//	void trainingGPU(Parameter<T> *parameter, T scale) override {
-//		auto value = parameter->value;
-//		auto gradient = parameter->gradient;
-//
-//		auto device = static_cast<GPUDevice*>(value.device);
-//
-//		if (m.find(parameter) == m.end()) {
-//			auto ptr = device->malloc(sizeof(T) * gradient.size());
-//
-//			Tensor<T> mt(ptr, gradient.shape, device);
-//			mt.zero();
-//
-//			m[parameter] = mt;
-//		}
-//
-//		if (v.find(parameter) == v.end()) {
-//			auto ptr = device->malloc(sizeof(T) * gradient.size());
-//			Tensor<T> vt(ptr, gradient.shape, device);
-//			vt.zero();
-//
-//			v[parameter] = vt;
-//		}
-//
-//		int size = (int)gradient.size();
-//
-//		auto mt = m[parameter];
-//		auto vt = v[parameter];
-//
-//		int minGrideSize;
-//		int blockSize;
-//		int grideSize;
-//
-//		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AdamTrainerKernel<T>, 0, size));
-//
-//		grideSize = (size + blockSize - 1) / blockSize;
-//
-//		T realLearningRate = this->learningRate * std::sqrt(1 - std::pow(beta2, T(this->times))) / (1 - std::pow(beta1, T(this->times)));
-//
-//		AdamTrainerKernel<T><<<grideSize, blockSize>>>(gradient.data(), scale, mt.data(), vt.data(), value.data(), beta1, beta2, epsilon, realLearningRate, size);
-//	}
-//
-//#endif // HAVE_CUDA
-//
-//
-//    void trainingCPU(Parameter<T> *parameter, T scale) override {
-//        auto value    = parameter->value;
-//        auto gradient = parameter->gradient;
-//
-//        auto device = static_cast<CPUDevice*>(value.device);
-//        auto eigenDevice = device->eigenDevice;
-//
-//        if (m.find(parameter) == m.end()) {
-//            auto ptr = device->malloc(sizeof(T) * gradient.size());
-//
-//            Tensor<T> mt(ptr, gradient.shape, device);
-//            mt.zero();
-//
-//			m[parameter] = mt;
-//        }
-//
-//        if (v.find(parameter) == v.end()) {
-//            auto ptr = device->malloc(sizeof(T) * gradient.size());
-//            Tensor<T> vt(ptr, gradient.shape, device);
-//            vt.zero();
-//
-//			v[parameter] = vt;
-//        }
-//
-//        auto mt = m[parameter];
-//        auto vt = v[parameter];
-//
-//        eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
-//
-//        eTVec(mt).device(*eigenDevice) = eTVec(mt) * beta1 + eTVec(gradient) * (1 - beta1);
-//        eTVec(vt).device(*eigenDevice) = eTVec(vt) * beta2 + eTVec(gradient).square() * (1 - beta2);
-//
-//        auto realLearningRate = this->learningRate * sqrt(1 - std::pow(beta2, T(this->times))) / (1 - std::pow(beta1, T(this->times)));
-//
-//        eTVec(value).device(*eigenDevice) -= eTVec(mt) / (eTVec(vt).sqrt() + epsilon) * realLearningRate;
-//    }
-//};
-//
-//#ifdef HAVE_CUDA
-//
-//template <typename real>
-//__global__ void RMSPropTrainerKernel(real *gradient, real scale, real *vt, real *value, real decay, real epsilon, real learningRate, int N) {
-//	int start = blockIdx.x * blockDim.x + threadIdx.x;
-//	int stride = blockDim.x * gridDim.x;
-//
-//	for (int i = start; i < N; i += stride) {
-//		gradient[i] *= scale;
-//		vt[i] = vt[i] * decay + gradient[i] * gradient[i] * (1 - decay);
-//		value[i] -= gradient[i] / cuSqrt(vt[i] + epsilon) * learningRate;
-//	}
-//}
-//
-//#endif
-//
-//template <typename T>
-//class RMSPropTrainer: public Trainer<T> {
-//public:
-//    T decay;
-//    T epsilon;
-//
-//    std::unordered_map<Parameter<T>*, Tensor<T>> v;
-//
-//    explicit RMSPropTrainer(T learningRate = 0.1, T decay = 0.9, T epsilon = 1e-8, bool clipGradient = false, T clipThreshold = 5.0):
-//		Trainer<T>(learningRate, clipGradient, clipThreshold), decay(decay), epsilon(epsilon) {
-//    }
-//
-//    ~RMSPropTrainer() {
-//        for (auto item : v) {
-//            item.second.free();
-//        }
-//
-//        v.clear();
-//    }
-//
-//protected:
-//#ifdef HAVE_CUDA
-//
-//	void trainingGPU(Parameter<T> *parameter, T scale) override {
-//		auto value = parameter->value;
-//		auto gradient = parameter->gradient;
-//
-//		auto device = static_cast<GPUDevice*>(value.device);
-//
-//		if (v.find(parameter) == v.end()) {
-//			auto ptr = device->malloc(sizeof(T) * gradient.size());
-//			Tensor<T> vt(ptr, gradient.shape, device);
-//			vt.zero();
-//
-//			v[parameter] = vt;
-//		}
-//
-//		auto vt = v[parameter];
-//
-//		int size = (int)gradient.size();
-//
-//		int minGrideSize;
-//		int blockSize;
-//		int grideSize;
-//
-//		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, RMSPropTrainerKernel<T>, 0, size));
-//
-//		grideSize = (size + blockSize - 1) / blockSize;
-//
-//		RMSPropTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, vt.data(), value.data(), decay, epsilon, learningRate, size);
-//	}
-//
-//#endif // HAVE_CUDA
-//
-//
-//    void trainingCPU(Parameter<T> *parameter, T scale) override {
-//        auto value    = parameter->value;
-//        auto gradient = parameter->gradient;
-//
-//        auto device = static_cast<CPUDevice*>(value.device);
-//        auto eigenDevice = device->eigenDevice;
-//
-//        if (v.find(parameter) == v.end()) {
-//            auto ptr = device->malloc(sizeof(T) * gradient.size());
-//            Tensor<T> vt(ptr, gradient.shape, device);
-//            vt.zero();
-//
-//			v[parameter] = vt;
-//        }
-//
-//        auto vt = v[parameter];
-//
-//        eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
-//        eTVec(vt).device(*eigenDevice) = eTVec(vt) * decay + eTVec(gradient).square() * (1 - decay);
-//        eTVec(value).device(*eigenDevice) -= eTVec(gradient) / (eTVec(vt) + epsilon).sqrt() * this->learningRate;
-//    }
-//};
-//
-//#ifdef HAVE_CUDA
-//
-//template <typename real>
-//__global__ void MomentumTrainerKernel(real *gradient, real scale, real *m, real *value, real alpha, real learningRate, int N) {
-//	int start = blockIdx.x * blockDim.x + threadIdx.x;
-//	int stride = blockDim.x * gridDim.x;
-//
-//	for (int i = start; i < N; i += stride) {
-//		m[i] = m[i] * alpha - gradient[i] * learningRate * scale;
-//		value[i] += m[i];
-//	}
-//}
-//
-//
-//#endif // HAVE_CUDA
-//
-//
-//template <typename T>
-//class MomentumTrainer: public Trainer<T> {
-//public:
-//    T alpha;
-//
-//    std::unordered_map<Parameter<T>*, Tensor<T>> momentum;
-//
-//    explicit MomentumTrainer(T learningRate = 0.1, T alpha = 0.9, bool clipGradient = false, T clipThreshold = 5.0):
-//		Trainer<T>(learningRate, clipGradient, clipThreshold), alpha(alpha) {
-//    }
-//
-//    ~MomentumTrainer() {
-//        for (auto item : momentum) {
-//            item.second.free();
-//        }
-//
-//        momentum.clear();
-//    }
-//
-//protected:
-//
-//#ifdef HAVE_CUDA
-//
-//	void trainingGPU(Parameter<T> *parameter, T scale) override {
-//		auto value = parameter->value;
-//		auto gradient = parameter->gradient;
-//
-//		auto device = static_cast<GPUDevice*>(value.device);
-//
-//		if (momentum.find(parameter) == momentum.end()) {
-//			auto ptr = device->malloc(sizeof(T) * gradient.size());
-//			Tensor<T> m(ptr, gradient.shape, device);
-//			m.zero();
-//
-//			momentum[parameter] = m;
-//		}
-//
-//		auto m = momentum[parameter];
-//
-//		int size = (int)gradient.size();
-//
-//		int minGrideSize;
-//		int blockSize;
-//		int grideSize;
-//
-//		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, MomentumTrainerKernel<T>, 0, size));
-//
-//		grideSize = (size + blockSize - 1) / blockSize;
-//
-//		MomentumTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, m.data(), value.data(), alpha, learningRate, size);
-//	}
-//
-//#endif // HAVE_CUDA
-//
-//
-//    void trainingCPU(Parameter<T> *parameter, T scale) override {
-//        auto value    = parameter->value;
-//        auto gradient = parameter->gradient;
-//
-//        auto device = static_cast<CPUDevice*>(value.device);
-//        auto eigenDevice = device->eigenDevice;
-//
-//        if (momentum.find(parameter) == momentum.end()) {
-//            auto ptr = device->malloc(sizeof(T) * gradient.size());
-//            Tensor<T> m(ptr, gradient.shape, device);
-//            m.zero();
-//
-//			momentum[parameter] = m;
-//        }
-//
-//        auto m = momentum[parameter];
-//
-//        eTVec(m).device(*eigenDevice) = eTVec(m) * alpha - eTVec(gradient) * this->learningRate * scale;
-//        eTVec(value).device(*eigenDevice) += eTVec(m);
-//    }
-//};
+
+
+#ifdef HAVE_CUDA
+
+template <typename real>
+__global__ void AdamTrainerKernel(real *gradient, real scale, real *mt, real *vt, real *value, real beta1, real beta2, real epsilon, real learningRate, int N) {
+	int start  = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		gradient[i] *= scale;
+		mt[i] = mt[i] * beta1 + (1.0 - beta1) * gradient[i];
+		vt[i] = vt[i] * beta2 + gradient[i] * gradient[i] * (1.0 - beta2);
+		value[i] -= mt[i] / (cuSqrt(vt[i]) + epsilon) * learningRate;
+	}
+}
+
+#endif
+
+template <typename T>
+class AdamTrainer: public Trainer<T> {
+public:
+   T beta1;
+   T beta2;
+   T epsilon;
+
+   std::unordered_map<Parameter<T>*, Tensor<T>> m;
+   std::unordered_map<Parameter<T>*, Tensor<T>> v;
+
+   explicit AdamTrainer(T learningRate = 0.1, T beta1 = 0.9, T beta2 = 0.999, T epsilon = 1e-7, bool clipGradient = false, T clipThreshold = 5.0):
+		Trainer<T>(learningRate, clipGradient, clipThreshold), beta1(beta1), beta2(beta2), epsilon(epsilon) {
+   }
+
+   ~AdamTrainer() override {
+       for (auto item : m) {
+           item.second.free();
+       }
+
+       for (auto item : v) {
+           item.second.free();
+       }
+
+       m.clear();
+       v.clear();
+   }
+
+protected:
+
+#ifdef HAVE_CUDA
+	template <typename real>
+	real calculateRealLearningRate(real learningRate, real beta1, real beta2, int64_t times) {
+		return learningRate * std::sqrt(1.0 - std::pow(beta2, real(times)) / (1 - std::pow(beta1, real(times));
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	half calculateRealLearningRate<half>(half learningRate, half beta1, half beta2, int64_t times) {
+		float learningRateF = __half2float(learningRate);
+		float beta1F        = __half2float(beta1);
+		float beta2F        = __half2float(beta2);
+
+		return __float2half(calculateRealLearningRate(learningRateF, beta1F, beta2F, times));
+	}
+#endif
+
+	void trainingGPU(Parameter<T> *parameter, T scale) override {
+		auto value    = parameter->value;
+		auto gradient = parameter->gradient;
+
+		auto device = static_cast<GPUDevice*>(value.device);
+
+		if (m.find(parameter) == m.end()) {
+			auto ptr = device->malloc(sizeof(T) * gradient.size());
+			Tensor<T> mt(ptr, gradient.shape, device);
+			mt.zero();
+
+			m[parameter] = mt;
+		}
+
+		if (v.find(parameter) == v.end()) {
+			auto ptr = device->malloc(sizeof(T) * gradient.size());
+			Tensor<T> vt(ptr, gradient.shape, device);
+			vt.zero();
+
+			v[parameter] = vt;
+		}
+
+		int size = (int) gradient.size();
+
+		auto mt = m[parameter];
+		auto vt = v[parameter];
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		auto realLearningRate = calculateRealLearningRate(this->learningRate, beta1, beta2, this->times);
+
+		AdamTrainerKernel<T><<<grideSize, blockSize>>>(gradient.data(), scale, mt.data(), vt.data(), value.data(), beta1, beta2, epsilon, realLearningRate, size);
+	}
+
+#endif // HAVE_CUDA
+
+	template <typename real> 
+	void trainingCPUImpl(Parameter<real> *parameter, real scale) {
+		auto value    = parameter->value;
+        auto gradient = parameter->gradient;
+
+		auto device = static_cast<CPUDevice*>(value.device);
+		auto eigenDevice = device->eigenDevice;
+
+		if (m.find(parameter) == m.end()) {
+			auto ptr = device->malloc(sizeof(real) * gradient.size());
+			Tensor<real> mt(ptr, gradient.shape, device);
+			mt.zero();
+
+			m[parameter] = mt;
+		}
+
+		if (v.find(parameter) == v.end()) {
+			auto ptr = device->malloc(sizeof(real) * gradient.size());
+			Tensor<real> vt(ptr, gradient.shape, device);
+			vt.zero();
+
+			v[parameter] = vt;
+		}
+
+		auto mt = m[parameter];
+		auto vt = v[parameter];
+
+		eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
+
+		eTVec(mt).device(*eigenDevice) = eTVec(mt) * beta1 + eTVec(gradient) * (1 - beta1);
+		eTVec(vt).device(*eigenDevice) = eTVec(vt) * beta2 + eTVec(gradient).square() * (1 - beta2);
+
+		auto realLearningRate = this->learningRate * sqrt(1 - std::pow(beta2, real(this->times))) / (1 - std::pow(beta1, real(this->times)));
+
+		eTVec(value).device(*eigenDevice) -= eTVec(mt) / (eTVec(vt).sqrt() + epsilon) * realLearningRate;
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void trainingCPUImpl<half>(Parameter<half> *parameter, half scale) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif
+
+    void trainingCPU(Parameter<T> *parameter, T scale) override {
+       trainingCPUImpl(parameter, scale);
+    }
+};
+
+#ifdef HAVE_CUDA
+template <typename real>
+__global__ void RMSPropTrainerKernel(real *gradient, real scale, real *vt, real *value, real decay, real epsilon, real learningRate, int N) {
+	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		gradient[i] *= scale;
+		vt[i] = vt[i] * decay + gradient[i] * gradient[i] * (1.0 - decay);
+		value[i] -= gradient[i] / cuSqrt(vt[i] + epsilon) * learningRate;
+	}
+}
+#endif
+
+template <typename T>
+class RMSPropTrainer: public Trainer<T> {
+public:
+   T decay;
+   T epsilon;
+
+   std::unordered_map<Parameter<T>*, Tensor<T>> v;
+
+   explicit RMSPropTrainer(T learningRate = 0.1, T decay = 0.9, T epsilon = 1e-7, bool clipGradient = false, T clipThreshold = 5.0):
+		Trainer<T>(learningRate, clipGradient, clipThreshold), decay(decay), epsilon(epsilon) {
+   }
+
+   ~RMSPropTrainer() {
+       for (auto item : v) {
+           item.second.free();
+       }
+
+       v.clear();
+   }
+
+protected:
+
+#ifdef HAVE_CUDA
+	void trainingGPU(Parameter<T> *parameter, T scale) override {
+		auto value    = parameter->value;
+		auto gradient = parameter->gradient;
+
+		auto device = static_cast<GPUDevice*>(value.device);
+
+		if (v.find(parameter) == v.end()) {
+			auto ptr = device->malloc(sizeof(T) * gradient.size());
+			Tensor<T> vt(ptr, gradient.shape, device);
+			vt.zero();
+
+			v[parameter] = vt;
+		}
+
+		auto vt = v[parameter];
+
+		int size = (int)gradient.size();
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		RMSPropTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, vt.data(), value.data(), decay, epsilon, learningRate, size);
+	}
+
+#endif // HAVE_CUDA
+
+	template <typename real>
+	void trainingCPUImpl(Parameter<real> *parameter, real scale) {
+		auto value    = parameter->value;
+		auto gradient = parameter->gradient;
+
+		auto device = static_cast<CPUDevice*>(value.device);
+		auto eigenDevice = device->eigenDevice;
+
+		if (v.find(parameter) == v.end()) {
+			auto ptr = device->malloc(sizeof(real) * gradient.size());
+			Tensor<real> vt(ptr, gradient.shape, device);
+			vt.zero();
+
+			v[parameter] = vt;
+		}
+
+		auto vt = v[parameter];
+
+		eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
+		eTVec(vt).device(*eigenDevice)       = eTVec(vt) * decay + eTVec(gradient).square() * (1 - decay);
+		eTVec(value).device(*eigenDevice)   -= eTVec(gradient) / (eTVec(vt) + epsilon).sqrt() * this->learningRate;
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void trainingCPUImpl<half>(Parameter<half> *parameter, half scale) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif
+
+    void trainingCPU(Parameter<T> *parameter, T scale) override {
+	    trainingCPUImpl(parameter, scale);
+   }
+};
+
+#ifdef HAVE_CUDA
+
+template <typename real>
+__global__ void MomentumTrainerKernel(real *gradient, real scale, real *m, real *value, real alpha, real learningRate, int N) {
+	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		m[i] = m[i] * alpha - gradient[i] * learningRate * scale;
+		value[i] += m[i];
+	}
+}
+#endif // HAVE_CUDA
+
+template <typename T>
+class MomentumTrainer: public Trainer<T> {
+public:
+   T alpha;
+
+   std::unordered_map<Parameter<T>*, Tensor<T>> momentum;
+
+   explicit MomentumTrainer(T learningRate = 0.1, T alpha = 0.9, bool clipGradient = false, T clipThreshold = 5.0):
+		Trainer<T>(learningRate, clipGradient, clipThreshold), alpha(alpha) {
+   }
+
+   ~MomentumTrainer() {
+       for (auto item : momentum) {
+           item.second.free();
+       }
+
+       momentum.clear();
+   }
+
+protected:
+
+#ifdef HAVE_CUDA
+
+	void trainingGPU(Parameter<T> *parameter, T scale) override {
+		auto value    = parameter->value;
+		auto gradient = parameter->gradient;
+
+		auto device = static_cast<GPUDevice*>(value.device);
+
+		if (momentum.find(parameter) == momentum.end()) {
+			auto ptr = device->malloc(sizeof(T) * gradient.size());
+			Tensor<T> m(ptr, gradient.shape, device);
+			m.zero();
+
+			momentum[parameter] = m;
+		}
+
+		auto m = momentum[parameter];
+
+		int size = (int)gradient.size();
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		MomentumTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, m.data(), value.data(), alpha, learningRate, size);
+	}
+
+#endif // HAVE_CUDA
+	template <typename real>
+	void trainingCPUImpl(Parameter<real> *parameter, real scale) {
+		auto value    = parameter->value;
+		auto gradient = parameter->gradient;
+
+		auto device = static_cast<CPUDevice*>(value.device);
+		auto eigenDevice = device->eigenDevice;
+
+		if (momentum.find(parameter) == momentum.end()) {
+			auto ptr = device->malloc(sizeof(real) * gradient.size());
+			Tensor<real> m(ptr, gradient.shape, device);
+			m.zero();
+
+			momentum[parameter] = m;
+		}
+
+		auto m = momentum[parameter];
+
+		eTVec(m).device(*eigenDevice) = eTVec(m) * alpha - eTVec(gradient) * this->learningRate * scale;
+		eTVec(value).device(*eigenDevice) += eTVec(m);
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void trainingCPUImpl<half>(Parameter<half> *parameter, half scale) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif
+
+   void trainingCPU(Parameter<T> *parameter, T scale) override {
+	   trainingCPUImpl(parameter, scale);
+   }
+};
 
 }
 
