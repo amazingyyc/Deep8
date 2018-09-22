@@ -64,7 +64,6 @@
 #endif
 
 #define EIGEN_NO_CUDA
-#define EIGEN_HAS_CUDA_FP16
 
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>

@@ -39,14 +39,13 @@ typedef Square<float>			 SquareF;
 typedef SumElements<float>		 SumElementsF;
 typedef TanH<float>				 TanHF;
 typedef SGDTrainer<float>		 SGDTrainerF;
-//typedef AdagradTrainer<float>	 AdagradTrainerF;
-//typedef AdamTrainer<float>		 AdamTrainerF;
-//typedef RMSPropTrainer<float>    RMSPropTrainerF;
-//typedef MomentumTrainer<float>	 MomentumTrainerF;
+typedef AdagradTrainer<float>	 AdagradTrainerF;
+typedef AdamTrainer<float>		 AdamTrainerF;
+typedef RMSPropTrainer<float>    RMSPropTrainerF;
+typedef MomentumTrainer<float>	 MomentumTrainerF;
 typedef Executor<float>			 ExecutorF;
 typedef DefaultExecutor<float>   DefaultExecutorF;
 typedef Expression<float>        ExpressionF;
-
 
 typedef Variable<double>          VariableD;
 typedef Parameter<double>         ParameterD;
@@ -83,14 +82,58 @@ typedef Square<double>			  SquareD;
 typedef SumElements<double>		  SumElementsD;
 typedef TanH<double>			  TanHD;
 typedef SGDTrainer<double>		  SGDTrainerD;
-//typedef AdagradTrainer<double>	  AdagradTrainerD;
-//typedef AdamTrainer<double>		  AdamTrainerD;
-//typedef RMSPropTrainer<double>    RMSPropTrainerD;
-//typedef MomentumTrainer<double>	  MomentumTrainerD;
+typedef AdagradTrainer<double>	  AdagradTrainerD;
+typedef AdamTrainer<double>		  AdamTrainerD;
+typedef RMSPropTrainer<double>    RMSPropTrainerD;
+typedef MomentumTrainer<double>	  MomentumTrainerD;
 typedef Executor<double>          ExecutorD;
 typedef DefaultExecutor<double>   DefaultExecutorD;
 typedef Expression<double>        ExpressionD;
 
+#ifdef HAVE_HALF
+typedef Variable<half>          VariableH;
+typedef Parameter<half>         ParameterH;
+typedef InputParameter<half>    InputParameterH;
+typedef ConstantParameter<half> ConstantParameterH;
+typedef Abs<half>				AbsH;
+typedef Add<half>				AddH;
+typedef AddScalar<half>		    AddScalarH;
+typedef AvgPooling2d<half>	    AvgPooling2dH;
+typedef Conv2d<half>			Conv2dH;
+typedef DeConv2d<half>		    DeConv2dH;
+typedef Divide<half>			DivideH;
+typedef DivideScalar<half>	    DivideScalarH;
+typedef Exp<half>				ExpH;
+typedef L1Norm<half>			L1NormH;
+typedef L2Norm<half>			L2NormH;
+typedef Linear<half>			LinearH;
+typedef Log<half>				LogH;
+typedef LReLu<half>			    LReLuH;
+typedef MatrixMultiply<half>	MatrixMultiplyH;
+typedef MaxPooling2d<half>	    MaxPooling2dH;
+typedef Minus<half>			    MinusH;
+typedef MinusScalar<half>	    MinusScalarH;
+typedef Multiply<half>		    MultiplyH;
+typedef MultiplyScalar<half>	MultiplyScalarH;
+typedef Pow<half>				PowH;
+typedef ReLu<half>			    ReLuH;
+typedef ReShape<half>			ReShapeH;
+typedef ScalarDivide<half>	    ScalarDivideH;
+typedef ScalarMinus<half>		ScalarMinusH;
+typedef Sigmoid<half>			SigmoidH;
+typedef Softmax<half>	        SoftmaxH;
+typedef Square<half>			SquareH;
+typedef SumElements<half>		SumElementsH;
+typedef TanH<half>			    TanHH;
+typedef SGDTrainer<half>		SGDTrainerH;
+typedef AdagradTrainer<half>	AdagradTrainerH;
+typedef AdamTrainer<half>		AdamTrainerH;
+typedef RMSPropTrainer<half>    RMSPropTrainerH;
+typedef MomentumTrainer<half>	MomentumTrainerH;
+typedef Executor<half>          ExecutorH;
+typedef DefaultExecutor<half>   DefaultExecutorH;
+typedef Expression<half>        ExpressionH;
+#endif
 }
 
 #endif

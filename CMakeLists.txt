@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU true)
+set(HAVE_GPU false)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -81,8 +81,7 @@ if (HAVE_GPU AND HAVE_CUDA)
 	endif()
 else()
 	message(STATUS "do not have GPU only support CPU")
-	# add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH)
-	add_definitions(-DEIGEN_USE_THREADS)
+	add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH)
 endif()
 
 # include the Eigen
