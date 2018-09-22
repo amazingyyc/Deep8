@@ -440,98 +440,117 @@ protected:
 #endif
 };
 
-//#ifdef HAVE_CUDA
-//
-//template <typename real>
-//__global__ void AdagradTrainerKernel(real *gradient, real scale, real *square, real *value, real epsilon, real learningRate, int N) {
-//	int start  = blockIdx.x * blockDim.x + threadIdx.x;
-//	int stride = blockDim.x * gridDim.x;
-//
-//	for (int i = start; i < N; i += stride) {
-//		gradient[i] *= scale;
-//		square[i] += gradient[i] * gradient[i];
-//		value[i]  -= learningRate * gradient[i] / cuSqrt(square[i] + epsilon);
-//	}
-//}
-//
-//#endif
-//
-//template <typename T>
-//class AdagradTrainer: public Trainer<T> {
-//public:
-//    T epsilon;
-//    std::unordered_map<Parameter<T>*, Tensor<T>> accumulate;
-//
-//    explicit AdagradTrainer(T learningRate = 0.1, T epsilon = 1e-8, bool clipGradient = false, T clipThreshold = 5.0)
-//            :Trainer<T>(learningRate, clipGradient, clipThreshold), epsilon(epsilon) {
-//        DEEP8_ARGUMENT_CHECK(0 != epsilon, "epsilon can not be 0");
-//    }
-//
-//    ~AdagradTrainer() override {
-//       for (auto item : accumulate) {
-//           item.second.free();
-//       }
-//
-//       accumulate.clear();
-//    }
-//
-//protected:
-//    void trainingCPU(Parameter<T> *parameter, T scale) override {
-//        auto value    = parameter->value;
-//        auto gradient = parameter->gradient;
-//
-//        auto device = static_cast<CPUDevice*>(value.device);
-//        auto eigenDevice = device->eigenDevice;
-//
-//        if (accumulate.find(parameter) == accumulate.end()) {
-//            auto ptr = device->malloc(sizeof(T) * gradient.size());
-//
-//			Tensor<T> square(ptr, gradient.shape, device);
-//            square.zero();
-//
-//			accumulate[parameter] = square;
-//        }
-//
-//        auto square = accumulate[parameter];
-//
-//        eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
-//        eTVec(square).device(*eigenDevice)  += eTVec(gradient).square();
-//        eTVec(value).device(*eigenDevice)   -= eTVec(gradient) / (eTVec(square) + epsilon).sqrt() * this->learningRate;
-//    }
-//
-//#ifdef HAVE_CUDA
-//	void trainingGPU(Parameter<T> *parameter, T scale) override {
-//		auto value    = parameter->value;
-//		auto gradient = parameter->gradient;
-//
-//		auto device = static_cast<GPUDevice*>(value.device);
-//
-//		int size = (int)gradient.size();
-//
-//		if (accumulate.find(parameter) == accumulate.end()) {
-//			auto ptr = device->malloc(sizeof(T) * size);
-//
-//			Tensor<T> square(ptr, gradient.shape, device);
-//			square.zero();
-//
-//			accumulate[parameter] = square;
-//		}
-//
-//		auto square = accumulate[parameter];
-//
-//		int minGrideSize;
-//		int blockSize;
-//		int grideSize;
-//
-//		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AdagradTrainerKernel<T>, 0, size));
-//
-//		grideSize = (size + blockSize - 1) / blockSize;
-//
-//		AdagradTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, square.data(), value.data(), epsilon, learningRate, size);
-//	}
-//#endif // HAVE_CUDA
-//
-//};
+#ifdef HAVE_CUDA
+
+template <typename real>
+__global__ void AdagradTrainerKernel(real *gradient, real scale, real *square, real *value, real epsilon, real learningRate, int N) {
+	int start  = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		gradient[i] *= scale;
+		square[i] += gradient[i] * gradient[i];
+		value[i]  -= learningRate * gradient[i] / cuSqrt(square[i] + epsilon);
+	}
+}
+
+#endif
+
+template <typename T>
+class AdagradTrainer: public Trainer<T> {
+public:
+    T epsilon;
+    std::unordered_map<Parameter<T>*, Tensor<T>> accumulate;
+
+    explicit AdagradTrainer(T learningRate = 0.1, T epsilon = 1e-7, bool clipGradient = false, T clipThreshold = 5.0)
+            :Trainer<T>(learningRate, clipGradient, clipThreshold), epsilon(epsilon) {
+		check(epsilon);
+    }
+
+	template <typename real>
+	void check(real epsilon) {
+		DEEP8_ARGUMENT_CHECK(0 != epsilon, "epsilon can not be 0");
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void check<half>(half epsilon) {
+		DEEP8_ARGUMENT_CHECK(0 != __half2float(epsilon), "epsilon can not be 0");
+	}
+#endif
+
+    ~AdagradTrainer() override {
+       for (auto item : accumulate) {
+           item.second.free();
+       }
+
+       accumulate.clear();
+    }
+
+protected: 
+	template <typename real>
+	void trainingCPUImpl(Parameter<real> *parameter, real scale) {
+		auto value    = parameter->value;
+		auto gradient = parameter->gradient;
+
+		auto device = static_cast<CPUDevice*>(value.device);
+		auto eigenDevice = device->eigenDevice;
+
+		if (accumulate.find(parameter) == accumulate.end()) {
+			auto ptr = device->malloc(sizeof(real) * gradient.size());
+
+			Tensor<real> square(ptr, gradient.shape, device);
+			square.zero();
+
+			accumulate[parameter] = square;
+		}
+
+		auto square = accumulate[parameter];
+
+		eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
+		eTVec(square).device(*eigenDevice)  += eTVec(gradient).square();
+		eTVec(value).device(*eigenDevice)   -= eTVec(gradient) / (eTVec(square) + epsilon).sqrt() * this->learningRate;
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void trainingCPUImpl<half>(Parameter<half> *parameter, half scale) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif
+
+    void trainingCPU(Parameter<T> *parameter, T scale) override {
+		trainingCPUImpl(parameter, scale);
+    }
+
+#ifdef HAVE_CUDA
+	void trainingGPU(Parameter<T> *parameter, T scale) override {
+		auto value    = parameter->value;
+		auto gradient = parameter->gradient;
+
+		auto device = static_cast<GPUDevice*>(value.device);
+
+		int size = (int) gradient.size();
+
+		if (accumulate.find(parameter) == accumulate.end()) {
+			auto ptr = device->malloc(sizeof(T) * size);
+
+			Tensor<T> square(ptr, gradient.shape, device);
+			square.zero();
+
+			accumulate[parameter] = square;
+		}
+
+		auto square = accumulate[parameter];
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		AdagradTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, square.data(), value.data(), epsilon, learningRate, size);
+	}
+#endif // HAVE_CUDA
+
+};
 //
 //
 //#ifdef HAVE_CUDA

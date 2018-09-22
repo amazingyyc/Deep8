@@ -18,7 +18,6 @@ struct L1NormBackwardExpr {
 
 #ifdef HAVE_CUDA
 
-
 template <int blockSize, typename real> 
 __global__ void L1NormForwardKernel(const real *x, real *y, const int batch, const int size) {
 	SharedMemory<real> shareMemory;
@@ -91,9 +90,9 @@ __global__ void L1NormBackwardKernel(const real *x, real *xGrad, const real *yGr
 	for (int i = start; i < N; i += stride) {
 		int y = i / size;
 
-		if (x[i] > 0) {
+		if (x[i] > real(0.0)) {
 			xGrad[i] += yGrad[y];
-		} else if (x[i] < 0) {
+		} else if (x[i] < real(0.0)) {
 			xGrad[i] -= yGrad[y];
 		}
 	}

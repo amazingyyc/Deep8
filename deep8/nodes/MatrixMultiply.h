@@ -56,8 +56,6 @@ protected:
          }
     }
 
-    
-
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
                      const Tensor<T> *output,
                      const Tensor<T> *outputGradient,
@@ -166,8 +164,8 @@ protected:
 
 #ifdef HAVE_HALF
 	void forwardGPUImpl(GPUDevice *device, const half *A, const Shape &aShape, const half *B, const Shape &bShape, half *C, const Shape &cShape) {
-		half alpha = 1;
-		half beta  = 0;
+		half alpha = 1.0;
+		half beta  = 0.0;
 
 		if (1 == bShape.batch()) {
 			int m = aShape.batch() *aShape.row();
@@ -280,8 +278,8 @@ protected:
 
 #ifdef HAVE_HALF
 	void backwardGPUImpl0(GPUDevice* device, half *aGrad, const Shape &aShape, const half *B, const Shape &bShape, const half *cGrad, const Shape &cShape) {
-		half alpha = 1;
-		half beta = 1;
+		half alpha = 1.0;
+		half beta  = 1.0;
 
 		if (1 == bShape.batch()) {
 			int b = aShape.batch();
@@ -382,8 +380,8 @@ protected:
 
 #ifdef HAVE_HALF
 	void backwardGPUImpl1(GPUDevice* device, const half *A, const Shape &aShape, half *bGrad, const Shape &bShape, const half *cGrad, const Shape &cShape) {
-		half alpha = 1;
-		half beta = 1;
+		half alpha = 1.0;
+		half beta  = 1.0;
 
 		if (1 == bShape.batch()) {
 			int b = aShape.batch();

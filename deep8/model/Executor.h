@@ -102,7 +102,7 @@ public:
 		parameterCollection.insert(parameter);
 
 		/**init the parameter*/
-		// TensorInit::gaussian(value);
+		TensorInit::gaussian(value);
 
 		return parameter;
 	}

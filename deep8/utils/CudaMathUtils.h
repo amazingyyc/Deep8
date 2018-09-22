@@ -220,23 +220,38 @@ struct SharedMemory<half> {
 #endif
 
 template <unsigned int blockSize, typename real>
-__device__ DEEP8_CUDA_INLINE void warpSumReduce(volatile real *shared, int threaId) {
-	if (blockSize >= 64) shared[threaId] += shared[threaId + 32];
-	if (blockSize >= 32) shared[threaId] += shared[threaId + 16];
-	if (blockSize >= 16) shared[threaId] += shared[threaId +  8];
-	if (blockSize >=  8) shared[threaId] += shared[threaId +  4];
-	if (blockSize >=  4) shared[threaId] += shared[threaId +  2];
-	if (blockSize >=  2) shared[threaId] += shared[threaId +  1];
+DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE void warpSumReduce(volatile real *shared, int threadId) {
+	if (blockSize >= 64) shared[threadId] += shared[threadId + 32];
+	if (blockSize >= 32) shared[threadId] += shared[threadId + 16];
+	if (blockSize >= 16) shared[threadId] += shared[threadId +  8];
+	if (blockSize >=  8) shared[threadId] += shared[threadId +  4];
+	if (blockSize >=  4) shared[threadId] += shared[threadId +  2];
+	if (blockSize >=  2) shared[threadId] += shared[threadId +  1];
 }
 
+
+#ifdef HAVE_HALF
+
+template <unsigned int blockSize, typename real = half>
+DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE void warpSumReduce(volatile half *shared, int threadId) {
+	if (blockSize >= 64) shared[threadId] = __hadd(shared[threadId], shared[threadId + 32]);
+	if (blockSize >= 32) shared[threadId] = __hadd(shared[threadId], shared[threadId + 16]);
+	if (blockSize >= 16) shared[threadId] = __hadd(shared[threadId], shared[threadId +  8]);
+	if (blockSize >=  8) shared[threadId] = __hadd(shared[threadId], shared[threadId +  4]);
+	if (blockSize >=  4) shared[threadId] = __hadd(shared[threadId], shared[threadId +  2]);
+	if (blockSize >=  2) shared[threadId] = __hadd(shared[threadId], shared[threadId +  1]);
+}
+
+#endif
+
 template <unsigned int blockSize, typename real>
-__device__ DEEP8_CUDA_INLINE void warpMaxReduce(volatile real *shared, int threaId) {
-	if (blockSize >= 64) { shared[threaId] = cuMax(shared[threaId], shared[threaId + 32]); }
-	if (blockSize >= 32) { shared[threaId] = cuMax(shared[threaId], shared[threaId + 16]); }
-	if (blockSize >= 16) { shared[threaId] = cuMax(shared[threaId], shared[threaId +  8]); }
-	if (blockSize >= 8)  { shared[threaId] = cuMax(shared[threaId], shared[threaId +  4]); }
-	if (blockSize >= 4)  { shared[threaId] = cuMax(shared[threaId], shared[threaId +  2]); }
-	if (blockSize >= 2)  { shared[threaId] = cuMax(shared[threaId], shared[threaId +  1]); }
+DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE void warpMaxReduce(volatile real *shared, int threadId) {
+	if (blockSize >= 64) { shared[threadId] = cuMax(shared[threadId], shared[threadId + 32]); }
+	if (blockSize >= 32) { shared[threadId] = cuMax(shared[threadId], shared[threadId + 16]); }
+	if (blockSize >= 16) { shared[threadId] = cuMax(shared[threadId], shared[threadId +  8]); }
+	if (blockSize >= 8)  { shared[threadId] = cuMax(shared[threadId], shared[threadId +  4]); }
+	if (blockSize >= 4)  { shared[threadId] = cuMax(shared[threadId], shared[threadId +  2]); }
+	if (blockSize >= 2)  { shared[threadId] = cuMax(shared[threadId], shared[threadId +  1]); }
 }
 
 }

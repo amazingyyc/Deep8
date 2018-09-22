@@ -32,7 +32,7 @@ __global__ void TensorInitConvertFloatToHalf(const float *from, half* to, int N)
     int stride = blockDim.x * gridDim.x;
 
     for (int i = start; i < N; i += stride) {
-        to[i] = (half) from[i];
+        to[i] = __float2half(from[i]);
     }
 }
 
@@ -229,13 +229,8 @@ private:
         CUBLAS_CHECK(cublasSasum(device->cublasHandle, N, tensor.data(), 1, &sum));
 
         if (0 != sum) {
-            int minGrideSize;
-            int blockSize;
-            int grideSize;
-
-            CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, TensorInitPositiveUnitballKernel<float>, 0, N));
-
-            grideSize = (N + blockSize - 1) / blockSize;
+			int blockSize = 1024;
+            int grideSize = (N + blockSize - 1) / blockSize;
 
             TensorInitPositiveUnitballKernel<float> << <grideSize, blockSize >> > (tensor.data(), sum, N);
         }
@@ -252,13 +247,8 @@ private:
         CUBLAS_CHECK(cublasDasum(device->cublasHandle, N, tensor.data(), 1, &sum));
 
         if (0 != sum) {
-            int minGrideSize;
-            int blockSize;
-            int grideSize;
-
-            CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, TensorInitPositiveUnitballKernel<double>, 0, N));
-
-            grideSize = (N + blockSize - 1) / blockSize;
+			int blockSize = 1024;
+            int grideSize = (N + blockSize - 1) / blockSize;
 
             TensorInitPositiveUnitballKernel<double> << <grideSize, blockSize >> > (tensor.data(), sum, N);
         }
