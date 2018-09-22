@@ -3,14 +3,6 @@
 
 namespace Deep8 {
 
-enum class TrainerType {
-    SGD,
-    Adagrad,
-    Adam,
-    RMSProp,
-    Momentum,
-};
-
 #ifdef HAVE_CUDA
 #ifdef HAVE_HALF
 
@@ -556,8 +548,8 @@ __global__ void AdamTrainerKernel(real *gradient, real scale, real *mt, real *vt
 
 	for (int i = start; i < N; i += stride) {
 		gradient[i] *= scale;
-		mt[i] = mt[i] * beta1 + (1.0 - beta1) * gradient[i];
-		vt[i] = vt[i] * beta2 + gradient[i] * gradient[i] * (1.0 - beta2);
+		mt[i] = mt[i] * beta1 + (real(1.0) - beta1) * gradient[i];
+		vt[i] = vt[i] * beta2 + gradient[i] * gradient[i] * (real(1.0) - beta2);
 		value[i] -= mt[i] / (cuSqrt(vt[i]) + epsilon) * learningRate;
 	}
 }
@@ -576,7 +568,20 @@ public:
 
    explicit AdamTrainer(T learningRate = 0.1, T beta1 = 0.9, T beta2 = 0.999, T epsilon = 1e-7, bool clipGradient = false, T clipThreshold = 5.0):
 		Trainer<T>(learningRate, clipGradient, clipThreshold), beta1(beta1), beta2(beta2), epsilon(epsilon) {
+	   check(epsilon);
    }
+
+   template <typename real>
+   void check(real epsilon) {
+	   DEEP8_ARGUMENT_CHECK(0 != epsilon, "epsilon can not be 0");
+   }
+
+#ifdef HAVE_HALF
+   template <>
+   void check<half>(half epsilon) {
+	   DEEP8_ARGUMENT_CHECK(0 != __half2float(epsilon), "epsilon can not be 0");
+   }
+#endif
 
    ~AdamTrainer() override {
        for (auto item : m) {
@@ -596,7 +601,7 @@ protected:
 #ifdef HAVE_CUDA
 	template <typename real>
 	real calculateRealLearningRate(real learningRate, real beta1, real beta2, int64_t times) {
-		return learningRate * std::sqrt(1.0 - std::pow(beta2, real(times)) / (1 - std::pow(beta1, real(times));
+		return learningRate * std::sqrt(1.0 - std::pow(beta2, real(times))) / (1 - std::pow(beta1, real(times)));
 	}
 
 #ifdef HAVE_HALF
@@ -704,7 +709,7 @@ __global__ void RMSPropTrainerKernel(real *gradient, real scale, real *vt, real 
 
 	for (int i = start; i < N; i += stride) {
 		gradient[i] *= scale;
-		vt[i] = vt[i] * decay + gradient[i] * gradient[i] * (1.0 - decay);
+		vt[i] = vt[i] * decay + gradient[i] * gradient[i] * (real(1.0) - decay);
 		value[i] -= gradient[i] / cuSqrt(vt[i] + epsilon) * learningRate;
 	}
 }
@@ -720,7 +725,20 @@ public:
 
    explicit RMSPropTrainer(T learningRate = 0.1, T decay = 0.9, T epsilon = 1e-7, bool clipGradient = false, T clipThreshold = 5.0):
 		Trainer<T>(learningRate, clipGradient, clipThreshold), decay(decay), epsilon(epsilon) {
+	   check(epsilon);
    }
+
+   template <typename real>
+   void check(real epsilon) {
+	   DEEP8_ARGUMENT_CHECK(0 != epsilon, "epsilon can not be 0");
+   }
+
+#ifdef HAVE_HALF
+   template <>
+   void check<half>(half epsilon) {
+	   DEEP8_ARGUMENT_CHECK(0 != __half2float(epsilon), "epsilon can not be 0");
+   }
+#endif
 
    ~RMSPropTrainer() {
        for (auto item : v) {

@@ -14,7 +14,7 @@ TEST(LinearRegression, half_Test) {
 	half x[4] = { 4.0, -1.0, 2.0, 1.0 };
 	half y[2] = { 10.0, 8.0 };
 
-	DefaultExecutor<half> executor(new AdagradTrainer<half>(), DeviceType::GPU);
+	DefaultExecutor<half> executor(new MomentumTrainer<half>(), DeviceType::GPU);
 
 	auto wP = executor.addParameter({1, 2});
     Expression<half> W(&executor, wP);
