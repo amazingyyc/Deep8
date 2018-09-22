@@ -101,6 +101,13 @@ public:
 	double *doubleZero;
 	double *doubleMinusOne;
 
+#ifdef HAVE_HALF
+	half *halfOne;
+	half *halfZero;
+	half *halfMinusOne;
+#endif // HAVE_HALF
+
+
 	explicit GPUDevice() : GPUDevice(0) {
 	}
 
@@ -118,9 +125,33 @@ public:
 		CUDNN_CHECK(cudnnCreate(&cudnnHandle));
 #endif
 
+#ifdef HAVE_HALF
+		void *ptr = gpuMemoryAllocator->malloc(sizeof(float) * 3 + sizeof(double) * 3 + sizeof(half) * 3);
+
+		floatOne = (float*)ptr;
+		floatZero = floatOne + 1;
+		floatMinusOne = floatZero + 1;
+
+		doubleOne = (double*)(floatMinusOne + 1);
+		doubleZero = doubleOne + 1;
+		doubleMinusOne = doubleZero + 1;
+
+		halfOne = (half*)(doubleMinusOne + 1);
+		halfZero = halfOne + 1;
+		halfMinusOne = halfZero + 1;
+
+		float  numberF[3] = { 1, 0, -1 };
+		double numberD[3] = { 1, 0, -1 };
+		half   numberH[3] = { 1.0, 0.0, -1.0 };
+
+		gpuMemoryAllocator->copyFromCPUToGPU(&numberF[0], floatOne,  sizeof(float)  * 3);
+		gpuMemoryAllocator->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
+		gpuMemoryAllocator->copyFromCPUToGPU(&numberH[0], halfOne,   sizeof(half)   * 3);
+
+#else
 		void *ptr = gpuMemoryAllocator->malloc(sizeof(float) * 3 + sizeof(double) * 3);
 
-		floatOne = (float*) ptr;
+		floatOne = (float*)ptr;
 		floatZero = floatOne + 1;
 		floatMinusOne = floatZero + 1;
 
@@ -129,10 +160,11 @@ public:
 		doubleMinusOne = doubleZero + 1;
 
 		float numberF[3] = { 1, 0, -1 };
-		float numberD[3] = { 1, 0, -1 };
+		double numberD[3] = { 1, 0, -1 };
 
 		gpuMemoryAllocator->copyFromCPUToGPU(&numberF[0], floatOne, sizeof(float) * 3);
 		gpuMemoryAllocator->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
+#endif // HAVE_HALF
 	}
 
 	~GPUDevice() {
@@ -178,7 +210,7 @@ public:
 
 	template<typename T>
 	void *gpuOne() {
-		DEEP8_RUNTIME_ERROR("get GPU number error");
+		DEEP8_RUNTIME_ERROR("get GPU number value error");
 	}
 
 	template <>
@@ -191,9 +223,17 @@ public:
 		return doubleOne;
 	}
 
+#ifdef HAVE_HALF
+	template <>
+	void *gpuOne<half>() {
+		return halfOne;
+	}
+#endif // HAVE_HALF
+
+
 	template<typename T>
 	void *gpuZero() {
-		DEEP8_RUNTIME_ERROR("get GPU number error");
+		DEEP8_RUNTIME_ERROR("get GPU number value error");
 	}
 
 	template <>
@@ -206,9 +246,16 @@ public:
 		return doubleZero;
 	}
 
+#ifdef HAVE_HALF
+	template <>
+	void *gpuZero<half>() {
+		return halfZero;
+	}
+#endif // HAVE_HALF
+
 	template<typename T>
 	void *gpuMinusOne() {
-		DEEP8_RUNTIME_ERROR("get GPU number error");
+		DEEP8_RUNTIME_ERROR("get GPU number value error");
 	}
 
 	template <>
@@ -220,6 +267,13 @@ public:
 	void *gpuMinusOne<double>() {
 		return doubleMinusOne;
 	}
+
+#ifdef HAVE_HALF
+	template <>
+	void *gpuMinusOne<half>() {
+		return halfMinusOne;
+	}
+#endif // HAVE_HALF
 
 };
 

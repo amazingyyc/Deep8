@@ -78,6 +78,33 @@ TEST(Linear, GPU_float) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(Linear, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 10, 400, 200);
+	auto output = createTensorGPU<real>(device, 10, 400, 200);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+	real a = 2.0;
+	real b = 3.5;
+
+	std::vector<Node*> inputs = { &inputVar };
+	Linear<real> linear(inputs, a, b);
+
+	std::vector<const Tensor<real>*> inputTensor = { &input };
+
+	linear.forwardGPU(inputTensor, &output);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif // HAVE_CUDA
 
 

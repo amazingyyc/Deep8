@@ -25,6 +25,18 @@ __global__ void TensorInitPositiveUnitballKernel(real *value, real sum, int N) {
     }
 }
 
+#ifdef HAVE_HALF
+
+__global__ void TensorInitConvertFloatToHalf(const float *from, half* to, int N) {
+    int start  = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+
+    for (int i = start; i < N; i += stride) {
+        to[i] = __float2half(from[i]);
+    }
+}
+
+#endif
 #endif
 
 /**
@@ -61,18 +73,22 @@ private:
         barrier.Wait();
     }
 
+
+#ifdef HAVE_HALF
+	template <>
+	static void constantCPU<half>(Tensor<half> &tensor, half v) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
+
 #ifdef HAVE_CUDA
     template <typename T>
     static void constantGPU(Tensor<T> &tensor, T v) {
         int N = (int)tensor.size();
 
-        int minGrideSize;
-		int blockSize;
-		int grideSize;
-
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, TensorInitConstantKernel<T>, 0, N));
-
-		grideSize = (N + blockSize - 1) / blockSize;
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
 
 		TensorInitConstantKernel<T> << <grideSize, blockSize >> > (tensor.data(), v, N);
     }
@@ -87,6 +103,13 @@ private:
         std::generate(tensor.data(), tensor.data() + tensor.size(), std::bind(distribution, device->randGenerator));
     }
 
+#ifdef HAVE_HALF
+	template <>
+	static void uniformCPU<half>(Tensor<half> &tensor, half left, half right) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
 #ifdef HAVE_CUDA
     static void uniformGPU(Tensor<float> &tensor) {
         auto device = static_cast<GPUDevice*>(tensor.device);
@@ -97,6 +120,27 @@ private:
         auto device = static_cast<GPUDevice*>(tensor.device);
         CURAND_CHECK(curandGenerateUniformDouble(device->curandGenerator, tensor.data(), (size_t)tensor.size()));
     }
+
+#ifdef HAVE_HALF
+    static void uniformGPU(Tensor<half> &tensor) {
+        auto device = static_cast<GPUDevice*>(tensor.device);
+
+        auto size = (size_t) tensor.size();
+        auto ptr  = (float*) device->malloc(sizeof(float) * size);
+
+        Tensor<float> tempTensor(ptr, tensor.shape, device);
+
+        uniformGPU(tempTensor);
+
+        int N = (int) size;
+        int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		TensorInitConvertFloatToHalf<<<grideSize, blockSize >>>(ptr, tensor.data(), N);
+
+        device->free(ptr);
+    }   
+#endif
 #endif
 
     template <typename T>
@@ -107,6 +151,13 @@ private:
 
         std::generate(tensor.data(), tensor.data() + tensor.size(), std::bind(distribution, device->randGenerator));
     }
+
+#ifdef HAVE_HALF
+	template <>
+	static void gaussianCPU<half>(Tensor<half> &tensor, half mean, half stddev) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
 
 #ifdef HAVE_CUDA
     static void gaussianGPU(Tensor<float> &tensor, float mean, float stddev) {
@@ -120,6 +171,27 @@ private:
 
         CURAND_CHECK(curandGenerateNormalDouble(device->curandGenerator, tensor.data(), (size_t)tensor.size(), mean, stddev));
     }
+
+#ifdef HAVE_HALF
+    static void gaussianGPU(Tensor<half> &tensor, half mean, half stddev) {
+        auto device = static_cast<GPUDevice*>(tensor.device);
+
+        auto size = (size_t) tensor.size();
+        auto ptr  = (float*) device->malloc(sizeof(float) * size);
+
+        Tensor<float> tempTensor(ptr, tensor.shape, device);
+
+		gaussianGPU(tempTensor, __half2float(mean), __half2float(stddev));
+
+        int N = (int) size;
+        int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		TensorInitConvertFloatToHalf<<<grideSize, blockSize>>>(ptr, tensor.data(), N);
+
+        device->free(ptr);
+    }   
+#endif
 #endif
 
     template <typename T>
@@ -138,6 +210,13 @@ private:
         eTVec(tensor).device(*device) = eTVec(tensor) / sum;
     }
 
+#ifdef HAVE_HALF
+	template <>
+	static void positiveUnitballCPU<half>(Tensor<half> &tensor) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
 #ifdef HAVE_CUDA
     static void positiveUnitballGPU(Tensor<float> &tensor) {
         auto device = static_cast<GPUDevice*>(tensor.device);
@@ -150,13 +229,8 @@ private:
         CUBLAS_CHECK(cublasSasum(device->cublasHandle, N, tensor.data(), 1, &sum));
 
         if (0 != sum) {
-            int minGrideSize;
-            int blockSize;
-            int grideSize;
-
-            CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, TensorInitPositiveUnitballKernel<float>, 0, N));
-
-            grideSize = (N + blockSize - 1) / blockSize;
+			int blockSize = 1024;
+            int grideSize = (N + blockSize - 1) / blockSize;
 
             TensorInitPositiveUnitballKernel<float> << <grideSize, blockSize >> > (tensor.data(), sum, N);
         }
@@ -173,19 +247,35 @@ private:
         CUBLAS_CHECK(cublasDasum(device->cublasHandle, N, tensor.data(), 1, &sum));
 
         if (0 != sum) {
-            int minGrideSize;
-            int blockSize;
-            int grideSize;
-
-            CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, TensorInitPositiveUnitballKernel<double>, 0, N));
-
-            grideSize = (N + blockSize - 1) / blockSize;
+			int blockSize = 1024;
+            int grideSize = (N + blockSize - 1) / blockSize;
 
             TensorInitPositiveUnitballKernel<double> << <grideSize, blockSize >> > (tensor.data(), sum, N);
         }
     }
 
+#ifdef HAVE_HALF
+    static void positiveUnitballGPU(Tensor<half> &tensor) {
+        auto device = static_cast<GPUDevice*>(tensor.device);
+
+        auto size = (size_t) tensor.size();
+        auto ptr  = (float*) device->malloc(sizeof(float) * size);
+
+        Tensor<float> tempTensor(ptr, tensor.shape, device);
+
+        positiveUnitballGPU(tempTensor);
+
+        int N = (int) size;
+        int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		TensorInitConvertFloatToHalf<<<grideSize, blockSize>>>(ptr, tensor.data(), N);
+
+        device->free(ptr);
+    }   
 #endif
+#endif
+
 public:
     /**set tensor to constant*/
     template <typename T>
@@ -202,7 +292,7 @@ public:
     }
 
     template <typename T>
-    static void uniform(Tensor<T> &tensor, T left = 0, T right = 1) {
+    static void uniform(Tensor<T> &tensor, T left = 0.0, T right = 1.0) {
         if (DeviceType::CPU == tensor.device->type) {
             uniformCPU(tensor, left, right);
         } else {
@@ -215,9 +305,9 @@ public:
     }
 
     template <typename T>
-    static void gaussian(Tensor<T> &tensor,  T mean = 0, T stddev = 1) {
+    static void gaussian(Tensor<T> &tensor, T mean = 0.0, T stddev = 1.0) {
         if (DeviceType::CPU == tensor.device->type) {
-            gaussianCPU(tensor, mean, stddev);
+            // TensorInit::gaussianCPU(tensor, mean, stddev);
         } else {
 #ifdef HAVE_CUDA
             gaussianGPU(tensor, mean, stddev);

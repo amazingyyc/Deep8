@@ -242,21 +242,33 @@ protected:
     }
 
 #ifdef HAVE_CUDA
-
-	void forwardGPUImpl(const T *x, const int *xshape, const int *xdims,
-						const T *y, const int *yshape, const int *ydims,
-							  T *z, const int *zshape, const int *zdims, const int N) {
+	template <typename real>
+	void forwardGPUImpl(const real *x, const int *xshape, const int *xdims,
+						const real *y, const int *yshape, const int *ydims,
+							  real *z, const int *zshape, const int *zdims, const int N) {
 		int minGrideSize;
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, MultiplyForwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, MultiplyForwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		MultiplyForwardKernel<T> << <grideSize, blockSize >> > (x, xshape, xdims, y, yshape, ydims, z, zshape, zdims, N);
+		MultiplyForwardKernel<real> << <grideSize, blockSize >> > (x, xshape, xdims, y, yshape, ydims, z, zshape, zdims, N);
 	}
 
+#ifdef HAVE_HALF
+
+	template <>
+	void forwardGPUImpl<half>(const half *x, const int *xshape, const int *xdims,
+							  const half *y, const int *yshape, const int *ydims,
+									half *z, const int *zshape, const int *zdims, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		MultiplyForwardKernel<half> << <grideSize, blockSize >> > (x, xshape, xdims, y, yshape, ydims, z, zshape, zdims, N);
+	}
+#endif // HAVE_HALF
 #endif
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -315,22 +327,35 @@ protected:
 	}
 
 #ifdef HAVE_CUDA
-
-	void backwardGPUImpl(T *inGrad,     const int *inShape,    const int *inDims,
-				   const T *otherValue, const int *otherShape, const int *otherDims,
-				   const T *outGrad,    const int *outShape,   const int *outDims, 
+	template <typename real>
+	void backwardGPUImpl(real *inGrad,     const int *inShape,    const int *inDims,
+				   const real *otherValue, const int *otherShape, const int *otherDims,
+				   const real *outGrad,    const int *outShape,   const int *outDims, 
 		           const int N) {
 		int minGrideSize;
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, MultiplyBackwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, MultiplyBackwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		MultiplyBackwardKernel<T> << <grideSize, blockSize >> > (inGrad, inShape, inDims, otherValue, otherShape, otherDims, outGrad, outShape, outDims, N);
+		MultiplyBackwardKernel<real> << <grideSize, blockSize >> > (inGrad, inShape, inDims, otherValue, otherShape, otherDims, outGrad, outShape, outDims, N);
 	}
 
+#ifdef HAVE_HALF
+
+	template <>
+	void backwardGPUImpl<half>(half *inGrad, const int *inShape, const int *inDims,
+						 const half *otherValue, const int *otherShape, const int *otherDims,
+						 const half *outGrad, const int *outShape, const int *outDims, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		MultiplyBackwardKernel<half> << <grideSize, blockSize >> > (inGrad, inShape, inDims, otherValue, otherShape, otherDims, outGrad, outShape, outDims, N);
+	}
+
+#endif // HAVE_HALF
 #endif
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,

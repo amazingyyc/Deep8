@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU true)
+set(HAVE_GPU false)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -81,8 +81,7 @@ if (HAVE_GPU AND HAVE_CUDA)
 	endif()
 else()
 	message(STATUS "do not have GPU only support CPU")
-	# add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH)
-	add_definitions(-DEIGEN_USE_THREADS)
+	add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH)
 endif()
 
 # include the Eigen
@@ -193,7 +192,7 @@ set ( DEEP8_TEST_HEAD_FILES
 		test/SumElementsTest.h
 		test/TanHTest.h
 		test/TestUtils.h
-		)
+        test/LinearRegressionHalfTest.h)
 
 set (DEEP8_TEST_SRC_FILES
 		test/Deep8Test.cpp)
@@ -208,36 +207,21 @@ if (HAVE_GPU AND HAVE_CUDA)
 	# enable separable compilation
 	set(CUDA_SEPARABLE_COMPILATION ON)
 
-	# copy the CPP file to cu file for nvcc complie
-	# foreach(CXX_FILE ${DEEP8_TEST_SRC_FILES})
-	# 	message(STATUS "create cu file for CUDA compile")
-	# 
-	# 	string(REGEX REPLACE ".+/(.+)\\..*" "\\1" FILE_NAME ${CXX_FILE})
-	# 
-	# 	# get_filename_component(CXX_FILE_PARENT_DIR ${CXX_FILE} DIRECTORY)
-	# 
-	# 	set(CU_FILE "${PROJECT_BINARY_DIR}/Deep8_Test_CUDA/${FILE_NAME}.cu")
-	# 
-	# 	file(READ ${CXX_FILE} CXX_FILE_CONTENT)
-	# 
-	# 	file(WRITE ${CU_FILE} "${CXX_FILE_CONTENT}")
-	# 
-	# 	list(APPEND DEEP8_TEST_CU_FILES ${CU_FILE})
-	# 
-	# 	message(STATUS "yyc ${CU_FILE}")
-	# endforeach()
-
 	# eigen enabel GPU
-	if(CUDA_ARCH)
-		list(APPEND CUDA_NVCC_FLAGS "-arch=sm_${CUDA_ARCH};-std=c++11;-DVERBOSE;-DEIGEN_USE_THREADS;-DHAVE_CUDA;-D_FORCE_INLINES;")
-	else()
-	    list(APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_60,code=sm_60;-std=c++11;-DVERBOSE;-DEIGEN_USE_THREADS;-DHAVE_CUDA;-D_FORCE_INLINES;")
-		message(STATUS ${CUDA_NVCC_FLAGS})
-	endif()
+	#if(CUDA_ARCH)
+	#	list(APPEND CUDA_NVCC_FLAGS "-arch=sm_${CUDA_ARCH};-std=c++11;-DVERBOSE;-DEIGEN_USE_THREADS;-DHAVE_CUDA;-D_FORCE_INLINES;")
+	#else()
+	#    list(APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_61,code=sm_61;-std=c++11;-DVERBOSE;-DEIGEN_USE_THREADS;-DHAVE_CUDA;-D_FORCE_INLINES;")
+	#	message(STATUS ${CUDA_NVCC_FLAGS})
+	#endif()
+
+	
+	string(APPEND CMAKE_CUDA_FLAGS " -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_62,code=sm_62 -gencode arch=compute_70,code=sm_70  -gencode arch=compute_72,code=sm_72 -DVERBOSE -DEIGEN_USE_THREADS -DHAVE_CUDA -D_FORCE_INLINES")
 
 	# enable cudnn
 	if (HAVE_CUDNN)
-		list(APPEND CUDA_NVCC_FLAGS "-DHAVE_CUDNN")
+		# list(APPEND CUDA_NVCC_FLAGS "-DHAVE_CUDNN")
+		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_CUDNN")
 	endif()
 
 	add_executable(Deep8  ${DEEP8_TEST_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})

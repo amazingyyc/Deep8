@@ -24,7 +24,7 @@ TEST(Pow, forwardCPU) {
         for (int j = 0; j < 500; ++j) {
             for (int k = 0; k < 200; ++k) {
                 auto temp = input.data()[i * 500 * 200 + j * 200 + k];
-                ASSERT_TRUE(abs(temp * temp * temp  - output.data()[i * 500 * 200 + j * 200 + k]) < 1e-6);
+                ASSERT_TRUE(std::abs(temp * temp * temp  - output.data()[i * 500 * 200 + j * 200 + k]) < 1e-6);
             }
         }
     }
@@ -60,7 +60,7 @@ TEST(Pow, backwardCPU) {
 
     for (int i = 0; i < 10 * 500 * 200; ++i) {
         auto temp = inputValue1.data()[i];
-        ASSERT_TRUE(abs(inputGrad1.data()[i] - outputGrad.data()[i] * temp * temp * 3.0) < 1e-6);
+        ASSERT_TRUE(std::abs(inputGrad1.data()[i] - outputGrad.data()[i] * temp * temp * 3.0) < 1e-6);
     }
 
     freeTensor<CPUDevice, float>(device, inputValue1);
@@ -111,14 +111,14 @@ TEST(Pow, GPU_float) {
 		for (int j = 0; j < 500; ++j) {
 			for (int k = 0; k < 200; ++k) {
 				auto temp = inputPtr[i * 500 * 200 + j * 200 + k];
-				ASSERT_TRUE(abs(temp * temp * temp - outputPtr[i * 500 * 200 + j * 200 + k]) < 1e-3);
+				ASSERT_TRUE(std::abs(temp * temp * temp - outputPtr[i * 500 * 200 + j * 200 + k]) < 1e-3);
 			}
 		}
 	}
 
 	for (int i = 0; i < 10 * 500 * 200; ++i) {
 		auto temp = inputPtr[i];
-		ASSERT_TRUE(abs(inputGradPtr[i] - outputGradPtr[i] * temp * temp * 3.0) < 1e-2);
+		ASSERT_TRUE(std::abs(inputGradPtr[i] - outputGradPtr[i] * temp * temp * 3.0) < 1e-2);
 	}
 
 	free(inputPtr);
@@ -134,6 +134,33 @@ TEST(Pow, GPU_float) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(Pow, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 10, 500, 200);
+	auto inputGrad = createTensorGPU<real>(device, 10, 500, 200);
+
+	auto output = createTensorGPU<real>(device, 10, 500, 200);
+	auto outputGrad = createTensorGPU<real>(device, 10, 500, 200);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar1 };
+	Pow<real> powFunc(inputs, 3.0);
+
+	std::vector<const Tensor<real>*> inputTensor = { &input };
+
+	powFunc.forwardGPU(inputTensor, &output);
+	powFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

@@ -27,7 +27,7 @@ TEST(Log, forwardCPU) {
     logFunc.forwardCPU(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        ASSERT_TRUE(abs(log(input.data()[i]) - output.data()[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(std::log(input.data()[i]) - output.data()[i]) < 1e-6);
     }
 
     freeTensor(device, input);
@@ -69,7 +69,7 @@ TEST(Log, backwardCPU) {
     for (int i = 0; i < 10 * 400 * 200; ++i) {
         long double temp = outputGrad.data()[i] / inputValue.data()[i];
 
-        ASSERT_TRUE(abs(temp - inputGrad.data()[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(temp - inputGrad.data()[i]) < 1e-6);
     }
 
     freeTensor(device, inputValue);
@@ -125,13 +125,13 @@ TEST(Log, GPU_float) {
 	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
-		ASSERT_TRUE(abs(log(inputPtr[i]) - outputPtr[i]) < 1e-6);
+		ASSERT_TRUE(std::abs(std::log(inputPtr[i]) - outputPtr[i]) < 1e-6);
 	}
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		real temp = outputGradPtr[i] / inputPtr[i];
 
-		ASSERT_TRUE(abs(temp - inputGradPtr[i]) < 1e-6);
+		ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) < 1e-6);
 	}
 
 	free(inputPtr);
@@ -148,6 +148,37 @@ TEST(Log, GPU_float) {
 
 	delete device;
 }
+
+
+#ifdef HAVE_HALF
+
+TEST(Log, half_GPU) {
+	typedef float real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 10, 400, 200);
+	auto inputGrad = createTensorGPU<real>(device, 10, 400, 200);
+	auto output = createTensorGPU<real>(device, 10, 400, 200);
+	auto outputGrad = createTensorGPU<real>(device, 10, 400, 200);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+	zeroTensor(device, inputGrad);
+
+	std::vector<Node*> inputs = { &inputVar };
+	Log<real> logFunc(inputs);
+
+	std::vector<const Tensor<real>*> inputValues = { &input };
+
+	logFunc.forwardGPU(inputValues, &output);
+	logFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 
 #endif
 

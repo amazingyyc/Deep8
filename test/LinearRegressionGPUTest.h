@@ -14,35 +14,28 @@ TEST(LinearRegression, GPU_Test) {
     float x[4] = {4, -1, 2, 1};
     float y[2] = {10, 8};
 
-	auto *trainer  = new AdagradTrainer<float>();
-    auto *executor = new DefaultExecutor<float>(trainer, DeviceType::GPU);
+	DefaultExecutorF executor(new SGDTrainerF(), DeviceType::GPU);
 
-	auto wP = executor->addParameter({1, 2});
-    Expression<float> W(executor, wP);
+	auto wP = executor.addParameter({1, 2});
+    ExpressionF W(&executor, wP);
 
-    auto inputP = executor->addInputParameter({1, 2, 2});
-    Expression<float> input(executor, inputP);
+    auto inputP = executor.addInputParameter({1, 2, 2}, x);
+    ExpressionF input(&executor, inputP);
 
-    auto outputP = executor->addInputParameter({1, 2});
-    Expression<float> output(executor, outputP);
-
-	inputP->feed(x);
-    outputP->feed(y);
+    auto outputP = executor.addInputParameter({1, 2}, y);
+    ExpressionF output(&executor, outputP);
 
 	float wPtr[2];
 
 	for (int i = 0; i < 5000; ++i) {
 		auto t3 = (input * W - output).l1Norm();
-
-        executor->backward(t3);
+		t3.backward();
 
 		((GPUDevice*)(wP->value.device))->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(float) * 2);
         std::cout << i + 1 << " => " << "[" << wPtr[0] << "," << wPtr[1] << "]" << std::endl;
 	}
 
 	std::cout << "the result should be around: [3, 2]" << std::endl;
-
-	delete executor;
 }
 
 #endif

@@ -86,18 +86,30 @@ protected:
 
 #ifdef HAVE_CUDA
 
-	void forwardGPUImpl(const T *x, T *y, const int N) {
+	template <typename real>
+	void forwardGPUImpl(const real *x, real *y, const int N) {
 		int minGrideSize;
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AbsForwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AbsForwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		AbsForwardKernel<T> << <grideSize, blockSize >> > (x, y, N);
+		AbsForwardKernel<real> << <grideSize, blockSize >> > (x, y, N);
 	}
 
+#ifdef HAVE_HALF
+
+	template <>
+	void forwardGPUImpl<half>(const half *x, half *y, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		AbsForwardKernel<half> << <grideSize, blockSize >> > (x, y, N);
+	}
+
+#endif
 #endif // HAVE_CUDA
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -111,18 +123,30 @@ protected:
 
 #ifdef HAVE_CUDA
 
-	void backwardGPUImpl(const T *x, T *xGrad, const T *yGrad, const int N) {
+	template <typename real>
+	void backwardGPUImpl(const real *x, real *xGrad, const real *yGrad, const int N) {
 		int minGrideSize;
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AbsBackwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AbsBackwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		AbsBackwardKernel<T> << <grideSize, blockSize >> > (x, xGrad, yGrad, N);
+		AbsBackwardKernel<real> << <grideSize, blockSize >> > (x, xGrad, yGrad, N);
 	}
 
+#ifdef HAVE_HALF
+
+	template <>
+	void backwardGPUImpl<half>(const half *x, half *xGrad, const half *yGrad, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		AbsBackwardKernel<half> << <grideSize, blockSize >> > (x, xGrad, yGrad, N);
+	}
+
+#endif
 #endif
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,

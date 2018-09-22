@@ -1,7 +1,7 @@
 #ifndef DEEP8_ABSTEST_H
 #define DEEP8_ABSTEST_H
 
-#include "Abs.h"
+using namespace std;
 
 namespace Deep8 {
 
@@ -21,7 +21,7 @@ TEST(Abs, forwardCPU_double) {
 	absFunc.forwardCPU(inputTensor, &output);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
-		ASSERT_EQ(abs(input.data()[i]), output.data()[i]);
+		ASSERT_EQ(std::abs(input.data()[i]), output.data()[i]);
 	}
 
 	freeTensor(device, input);
@@ -103,7 +103,7 @@ TEST(Abs, forwardGPU_double) {
 	device->copyFromGPUToCPU(output.pointer, cpuOuputPtr, sizeof(double) * dim0 * dim1 * dim2);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
-		ASSERT_EQ(abs(cpuInputPtr[i]), cpuOuputPtr[i]);
+		ASSERT_EQ(std::abs(cpuInputPtr[i]), cpuOuputPtr[i]);
 	}
 
 	freeTensor(device, input);
@@ -180,6 +180,46 @@ TEST(Abs, backwardGPU_double) {
 
 	delete device;
 }
+
+
+/**half test*/
+#ifdef HAVE_HALF
+
+TEST(Abs, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	size_t dim0 = 10, dim1 = 400, dim2 = 200;
+
+	auto inputValue = createTensorGPU<real>(device, dim0, dim1, dim2);
+	auto inputGrad = createTensorGPU<real>(device, dim0, dim1, dim2);
+
+	auto outputValue = createTensorGPU<real>(device, dim0, dim1, dim2);
+	auto outputGrad = createTensorGPU<real>(device, dim0, dim1, dim2);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar };
+	Abs<real> absFunc(inputs);
+
+	zeroTensor(device, inputGrad);
+
+	std::vector<const Tensor<real>*> inputValues = { &inputValue };
+
+	absFunc.forwardGPU(inputValues, &outputValue);
+	absFunc.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+
+	freeTensor(device, inputValue);
+	freeTensor(device, inputGrad);
+	freeTensor(device, outputValue);
+	freeTensor(device, outputGrad);
+
+	delete device;
+}
+
+#endif
 
 #endif
 

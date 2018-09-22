@@ -19,6 +19,16 @@ __global__ void MinusScalarForwardKernel(const real *X, const real scalar, real 
 	}
 }
 
+template <typename real>
+__global__ void MinusScalarBackwardKernel(real *xGrad, const real *yGrad, const int N) {
+	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		xGrad[i] += yGrad[i];
+	}
+}
+
 #endif
 
 template <typename T>
@@ -39,10 +49,23 @@ public:
 	}
 
 protected:
-	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
+	template <typename real>
+	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
 		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
 
 		eTVec(output).device(*device) = eTVec(inputs[0]) - scalar;
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void forwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
+
+	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
+		forwardCPUImpl(inputs, output);
 	}
 
 	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
@@ -59,17 +82,29 @@ protected:
 
 
 #ifdef HAVE_CUDA
-	void forwardGPUImpl(const T *X, const T scalar, T *Y, const int N) {
+	template <typename real>
+	void forwardGPUImpl(const real *X, const real scalar, real *Y, const int N) {
 		int minGrideSize;
 		int blockSize;
 		int grideSize;
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, MinusScalarForwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, MinusScalarForwardKernel<real>, 0, N));
 
 		grideSize = (N + blockSize - 1) / blockSize;
 
-		MinusScalarForwardKernel<T> << <grideSize, blockSize >> > (X, scalar, Y, N);
+		MinusScalarForwardKernel<real> << <grideSize, blockSize >> > (X, scalar, Y, N);
 	}
+
+#ifdef HAVE_HALF
+
+	template <>
+	void forwardGPUImpl<half>(const half *X, const half scalar, half *Y, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		MinusScalarForwardKernel<half> << <grideSize, blockSize >> > (X, scalar, Y, N);
+	}
+#endif // HAVE_HALF
 #endif
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -92,6 +127,16 @@ protected:
 		CUBLAS_CHECK(cublasDaxpy(cublasHandle, N, &alpha, outGrad, 1, inGrad, 1));
 	}
 
+#ifdef HAVE_HALF
+
+	void backwardGPUImpl(cublasHandle_t &cublasHandle, half *inGrad, const half *outGrad, const int N) {
+		int blockSize = 1024;
+		int grideSize = (N + blockSize - 1) / blockSize;
+
+		MinusScalarBackwardKernel<half> << <grideSize, blockSize >> > (inGrad, outGrad, N);
+	}
+
+#endif // HAVE_HALF
 #endif
 
 	void backwardGPU(const std::vector<const Tensor<T>*> &inputs,

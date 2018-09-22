@@ -26,7 +26,7 @@ TEST(L1Norm, forwardCPU) {
         auto inputPtr = input.data() + i * 200;
 
         for (int j = 0; j < 200; ++j) {
-            temp += abs(inputPtr[j]);
+            temp += std::abs(inputPtr[j]);
         }
 
         ASSERT_EQ(temp, output.data()[i]);
@@ -130,7 +130,7 @@ TEST(L1Norm, GPU_float) {
         auto tempInputPtr = inputPtr + i * 200;
 
         for (int j = 0; j < 200; ++j) {
-            temp += abs(tempInputPtr[j]);
+            temp += std::abs(tempInputPtr[j]);
         }
 
         ASSERT_EQ(temp, outputPtr[i]);
@@ -166,6 +166,39 @@ TEST(L1Norm, GPU_float) {
 	delete device;
 }
 
+#ifdef HAVE_HALF
+
+TEST(L1Norm, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 400, 200);
+	auto inputGrad = createTensorGPU<real>(device, 400, 200);
+
+	auto output = createTensorGPU<real>(device, 400, 1);
+	auto outputGrad = createTensorGPU<real>(device, 400, 1);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar };
+	L1Norm<real> l1norm(inputs);
+
+	std::vector<const Tensor<real>*> inputValues = { &input };
+
+	l1norm.forwardGPU(inputValues, &output);
+	l1norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+
+	freeTensor(device, input);
+	freeTensor(device, inputGrad);
+	freeTensor(device, output);
+	freeTensor(device, outputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 }
 

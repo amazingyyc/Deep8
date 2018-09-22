@@ -33,7 +33,7 @@ TEST(Softmax, forwardCPU) {
         }
 
         for (int i = 0; i < 200; ++i) {
-            temp[i] = exp(ptr[i] - maxValue);
+            temp[i] = std::exp(ptr[i] - maxValue);
         }
 
         long double sumValue = 0;
@@ -45,7 +45,7 @@ TEST(Softmax, forwardCPU) {
         for (int i = 0; i < 200; ++i) {
             temp[i] /= sumValue;
 
-            ASSERT_TRUE(abs(temp[i] - outputPtr[i]) <= 1e-6);
+            ASSERT_TRUE(std::abs(temp[i] - outputPtr[i]) <= 1e-6);
         }
     }
 
@@ -95,7 +95,7 @@ TEST(Softmax, backwardCPU) {
         for (int i = 0; i < 200; ++i) {
             auto temp = (outputGradPtr[i] - sum) * outputValuePtr[i];
 
-            ASSERT_TRUE(abs(temp - inputGradPtr[i]) < 1e-6);
+            ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) < 1e-6);
         }
     }
 
@@ -156,7 +156,7 @@ TEST(Softmax, GPU_float) {
 		}
 
 		for (int i = 0; i < 200; ++i) {
-			temp[i] = exp(ptr[i] - maxValue);
+			temp[i] = std::exp(ptr[i] - maxValue);
 		}
 
 		float sumValue = 0;
@@ -168,7 +168,7 @@ TEST(Softmax, GPU_float) {
 		for (int i = 0; i < 200; ++i) {
 			temp[i] /= sumValue;
 
-			if (abs(temp[i] - tempoutputPtr[i]) > 1e-6) {
+			if (std::abs(temp[i] - tempoutputPtr[i]) > 1e-6) {
 				std::cout << temp[i] << ", " << tempoutputPtr[i] << std::endl;
 				ASSERT_TRUE(false);
 			}
@@ -189,8 +189,8 @@ TEST(Softmax, GPU_float) {
 		for (int i = 0; i < 200; ++i) {
 			auto temp = (tempoutputGradPtr[i] - sum) * tempoutputValuePtr[i];
 
-			if (abs(temp - tempinputGradPtr[i]) > 1e-4) {
-				std::cout << temp << ", " << tempinputGradPtr[i] << "," << abs(temp - tempinputGradPtr[i]) << std::endl;
+			if (std::abs(temp - tempinputGradPtr[i]) > 1e-4) {
+				std::cout << temp << ", " << tempinputGradPtr[i] << "," << std::abs(temp - tempinputGradPtr[i]) << std::endl;
 				ASSERT_TRUE(false);
 			}
 		}
@@ -209,7 +209,33 @@ TEST(Softmax, GPU_float) {
 
 	delete device;
 }
+#ifdef HAVE_HALF
 
+TEST(Softmax, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<real>(device, 400, 200);
+	auto inputGrad = createTensorGPU<real>(device, 400, 200);
+
+	auto output = createTensorGPU<real>(device, 400, 200);
+	auto outputGrad = createTensorGPU<real>(device, 400, 200);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+
+	std::vector<Node*> inputs = { &inputVar1 };
+	Softmax<real> softmax(inputs);
+
+	std::vector<const Tensor<real>*> inputTensor = { &input };
+
+	softmax.forwardGPU(inputTensor, &output);
+	softmax.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 }
 

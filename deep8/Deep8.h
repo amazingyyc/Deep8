@@ -1,18 +1,21 @@
 #ifndef DEEP8_DEEP8_H
 #define DEEP8_DEEP8_H
 
-#if __CUDA_ARCH__ >= 530 || !defined(__CUDA_ARCH__)
-#if !defined(__CUDA_NO_HALF_OPERATORS__)
-#if defined(__CUDACC__)
-
-#define HAVE_HALF
-
-#endif
-#endif
-#endif
-
 #ifdef HAVE_CUDA
-#define DEEP8_CUDA_FUNC __host__ __device__
+
+#if defined(__CUDACC_VER_MAJOR__) && (__CUDACC_VER_MAJOR__ >= 9)
+#define DEEP8_CUDACC_VER  ((__CUDACC_VER_MAJOR__ * 10000) + (__CUDACC_VER_MINOR__ * 100))
+#elif defined(__CUDACC_VER__)
+#define DEEP8_CUDACC_VER __CUDACC_VER__
+#else
+#define DEEP8_CUDACC_VER 0
+#endif
+
+#if DEEP8_CUDACC_VER >= 70500
+#define HAVE_HALF
+#endif
+
+#define DEEP8_CUDA_FUNC __device__
 
 #if _MSC_VER || __INTEL_COMPILER
 #define DEEP8_CUDA_INLINE __forceinline
@@ -35,8 +38,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <Eigen/Dense>
-#include <unsupported/Eigen/CXX11/Tensor>
 
 #ifdef __GUNC__
 #include <mm_malloc.h>
@@ -61,6 +62,11 @@
 #endif
 
 #endif
+
+#define EIGEN_NO_CUDA
+
+#include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 #include "basic/Exception.h"
 #include "basic/CudaException.h"
@@ -119,8 +125,8 @@
 #include "model/TensorInit.h"
 #include "model/Trainer.h"
 #include "model/Executor.h"
-#include "model/DefaultExecutor.h"
 #include "model/Expression.h"
+#include "model/DefaultExecutor.h"
 #include "model/PreDefinition.h"
 
 #endif

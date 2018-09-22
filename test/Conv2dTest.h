@@ -523,6 +523,60 @@ TEST(Conv2d, backwardGPU_float) {
     delete device;
 }
 
+
+#ifdef HAVE_HALF
+
+TEST(Conv2d, half_GPU) {
+	bool isCovered = false;
+
+	size_t strideH = 2;
+	size_t strideW = 2;
+
+	size_t dilationH = 2;
+	size_t dilationW = 2;
+
+	size_t batch = 2;
+	size_t inputHeight = 32;
+	size_t inputWidth = 32;
+	size_t inputChannel = 64;
+
+	size_t filterH = 4;
+	size_t filterW = 4;
+
+	auto realFilterH = filterH + (filterH - 1) * (dilationH - 1);
+	auto realFilterW = filterW + (filterW - 1) * (dilationW - 1);
+
+	size_t outputHeight = (inputHeight - realFilterH) / static_cast<size_t>(strideH) + 1;
+	size_t outputWidth = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
+	size_t outputChannel = 32;
+
+	auto device = new GPUDevice();
+
+	auto input = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
+	auto inputGrad = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
+
+	auto filter = createTensorGPU<half>(device, outputChannel, filterH, filterW, inputChannel);
+	auto filterGrad = createTensorGPU<half>(device, outputChannel, filterH, filterW, inputChannel);
+
+	auto output = createTensorGPU<half>(device, batch, outputHeight, outputWidth, outputChannel);
+	auto outputGrad = createTensorGPU<half>(device, batch, outputHeight, outputWidth, outputChannel);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, half>(device, { batch, inputHeight, inputWidth, inputChannel });
+	auto inputVar2 = createFakeVariable<GPUDevice, half>(device, { outputChannel, filterH, filterW, inputChannel });
+
+	std::vector<Node*> inputs = { &inputVar1, &inputVar2 };
+	Conv2d<half> conv2d(inputs, isCovered, size_t(strideH), size_t(strideW), size_t(dilationH), size_t(dilationW));
+
+	std::vector<const Tensor<half>*> inputTensor = { &input, &filter };
+
+	conv2d.forwardGPU(inputTensor, &output);
+	conv2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	conv2d.backwardGPU(inputTensor, &output, &outputGrad, 1, &filterGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

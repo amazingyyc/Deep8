@@ -253,37 +253,103 @@ public:
     }
 
 protected:
+
+	template <typename real>
+	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
+		auto cpuDevice = static_cast<CPUDevice*>(output->device);
+		auto eigenDevice = cpuDevice->eigenDevice;
+
+		auto shape = output->shape;
+
+		auto maxPtr = static_cast<real*>(cpuDevice->malloc(sizeof(real)));
+		auto sumPtr = static_cast<real*>(cpuDevice->malloc(sizeof(real)));
+
+		Tensor<real> maxValue(maxPtr, { 1 }, cpuDevice);
+		Tensor<real> sumValue(sumPtr, { 1 }, cpuDevice);
+
+		auto batch = shape.batch();
+		auto size = shape.size() / batch;
+
+		Tensor<real> inputRow(inputs[0]->data(), { size }, cpuDevice);
+		Tensor<real> outputRow(output->data(), { size }, cpuDevice);
+
+		for (size_t b = 0; b < batch; ++b) {
+			eTScalar(maxValue).device(*eigenDevice) = eTVec(inputRow).maximum();
+			eTVec(outputRow).device(*eigenDevice) = (eTVec(inputRow) - maxValue.scalar()).exp();
+
+			eTScalar(sumValue).device(*eigenDevice) = eTVec(outputRow).sum();
+			eTVec(outputRow).device(*eigenDevice) = eTVec(outputRow) / sumValue.scalar();
+
+			inputRow.pointer = static_cast<int8_t*>(inputRow.pointer) + size * sizeof(real);
+			outputRow.pointer = static_cast<int8_t*>(outputRow.pointer) + size * sizeof(real);
+		}
+
+		cpuDevice->free(maxPtr);
+		cpuDevice->free(sumPtr);
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void forwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
+	template <typename real>
+	void backwardCPUImpl(const std::vector<const Tensor<real>*> &inputs,
+		const Tensor<real> *output,
+		const Tensor<real> *outputGradient,
+		size_t index,
+		Tensor<real> *iGradient) {
+		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
+
+		auto cpuDevice = static_cast<CPUDevice*>(iGradient->device);
+		auto eigenDevice = cpuDevice->eigenDevice;
+
+		auto shape = outputGradient->shape;
+
+		auto batch = shape.batch();
+		auto size = shape.size() / batch;
+
+		auto sumPtr = static_cast<real*>(cpuDevice->malloc(sizeof(T) * batch));
+
+		Tensor<real> sum(sumPtr, { batch }, cpuDevice);
+
+		Eigen::array<size_t, 1> sumDims = { 1 };
+		Eigen::array<size_t, 2> reShapeDims = { batch, size };
+		Eigen::array<size_t, 1> sumReShapeDims = { batch };
+
+		eTVec(sum).device(*eigenDevice) = (eTVec(outputGradient).reshape(reShapeDims) * eTVec(output).reshape(reShapeDims)).sum(sumDims).reshape(sumReShapeDims);
+
+		Tensor<real> outputGradientRow(outputGradient->data(), { size }, cpuDevice);
+		Tensor<real> outputValueRow(output->data(), { size }, cpuDevice);
+		Tensor<real> iGradientRow(iGradient->data(), { size }, cpuDevice);
+
+		for (size_t b = 0; b < batch; ++b) {
+			eTVec(iGradientRow).device(*eigenDevice) += (eTVec(outputGradientRow) -
+				sum.data()[b]) * eTVec(outputValueRow);
+
+			outputGradientRow.pointer = static_cast<int8_t*>(outputGradientRow.pointer) + size * sizeof(real);
+			outputValueRow.pointer    = static_cast<int8_t*>(outputValueRow.pointer) + size * sizeof(real);
+			iGradientRow.pointer      = static_cast<int8_t*>(iGradientRow.pointer) + size * sizeof(real);
+		}
+
+		cpuDevice->free(sumPtr);
+	}
+
+#ifdef HAVE_HALF
+	template <>
+	void backwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs,
+		const Tensor<half> *output,
+		const Tensor<half> *outputGradient,
+		size_t index,
+		Tensor<half> *iGradient) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif // HAVE_HALF
+
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-        auto cpuDevice   = static_cast<CPUDevice*>(output->device);
-        auto eigenDevice = cpuDevice->eigenDevice;
-
-        auto shape = output->shape;
-
-        auto maxPtr = static_cast<T*>(cpuDevice->malloc(sizeof(T)));
-        auto sumPtr = static_cast<T*>(cpuDevice->malloc(sizeof(T)));
-
-    	Tensor<T> maxValue(maxPtr, {1}, cpuDevice);
-		Tensor<T> sumValue(sumPtr, {1}, cpuDevice);
-
-        auto batch = shape.batch();
-        auto size  = shape.size() / batch;
-
-        Tensor<T> inputRow(inputs[0]->data(), { size }, cpuDevice);
-        Tensor<T> outputRow(output->data(), { size }, cpuDevice);
-
-        for (size_t b = 0; b < batch; ++b) {
-            eTScalar(maxValue).device(*eigenDevice) = eTVec(inputRow).maximum();
-            eTVec(outputRow).device(*eigenDevice)   = (eTVec(inputRow) - maxValue.scalar()).exp();
-
-            eTScalar(sumValue).device(*eigenDevice) = eTVec(outputRow).sum();
-            eTVec(outputRow).device(*eigenDevice)   = eTVec(outputRow) / sumValue.scalar();
-
-			inputRow.pointer  = static_cast<int8_t*>(inputRow.pointer) + size * sizeof(T);
-			outputRow.pointer = static_cast<int8_t*>(outputRow.pointer) + size * sizeof(T);
-        }
-
-        cpuDevice->free(maxPtr);
-        cpuDevice->free(sumPtr);
+		forwardCPUImpl(inputs, output);
     }
 
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
@@ -291,45 +357,13 @@ protected:
 					const Tensor<T> *outputGradient,
 					size_t index,
 					Tensor<T> *iGradient) override {
-		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
-
-        auto cpuDevice   = static_cast<CPUDevice*>(iGradient->device);
-        auto eigenDevice = cpuDevice->eigenDevice;
-
-        auto shape = outputGradient->shape;
-
-        auto batch = shape.batch();
-        auto size  = shape.size() / batch;
-
-        auto sumPtr = static_cast<T*>(cpuDevice->malloc(sizeof(T) * batch));
-
-		Tensor<T> sum(sumPtr, { batch }, cpuDevice);
-
-        Eigen::array<size_t, 1> sumDims = {1};
-        Eigen::array<size_t, 2> reShapeDims = {batch, size};
-        Eigen::array<size_t, 1> sumReShapeDims = {batch};
-
-        eTVec(sum).device(*eigenDevice) = (eTVec(outputGradient).reshape(reShapeDims) * eTVec(output).reshape(reShapeDims)).sum(sumDims).reshape(sumReShapeDims);
-
-        Tensor<T> outputGradientRow(outputGradient->data(), { size }, cpuDevice);
-        Tensor<T> outputValueRow(output->data(), { size }, cpuDevice);
-        Tensor<T> iGradientRow(iGradient->data(), { size }, cpuDevice);
-
-        for (size_t b = 0; b < batch; ++b) {
-            eTVec(iGradientRow).device(*eigenDevice) += (eTVec(outputGradientRow) -
-                    sum.data()[b]) * eTVec(outputValueRow);
-
-			outputGradientRow.pointer = static_cast<int8_t*>(outputGradientRow.pointer) + size * sizeof(T);
-			outputValueRow.pointer = static_cast<int8_t*>(outputValueRow.pointer) + size * sizeof(T);
-			iGradientRow.pointer = static_cast<int8_t*>(iGradientRow.pointer) + size * sizeof(T);
-        }
-
-        cpuDevice->free(sumPtr);
+		backwardCPUImpl(inputs, output, outputGradient, index, iGradient);
     }
 
 #ifdef HAVE_CUDA
 
-	void forwardGPUImpl(GPUDevice *device, const T *x, T *y, Shape &shape) {
+	template <typename real>
+	void forwardGPUImpl(GPUDevice *device, const real *x, real *y, Shape &shape) {
 		int N      = (int)shape.size();
 		int batch  = (int)shape.batch();
 		int size   = N / batch;
@@ -345,77 +379,164 @@ protected:
 			blockSize = prevPowerOf2(size);
 		}
 
-		int sharedSize = sizeof(T) * blockSize;
+		int sharedSize = sizeof(real) * blockSize;
 
-		auto maxPtr = (T*)device->malloc(sizeof(T) * batch);
-		auto sumPtr = (T*)device->malloc(sizeof(T) * batch);
+		auto maxPtr = (real*)device->malloc(sizeof(real) * batch);
+		auto sumPtr = (real*)device->malloc(sizeof(real) * batch);
 
 		if (1024 == blockSize) {
-			SoftmaxForwardFindMaxKernel<1024, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<1024, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (512 == blockSize) {
-			SoftmaxForwardFindMaxKernel<512, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<512, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (256 == blockSize) {
-			SoftmaxForwardFindMaxKernel<256, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<256, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (128 == blockSize) {
-			SoftmaxForwardFindMaxKernel<128, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<128, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (64 == blockSize) {
-			SoftmaxForwardFindMaxKernel<64, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<64, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (32 == blockSize) {
-			SoftmaxForwardFindMaxKernel<32, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<32, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (16 == blockSize) {
-			SoftmaxForwardFindMaxKernel<16, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<16, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (8 == blockSize) {
-			SoftmaxForwardFindMaxKernel<8, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<8, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (4 == blockSize) {
-			SoftmaxForwardFindMaxKernel<4, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<4, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (2 == blockSize) {
-			SoftmaxForwardFindMaxKernel<2, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<2, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else if (1 == blockSize) {
-			SoftmaxForwardFindMaxKernel<1, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+			SoftmaxForwardFindMaxKernel<1, real> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
 		} else {
 			DEEP8_RUNTIME_ERROR("the block size is error");
 		}
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &maxBlockSize, SoftmaxForwardExpMinusScalar<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &maxBlockSize, SoftmaxForwardExpMinusScalar<real>, 0, N));
 		grideSize = (N + maxBlockSize - 1) / maxBlockSize;
 
-		SoftmaxForwardExpMinusScalar<T><<<grideSize, maxBlockSize >>>(x, maxPtr, y, size, N);
+		SoftmaxForwardExpMinusScalar<real><<<grideSize, maxBlockSize >>>(x, maxPtr, y, size, N);
 												       
 		if (1024 == blockSize) {
-			SoftmaxForwardSumKernel<1024, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<1024, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (512 == blockSize) {
-			SoftmaxForwardSumKernel<512, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<512, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (256 == blockSize) {
-			SoftmaxForwardSumKernel<256, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<256, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (128 == blockSize) {
-			SoftmaxForwardSumKernel<128, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<128, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (64 == blockSize) {
-			SoftmaxForwardSumKernel<64, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<64, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (32 == blockSize) {
-			SoftmaxForwardSumKernel<32, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<32, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (16 == blockSize) {
-			SoftmaxForwardSumKernel<16, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<16, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (8 == blockSize) {
-			SoftmaxForwardSumKernel<8, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<8, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (4 == blockSize) {
-			SoftmaxForwardSumKernel<4, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<4, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (2 == blockSize) {
-			SoftmaxForwardSumKernel<2, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<2, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else if (1 == blockSize) {
-			SoftmaxForwardSumKernel<1, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+			SoftmaxForwardSumKernel<1, real> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
 		} else {
 			DEEP8_RUNTIME_ERROR("the block size is error");
 		}
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &divideBlockSize, SoftmaxForwardDivideScalar<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &divideBlockSize, SoftmaxForwardDivideScalar<real>, 0, N));
 		grideSize = (N + divideBlockSize - 1) / divideBlockSize;
 
-		SoftmaxForwardDivideScalar<T><<<grideSize, divideBlockSize >>>(y, sumPtr, size, N);
+		SoftmaxForwardDivideScalar<real><<<grideSize, divideBlockSize >>>(y, sumPtr, size, N);
 										  
 		device->free(sumPtr);
 		device->free(maxPtr);
 	}
 
+#ifdef HAVE_HALF
+
+	template <>
+	void forwardGPUImpl<half>(GPUDevice *device, const half *x, half *y, Shape &shape) {
+		int N      = (int)shape.size();
+		int batch  = (int)shape.batch();
+		int size   = N / batch;
+
+		int blockSize = 1024;
+		int maxBlockSize = 1024;
+		int divideBlockSize = 1024;
+
+		int grideSize;
+
+		if (size < blockSize) {
+			blockSize = prevPowerOf2(size);
+		}
+
+		int sharedSize = sizeof(half) * blockSize;
+
+		auto maxPtr = (half*)device->malloc(sizeof(half) * batch);
+		auto sumPtr = (half*)device->malloc(sizeof(half) * batch);
+
+		if (1024 == blockSize) {
+			SoftmaxForwardFindMaxKernel<1024, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (512 == blockSize) {
+			SoftmaxForwardFindMaxKernel<512, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (256 == blockSize) {
+			SoftmaxForwardFindMaxKernel<256, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (128 == blockSize) {
+			SoftmaxForwardFindMaxKernel<128, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (64 == blockSize) {
+			SoftmaxForwardFindMaxKernel<64, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (32 == blockSize) {
+			SoftmaxForwardFindMaxKernel<32, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (16 == blockSize) {
+			SoftmaxForwardFindMaxKernel<16, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (8 == blockSize) {
+			SoftmaxForwardFindMaxKernel<8, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (4 == blockSize) {
+			SoftmaxForwardFindMaxKernel<4, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (2 == blockSize) {
+			SoftmaxForwardFindMaxKernel<2, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else if (1 == blockSize) {
+			SoftmaxForwardFindMaxKernel<1, half> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
+		} else {
+			DEEP8_RUNTIME_ERROR("the block size is error");
+		}
+
+		grideSize = (N + maxBlockSize - 1) / maxBlockSize;
+
+		SoftmaxForwardExpMinusScalar<half><<<grideSize, maxBlockSize >>>(x, maxPtr, y, size, N);
+												       
+		if (1024 == blockSize) {
+			SoftmaxForwardSumKernel<1024, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (512 == blockSize) {
+			SoftmaxForwardSumKernel<512, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (256 == blockSize) {
+			SoftmaxForwardSumKernel<256, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (128 == blockSize) {
+			SoftmaxForwardSumKernel<128, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (64 == blockSize) {
+			SoftmaxForwardSumKernel<64, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (32 == blockSize) {
+			SoftmaxForwardSumKernel<32, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (16 == blockSize) {
+			SoftmaxForwardSumKernel<16, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (8 == blockSize) {
+			SoftmaxForwardSumKernel<8, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (4 == blockSize) {
+			SoftmaxForwardSumKernel<4, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (2 == blockSize) {
+			SoftmaxForwardSumKernel<2, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else if (1 == blockSize) {
+			SoftmaxForwardSumKernel<1, half> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
+		} else {
+			DEEP8_RUNTIME_ERROR("the block size is error");
+		}
+
+		grideSize = (N + divideBlockSize - 1) / divideBlockSize;
+
+		SoftmaxForwardDivideScalar<half><<<grideSize, divideBlockSize >>>(y, sumPtr, size, N);
+										  
+		device->free(sumPtr);
+		device->free(maxPtr);
+	}
+#endif
 #endif // HAVE_CUDA
 
     void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -429,7 +550,8 @@ protected:
 
 #ifdef HAVE_CUDA
 
-	void backwardGPUImpl(GPUDevice *device, T *xGrad, const T *y, const T *yGrad, Shape &shape) {
+	template <typename real>
+	void backwardGPUImpl(GPUDevice *device, real *xGrad, const real *y, const real *yGrad, Shape &shape) {
 		int N      = (int)shape.size();
 		int batch  = (int)shape.batch();
 		int size   = N / batch;
@@ -444,44 +566,98 @@ protected:
 			blockSize = prevPowerOf2(size);
 		}
 
-		int sharedSize = sizeof(T) * blockSize;
+		int sharedSize = sizeof(real) * blockSize;
 
-		auto dotPtr = (T*)device->malloc(sizeof(T) * batch);
+		auto dotPtr = (real*)device->malloc(sizeof(real) * batch);
 
 		if (1024 == blockSize) {
-			SoftmaxBackwardDotKernel<1024, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<1024, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (512 == blockSize) {
-			SoftmaxBackwardDotKernel<512, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<512, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (256 == blockSize) {
-			SoftmaxBackwardDotKernel<256, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<256, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (128 == blockSize) {
-			SoftmaxBackwardDotKernel<128, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<128, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (64 == blockSize) {
-			SoftmaxBackwardDotKernel<64, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<64, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (32 == blockSize) {
-			SoftmaxBackwardDotKernel<32, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<32, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (16 == blockSize) {
-			SoftmaxBackwardDotKernel<16, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<16, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (8 == blockSize) {
-			SoftmaxBackwardDotKernel<8, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<8, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (4 == blockSize) {
-			SoftmaxBackwardDotKernel<4, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<4, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (2 == blockSize) {
-			SoftmaxBackwardDotKernel<2, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<2, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else if (1 == blockSize) {
-			SoftmaxBackwardDotKernel<1, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+			SoftmaxBackwardDotKernel<1, real> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
 		} else {
 			DEEP8_RUNTIME_ERROR("the block size is error");
 		}
 
-		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &backBlockSize, SoftmaxBackwardKernel<T>, 0, N));
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &backBlockSize, SoftmaxBackwardKernel<real>, 0, N));
 		grideSize = (N + backBlockSize - 1) / backBlockSize;
 
-		SoftmaxBackwardKernel<T><<<grideSize, backBlockSize >>>(xGrad, y, yGrad, dotPtr, size, N);
+		SoftmaxBackwardKernel<real><<<grideSize, backBlockSize >>>(xGrad, y, yGrad, dotPtr, size, N);
 
 		device->free(dotPtr);
 	}
 
+#ifdef HAVE_HALF
+
+	template <>
+	void backwardGPUImpl<half>(GPUDevice *device, half *xGrad, const half *y, const half *yGrad, Shape &shape) {
+		int N      = (int)shape.size();
+		int batch  = (int)shape.batch();
+		int size   = N / batch;
+
+		int blockSize = 1024;
+		
+		int grideSize;
+		int backBlockSize = 1024;
+
+		if (size < blockSize) {
+			blockSize = prevPowerOf2(size);
+		}
+
+		int sharedSize = sizeof(half) * blockSize;
+
+		auto dotPtr = (half*)device->malloc(sizeof(half) * batch);
+
+		if (1024 == blockSize) {
+			SoftmaxBackwardDotKernel<1024, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (512 == blockSize) {
+			SoftmaxBackwardDotKernel<512, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (256 == blockSize) {
+			SoftmaxBackwardDotKernel<256, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (128 == blockSize) {
+			SoftmaxBackwardDotKernel<128, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (64 == blockSize) {
+			SoftmaxBackwardDotKernel<64, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (32 == blockSize) {
+			SoftmaxBackwardDotKernel<32, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (16 == blockSize) {
+			SoftmaxBackwardDotKernel<16, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (8 == blockSize) {
+			SoftmaxBackwardDotKernel<8, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (4 == blockSize) {
+			SoftmaxBackwardDotKernel<4, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (2 == blockSize) {
+			SoftmaxBackwardDotKernel<2, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else if (1 == blockSize) {
+			SoftmaxBackwardDotKernel<1, half> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+		} else {
+			DEEP8_RUNTIME_ERROR("the block size is error");
+		}
+
+		grideSize = (N + backBlockSize - 1) / backBlockSize;
+
+		SoftmaxBackwardKernel<half><<<grideSize, backBlockSize >>>(xGrad, y, yGrad, dotPtr, size, N);
+
+		device->free(dotPtr);
+	}
+#endif
 #endif // HAVE_CUDA
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,

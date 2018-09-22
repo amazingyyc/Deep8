@@ -436,6 +436,38 @@ protected:
 		device->free(xCol);
 	}
 
+#ifdef HAVE_HALF
+
+	void forwardGPUImpl(GPUDevice* device, const half *x, const half *filter, half *y,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX) {
+
+		int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		auto xCol = (half*)device->malloc(sizeof(half) * size * inputChannel);
+
+		Conv2dIm2ColKernel<half> << <grideSize, blockSize >> > (x, xCol,
+			batch, inputHeight, inputWidth, inputChannel,
+			filterHeight, filterWidth, padTop, padLeft,
+			strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
+
+		int m = batch * outputHeight * outputWidth;
+		int k = filterHeight * filterWidth * inputChannel;
+		int n = outputChannel;
+
+		half alpha(1);
+		half beta(0);
+
+		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, n, m, k, &alpha, filter, k, xCol, k, &beta, y, n));
+
+		device->free(xCol);
+	}
+#endif
 #endif
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -477,6 +509,7 @@ protected:
 
 #ifdef HAVE_CUDA
 
+	/**for input*/
 	void backwardGPUInputImpl(GPUDevice* device, float *dx, const float *w, const float *dy,
 		int batch, int inputHeight, int inputWidth, int inputChannel,
 		int outputHeight, int outputWidth, int outputChannel,
@@ -512,6 +545,75 @@ protected:
 		device->free(xCol);
 	}
 
+	void backwardGPUInputImpl(GPUDevice* device, double *dx, const double *w, const double *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX) {
+
+		int size = batch * inputHeight * inputWidth;
+
+		int minGrideSize;
+		int blockSize;
+		int grideSize;
+
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dCol2ImKernel<double>, 0, size));
+
+		grideSize = (size + blockSize - 1) / blockSize;
+
+		auto xCol = (double*)device->malloc(sizeof(double) * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel);
+
+		int m = filterHeight * filterWidth * inputChannel;
+		int k = outputChannel;
+		int n = batch * outputHeight * outputWidth;
+
+		double alpha = 1;
+		double beta = 0;
+
+		CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, w, m, dy, k, &beta, xCol, m));
+
+		Conv2dCol2ImKernel<double> << <grideSize, blockSize >> > (xCol, dx,
+			batch, inputHeight, inputWidth, inputChannel,
+			filterHeight, filterWidth, padTop, padLeft,
+			strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
+
+		device->free(xCol);
+	}
+
+#ifdef HAVE_HALF
+
+	void backwardGPUInputImpl(GPUDevice* device, half *dx, const half *w, const half *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX) {
+
+		int size = batch * inputHeight * inputWidth;
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		auto xCol = (half*)device->malloc(sizeof(half) * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel);
+
+		int m = filterHeight * filterWidth * inputChannel;
+		int k = outputChannel;
+		int n = batch * outputHeight * outputWidth;
+
+		half alpha = 1;
+		half beta = 0;
+
+		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, w, m, dy, k, &beta, xCol, m));
+
+		Conv2dCol2ImKernel<half> << <grideSize, blockSize >> > (xCol, dx,
+			batch, inputHeight, inputWidth, inputChannel,
+			filterHeight, filterWidth, padTop, padLeft,
+			strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
+
+		device->free(xCol);
+	}
+#endif
+
+	/**for filter*/
 	void backwardGPUFilterImpl(GPUDevice* device, const float *x, float *dw, const float *dy,
 		int batch, int inputHeight, int inputWidth, int inputChannel,
 		int outputHeight, int outputWidth, int outputChannel,
@@ -540,13 +642,79 @@ protected:
 		int n = outputChannel;
 
 		float alpha = 1;
-		float beta  = 1;
+		float beta = 1;
 
 		CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, m, n, k, &alpha, xCol, m, dy, n, &beta, dw, m));
 
 		device->free(xCol);
 	}
 
+	void backwardGPUFilterImpl(GPUDevice* device, const double *x, double *dw, const double *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX) {
+
+		int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
+
+		int minGrideSize;
+		int blockSize;
+		int grideSize;
+
+		CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dIm2ColKernel<double>, 0, size));
+
+		grideSize = (size + blockSize - 1) / blockSize;
+
+		auto xCol = (double*)device->malloc(sizeof(double) * size * inputChannel);
+
+		Conv2dIm2ColKernel<double> << <grideSize, blockSize >> > (x, xCol,
+			batch, inputHeight, inputWidth, inputChannel,
+			filterHeight, filterWidth, padTop, padLeft,
+			strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
+
+		int m = filterHeight * filterWidth * inputChannel;
+		int k = batch * outputHeight * outputWidth;
+		int n = outputChannel;
+
+		double alpha = 1;
+		double beta = 1;
+
+		CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, m, n, k, &alpha, xCol, m, dy, n, &beta, dw, m));
+
+		device->free(xCol);
+	}
+
+#ifdef HAVE_HALF
+	void backwardGPUFilterImpl(GPUDevice* device, const half *x, half *dw, const half *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX) {
+
+		int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
+
+		int blockSize = 1024;
+		int grideSize = (size + blockSize - 1) / blockSize;
+
+		auto xCol = (half*)device->malloc(sizeof(half) * size * inputChannel);
+
+		Conv2dIm2ColKernel<half> << <grideSize, blockSize >> > (x, xCol,
+			batch, inputHeight, inputWidth, inputChannel,
+			filterHeight, filterWidth, padTop, padLeft,
+			strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
+
+		int m = filterHeight * filterWidth * inputChannel;
+		int k = batch * outputHeight * outputWidth;
+		int n = outputChannel;
+
+		half alpha = 1;
+		half beta = 1;
+
+		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, m, n, k, &alpha, xCol, m, dy, n, &beta, dw, m));
+
+		device->free(xCol);
+	}
+#endif
 #endif
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,

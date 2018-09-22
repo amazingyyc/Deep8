@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <gtest/gtest.h>
 
@@ -38,7 +37,8 @@
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
 //#include "LinearRegressionTest.h"
-#include "LinearRegressionGPUTest.h"
+//#include "LinearRegressionGPUTest.h"
+#include "LinearRegressionHalfTest.h"
 
 using namespace Deep8;
 

@@ -23,7 +23,7 @@ TEST(DivideScalar, forwardCPU) {
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {
             for (int k = 0; k < 200; ++k) {
-                ASSERT_TRUE(abs(input.data()[i * 500 * 200 + j * 200 + k] / 3.0 - output.data()[i * 500 * 200 + j * 200 + k]) < 1e-6);
+                ASSERT_TRUE(std::abs(input.data()[i * 500 * 200 + j * 200 + k] / 3.0 - output.data()[i * 500 * 200 + j * 200 + k]) < 1e-6);
             }
         }
     }
@@ -58,7 +58,7 @@ TEST(DivideScalar, backwardCPU) {
 	divideScalar.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
 
     for (int i = 0; i < 10 * 500 * 200; ++i) {
-        ASSERT_TRUE(abs(inputGrad1.data()[i] - outputGrad.data()[i] / 5.0) < 1e-6);
+        ASSERT_TRUE(std::abs(inputGrad1.data()[i] - outputGrad.data()[i] / 5.0) < 1e-6);
     }
 
     freeTensor<CPUDevice, float>(device, inputValue1);
@@ -112,13 +112,13 @@ TEST(DivideScalar, GPU_double) {
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {
             for (int k = 0; k < 200; ++k) {
-                ASSERT_TRUE(abs(inputPtr[i * 500 * 200 + j * 200 + k] / scalar - outputPtr[i * 500 * 200 + j * 200 + k]) < 1e-6);
+                ASSERT_TRUE(std::abs(inputPtr[i * 500 * 200 + j * 200 + k] / scalar - outputPtr[i * 500 * 200 + j * 200 + k]) < 1e-6);
             }
         }
     }
 
     for (int i = 0; i < 10 * 500 * 200; ++i) {
-        ASSERT_TRUE(abs(inputGradPtr[i] - outputGradPtr[i] / scalar) < 1e-6);
+        ASSERT_TRUE(std::abs(inputGradPtr[i] - outputGradPtr[i] / scalar) < 1e-6);
     }
 
     free(inputPtr);
@@ -136,6 +136,40 @@ TEST(DivideScalar, GPU_double) {
 	delete device;
 }
 
+
+#ifdef HAVE_HALF
+
+TEST(DivideScalar, half_GPU) {
+	typedef half real;
+
+	auto device = new GPUDevice();
+
+	int dim0 = 10, dim1 = 500, dim2 = 200;
+	real scalar = 5.5;
+
+	auto input = createTensorGPU<real>(device, dim0, dim1, dim2);
+	auto inputGrad = createTensorGPU<real>(device, dim0, dim1, dim2);
+
+	auto output = createTensorGPU<real>(device, dim0, dim1, dim2);
+	auto outputGrad = createTensorGPU<real>(device, dim0, dim1, dim2);
+
+	/**create fake Add Function*/
+	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+
+	zeroTensor(device, inputGrad);
+
+	std::vector<Node*> inputs = { &inputVar };
+	DivideScalar<real> divideScalar(inputs, scalar);
+
+	std::vector<const Tensor<real>*> inputValues = { &input };
+
+	divideScalar.forwardGPU(inputValues, &output);
+	divideScalar.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 #endif
 
 }

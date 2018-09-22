@@ -102,7 +102,7 @@ TEST(Divide, backwardCPU) {
             }
         }
 
-        ASSERT_TRUE(abs(inputGrad1.data()[i] - temp) < 1e-6);
+        ASSERT_TRUE(std::abs(inputGrad1.data()[i] - temp) < 1e-6);
     }
 
     freeTensor<CPUDevice, double>(device, inputValue0);
@@ -196,7 +196,7 @@ TEST(Divide, GPU_float) {
 			}
 		}
 
-		ASSERT_TRUE(abs(input2GradPtr[i] - temp) < 1e-6);
+		ASSERT_TRUE(std::abs(input2GradPtr[i] - temp) < 1e-6);
 	}
 
     free(input1Ptr);
@@ -218,6 +218,40 @@ TEST(Divide, GPU_float) {
 
 	delete device;
 }
+
+#ifdef HAVE_HALF
+
+TEST(Divide, half_GPU) {
+	auto device = new GPUDevice();
+
+	auto input1 = createTensorGPU<half>(device, 10, 100, 200);
+	auto input1Grad = createTensorGPU<half>(device, 10, 100, 200);
+
+	auto input2 = createTensorGPU<half>(device, 1, 200);
+	auto input2Grad = createTensorGPU<half>(device, 1, 200);
+
+	auto output = createTensorGPU<half>(device, 10, 100, 200);
+	auto outputGrad = createTensorGPU<half>(device, 10, 100, 200);
+
+	auto inputVar1 = createFakeVariable<GPUDevice, half>(device);
+	auto inputVar2 = createFakeVariable<GPUDevice, half>(device);
+
+	std::vector<Node*> inputs = { &inputVar1, &inputVar2 };
+	Divide<half> divide(inputs);
+
+	zeroTensor(device, input1Grad);
+	zeroTensor(device, input2Grad);
+
+	std::vector<const Tensor<half>*> inputValues = { &input1, &input2 };
+
+	divide.forwardGPU(inputValues, &output);
+	divide.backwardGPU(inputValues, &output, &outputGrad, 0, &input1Grad);
+	divide.backwardGPU(inputValues, &output, &outputGrad, 1, &input2Grad);
+
+	delete device;
+}
+
+#endif // HAVE_HALF
 
 #endif
 

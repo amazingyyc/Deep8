@@ -311,7 +311,35 @@ protected:
 		CUDNN_CHECK(cudnnDestroyPoolingDescriptor(poolingDesc));
 	}
 
+#ifdef HAVE_HALF
 
+	void forwardGPUCUDNNImpl(GPUDevice *device, const half *x, const Shape &xShape, half *y, const Shape &yShape,
+		int windowsHeight, int windowsWidth,
+		int verticalPadding, int horizontalPadding,
+		int verticalStride, int horizontalStride) {
+		half alpha = 1;
+		half beta = 0;
+
+		cudnnPoolingDescriptor_t poolingDesc;
+		CUDNN_CHECK(cudnnCreatePoolingDescriptor(&poolingDesc));
+		CUDNN_CHECK(cudnnSetPooling2dDescriptor(poolingDesc, CUDNN_POOLING_MAX, CUDNN_PROPAGATE_NAN,
+			windowsHeight, windowsWidth, verticalPadding, horizontalPadding, verticalStride, horizontalStride));
+
+		cudnnTensorDescriptor_t xDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+
+		cudnnTensorDescriptor_t yDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+
+		CUDNN_CHECK(cudnnPoolingForward(device->cudnnHandle, poolingDesc, &alpha, xDesc, x, &beta, yDesc, y));
+
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(yDesc));
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(xDesc));
+		CUDNN_CHECK(cudnnDestroyPoolingDescriptor(poolingDesc));
+	}
+#endif // HAVE_HALF
 #endif
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
@@ -420,6 +448,45 @@ protected:
 		CUDNN_CHECK(cudnnDestroyPoolingDescriptor(poolingDesc));
 	}
 
+#ifdef HAVE_HALF
+	void backwardGPUCUDNNImpl(GPUDevice *device, const half *x, half *dx, const Shape &xShape, const half *y, const half *dy, const Shape &yShape,
+		int windowsHeight, int windowsWidth,
+		int verticalPadding, int horizontalPadding,
+		int verticalStride, int horizontalStride) {
+
+		half alpha = 1;
+		half beta = 1;
+
+		cudnnPoolingDescriptor_t poolingDesc;
+		CUDNN_CHECK(cudnnCreatePoolingDescriptor(&poolingDesc));
+		CUDNN_CHECK(cudnnSetPooling2dDescriptor(poolingDesc, CUDNN_POOLING_MAX, CUDNN_PROPAGATE_NAN,
+			windowsHeight, windowsWidth, verticalPadding, horizontalPadding, verticalStride, horizontalStride));
+
+		cudnnTensorDescriptor_t xDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+
+		cudnnTensorDescriptor_t dxDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&dxDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(dxDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+
+		cudnnTensorDescriptor_t yDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+
+		cudnnTensorDescriptor_t dyDesc;
+		CUDNN_CHECK(cudnnCreateTensorDescriptor(&dyDesc));
+		CUDNN_CHECK(cudnnSetTensor4dDescriptor(dyDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+
+		CUDNN_CHECK(cudnnPoolingBackward(device->cudnnHandle, poolingDesc, &alpha, yDesc, y, dyDesc, dy, xDesc, x, &beta, dxDesc, dx));
+
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(dyDesc));
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(yDesc));
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(dxDesc));
+		CUDNN_CHECK(cudnnDestroyTensorDescriptor(xDesc));
+		CUDNN_CHECK(cudnnDestroyPoolingDescriptor(poolingDesc));
+	}
+#endif // HAVE_HALF
 #endif
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
