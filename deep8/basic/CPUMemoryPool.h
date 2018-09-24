@@ -12,12 +12,12 @@ typedef char byte;
  * every memory block max size is 2^MAX_MEMORY_BLOCK_RANK
  * the default is 512MB
  */
-#define MAX_MEMORY_BLOCK_RANK 29
+#define DEFAULT_MEMORY_BLOCK_RANK 29
 
 /**
  * the max memory size is 512MB
  */
-#define MAX_MEMORY_BLOCK_SIZE (1 << MAX_MEMORY_BLOCK_RANK)
+#define DEFAULT_MEMORY_BLOCK_SIZE (1 << DEFAULT_MEMORY_BLOCK_RANK)
 
 /**the min size of a memory block*/
 #define MIN_MEMORY_BLOCK_SIZE 128
@@ -43,120 +43,154 @@ struct CPUMemoryChunk {
     }
 };
 
-/**
- * a block of memory this block include many chunks
- */
+class CPUMemoryPool;
+
 class CPUMemoryBlock {
+    friend CPUMemoryPool;
+
 private:
-    /**a pointer of the memory*/
-    void *pointer;
+    /**the pointer of memory block*/
+    void *ptr;
 
-    /**the size of this memory must be the power of 2*/
-    size_t blockSize;
-
-    /**the fake Head and Tail of chunk list*/
-    CPUMemoryChunk head;
-    CPUMemoryChunk tail;
+    /**the size of this memory block*/
+    size_t size;
 
     /**
-     * the ware store the free memory chunk
-     * if the size = 2^k
-     * than the ware'size is k + 1
-     * ware[i] store the free chunks that the chunk size is 2^i
-     * */
-    std::vector<std::unordered_set<CPUMemoryChunk*>> ware;
+     * the fake head and tail of the double-list
+     * head[i] store the free chunks that the chunk size is 2^i
+     */
+    std::vector<CPUMemoryChunk> head;
+    std::vector<CPUMemoryChunk> tail;
 
 public:
-    explicit CPUMemoryBlock(void *ptr, size_t s): pointer(ptr), blockSize(s) {
-        DEEP8_ARGUMENT_CHECK(isPowerOf2(blockSize) && blockSize >= MIN_MEMORY_BLOCK_SIZE, "the memory blockSize is error");
+    explicit CPUMemoryBlock(void *p, size_t s): ptr(p), size(s) {
+        DEEP8_ARGUMENT_CHECK(isPowerOf2(size) && size >= MIN_MEMORY_BLOCK_SIZE, "the memory blockSize is error");
 
-        ware.resize(logOf2(blockSize) + 1);
+        int count = (int) logOf2(size) + 1;
 
-        /**build a chunk*/
-        auto chunk = static_cast<CPUMemoryChunk*>(ptr);
-        chunk->prev = &head;
-        chunk->next = &tail;
-        chunk->size = blockSize;
-        chunk->capacity = blockSize - sizeof(CPUMemoryChunk);
-        chunk->used = false;
+        head.resize(count);
+        tail.resize(count);
 
-        head.next = chunk;
-        tail.prev = chunk;
+        for (int i = 0; i < count; ++i) {
+            head[i].next = &tail[i];
+            head[i].prev = nullptr;
+            head[i].used = true;
 
-        /**put the chunk to the free ware*/
-        ware.back().insert(chunk);
+            tail[i].prev = &head[i];
+            tail[i].next = nullptr;
+            tail[i].used = true;
+        }
+
+        insert(ptr, count - 1);
     }
 
-    ~CPUMemoryBlock() {
-        ware.clear();
+protected:
+    void insertChunk(CPUMemoryChunk *chunk, int index) {
+        chunk->next = head[index].next;
+        chunk->prev = &head[index];
+
+        head[index].next  = chunk;
+        chunk->next->prev = chunk;
+    }
+
+    void insert(void *ptr, int index) {
+        DEEP8_ARGUMENT_CHECK(index >= 0 && index < head.size(), "the index is error");
+
+        auto chunk = static_cast<CPUMemoryChunk*>(ptr);
+        chunk->used = false;
+        chunk->size = (size_t) (1 << index);
+        chunk->capacity = chunk->size - sizeof(CPUMemoryChunk);
+
+        chunk->next = head[index].next;
+        chunk->prev = &head[index];
+
+        head[index].next = chunk;
+        chunk->next->prev = chunk;
+    }
+
+    CPUMemoryChunk *take(int index) {
+        DEEP8_ARGUMENT_CHECK(!empty(index), "the index is empty");
+
+        auto ret = head[index].next;
+
+        head[index].next = ret->next;
+        head[index].next->prev = &head[index];
+
+        ret->next = nullptr;
+        ret->prev = nullptr;
+
+        return ret;
+    }
+
+    bool empty(int index) {
+        DEEP8_ARGUMENT_CHECK(index >= 0 && index < head.size(), "the index is error");
+
+        return head[index].next == &tail[index];
     }
 
     /**
-     * malloc size memory from the block
-     * if can not size free memory return null
+     * the chunk is like a Node of a binary-tree
+     * use the address offset and size to decide if the Chunk is left, right or a root node in the tree
+     * -1 left node
+     * 1 right node
+     * 0 root
      */
-    void* malloc(size_t size) {
-        size += sizeof(CPUMemoryChunk);
+    int chunkType(size_t offset, size_t size) {
+        DEEP8_ARGUMENT_CHECK(size > 0, "cannot call function chunkType with size is 0");
+
+        if (size == this->size) {
+            return 0;
+        }
+
+        while (offset > size) {
+            offset -= prevPowerOf2(offset);
+        }
+
+        if (offset == size) {
+            return 1;
+        } else if (0 == offset) {
+            return -1;
+        }
+
+        DEEP8_RUNTIME_ERROR("chunk type is error!");
+    }
+
+public:
+    void *malloc(size_t mem) {
+        mem += sizeof(CPUMemoryChunk);
 
         /**the malloc size must be power of 2*/
-        size = nextPowerOf2(size);
+        mem = nextPowerOf2(mem);
 
-        if (size > blockSize) {
+        if (mem > this->size) {
             return nullptr;
         }
 
-        auto lower = logOf2(size);
-        auto index = lower;
+        int lower = (int) logOf2(mem);
+        int index = lower;
 
-        while (index < ware.size()) {
-            if (!ware[index].empty()) {
+        while (index < head.size()) {
+            if (!empty(index)) {
                 break;
             }
 
             index++;
         }
 
-        if (index >= ware.size()) {
+        if (index >= head.size()) {
             return nullptr;
         }
 
         while (index > lower) {
-            auto chunk = *(ware[index].begin());
-            ware[index].erase(chunk);
+            auto chunk = take(index);
 
-            auto prev = chunk->prev;
-            auto next = chunk->next;
-
-            auto chunkSize = chunk->size / 2;
-
-            /**split the chunk*/
-            auto left  = chunk;
-            auto right = (CPUMemoryChunk*)((byte*)chunk + chunkSize);
-
-            left->prev = prev;
-            left->next = right;
-            left->size = chunkSize;
-            left->capacity = left->size - sizeof(CPUMemoryChunk);
-            left->used = false;
-
-            right->prev = left;
-            right->next = next;
-            right->size = chunkSize;
-            right->capacity = right->size - sizeof(CPUMemoryChunk);
-            right->used = false;
-
-            prev->next = left;
-            next->prev = right;
+            insert((byte*) chunk, index - 1);
+            insert((byte*) chunk + (1 << (index - 1)), index - 1);
 
             index--;
-
-            ware[index].insert(left);
-            ware[index].insert(right);
         }
 
-        auto chunk = *(ware[lower].begin());
-        ware[lower].erase(chunk);
-
+        auto chunk = take(lower);
         chunk->used = true;
 
         return (byte*)chunk + sizeof(CPUMemoryChunk);
@@ -174,115 +208,86 @@ public:
 
         DEEP8_ARGUMENT_CHECK(chunkSize > 0 && isPowerOf2(chunkSize), "the memory chunk is error");
 
-        auto index = logOf2(chunkSize);
+        int index = (int) logOf2(chunkSize);
 
-        /**add to free*/
-        ware[index].insert(chunk);
+        insertChunk(chunk, index);
 
-        while (index + 1 < ware.size()) {
+        while (index + 1 < head.size()) {
             /**merge the memory*/
-            auto type = chunkType((byte*)chunk - (byte*)pointer, chunk->size);
+            auto type = chunkType((byte*)chunk - (byte*)(this->ptr), chunk->size);
 
             if (-1 == type) {
-                /**left node merge with right node*/
-                auto next = chunk->next;
+                auto right = (CPUMemoryChunk*) ((byte*)chunk + chunk->size);
 
-                if (&tail == next || next->used || next->size != chunk->size) {
+                if (right->used || chunk->size != right->size) {
                     break;
                 }
 
-                /**remove from free ware, and merge it*/
-                ware[index].erase(chunk);
-                ware[index].erase(next);
+                chunk->next->prev = chunk->prev;
+                chunk->prev->next = chunk->next;
 
-                chunk->next = next->next;
-                next->next->prev = chunk;
+                right->next->prev = right->prev;
+                right->prev->next = right->next;
 
+                chunk->used = false;
                 chunk->size = 2 * chunk->size;
                 chunk->capacity = chunk->size - sizeof(CPUMemoryChunk);
-                chunk->used = false;
 
                 index++;
-                ware[index].insert(chunk);
-            } else if (1 == type) {
-                auto prev = chunk->prev;
 
-                if (&head == prev || prev->used || prev->size != chunk->size) {
+                insertChunk(chunk, index);
+            } else if (1 == type) {
+                auto left = (CPUMemoryChunk*) ((byte*)chunk - chunk->size);
+
+                if (left->used || chunk->size != left->size) {
                     break;
                 }
 
-                ware[index].erase(chunk);
-                ware[index].erase(prev);
+                chunk->next->prev = chunk->prev;
+                chunk->prev->next = chunk->next;
 
-                prev->next = chunk->next;
-                chunk->next->prev = prev;
+                left->next->prev = left->prev;
+                left->prev->next = left->next;
 
-                prev->size = 2 * prev->size;
-                prev->capacity = prev->size - sizeof(CPUMemoryChunk);
-                prev->used = false;
+                left->used = false;
+                left->size = 2 * left->size;
+                left->capacity = left->size - sizeof(CPUMemoryChunk);
 
                 index++;
-                ware[index].insert(prev);
 
-                chunk = prev;
+                insertChunk(left, index);
+
+                chunk = left;
             } else {
                 break;
             }
-        };
+        }
     }
 
-    /**
-     * the chunk is like a Node of a binary-tree
-     * use the address offset and size to decide if the Chunk is left, right or a root node in the tree
-     * -1 left node
-     * 1 right node
-     * 0 root
-     */
-    int chunkType(size_t offset, size_t size) {
-        DEEP8_ARGUMENT_CHECK(size > 0, "cannot call function chunkType with size is 0");
-
-        if (size == blockSize) {
-            return 0;
-        }
-
-        while (offset > size) {
-            offset -= prevPowerOf2(offset);
-        }
-
-        if (offset == size) {
-            return 1;
-        } else if (0 == offset) {
-            return -1;
-        }
-
-        DEEP8_RUNTIME_ERROR("chunkType meet a error!");
-    }
-
-    /**
-     * if the block contain the pointer
-     */
-    bool contain(void *ptr) {
-        return (byte*)(ptr) >= (byte*)(pointer) && (byte*)(ptr) < (byte*)(pointer) + blockSize;
+    bool contain(void *p) {
+        return ((byte*)p >= (byte*)ptr) && ((byte*)p < (byte*)ptr + size);
     }
 
     std::string toString() {
         std::ostringstream oss;
-        oss << "The memory block pointer is: " << pointer << ", size is: " << blockSize << "\n";
+        oss << "The memory block pointer is: " << ptr << ", size is: " << size << "\n";
 
-        auto chunk = head.next;
+        for (int i = 0; i < head.size(); ++i) {
+            auto chunk = head[i].next;
 
-        while (chunk != &tail) {
-            oss << "The chunk size is: " << chunk->size << " byte, capacity is: " << chunk->capacity << " byte, ";
+            while (chunk != &tail[i]) {
+                oss << "The chunk size is: " << chunk->size << " byte, capacity is: " << chunk->capacity << " byte, ";
 
-            if (chunk->used) {
-                oss << "have been used.";
-            } else {
-                oss << "not used.";
+                if (chunk->used) {
+                    oss << "have been used.";
+                } else {
+                    oss << "not used.";
+                }
+
+                oss << "\n";
+
+                chunk = chunk->next;
             }
-
-            oss << "\n";
-
-            chunk = chunk->next;
         }
 
         return oss.str();
@@ -297,13 +302,10 @@ public:
     /**for allocate the memory*/
     CPUMemoryAllocator *allocator;
 
-    /**store the memory that allocated by MemoryAllocator*/
-    std::vector<std::pair<void*, size_t>> memories;
-
     /**store the memory blocks*/
-    std::vector<CPUMemoryBlock*> memoryBlocks;
+    std::vector<CPUMemoryBlock*> blocks;
 
-    explicit CPUMemoryPool(): CPUMemoryPool(MAX_MEMORY_BLOCK_SIZE) {
+    explicit CPUMemoryPool(): CPUMemoryPool(DEFAULT_MEMORY_BLOCK_SIZE) {
     }
 
     CPUMemoryPool(size_t size) {
@@ -315,16 +317,12 @@ public:
     }
 
     ~CPUMemoryPool() {
-        for (auto block : memoryBlocks) {
-            delete block;
+        for (auto item : blocks) {
+            allocator->free(item->ptr);
+            delete item;
         }
 
-        for (auto item : memories) {
-            allocator->free(item.first);
-        }
-
-        memories.clear();
-        memoryBlocks.clear();
+        blocks.clear();
 
         delete allocator;
     }
@@ -333,8 +331,8 @@ public:
 		DEEP8_ARGUMENT_CHECK(size > 0, "can not malloc 0 memory");
         DEEP8_ARGUMENT_CHECK(size + sizeof(CPUMemoryChunk) <= blockSize, "malloc too much memory");
 
-        for (auto block : memoryBlocks) {
-            auto ptr = block->malloc(size);
+        for (auto item : blocks) {
+            auto ptr = item->malloc(size);
 
             if (nullptr != ptr) {
                 return ptr;
@@ -343,18 +341,16 @@ public:
 
         auto ptr = allocator->malloc(blockSize);
 
-        memories.emplace_back(std::make_pair(ptr, blockSize));
+        auto item = new CPUMemoryBlock(ptr, blockSize);
+        blocks.emplace_back(item);
 
-        auto block = new CPUMemoryBlock(ptr, blockSize);
-        memoryBlocks.emplace_back(block);
-
-        return block->malloc(size);
+        return item->malloc(size);
     }
 
     void free(void *ptr) {
-        for (auto block : memoryBlocks) {
-            if (block->contain(ptr)) {
-                block->free(ptr);
+        for (auto item : blocks) {
+            if (item->contain(ptr)) {
+                item->free(ptr);
                 return;
             }
         }
@@ -370,23 +366,11 @@ public:
 		allocator->copy(from, to, size);
 	}
 
-    void free() {
-        for (auto block : memoryBlocks) {
-            delete block;
-        }
-
-        memoryBlocks.clear();
-
-        for (auto item : memories) {
-            memoryBlocks.emplace_back(new CPUMemoryBlock(item.first, item.second));
-        }
-    }
-
     void printInfo() {
         std::cout << "=============================================================\n" << std::endl;
-        std::cout << "the Memory Pool have " << memoryBlocks.size() << " blocks." << std::endl;
+        std::cout << "the Memory Pool have " << blocks.size() << " blocks." << std::endl;
 
-        for (auto block : memoryBlocks) {
+        for (auto block : blocks) {
             std::cout << block->toString() << std::endl;
         }
 

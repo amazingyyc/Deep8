@@ -1,12 +1,10 @@
 #ifndef DEEP8_MEMORYPOOLTEST_H
 #define DEEP8_MEMORYPOOLTEST_H
 
-#include "CPUMemoryPool.h"
-
 namespace Deep8 {
 
 TEST(CPUMemoryPool, MemoryPoolTest) {
-    CPUMemoryPool pool(256);
+    CPUMemoryPool pool(1024);
 
     auto p1 = pool.malloc(6);
 

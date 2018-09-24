@@ -105,11 +105,15 @@ include_directories(deep8/nodes)
 include_directories(deep8/utils)
 
 set ( DEEP8_HEAD_FILES
+
+		deep8/Deep8.h
+
 		deep8/basic/Device.h
 		deep8/basic/Exception.h
 		deep8/basic/MemoryAllocator.h
 		deep8/basic/CPUMemoryPool.h
         deep8/basic/Shape.h
+		deep8/basic/TensorStorage.h
 		deep8/basic/Tensor.h
 		deep8/basic/CudaException.h
 

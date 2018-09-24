@@ -79,6 +79,7 @@
 
 #include "basic/CPUMemoryPool.h"
 #include "basic/Device.h"
+#include "basic/TensorStorage.h"
 #include "basic/Tensor.h"
 
 #include "utils/ShapeUtils.h"
