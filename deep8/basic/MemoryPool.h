@@ -32,62 +32,79 @@ struct CPUMemoryChunk {
 	CPUMemoryChunk *prev;
 	CPUMemoryChunk *next;
 
+	size_t offset;
+
 	/**the size of this chunk include MemoryChunk head*/
 	size_t size;
-
-	/**the capacity of this chunk not include the Chunk head*/
-	size_t capacity;
 
 	/**if this chunk have been used*/
 	bool used;
 
-	explicit CPUMemoryChunk() : prev(nullptr), next(nullptr), size(0), capacity(0), used(false) {
+	explicit CPUMemoryChunk() : prev(nullptr), next(nullptr), offset(0), size(0), used(false) {
 	}
 };
 
-class CPUMemoryPool;
+class CPUMemoryPool {
+public:
+	/**memory allocator*/
+	CPUMemoryAllocator *allocator;
 
-class CPUMemoryBlock {
-	friend CPUMemoryPool;
+	/**the block size*/
+	size_t blockSize;
 
-private:
-	/**the pointer of memory block*/
-	void *ptr;
+	int maxLevel;
 
-	/**the size of this memory block*/
-	size_t size;
-
-	/**
-	 * the fake head and tail of the double-list
-	 * head[i] store the free chunks that the chunk size is 2^i
-	 */
 	std::vector<CPUMemoryChunk> head;
 	std::vector<CPUMemoryChunk> tail;
 
-public:
-	explicit CPUMemoryBlock(void *p, size_t s) : ptr(p), size(s) {
-		DEEP8_ARGUMENT_CHECK(isPowerOf2(size) && size >= MIN_MEMORY_BLOCK_SIZE, "the memory blockSize is error");
+	explicit CPUMemoryPool(): CPUMemoryPool(DEFAULT_MEMORY_BLOCK_SIZE) {
+	}
 
-		int count = (int)logOf2(size) + 1;
+	explicit CPUMemoryPool(size_t size) {
+		blockSize = nextPowerOf2(size);
 
-		head.resize(count);
-		tail.resize(count);
+		DEEP8_ARGUMENT_CHECK(blockSize >= MIN_MEMORY_BLOCK_SIZE, "the Memory size must >= " << MIN_MEMORY_BLOCK_SIZE);
 
-		for (int i = 0; i < count; ++i) {
+		allocator = new CPUMemoryAllocator();
+
+		maxLevel = (int)logOf2(blockSize);
+
+		head.resize(maxLevel + 1);
+		tail.resize(maxLevel + 1);
+
+		for (int i = 0; i <= maxLevel; ++i) {
 			head[i].next = &tail[i];
 			head[i].prev = nullptr;
-			head[i].used = true;
 
 			tail[i].prev = &head[i];
 			tail[i].next = nullptr;
-			tail[i].used = true;
+		}
+	}
+
+	~CPUMemoryPool() {
+		auto chunk = head[maxLevel].next;
+
+		while (chunk != &tail[maxLevel]) {
+			auto temp = chunk->next;
+
+			allocator->free(chunk);
+
+			chunk = temp;
 		}
 
-		insert(ptr, count - 1);
+		delete allocator;
 	}
 
 protected:
-	void insertChunk(CPUMemoryChunk *chunk, int index) {
+	bool isLinkEmpty(int index) {
+		DEEP8_ARGUMENT_CHECK(index >= 0 && index <= maxLevel, "the index is error");
+
+		return head[index].next == &tail[index];
+	}
+
+	void insertToLink(CPUMemoryChunk *chunk, int index) {
+		DEEP8_ARGUMENT_CHECK(index >= 0 && index <= maxLevel, "the index is error");
+
 		chunk->next = head[index].next;
 		chunk->prev = &head[index];
 
@@ -95,23 +112,8 @@ protected:
 		chunk->next->prev = chunk;
 	}
 
-	void insert(void *ptr, int index) {
-		DEEP8_ARGUMENT_CHECK(index >= 0 && index < head.size(), "the index is error");
-
-		auto chunk = static_cast<CPUMemoryChunk*>(ptr);
-		chunk->used = false;
-		chunk->size = (size_t)(1 << index);
-		chunk->capacity = chunk->size - sizeof(CPUMemoryChunk);
-
-		chunk->next = head[index].next;
-		chunk->prev = &head[index];
-
-		head[index].next = chunk;
-		chunk->next->prev = chunk;
-	}
-
-	CPUMemoryChunk *take(int index) {
-		DEEP8_ARGUMENT_CHECK(!empty(index), "the index is empty");
+	CPUMemoryChunk *takeFromLink(int index) {
+		DEEP8_ARGUMENT_CHECK(!isLinkEmpty(index), "the index is empty");
 
 		auto ret = head[index].next;
 
@@ -124,10 +126,16 @@ protected:
 		return ret;
 	}
 
-	bool empty(int index) {
-		DEEP8_ARGUMENT_CHECK(index >= 0 && index < head.size(), "the index is error");
+	void allocatorNewBlock() {
+		auto chunk = (CPUMemoryChunk*) allocator->malloc(blockSize);
 
-		return head[index].next == &tail[index];
+		chunk->prev = nullptr;
+		chunk->next = nullptr;
+		chunk->offset = 0;
+		chunk->size   = blockSize;
+		chunk->used   = false;
+
+		insertToLink(chunk, maxLevel);
 	}
 
 	/**
@@ -140,7 +148,7 @@ protected:
 	int chunkType(size_t offset, size_t size) {
 		DEEP8_ARGUMENT_CHECK(size > 0, "cannot call function chunkType with size is 0");
 
-		if (size == this->size) {
+		if (size == this->blockSize) {
 			return 0;
 		}
 
@@ -158,70 +166,70 @@ protected:
 	}
 
 public:
-	void *malloc(size_t mem) {
-		mem += sizeof(CPUMemoryChunk);
+	void *malloc(size_t size) {
+		size += sizeof(CPUMemoryChunk);
+		size = nextPowerOf2(size);
 
-		/**the malloc size must be power of 2*/
-		mem = nextPowerOf2(mem);
+		DEEP8_ARGUMENT_CHECK(size > 0, "can not malloc 0 memory");
+		DEEP8_ARGUMENT_CHECK(size <= blockSize, "malloc too much memory");
 
-		if (mem > this->size) {
-			return nullptr;
-		}
-
-		int lower = (int)logOf2(mem);
+		int lower = (int)logOf2(size);
 		int index = lower;
 
-		while (index < head.size()) {
-			if (!empty(index)) {
-				break;
-			}
-
+		while (index <= maxLevel && isLinkEmpty(index)) {
 			index++;
 		}
 
-		if (index >= head.size()) {
-			return nullptr;
+		/**no extra memory. should allocator more*/
+		if (index > maxLevel) {
+			allocatorNewBlock();
+			index = maxLevel;
 		}
 
 		while (index > lower) {
-			auto chunk = take(index);
+			auto chunk = takeFromLink(index);
 
-			insert((byte*)chunk, index - 1);
-			insert((byte*)chunk + (1 << (index - 1)), index - 1);
+			auto left  = chunk;
+			auto right = (CPUMemoryChunk*)((byte*)chunk + chunk->size / 2);
+
+			left->size /= 2;
+
+			right->offset = left->offset + left->size;
+			right->size   = left->size;
+			right->used   = false;
+			right->prev   = nullptr;
+			right->next   = nullptr;
+
+			insertToLink(right, index - 1);
+			insertToLink(left, index - 1);
 
 			index--;
 		}
 
-		auto chunk = take(lower);
+		auto chunk = takeFromLink(lower);
 		chunk->used = true;
 
 		return (byte*)chunk + sizeof(CPUMemoryChunk);
 	}
 
 	void free(void *ptr) {
-		if (!contain(ptr)) {
-			return;
-		}
-
 		auto chunk = (CPUMemoryChunk*)((byte*)ptr - sizeof(CPUMemoryChunk));
+
+		DEEP8_ARGUMENT_CHECK(chunk->size > 0 && isPowerOf2(chunk->size), "the memory chunk is error");
+
 		chunk->used = false;
 
-		auto chunkSize = chunk->size;
+		int index = (int)logOf2(chunk->size);
 
-		DEEP8_ARGUMENT_CHECK(chunkSize > 0 && isPowerOf2(chunkSize), "the memory chunk is error");
+        insertToLink(chunk, index);
 
-		int index = (int)logOf2(chunkSize);
-
-		insertChunk(chunk, index);
-
-		while (index + 1 < head.size()) {
-			/**merge the memory*/
-			auto type = chunkType((byte*)chunk - (byte*)(this->ptr), chunk->size);
+		while (index < maxLevel) {
+			auto type = chunkType(chunk->offset, chunk->size);
 
 			if (-1 == type) {
-				auto right = (CPUMemoryChunk*)((byte*)chunk + chunk->size);
+				 auto right = (CPUMemoryChunk*)((byte*)chunk + chunk->size);
 
-				if (right->used || chunk->size != right->size) {
+				 if (right->used || chunk->size != right->size) {
 					break;
 				}
 
@@ -233,11 +241,10 @@ public:
 
 				chunk->used = false;
 				chunk->size = 2 * chunk->size;
-				chunk->capacity = chunk->size - sizeof(CPUMemoryChunk);
+
+                insertToLink(chunk, index + 1);
 
 				index++;
-
-				insertChunk(chunk, index);
 			} else if (1 == type) {
 				auto left = (CPUMemoryChunk*)((byte*)chunk - chunk->size);
 
@@ -253,11 +260,10 @@ public:
 
 				left->used = false;
 				left->size = 2 * left->size;
-				left->capacity = left->size - sizeof(CPUMemoryChunk);
+
+                insertToLink(left, index);
 
 				index++;
-
-				insertChunk(left, index);
 
 				chunk = left;
 			} else {
@@ -266,19 +272,14 @@ public:
 		}
 	}
 
-	bool contain(void *p) {
-		return ((byte*)p >= (byte*)ptr) && ((byte*)p < (byte*)ptr + size);
-	}
-
 	std::string toString() {
 		std::ostringstream oss;
-		oss << "The memory block pointer is: " << ptr << ", size is: " << size << "\n";
 
 		for (int i = 0; i < head.size(); ++i) {
 			auto chunk = head[i].next;
 
 			while (chunk != &tail[i]) {
-				oss << "The chunk size is: " << chunk->size << " byte, capacity is: " << chunk->capacity << " byte, ";
+				oss << "The chunk offset is: " << chunk->offset << ", size is: " << chunk->size << " byte, ";
 
 				if (chunk->used) {
 					oss << "have been used.";
@@ -294,71 +295,6 @@ public:
 
 		return oss.str();
 	}
-};
-
-class CPUMemoryPool {
-public:
-	/**the memory block size*/
-	size_t blockSize;
-
-	/**for allocate the memory*/
-	CPUMemoryAllocator *allocator;
-
-	/**store the memory blocks*/
-	std::vector<CPUMemoryBlock*> blocks;
-
-	explicit CPUMemoryPool() : CPUMemoryPool(DEFAULT_MEMORY_BLOCK_SIZE) {
-	}
-
-	CPUMemoryPool(size_t size) {
-		blockSize = nextPowerOf2(size);
-
-		DEEP8_ARGUMENT_CHECK(blockSize >= MIN_MEMORY_BLOCK_SIZE, "the Memory size must >= " << MIN_MEMORY_BLOCK_SIZE);
-
-		allocator = new CPUMemoryAllocator();
-	}
-
-	~CPUMemoryPool() {
-		for (auto item : blocks) {
-			allocator->free(item->ptr);
-			delete item;
-		}
-
-		blocks.clear();
-
-		delete allocator;
-	}
-
-	void* malloc(size_t size) {
-		DEEP8_ARGUMENT_CHECK(size > 0, "can not malloc 0 memory");
-		DEEP8_ARGUMENT_CHECK(size + sizeof(CPUMemoryChunk) <= blockSize, "malloc too much memory");
-
-		for (auto item : blocks) {
-			auto ptr = item->malloc(size);
-
-			if (nullptr != ptr) {
-				return ptr;
-			}
-		}
-
-		auto ptr = allocator->malloc(blockSize);
-
-		auto item = new CPUMemoryBlock(ptr, blockSize);
-		blocks.emplace_back(item);
-
-		return item->malloc(size);
-	}
-
-	void free(void *ptr) {
-		for (auto item : blocks) {
-			if (item->contain(ptr)) {
-				item->free(ptr);
-				return;
-			}
-		}
-
-		DEEP8_RUNTIME_ERROR("free memory error");
-	}
 
 	void zero(void *ptr, size_t size) {
 		allocator->zero(ptr, size);
@@ -369,19 +305,13 @@ public:
 	}
 
 	void printInfo() {
-		std::cout << "=============================================================\n" << std::endl;
-		std::cout << "the Memory Pool have " << blocks.size() << " blocks." << std::endl;
-
-		for (auto block : blocks) {
-			std::cout << block->toString() << std::endl;
-		}
-
-		std::cout << "=============================================================\n" << std::endl;
+		std::cout << "============================================================" << std::endl;
+		std::cout << toString() << std::endl;
+		std::cout << "============================================================" << std::endl;
 	}
 };
 
-
-/#ifdef HAVE_CUDA
+#ifdef HAVE_CUDA
 
 /**
  * the GPU memory pool
@@ -515,7 +445,7 @@ protected:
 		chunk->size   = gpuBlockSize;
 		chunk->used   = false;
 
-		insertToLink(chunk, index);
+		insertToLink(chunk, maxLevel);
 
 		/**store in map*/
 		ptrMaps[chunk->ptr] = chunk;
@@ -688,6 +618,14 @@ public:
 				break;
 			}
 		}
+	}
+
+	void *mallocCPU(size_t size) {
+		return cpuMemoryPool->malloc(size);
+	}
+
+	void freeCPU(void *ptr) {
+		cpuMemoryPool->free(ptr);
 	}
 };
 

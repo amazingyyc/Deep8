@@ -77,7 +77,7 @@
 #include "utils/MathUtils.h"
 #include "utils/CudaMathUtils.h"
 
-#include "basic/CPUMemoryPool.h"
+#include "basic/MemoryPool.h"
 #include "basic/Device.h"
 #include "basic/TensorStorage.h"
 #include "basic/Tensor.h"

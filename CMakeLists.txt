@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU true)
+set(HAVE_GPU false)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -111,7 +111,7 @@ set ( DEEP8_HEAD_FILES
 		deep8/basic/Device.h
 		deep8/basic/Exception.h
 		deep8/basic/MemoryAllocator.h
-		deep8/basic/CPUMemoryPool.h
+		deep8/basic/MemoryPool.h
         deep8/basic/Shape.h
 		deep8/basic/TensorStorage.h
 		deep8/basic/Tensor.h
