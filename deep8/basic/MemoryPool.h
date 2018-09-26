@@ -365,6 +365,12 @@ public:
 	explicit GPUMemoryPool(): GPUMemoryPool(0, DEFAULT_CPU_MEMORY_BLOCK_SIZE_FOR_GPU, DEFAULT_MEMORY_BLOCK_SIZE) {
 	}
 
+	explicit GPUMemoryPool(int id) : GPUMemoryPool(id, DEFAULT_CPU_MEMORY_BLOCK_SIZE_FOR_GPU, DEFAULT_MEMORY_BLOCK_SIZE) {
+	}
+
+	explicit GPUMemoryPool(int id, size_t gSize) : GPUMemoryPool(id, DEFAULT_CPU_MEMORY_BLOCK_SIZE_FOR_GPU, gSize) {
+	}
+
 	explicit GPUMemoryPool(int id, size_t cSize, size_t gSize): deviceId(id) {
 		gpuBlockSize = nextPowerOf2(gSize);
 
@@ -373,7 +379,7 @@ public:
 		cpuMemoryPool = new CPUMemoryPool(cSize);
 		gpuAllocator  = new GPUMemoryAllocator(deviceId);
 
-		int maxLevel = (int)logOf2(gpuBlockSize);
+		maxLevel = (int)logOf2(gpuBlockSize);
 
 		head.resize(maxLevel + 1);
 		tail.resize(maxLevel + 1);
@@ -390,7 +396,7 @@ public:
 	~GPUMemoryPool() {
 		auto chunk = head[maxLevel].next;
 
-		while (chunk != tail[maxLevel]) {
+		while (chunk != &tail[maxLevel]) {
 			auto temp = chunk->next;
 
 			gpuAllocator->free(chunk->ptr);
@@ -461,7 +467,7 @@ protected:
 	int chunkType(size_t offset, size_t size) {
 		DEEP8_ARGUMENT_CHECK(size > 0, "cannot call function chunkType with size is 0");
 
-		if (size == this->size) {
+		if (size == this->gpuBlockSize) {
 			return 0;
 		}
 
@@ -513,7 +519,7 @@ public:
 
 			right->offset = left->offset + left->size;
 			right->size   = left->size;
-			right->use    = false;
+			right->used   = false;
 			right->ptr    = (byte*)(left->ptr) + left->size;
 
 			insertToLink(right, index - 1);
@@ -620,12 +626,77 @@ public:
 		}
 	}
 
+	void zero(void *ptr, size_t size) {
+		gpuAllocator->zero(ptr, size);
+	}
+
+	/**
+	 * for GPU the copy function is between the GPU Device
+	 */
+	void copy(const void *from, void *to, size_t size) {
+		gpuAllocator->copy(from, to, size);
+	}
+
+	/**
+	 * copy memory from host to GPU
+	 */
+	void copyFromCPUToGPU(const void *from, void *to, size_t size) {
+		gpuAllocator->copyFromCPUToGPU(from, to, size);
+	}
+
+	/**
+	 * copy memory from GPU to Host
+	 */
+	void copyFromGPUToCPU(const void *from, void *to, size_t size) {
+		gpuAllocator->copyFromGPUToCPU(from, to, size);
+	}
+
+	void copyFromGPUToGPU(const void *from, void *to, size_t size) {
+		gpuAllocator->copyFromGPUToGPU(from, to, size);
+	}
+
 	void *mallocCPU(size_t size) {
 		return cpuMemoryPool->malloc(size);
 	}
 
 	void freeCPU(void *ptr) {
 		cpuMemoryPool->free(ptr);
+	}
+
+	std::string toString() {
+		std::ostringstream oss;
+
+		for (int i = 0; i < head.size(); ++i) {
+			auto chunk = head[i].next;
+
+			while (chunk != &tail[i]) {
+				oss << "The chunk offset is: " << chunk->offset << ", size is: " << chunk->size << " byte, ";
+
+				if (chunk->used) {
+					oss << "have been used.";
+				} else {
+					oss << "not used.";
+				}
+
+				oss << "\n";
+
+				chunk = chunk->next;
+			}
+		}
+
+		return oss.str();
+	}
+
+	void printInfo() {
+		std::cout << "============================================================" << std::endl;
+		std::cout << "GPU memory info" << std::endl;
+		std::cout << toString() << std::endl;
+		std::cout << "============================================================" << std::endl;
+
+		std::cout << "============================================================" << std::endl;
+		std::cout << "CPU memory info" << std::endl;
+		std::cout << cpuMemoryPool->toString() << std::endl;
+		std::cout << "============================================================" << std::endl;
 	}
 };
 

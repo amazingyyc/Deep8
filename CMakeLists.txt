@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU false)
+set(HAVE_GPU true)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -171,6 +171,7 @@ set ( DEEP8_TEST_HEAD_FILES
 		test/AvgPooling2dTest.h
 		test/Conv2dTest.h
 		test/CPUMemoryPoolTest.h
+		test/GPUMemoryPoolTest.h
 		test/DeConv2dTest.h
 		test/DivideScalarTest.h
 		test/DivideTest.h

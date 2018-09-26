@@ -27,7 +27,7 @@ TEST(LinearRegression, GPU_Test) {
 
 	float wPtr[2];
 
-	for (int i = 0; i < 5000; ++i) {
+	for (int i = 0; i < 500; ++i) {
 		auto t3 = (input * W - output).l1Norm();
 		t3.backward();
 
