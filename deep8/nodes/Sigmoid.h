@@ -59,7 +59,7 @@ public:
 protected:
 	template <typename real>
 	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 		eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(SigmoidForwardExpr<T>());
 	}
 
@@ -83,7 +83,7 @@ protected:
 		Tensor<real> *iGradient) {
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Sigmoid backwardCPU is error");
 
-		auto device = static_cast<CPUDevice*>(iGradient->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
 		eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(output), SigmoidBackwardExpr<T>());
 	}
 

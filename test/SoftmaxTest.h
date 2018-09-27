@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(Softmax, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, 400, 200);
     auto output = createTensor<CPUDevice, float>(device, 400, 200);
@@ -20,7 +20,7 @@ TEST(Softmax, forwardCPU) {
 
     softmax.forwardCPU(inputTensor, &output);
 
-    auto temp = (float*)device->malloc(sizeof(float) * 200);
+    auto temp = (float*)device.malloc(sizeof(float) * 200);
 
     for (int b = 0; b < 400; ++b) {
         auto ptr = input.data() + b * 200;
@@ -54,13 +54,11 @@ TEST(Softmax, forwardCPU) {
 
 	freeFakeVariable(inputVar1);
 
-    device->free(temp);
-
-    delete device;
+    device.free(temp);
 }
 
 TEST(Softmax, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto inputValue = createTensor<CPUDevice, float>(device, 400, 200);
 	auto inputGrad = createTensor<CPUDevice, float>(device, 400, 200);
@@ -105,8 +103,6 @@ TEST(Softmax, backwardCPU) {
 	freeTensor(device, outputGrad);
 
 	freeFakeVariable(inputVar);
-
-	delete device;
 }
 
 #ifdef HAVE_CUDA

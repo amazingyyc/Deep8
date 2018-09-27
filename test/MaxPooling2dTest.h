@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(MaxPooling2d, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, 1, 32, 32, 64);
     auto output = createTensor<CPUDevice, float>(device, 1, 15, 15, 64);
@@ -46,11 +46,10 @@ TEST(MaxPooling2d, forwardCPU) {
 
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(MaxPooling2d, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto inputValue = createTensor<CPUDevice, float>(device, 1, 32, 32, 64);
 	auto inputGrad  = createTensor<CPUDevice, float>(device, 1, 32, 32, 64);
@@ -111,7 +110,6 @@ TEST(MaxPooling2d, backwardCPU) {
 
     freeFakeVariable(inputVar);
 
-    delete device;
 }
 
 

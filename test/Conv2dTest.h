@@ -31,12 +31,12 @@ TEST(Conv2d, forwardCPU_float) {
 
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(&device, batch, inputHeight, inputWidth, inputChannel);
-    auto filter = createTensor<CPUDevice, float>(&device, outputChannel, filterH,  filterW, inputChannel);
-    auto output = createTensor<CPUDevice, float>(&device, batch, outputHeight, outputWidth, outputChannel);
+    auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
+    auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
+    auto output = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(&device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
+    auto inputVar2 = createFakeVariable<CPUDevice, float>(device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
     Conv2d<float> conv2d(inputs, isCovered, size_t(strideH), size_t(strideW), size_t(dilationH), size_t(dilationW));
@@ -79,9 +79,9 @@ TEST(Conv2d, forwardCPU_float) {
         }
     }
 
-    freeTensor(&device, input);
-    freeTensor(&device, filter);
-    freeTensor(&device, output);
+    freeTensor(device, input);
+    freeTensor(device, filter);
+    freeTensor(device, output);
 
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
@@ -113,23 +113,23 @@ TEST(Conv2d, backwardCPU_float) {
 
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(&device, batch, inputHeight, inputWidth, inputChannel);
-    auto filter = createTensor<CPUDevice, float>(&device, outputChannel, filterH,  filterW, inputChannel);
-    auto output = createTensor<CPUDevice, float>(&device, batch, outputHeight, outputWidth, outputChannel);
+    auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
+    auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
+    auto output = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
 
-    auto inputGrad  = createTensor<CPUDevice, float>(&device, batch, inputHeight, inputWidth, inputChannel);
-    auto filterGrad = createTensor<CPUDevice, float>(&device, outputChannel, filterH,  filterW, inputChannel);
-    auto outputGrad = createTensor<CPUDevice, float>(&device, batch, outputHeight, outputWidth, outputChannel);
+    auto inputGrad  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
+    auto filterGrad = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
+    auto outputGrad = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
 
     /**create fake Function*/
-    auto inputVar0 = createFakeVariable<CPUDevice, float>(&device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
+    auto inputVar0 = createFakeVariable<CPUDevice, float>(device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
 
     std::vector<Node*> inputs = {&inputVar0, &inputVar1};
     Conv2d<float> conv2d(inputs, isCovered, size_t(strideH), size_t(strideW), size_t(dilationH), size_t(dilationW));
 
-    zeroTensor(&device, inputGrad);
-    zeroTensor(&device, filterGrad);
+    zeroTensor(device, inputGrad);
+    zeroTensor(device, filterGrad);
 
     std::vector<const Tensor<float>*> inputValues = {&input, &filter};
 
@@ -230,12 +230,12 @@ TEST(Conv2d, backwardCPU_float) {
 		}
 	}
 
-    freeTensor(&device, input);
-    freeTensor(&device, filter);
-    freeTensor(&device, output);
-    freeTensor(&device, inputGrad);
-    freeTensor(&device, filterGrad);
-    freeTensor(&device, outputGrad);
+    freeTensor(device, input);
+    freeTensor(device, filter);
+    freeTensor(device, output);
+    freeTensor(device, inputGrad);
+    freeTensor(device, filterGrad);
+    freeTensor(device, outputGrad);
 
     freeFakeVariable(inputVar0);
     freeFakeVariable(inputVar1);

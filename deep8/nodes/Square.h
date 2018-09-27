@@ -49,7 +49,7 @@ public:
 
 protected:
 	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
 		eTVec(output).device(*device) = eTVec(inputs[0]).square();
 	}
@@ -63,7 +63,7 @@ protected:
 			DEEP8_RUNTIME_ERROR("the index of Linear backwardCPU is error");
 		}
 
-		auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
 
 		eTVec(iGradient).device(*device) += eTVec(outputGradient) * eTVec(inputs[0]) * T(2);
 	}

@@ -72,7 +72,7 @@ public:
 protected:
 	template <typename real>
 	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 		eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(LReLuForwardExpr<T>(a));
 	}
 
@@ -91,7 +91,7 @@ protected:
 	void backwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, const Tensor<real> *output, const Tensor<real> *outputGradient, size_t index, Tensor<real> *iGradient) {
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-		auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
 		eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), LReLuBackwardExpr<T>(a));
 	}
 

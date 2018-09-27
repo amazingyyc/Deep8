@@ -11,10 +11,10 @@ namespace Deep8 {
 TEST(AddScalar, forwardCPU_float) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
-    auto output = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
+    auto input  = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto output = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device);
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
 
     std::vector<Node*> inputs = {&inputVar1};
     AddScalar<float> add(inputs, 3.0);
@@ -31,8 +31,8 @@ TEST(AddScalar, forwardCPU_float) {
         }
     }
 
-    freeTensor<CPUDevice, float>(&device, input);
-    freeTensor<CPUDevice, float>(&device, output);
+    freeTensor<CPUDevice, float>(device, input);
+    freeTensor<CPUDevice, float>(device, output);
 
     freeFakeVariable(inputVar1);
 }
@@ -40,19 +40,19 @@ TEST(AddScalar, forwardCPU_float) {
 TEST(AddScalar, backwardCPU_float) {
 	CPUDevice device;
 	
-    auto inputValue1 = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
-    auto inputGrad1  = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
+    auto inputValue1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto inputGrad1  = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
 
-	auto outputValue = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
-    auto outputGrad  = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
+	auto outputValue = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto outputGrad  = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
 
     /**create fake Add Function*/
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device);
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
 
     std::vector<Node*> inputs = {&inputVar1};
     AddScalar<float> add(inputs, 5.0);
 
-    zeroTensor(&device, inputGrad1);
+    zeroTensor(device, inputGrad1);
 
     std::vector<const Tensor<float>*> inputValues = {&inputValue1};
 
@@ -62,10 +62,10 @@ TEST(AddScalar, backwardCPU_float) {
         ASSERT_EQ(inputGrad1.data()[i], outputGrad.data()[i]);
     }
 
-    freeTensor<CPUDevice, float>(&device, inputValue1);
-    freeTensor<CPUDevice, float>(&device, inputGrad1);
-    freeTensor<CPUDevice, float>(&device, outputValue);
-    freeTensor<CPUDevice, float>(&device, outputGrad);
+    freeTensor<CPUDevice, float>(device, inputValue1);
+    freeTensor<CPUDevice, float>(device, inputGrad1);
+    freeTensor<CPUDevice, float>(device, outputValue);
+    freeTensor<CPUDevice, float>(device, outputGrad);
 
     freeFakeVariable(inputVar1);
 }

@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(MatrixMultiply, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input0 = createTensor<CPUDevice, float>(device, 10, 400, 200);
     auto input1 = createTensor<CPUDevice, float>(device, 1,  200, 300);
@@ -47,7 +47,6 @@ TEST(MatrixMultiply, forwardCPU) {
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
 
-    delete device;
 }
 
 TEST(MatrixMultiply, forwardCPU2) {
@@ -56,7 +55,7 @@ TEST(MatrixMultiply, forwardCPU2) {
     size_t k = 100;
     size_t n = 1;
 
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input0 = createTensor<CPUDevice, float>(device, 1, m, k);
     auto input1 = createTensor<CPUDevice, float>(device, batch,  k, n);
@@ -97,11 +96,10 @@ TEST(MatrixMultiply, forwardCPU2) {
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
 
-    delete device;
 }
 
 TEST(MatrixMultiply, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto inputValue0 = createTensor<CPUDevice, float>(device, 10, 400, 200);
 	auto inputValue1 = createTensor<CPUDevice, float>(device, 1, 200, 300);
@@ -178,7 +176,6 @@ TEST(MatrixMultiply, backwardCPU) {
     freeFakeVariable(inputVar0);
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(MatrixMultiply, backwardCPU2) {
@@ -187,7 +184,7 @@ TEST(MatrixMultiply, backwardCPU2) {
     size_t k = 100;
     size_t n = 1;
 
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto inputValue0 = createTensor<CPUDevice, float>(device, 1, m, k);
     auto inputValue1 = createTensor<CPUDevice, float>(device, batch, k, n);
@@ -215,8 +212,8 @@ TEST(MatrixMultiply, backwardCPU2) {
     /**
      * test the inputGrad0
      */
-    auto temp0 = (float*) device->malloc(sizeof(float) * 1 * m * k);
-    device->zero(temp0, sizeof(float) * 1 * m * k);
+    auto temp0 = (float*) device.malloc(sizeof(float) * 1 * m * k);
+    device.zero(temp0, sizeof(float) * 1 * m * k);
 
     for (int b = 0; b < batch; ++b) {
         auto tempPtr0 = temp0;
@@ -238,8 +235,8 @@ TEST(MatrixMultiply, backwardCPU2) {
         }
     }
 
-    auto temp1 = (float*) device->malloc(sizeof(float) * batch * k * n);
-    device->zero(temp1, sizeof(float) * batch * k * n);
+    auto temp1 = (float*) device.malloc(sizeof(float) * batch * k * n);
+    device.zero(temp1, sizeof(float) * batch * k * n);
 
     for (int b = 0; b < batch; ++b) {
         auto inputPtr0 =  inputValue0.data();
@@ -269,10 +266,9 @@ TEST(MatrixMultiply, backwardCPU2) {
     freeFakeVariable(inputVar0);
     freeFakeVariable(inputVar1);
 
-    device->free(temp0);
-    device->free(temp1);
+    device.free(temp0);
+    device.free(temp1);
 
-    delete device;
 }
 
 #ifdef HAVE_CUDA

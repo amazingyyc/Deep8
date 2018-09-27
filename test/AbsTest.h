@@ -8,10 +8,10 @@ namespace Deep8 {
 TEST(Abs, forwardCPU_double) {
 	CPUDevice device;
 
-	auto input = createTensor<CPUDevice, double>(&device, size_t(10), size_t(400), size_t(200));
-	auto output = createTensor<CPUDevice, double>(&device, size_t(10), size_t(400), size_t(200));
+	auto input = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
+	auto output = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
 
-	auto inputVar1 = createFakeVariable<CPUDevice, double>(&device);
+	auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
 
 	std::vector<Node*> inputs = { &inputVar1 };
 	Abs< double> absFunc(inputs);
@@ -24,8 +24,8 @@ TEST(Abs, forwardCPU_double) {
 		ASSERT_EQ(std::abs(input.data()[i]), output.data()[i]);
 	}
 
-	freeTensor(&device, input);
-	freeTensor(&device, output);
+	freeTensor(device, input);
+	freeTensor(device, output);
 
 	freeFakeVariable(inputVar1);
 }
@@ -33,19 +33,19 @@ TEST(Abs, forwardCPU_double) {
 TEST(Abs, backwardCPU_float) {
 	CPUDevice device;
 
-    auto inputValue = createTensor<CPUDevice, float>(&device, size_t(10), size_t(400), size_t(200));
-    auto inputGrad  = createTensor<CPUDevice, float>(&device, size_t(10), size_t(400), size_t(200));
+    auto inputValue = createTensor<CPUDevice, float>(device, size_t(10), size_t(400), size_t(200));
+    auto inputGrad  = createTensor<CPUDevice, float>(device, size_t(10), size_t(400), size_t(200));
 
-    auto outputValue = createTensor<CPUDevice, float>(&device, size_t(10), size_t(400), size_t(200));
-    auto outputGrad  = createTensor<CPUDevice, float>(&device, size_t(10), size_t(400), size_t(200));
+    auto outputValue = createTensor<CPUDevice, float>(device, size_t(10), size_t(400), size_t(200));
+    auto outputGrad  = createTensor<CPUDevice, float>(device, size_t(10), size_t(400), size_t(200));
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, float>(&device);
+    auto inputVar = createFakeVariable<CPUDevice, float>(device);
 
     std::vector<Node*> inputs = {&inputVar};
     Abs<float> absFunc(inputs);
 
-    zeroTensor(&device, inputGrad);
+    zeroTensor(device, inputGrad);
 
     std::vector<const Tensor<float>*> inputValues = {&inputValue};
 
@@ -66,10 +66,10 @@ TEST(Abs, backwardCPU_float) {
         ASSERT_EQ(temp, inputGrad.data()[i]);
     }
 
-    freeTensor(&device, inputValue);
-    freeTensor(&device, inputGrad);
-    freeTensor(&device, outputValue);
-    freeTensor(&device, outputGrad);
+    freeTensor(device, inputValue);
+    freeTensor(device, inputGrad);
+    freeTensor(device, outputValue);
+    freeTensor(device, outputGrad);
 
     freeFakeVariable(inputVar);
 }

@@ -91,15 +91,15 @@ Tensor<T> createTensorGPU(GPUDevice *device, T *cpuPtr, size_t dim0, size_t dim1
 
 
 template<typename DeviceType, typename T>
-Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1, size_t dim2, size_t dim3) {
+Tensor<T> createTensor(DeviceType &device, size_t dim0, size_t dim1, size_t dim2, size_t dim3) {
 	Shape shape({ dim0, dim1, dim2, dim3 });
 
 	auto storageSize = sizeof(T) * shape.size();
 
-	auto ptr = device->malloc(storageSize);
-	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+	auto ptr = device.malloc(storageSize);
+	auto refPtr = (size_t*)device.malloc(sizeof(size_t));
 
-	TensorStorage storage(ptr, refPtr, storageSize, device);
+	TensorStorage storage(ptr, refPtr, storageSize, &device);
 
 	auto generator = [&]() -> T {
 		return rand() % 50;
@@ -111,15 +111,15 @@ Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1, size_t dim2
 }
 
 template<typename DeviceType, typename T>
-Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1, size_t dim2) {
+Tensor<T> createTensor(DeviceType &device, size_t dim0, size_t dim1, size_t dim2) {
 	Shape shape({dim0, dim1, dim2});
 
 	auto storageSize = sizeof(T) * shape.size();
 
-	auto ptr = device->malloc(storageSize);
-	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+	auto ptr = device.malloc(storageSize);
+	auto refPtr = (size_t*)device.malloc(sizeof(size_t));
 
-	TensorStorage storage(ptr, refPtr, storageSize, device);
+	TensorStorage storage(ptr, refPtr, storageSize, &device);
 
 	auto generator = [&]() -> T {
 		return rand() % 50;
@@ -131,15 +131,15 @@ Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1, size_t dim2
 }
 
 template<typename DeviceType, typename T>
-Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1) {
+Tensor<T> createTensor(DeviceType &device, size_t dim0, size_t dim1) {
 	Shape shape({ dim0, dim1 });
 
 	auto storageSize = sizeof(T) * shape.size();
 
-	auto ptr = device->malloc(storageSize);
-	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+	auto ptr = device.malloc(storageSize);
+	auto refPtr = (size_t*)device.malloc(sizeof(size_t));
 
-	TensorStorage storage(ptr, refPtr, storageSize, device);
+	TensorStorage storage(ptr, refPtr, storageSize, &device);
 
 	auto generator = [&]() -> T {
 		return rand() % 50;
@@ -151,34 +151,34 @@ Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1) {
 }
 
 template <typename DeviceType, typename T>
-void freeTensor(DeviceType *device, Tensor<T> &t) {
+void freeTensor(DeviceType &device, Tensor<T> &t) {
 }
 
 template <typename DeviceType, typename T>
-void zeroTensor(DeviceType *device, Tensor<T> &t) {
-    device->zero(t.raw(), sizeof(T) * t.size());
+void zeroTensor(DeviceType &device, Tensor<T> &t) {
+    device.zero(t.raw(), sizeof(T) * t.size());
 }
 
 /**
  * create a fake Variable for test
  */
 template <typename DeviceType, typename T>
-Deep8::Variable<T> createFakeVariable(DeviceType *device) {
+Deep8::Variable<T> createFakeVariable(DeviceType &device) {
 }
 
 /**
  * create a fake Variable for test
  */
 template <typename DeviceType = CPUDevice, typename T>
-Deep8::Variable<T> createFakeVariable(CPUDevice *device) {
+Deep8::Variable<T> createFakeVariable(CPUDevice &device) {
 	Shape shape({ 1, 1 });
 
 	auto storageSize = sizeof(T) * shape.size();
 
-	auto ptr = device->malloc(storageSize);
-	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+	auto ptr = device.malloc(storageSize);
+	auto refPtr = (size_t*)device.malloc(sizeof(size_t));
 
-	TensorStorage storage(ptr, refPtr, storageSize, device);
+	TensorStorage storage(ptr, refPtr, storageSize, &device);
 
 	Tensor<T> value(storage, 0, shape);
 	Tensor<T> grad(storage, 0, shape);
@@ -188,21 +188,21 @@ Deep8::Variable<T> createFakeVariable(CPUDevice *device) {
 
 
 template <typename DeviceType, typename T>
-Deep8::Variable<T> createFakeVariable(DeviceType *device, std::initializer_list<size_t> list) {
+Deep8::Variable<T> createFakeVariable(DeviceType &device, std::initializer_list<size_t> list) {
     
 }
 
 
 template <typename DeviceType = CPUDevice, typename T>
-Deep8::Variable<T> createFakeVariable(CPUDevice *device, std::initializer_list<size_t> list) {
+Deep8::Variable<T> createFakeVariable(CPUDevice &device, std::initializer_list<size_t> list) {
 	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
-	auto ptr = device->malloc(storageSize);
-	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+	auto ptr = device.malloc(storageSize);
+	auto refPtr = (size_t*)device.malloc(sizeof(size_t));
 
-	TensorStorage storage(ptr, refPtr, storageSize, device);
+	TensorStorage storage(ptr, refPtr, storageSize, &device);
 
 	Tensor<T> value(storage, 0, shape);
 	Tensor<T> grad(storage, 0, shape);

@@ -127,7 +127,7 @@ public:
 
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-        auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+        auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
         auto xShape = inputs[0]->shape;
         auto yShape = inputs[1]->shape;
@@ -201,7 +201,7 @@ protected:
                      Tensor<T> *iGradient) override {
         DEEP8_ARGUMENT_CHECK(0 == index || 1 == index, "the index is error");
 
-        auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
+        auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
 
         auto curValue   = inputs[(0 == index) ? 0 : 1];
         auto otherValue = inputs[(0 == index) ? 1 : 0];

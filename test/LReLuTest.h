@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(LReLu, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, 10, 400, 200);
     auto output = createTensor<CPUDevice, float>(device, 10, 400, 200);
@@ -35,11 +35,10 @@ TEST(LReLu, forwardCPU) {
 
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(LReLu, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto inputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
 	auto inputGrad = createTensor<CPUDevice, float>(device, 10, 400, 200);
@@ -75,8 +74,6 @@ TEST(LReLu, backwardCPU) {
     freeTensor(device, outputGrad);
 
     freeFakeVariable(inputVar);
-
-    delete device;
 }
 
 #ifdef HAVE_CUDA

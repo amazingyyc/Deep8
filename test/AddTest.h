@@ -11,12 +11,12 @@ namespace Deep8 {
 TEST(Add, forwardCPU_float) {
 	CPUDevice device;
 
-    auto t1 = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
-    auto t2 = createTensor<CPUDevice, float>(&device, size_t(1), size_t(200));
-    auto t3 = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
+    auto t1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto t2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
+    auto t3 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device);
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(&device);
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar2 = createFakeVariable<CPUDevice, float>(device);
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
     Add<float> add(inputs);
@@ -33,9 +33,9 @@ TEST(Add, forwardCPU_float) {
         }
     }
 
-    freeTensor<CPUDevice, float>(&device, t1);
-    freeTensor<CPUDevice, float>(&device, t2);
-    freeTensor<CPUDevice, float>(&device, t3);
+    freeTensor<CPUDevice, float>(device, t1);
+    freeTensor<CPUDevice, float>(device, t2);
+    freeTensor<CPUDevice, float>(device, t3);
 
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
@@ -44,24 +44,24 @@ TEST(Add, forwardCPU_float) {
 TEST(Add, backwardCPU_float) {
 	CPUDevice device;
 
-    auto inputValue1 = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
-    auto inputValue2 = createTensor<CPUDevice, float>(&device, size_t(1), size_t(200));
+    auto inputValue1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto inputValue2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
 
-    auto inputGrad1 = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
-    auto inputGrad2 = createTensor<CPUDevice, float>(&device, size_t(1), size_t(200));
+    auto inputGrad1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto inputGrad2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
 
-    auto outputValue = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
-    auto outputGrad  = createTensor<CPUDevice, float>(&device, size_t(10), size_t(500), size_t(200));
+    auto outputValue = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto outputGrad  = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
 
     /**create fake Add Function*/
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device);
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(&device);
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar2 = createFakeVariable<CPUDevice, float>(device);
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
     Add<float> add(inputs);
 
-    zeroTensor(&device, inputGrad1);
-    zeroTensor(&device, inputGrad2);
+    zeroTensor(device, inputGrad1);
+    zeroTensor(device, inputGrad2);
 
     std::vector<const Tensor<float>*> inputValues = {&inputValue1, &inputValue2};
 
@@ -84,12 +84,12 @@ TEST(Add, backwardCPU_float) {
         ASSERT_EQ(inputGrad2.data()[i], temp);
     }
 
-    freeTensor<CPUDevice, float>(&device, inputValue1);
-    freeTensor<CPUDevice, float>(&device, inputValue2);
-    freeTensor<CPUDevice, float>(&device, inputGrad1);
-    freeTensor<CPUDevice, float>(&device, inputGrad2);
-    freeTensor<CPUDevice, float>(&device, outputValue);
-    freeTensor<CPUDevice, float>(&device, outputGrad);
+    freeTensor<CPUDevice, float>(device, inputValue1);
+    freeTensor<CPUDevice, float>(device, inputValue2);
+    freeTensor<CPUDevice, float>(device, inputGrad1);
+    freeTensor<CPUDevice, float>(device, inputGrad2);
+    freeTensor<CPUDevice, float>(device, outputValue);
+    freeTensor<CPUDevice, float>(device, outputGrad);
 
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);

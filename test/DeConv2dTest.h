@@ -23,7 +23,7 @@ TEST(DeConv2d, forwardCPU) {
     size_t outputWidth  = (inputWidth  - 1) * strideX + 1 - strideX + filterW;
     size_t outputChannel = 32;
 
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
     auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
@@ -89,8 +89,6 @@ TEST(DeConv2d, forwardCPU) {
 
 	freeFakeVariable(inputVar1);
 	freeFakeVariable(inputVar2);
-
-    delete device;
 }
 
 TEST(DeConv2d, backwardCPU) {
@@ -111,7 +109,7 @@ TEST(DeConv2d, backwardCPU) {
     size_t outputWidth  = (inputWidth  - 1) * strideW + 1 - strideW + filterW;
     size_t outputChannel = 32;
 
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto input = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
 	auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH, filterW, inputChannel);
@@ -141,11 +139,11 @@ TEST(DeConv2d, backwardCPU) {
     int64_t padTop    = -padH / 2;
     int64_t padLeft   = -padW / 2;
 
-    auto *inputMat = (float*)device->malloc(sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
-    auto *inputGradTemp = (float*)device->malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+    auto *inputMat = (float*)device.malloc(sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    auto *inputGradTemp = (float*)device.malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
 
-    device->zero(inputGradTemp, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
-    device->zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    device.zero(inputGradTemp, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+    device.zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
 
     /**
      * test the inputGrad
@@ -205,7 +203,7 @@ TEST(DeConv2d, backwardCPU) {
     /**
      * test the filterGrad
      */
-    device->zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    device.zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
 
     for (int64_t row = 0; row < batch * outputHeight * outputWidth; ++row) {
         int64_t b = row / (outputHeight * outputWidth);
@@ -265,10 +263,8 @@ TEST(DeConv2d, backwardCPU) {
 	freeFakeVariable(inputVar1);
 	freeFakeVariable(inputVar2);
 
-    device->free(inputMat);
-    device->free(inputGradTemp);
-
-    delete device;
+    device.free(inputMat);
+    device.free(inputGradTemp);
 }
 
 
