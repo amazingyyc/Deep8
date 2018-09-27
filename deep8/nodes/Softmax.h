@@ -271,8 +271,8 @@ protected:
 		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> inputTensor(inputs[0]->data(), batch, size);
 		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> outputTensor(output->data(), batch, size);
 
-		outputTensor.device(*eigenDevice) = (inputTensor - inputTensor.maximum(reduceDims).reshape(reshape).broadcast(broad)).exp();
-		outputTensor.device(*eigenDevice) = outputTensor / outputTensor.sum(reduceDims).reshape(reshape).broadcast(broad);
+		auto temp = (inputTensor - inputTensor.maximum(reduceDims).reshape(reshape).broadcast(broad)).exp();
+		outputTensor.device(*eigenDevice) = temp / temp.sum(reduceDims).reshape(reshape).broadcast(broad);
 	}
 
 #ifdef HAVE_HALF
@@ -288,41 +288,25 @@ protected:
 		const Tensor<real> *outputGradient,
 		size_t index,
 		Tensor<real> *iGradient) {
-		//DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
+		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
 
-		//auto cpuDevice = static_cast<CPUDevice*>(iGradient->device());
-		//auto eigenDevice = cpuDevice->eigenDevice;
+		auto cpuDevice = static_cast<CPUDevice*>(iGradient->device());
+		auto eigenDevice = cpuDevice->eigenDevice;
 
-		//auto shape = outputGradient->shape;
+		auto shape = outputGradient->shape;
 
-		//auto batch = shape.batch();
-		//auto size = shape.size() / batch;
+		auto batch = (int) shape.batch();
+		auto size  = (int) shape.batchSize();
 
-		//auto sumPtr = static_cast<real*>(cpuDevice->malloc(sizeof(T) * batch));
+        Eigen::array<int, 1> sumDims = { 1 };
+        Eigen::array<int, 2> reshape = { batch, 1 };
+        Eigen::array<int, 2> broad   = { 1, size };
 
-		//// Tensor<real> sum(sumPtr, { batch }, cpuDevice);
+        Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> dx(iGradient->data(), batch, size);
+        Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> y(output->data(), batch, size);
+        Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> dy(outputGradient->data(), batch, size);
 
-		//Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> sumTensor(sumPtr, (int)batch);
-
-		//Eigen::array<size_t, 1> sumDims = { 1 };
-		//Eigen::array<size_t, 2> reShapeDims = { batch, size };
-		//Eigen::array<size_t, 1> sumReShapeDims = { batch };
-
-		//sumTensor.device(*eigenDevice) = (eTVec(outputGradient).reshape(reShapeDims) * eTVec(output).reshape(reShapeDims)).sum(sumDims).reshape(sumReShapeDims);
-
-		//Tensor<real> outputGradientRow(outputGradient->data(), { size }, cpuDevice);
-		//Tensor<real> outputValueRow(output->data(), { size }, cpuDevice);
-		//Tensor<real> iGradientRow(iGradient->data(), { size }, cpuDevice);
-
-		//for (size_t b = 0; b < batch; ++b) {
-		//	eTVec(iGradientRow).device(*eigenDevice) += (eTVec(outputGradientRow) - sumPtr[b]) * eTVec(outputValueRow);
-
-		//	outputGradientRow.pointer = (byte*)(outputGradientRow.raw()) + size * sizeof(real);
-		//	outputValueRow.pointer    = (byte*)(outputValueRow.raw()) + size * sizeof(real);
-		//	iGradientRow.pointer      = (byte*)(iGradientRow.raw()) + size * sizeof(real);
-		//}
-
-		//cpuDevice->free(sumPtr);
+        dx.device(*eigenDevice) += (dy - (y * dy).sum(sumDims).reshape(reshape).broadcast(broad)) * y;
 	}
 
 #ifdef HAVE_HALF

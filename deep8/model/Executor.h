@@ -67,6 +67,8 @@ protected:
 	}
 #endif
 
+#ifdef HAVE_CUDA
+
 	template <typename real>
 	Tensor<real> createTensorWithShapeGPU(Shape &shape) {
 		size_t size = sizeof(real) * shape.size();
@@ -80,6 +82,8 @@ protected:
 
 		return Tensor<real>(storage, 0, shape);
 	}
+
+#endif
 
 	Tensor<T> createTensorWithShape(Shape &shape) {
 		if (DeviceType::CPU == device->type) {
