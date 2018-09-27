@@ -8,6 +8,7 @@ namespace Deep8 {
  * the TensorStorage is to store the memory of the Tensor
  * it use the ref count to manage the memory automatic
  */
+
 class TensorStorage {
 public:
     /**the device*/
@@ -31,6 +32,15 @@ public:
 
         (*refPtr) = 1;
     }
+
+	explicit TensorStorage(const TensorStorage &other) {
+		(*other.refPtr)++;
+
+		ptr    = other.ptr;
+		refPtr = other.refPtr;
+		size   = other.size;
+		device = other.device;
+	}
 
     ~TensorStorage() {
         if (nullptr != refPtr) {
@@ -61,55 +71,7 @@ public:
         return *this;
     }
 
-    TensorStorage &operator=(const TensorStorage other) {
-        (*other.refPtr)++;
-
-        if (nullptr != refPtr) {
-            (*refPtr)--;
-
-            if (0 == (*refPtr)) {
-                free();
-            }
-        }
-
-        ptr    = other.ptr;
-        refPtr = other.refPtr;
-        size   = other.size;
-        device = other.device;
-
-        return *this;
-    }
-
-    TensorStorage clone() {
-        if (DeviceType::CPU == device->type) {
-            return cloneCPU();
-        } else {
-#ifdef HAVE_CUDA
-            return cloneGPU();
-#else
-            DEEP8_RUNTIME_ERROR("can not call GPU function without a GPU");
-#endif
-        }
-    }
-
 protected:
-    TensorStorage cloneCPU() {
-        auto p    = device->malloc(size);
-        auto refP = (size_t*) device->malloc(sizeof(size_t));
-
-        return TensorStorage(p, refP, size, device);
-    }
-
-#ifdef HAVE_CUDA
-    TensorStorage cloneGPU() {
-        auto gpuDevice = static_cast<GPUDevice*>(device);
-
-        auto p    = gpuDevice->malloc(size);
-        auto refP = (size_t*) gpuDevice->mallocCPU(sizeof(size_t));
-
-        return TensorStorage(p, refP, size, device);
-    }
-#endif
 
     void free() {
         if (DeviceType::CPU == device->type) {

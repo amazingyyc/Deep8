@@ -65,7 +65,7 @@ public:
 
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-        auto eigenDevice = static_cast<CPUDevice*>(output->device)->eigenDevice;
+        auto eigenDevice = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
         eTVec(output).device(*eigenDevice) = eTVec(inputs[0]).abs();
     }
@@ -79,7 +79,7 @@ protected:
             DEEP8_RUNTIME_ERROR("the index of Abs backwardCPU is error");
         }
 
-        auto eigenDevice = static_cast<CPUDevice*>(output->device)->eigenDevice;
+        auto eigenDevice = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
         eTVec(iGradient).device(*eigenDevice) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), AbsBackwardExpr<T>());
     }

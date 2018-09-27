@@ -94,55 +94,69 @@ template<typename DeviceType, typename T>
 Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1, size_t dim2, size_t dim3) {
 	Shape shape({ dim0, dim1, dim2, dim3 });
 
-	auto ptr = (T*)device->malloc(sizeof(T) * shape.size());
+	auto storageSize = sizeof(T) * shape.size();
+
+	auto ptr = device->malloc(storageSize);
+	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+
+	TensorStorage storage(ptr, refPtr, storageSize, device);
 
 	auto generator = [&]() -> T {
 		return rand() % 50;
 	};
 
-	std::generate(ptr, ptr + shape.size(), generator);
+	std::generate((T*)ptr, (T*)ptr + shape.size(), generator);
 
-	return Tensor<T>(ptr, shape, device);
+	return Tensor<T>(storage, 0, shape);
 }
 
 template<typename DeviceType, typename T>
 Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1, size_t dim2) {
 	Shape shape({dim0, dim1, dim2});
 
-	auto ptr = (T*)device->malloc(sizeof(T) * shape.size());
+	auto storageSize = sizeof(T) * shape.size();
+
+	auto ptr = device->malloc(storageSize);
+	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+
+	TensorStorage storage(ptr, refPtr, storageSize, device);
 
 	auto generator = [&]() -> T {
 		return rand() % 50;
 	};
 
-	std::generate(ptr, ptr + shape.size(), generator);
+	std::generate((T*)ptr, (T*)ptr + shape.size(), generator);
 
-	return Tensor<T>(ptr, shape, device);
+	return Tensor<T>(storage, 0, shape);
 }
 
 template<typename DeviceType, typename T>
 Tensor<T> createTensor(DeviceType *device, size_t dim0, size_t dim1) {
 	Shape shape({ dim0, dim1 });
 
-	auto ptr = (T*)device->malloc(sizeof(T) * shape.size());
+	auto storageSize = sizeof(T) * shape.size();
+
+	auto ptr = device->malloc(storageSize);
+	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+
+	TensorStorage storage(ptr, refPtr, storageSize, device);
 
 	auto generator = [&]() -> T {
 		return rand() % 50;
 	};
 
-	std::generate(ptr, ptr + shape.size(), generator);
+	std::generate((T*)ptr, (T*)ptr + shape.size(), generator);
 
-	return Tensor<T>(ptr, shape, device);
+	return Tensor<T>(storage, 0, shape);
 }
 
 template <typename DeviceType, typename T>
 void freeTensor(DeviceType *device, Tensor<T> &t) {
-    device->free(t.pointer);
 }
 
 template <typename DeviceType, typename T>
 void zeroTensor(DeviceType *device, Tensor<T> &t) {
-    device->zero(t.pointer, sizeof(T) * t.size());
+    device->zero(t.raw(), sizeof(T) * t.size());
 }
 
 /**
@@ -150,23 +164,52 @@ void zeroTensor(DeviceType *device, Tensor<T> &t) {
  */
 template <typename DeviceType, typename T>
 Deep8::Variable<T> createFakeVariable(DeviceType *device) {
-    Shape shape({1, 1});
-
-    auto value = Tensor<T>(nullptr, shape, device);
-    auto grad  = Tensor<T>(nullptr, shape, device);
-
-    return Deep8::Parameter<T>(value, grad);
 }
+
+/**
+ * create a fake Variable for test
+ */
+template <typename DeviceType = CPUDevice, typename T>
+Deep8::Variable<T> createFakeVariable(CPUDevice *device) {
+	Shape shape({ 1, 1 });
+
+	auto storageSize = sizeof(T) * shape.size();
+
+	auto ptr = device->malloc(storageSize);
+	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+
+	TensorStorage storage(ptr, refPtr, storageSize, device);
+
+	Tensor<T> value(storage, 0, shape);
+	Tensor<T> grad(storage, 0, shape);
+
+	return Deep8::Parameter<T>(value, grad);
+}
+
 
 template <typename DeviceType, typename T>
 Deep8::Variable<T> createFakeVariable(DeviceType *device, std::initializer_list<size_t> list) {
-    Shape shape(list);
-
-    auto value = Tensor<T>(nullptr, shape, device);
-    auto grad  = Tensor<T>(nullptr, shape, device);
-
-    return Deep8::Parameter<T>(value, grad);
+    
 }
+
+
+template <typename DeviceType = CPUDevice, typename T>
+Deep8::Variable<T> createFakeVariable(CPUDevice *device, std::initializer_list<size_t> list) {
+	Shape shape(list);
+
+	auto storageSize = sizeof(T) * shape.size();
+
+	auto ptr = device->malloc(storageSize);
+	auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+
+	TensorStorage storage(ptr, refPtr, storageSize, device);
+
+	Tensor<T> value(storage, 0, shape);
+	Tensor<T> grad(storage, 0, shape);
+
+	return Deep8::Parameter<T>(value, grad);
+}
+
 
 template <typename T>
 void freeFakeVariable(Deep8::Variable<T> &var) {

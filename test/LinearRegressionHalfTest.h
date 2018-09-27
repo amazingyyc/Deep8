@@ -14,7 +14,7 @@ TEST(LinearRegression, half_Test) {
 	half x[4] = { 4.0, -1.0, 2.0, 1.0 };
 	half y[2] = { 10.0, 8.0 };
 
-	DefaultExecutor<half> executor(new MomentumTrainer<half>(), DeviceType::GPU);
+	DefaultExecutor<half> executor(new AdagradTrainer<half>(), DeviceType::GPU);
 
 	auto wP = executor.addParameter({1, 2});
     Expression<half> W(&executor, wP);
@@ -30,7 +30,7 @@ TEST(LinearRegression, half_Test) {
 	for (int i = 0; i < 1000; ++i) {
 		(input * W - output).l1Norm().backward();
 
-		((GPUDevice*)(wP->value.device))->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(half) * 2);
+		((GPUDevice*)(wP->value.device()))->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(half) * 2);
         std::cout << i + 1 << " => " << "[" << __half2float(wPtr[0]) << "," << __half2float(wPtr[1]) << "]" << std::endl;
 	}
 

@@ -199,7 +199,7 @@ protected:
 
     void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
-    forwardGPUImpl(static_cast<GPUDevice*>(output->device), 
+    forwardGPUImpl(static_cast<GPUDevice*>(output->device()), 
                     inputs[0]->data(), inputs[0]->shape, 
                     inputs[1]->data(), inputs[1]->shape, 
                     output->data(), output->shape);
@@ -420,7 +420,7 @@ protected:
                      size_t index,
                      Tensor<T> *iGradient) override {
 #ifdef HAVE_CUDA
-    auto device = static_cast<GPUDevice*>(iGradient->device);
+    auto device = static_cast<GPUDevice*>(iGradient->device());
 
     if (0 == index) {
         backwardGPUImpl0(device, iGradient->data(), iGradient->shape, inputs[1]->data(), inputs[1]->shape, outputGradient->data(), outputGradient->shape);

@@ -6,12 +6,12 @@
 namespace Deep8 {
 
 TEST(AvgPooling2d, forwardCPU_float) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, size_t(1), size_t(32), size_t(32), size_t(64));
-    auto output = createTensor<CPUDevice, float>(device, size_t(1), size_t(16), size_t(16), size_t(64));
+    auto input  = createTensor<CPUDevice, float>(&device, size_t(1), size_t(32), size_t(32), size_t(64));
+    auto output = createTensor<CPUDevice, float>(&device, size_t(1), size_t(16), size_t(16), size_t(64));
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device, {1, 32, 32, 64});
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device, {1, 32, 32, 64});
 
     std::vector<Node*> inputs = {&inputVar1};
     AvgPooling2d<float> vagPooling(inputs, true, 3, 3, 2, 2);
@@ -41,26 +41,24 @@ TEST(AvgPooling2d, forwardCPU_float) {
         }
     }
 
-    freeTensor(device, input);
-    freeTensor(device, output);
+    freeTensor(&device, input);
+    freeTensor(&device, output);
 
     freeFakeVariable(inputVar1);
-
-    delete device;
 }
 
 TEST(AvgPooling2d, backwardCPU_float) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, float>(device, size_t(1), size_t(32), size_t(32), size_t(64));
-	auto inputGrad = createTensor<CPUDevice, float>(device, size_t(1), size_t(32), size_t(32), size_t(64));
+	auto inputValue = createTensor<CPUDevice, float>(&device, size_t(1), size_t(32), size_t(32), size_t(64));
+	auto inputGrad = createTensor<CPUDevice, float>(&device, size_t(1), size_t(32), size_t(32), size_t(64));
 
-    auto outputValue = createTensor<CPUDevice, float>(device, size_t(1), size_t(16), size_t(16), size_t(64));
-    auto outputGrad  = createTensor<CPUDevice, float>(device, size_t(1), size_t(16), size_t(16), size_t(64));
+    auto outputValue = createTensor<CPUDevice, float>(&device, size_t(1), size_t(16), size_t(16), size_t(64));
+    auto outputGrad  = createTensor<CPUDevice, float>(&device, size_t(1), size_t(16), size_t(16), size_t(64));
 
-    zeroTensor(device, inputGrad);
+    zeroTensor(&device, inputGrad);
 
-    auto inputVar = createFakeVariable<CPUDevice, float>(device, {1, 32, 32, 64});
+    auto inputVar = createFakeVariable<CPUDevice, float>(&device, {1, 32, 32, 64});
 
     std::vector<Node*> inputs = {&inputVar};
     AvgPooling2d<float> avgPooling2d(inputs, false, 2, 2, 2, 2);
@@ -89,14 +87,12 @@ TEST(AvgPooling2d, backwardCPU_float) {
         }
     }
 
-    freeTensor(device, inputValue);
-    freeTensor(device, inputGrad);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
+    freeTensor(&device, inputValue);
+    freeTensor(&device, inputGrad);
+    freeTensor(&device, outputValue);
+    freeTensor(&device, outputGrad);
 
     freeFakeVariable(inputVar);
-
-    delete device;
 }
 
 
@@ -120,7 +116,7 @@ TEST(AvgPooling2d, forwardGPU_float) {
 
     vagPooling.forwardGPU(inputTensor, &output);
 
-    device->copyFromGPUToCPU(output.pointer, cpuOutputPtr, sizeof(float) * 1 * 16 * 16 * 64);
+    device->copyFromGPUToCPU(output.raw(), cpuOutputPtr, sizeof(float) * 1 * 16 * 16 * 64);
 
     for (int y = 0; y < 16; ++y) {
         for (int x = 0; x < 16; ++x) {
@@ -183,7 +179,7 @@ TEST(AvgPooling2d, backwardGPU_float) {
 
 	vagPooling.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
-    device->copyFromGPUToCPU(inputGrad.pointer, cpuInputGradPtr, sizeof(float) * 1 * 32 * 32 * 64);
+    device->copyFromGPUToCPU(inputGrad.raw(), cpuInputGradPtr, sizeof(float) * 1 * 32 * 32 * 64);
 
 	auto tempinputgradptr = (real*)malloc(sizeof(real) * 1 * 32 * 32 * 64);
 	memset(tempinputgradptr, 0, sizeof(real) * 1 * 32 * 32 * 64);

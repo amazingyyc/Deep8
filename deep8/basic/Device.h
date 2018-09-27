@@ -110,7 +110,7 @@ public:
 	explicit GPUDevice() : GPUDevice(0) {
 	}
 
-	explicit GPUDevice(int deviceId) : Device(DeviceType::GPU), deviceId(deviceId) {
+	explicit GPUDevice(int id) : Device(DeviceType::GPU), deviceId(id) {
 		CUDA_CHECK(cudaSetDevice(deviceId));
 
 		memoryPool = new GPUMemoryPool(deviceId);

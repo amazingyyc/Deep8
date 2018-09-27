@@ -68,6 +68,9 @@
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 
+/**define the byte type*/
+typedef unsigned char byte;
+
 #include "basic/Exception.h"
 #include "basic/CudaException.h"
 #include "basic/MemoryAllocator.h"

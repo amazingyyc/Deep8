@@ -98,7 +98,7 @@ protected:
     virtual void check() {
         DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
-		DEEP8_ARGUMENT_CHECK(value.device->type == gradient.device->type, "the values and gradient must be the same type");
+		DEEP8_ARGUMENT_CHECK(value.device()->type == gradient.device()->type, "the values and gradient must be the same type");
 		DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape if Value and Gradient must be same");
         
         for (auto i : inputs) {
@@ -111,13 +111,6 @@ protected:
 
 public:
 	~Variable() override {
-		if (false == this->shared) {
-			value.free();
-
-			if (true == this->updateGradient) {
-				gradient.free();
-			}
-		}
     }
 
 	/**
@@ -131,7 +124,7 @@ public:
 	 * get the device type
 	 */
 	DeviceType deviceType() override {
-		return value.device->type;
+		return value.device()->type;
 	}
 
 	/**
@@ -140,13 +133,13 @@ public:
 	void setGradientOne() override {
 		DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
 
-		if (DeviceType::CPU == gradient.device->type) {
-			(static_cast<T*>(gradient.pointer))[0] = T(1);
+		if (DeviceType::CPU == gradient.device()->type) {
+			gradient.data()[0] = T(1);
 		} else {
 #ifdef HAVE_CUDA
-			auto device = static_cast<GPUDevice*>(gradient.device);
+			auto device = static_cast<GPUDevice*>(gradient.device());
 
-			device->copyFromGPUToGPU(device->gpuOne<T>(), gradient.pointer, sizeof(T));
+			device->copyFromGPUToGPU(device->gpuOne<T>(), gradient.raw(), sizeof(T));
 #else
 			DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
 #endif

@@ -4,11 +4,6 @@
 namespace Deep8 {
 
 /**
- * define the byte type
- */
-typedef char byte;
-
-/**
  * every memory block max size is 2^MAX_MEMORY_BLOCK_RANK
  * the default is 512MB
  */
@@ -86,6 +81,9 @@ public:
 
 		while (chunk != &tail[maxLevel]) {
 			auto temp = chunk->next;
+
+			chunk->prev->next = chunk->next;
+			chunk->next->prev = chunk->prev;
 
 			allocator->free(chunk);
 
@@ -398,6 +396,9 @@ public:
 
 		while (chunk != &tail[maxLevel]) {
 			auto temp = chunk->next;
+
+			chunk->prev->next = chunk->next;
+			chunk->next->prev = chunk->prev;
 
 			gpuAllocator->free(chunk->ptr);
 			cpuMemoryPool->free(chunk);

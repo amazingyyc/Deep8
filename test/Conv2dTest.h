@@ -29,14 +29,14 @@ TEST(Conv2d, forwardCPU_float) {
 	size_t outputWidth  = (inputWidth - realFilterW)  / static_cast<size_t>(strideW) + 1;
 	size_t outputChannel = 32;
 
-    auto device = new CPUDevice();
+	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-    auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
-    auto output = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
+    auto input  = createTensor<CPUDevice, float>(&device, batch, inputHeight, inputWidth, inputChannel);
+    auto filter = createTensor<CPUDevice, float>(&device, outputChannel, filterH,  filterW, inputChannel);
+    auto output = createTensor<CPUDevice, float>(&device, batch, outputHeight, outputWidth, outputChannel);
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
+    auto inputVar2 = createFakeVariable<CPUDevice, float>(&device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
     Conv2d<float> conv2d(inputs, isCovered, size_t(strideH), size_t(strideW), size_t(dilationH), size_t(dilationW));
@@ -79,14 +79,12 @@ TEST(Conv2d, forwardCPU_float) {
         }
     }
 
-    freeTensor(device, input);
-    freeTensor(device, filter);
-    freeTensor(device, output);
+    freeTensor(&device, input);
+    freeTensor(&device, filter);
+    freeTensor(&device, output);
 
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
-
-    delete device;
 }
 
 TEST(Conv2d, backwardCPU_float) {
@@ -113,25 +111,25 @@ TEST(Conv2d, backwardCPU_float) {
 	size_t outputWidth  = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
 	size_t outputChannel = 32;
 
-    auto device = new CPUDevice();
+	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-    auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
-    auto output = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
+    auto input  = createTensor<CPUDevice, float>(&device, batch, inputHeight, inputWidth, inputChannel);
+    auto filter = createTensor<CPUDevice, float>(&device, outputChannel, filterH,  filterW, inputChannel);
+    auto output = createTensor<CPUDevice, float>(&device, batch, outputHeight, outputWidth, outputChannel);
 
-    auto inputGrad  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-    auto filterGrad = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
-    auto outputGrad = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
+    auto inputGrad  = createTensor<CPUDevice, float>(&device, batch, inputHeight, inputWidth, inputChannel);
+    auto filterGrad = createTensor<CPUDevice, float>(&device, outputChannel, filterH,  filterW, inputChannel);
+    auto outputGrad = createTensor<CPUDevice, float>(&device, batch, outputHeight, outputWidth, outputChannel);
 
     /**create fake Function*/
-    auto inputVar0 = createFakeVariable<CPUDevice, float>(device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
+    auto inputVar0 = createFakeVariable<CPUDevice, float>(&device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
+    auto inputVar1 = createFakeVariable<CPUDevice, float>(&device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
 
     std::vector<Node*> inputs = {&inputVar0, &inputVar1};
     Conv2d<float> conv2d(inputs, isCovered, size_t(strideH), size_t(strideW), size_t(dilationH), size_t(dilationW));
 
-    zeroTensor(device, inputGrad);
-    zeroTensor(device, filterGrad);
+    zeroTensor(&device, inputGrad);
+    zeroTensor(&device, filterGrad);
 
     std::vector<const Tensor<float>*> inputValues = {&input, &filter};
 
@@ -144,11 +142,11 @@ TEST(Conv2d, backwardCPU_float) {
     int64_t padTop    = -padY / 2;
     int64_t padLeft   = -padX / 2;
 
-    auto *inputMat = (float*)device->malloc(sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
-    auto *inputGradTemp = (float*)device->malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+    auto *inputMat = (float*)device.malloc(sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    auto *inputGradTemp = (float*)device.malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
 
-    device->zero(inputGradTemp, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
-    device->zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    device.zero(inputGradTemp, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+    device.zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
 
     /**
      * test the inputGrad
@@ -195,7 +193,7 @@ TEST(Conv2d, backwardCPU_float) {
     /**
      * test the filterGrad
      */
-    device->zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    device.zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
 
     for (int64_t row = 0; row < batch * outputHeight * outputWidth; ++row) {
         int64_t b = row / (outputHeight * outputWidth);
@@ -232,20 +230,18 @@ TEST(Conv2d, backwardCPU_float) {
 		}
 	}
 
-    freeTensor(device, input);
-    freeTensor(device, filter);
-    freeTensor(device, output);
-    freeTensor(device, inputGrad);
-    freeTensor(device, filterGrad);
-    freeTensor(device, outputGrad);
+    freeTensor(&device, input);
+    freeTensor(&device, filter);
+    freeTensor(&device, output);
+    freeTensor(&device, inputGrad);
+    freeTensor(&device, filterGrad);
+    freeTensor(&device, outputGrad);
 
     freeFakeVariable(inputVar0);
     freeFakeVariable(inputVar1);
 
-    device->free(inputMat);
-    device->free(inputGradTemp);
-
-    delete device;
+    device.free(inputMat);
+    device.free(inputGradTemp);
 }
 
 #ifdef HAVE_CUDA
