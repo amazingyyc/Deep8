@@ -110,7 +110,7 @@ TEST(Softmax, backwardCPU) {
 TEST(Softmax, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 400 * 200);
 	auto inputGradPtr = (real*)malloc(sizeof(real) * 400 * 200);
@@ -136,8 +136,8 @@ TEST(Softmax, GPU_float) {
 	softmax.forwardGPU(inputTensor, &output);
 	softmax.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 400 * 200);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 400 * 200);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
 
 	auto temp = (real*)malloc(sizeof(real) * 200);
 
@@ -202,15 +202,13 @@ TEST(Softmax, GPU_float) {
 	freeTensor(device, inputGrad);
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
-
-	delete device;
 }
 #ifdef HAVE_HALF
 
 TEST(Softmax, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 400, 200);
@@ -227,8 +225,6 @@ TEST(Softmax, half_GPU) {
 
 	softmax.forwardGPU(inputTensor, &output);
 	softmax.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
-
-	delete device;
 }
 
 #endif // HAVE_HALF

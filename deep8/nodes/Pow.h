@@ -20,7 +20,7 @@ __global__ void PowBackwardKernel(real *xGrad, const real *X, const real scalar,
 	int start  = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 
-	real realScalar = scalar - 1;
+	real realScalar = scalar - real(1);
 
 	for (int i = start; i < N; i += stride) {
 		xGrad[i] += yGrad[i] * cuPow(X[i], realScalar) * scalar;

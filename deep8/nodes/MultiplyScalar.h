@@ -128,7 +128,7 @@ protected:
 #ifdef HAVE_CUDA
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-		auto device = static_cast<GPUDevice*>(iGradient->device);
+		auto device = static_cast<GPUDevice*>(iGradient->device());
 
 		backwardGPUImpl(device->cublasHandle, iGradient->data(), scalar, outputGradient->data(), static_cast<int>(iGradient->size()));
 #else

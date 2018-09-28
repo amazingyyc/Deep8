@@ -271,7 +271,7 @@ TEST(DeConv2d, backwardCPU) {
 #ifdef HAVE_CUDA
 
 TEST(DeConv2d, forwarGPU_float) {
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	bool isCovered = true;
 
@@ -308,7 +308,7 @@ TEST(DeConv2d, forwarGPU_float) {
 
 	transposeConv2d.forwardGPU(inputTensor, &output);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
 
 	int64_t padH = std::max<int64_t>(0, outputHeight + filterH - (inputHeight - 1) * static_cast<int64_t>(strideY) - 2);
 	int64_t padW = std::max<int64_t>(0, outputWidth + filterW - (inputWidth - 1) * static_cast<int64_t>(strideX) - 2);
@@ -366,7 +366,6 @@ TEST(DeConv2d, forwarGPU_float) {
 	free(filterPtr);
 	free(outputPtr);
 
-	delete device;
 }
 
 TEST(DeConv2d, backwarGPU_float) {
@@ -387,7 +386,7 @@ TEST(DeConv2d, backwarGPU_float) {
     size_t outputWidth  = (inputWidth  - 1) * strideW + 1 - strideW + filterW;
     size_t outputChannel = 32;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputValuePtr = (float*)malloc(sizeof(float)*batch * inputHeight * inputWidth * inputChannel);
 	auto inputGradPtr = (float*)malloc(sizeof(float)*batch * inputHeight * inputWidth * inputChannel);
@@ -421,8 +420,8 @@ TEST(DeConv2d, backwarGPU_float) {
 	transposeConv2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 	transposeConv2d.backwardGPU(inputTensor, &output, &outputGrad, 1, &filterGrad);
 
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
-	device->copyFromGPUToCPU(filterGrad.pointer, filterGradPtr, sizeof(float) * outputChannel * filterH * filterW * inputChannel);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+	device.copyFromGPUToCPU(filterGrad.raw(), filterGradPtr, sizeof(float) * outputChannel * filterH * filterW * inputChannel);
 
 	int64_t padH = std::max<int64_t>(0, outputHeight + filterH - (inputHeight - 1) * static_cast<int64_t>(strideH) - 2);
 	int64_t padW = std::max<int64_t>(0, outputWidth + filterW - (inputWidth - 1) * static_cast<int64_t>(strideW) - 2);
@@ -564,7 +563,6 @@ TEST(DeConv2d, backwarGPU_float) {
 	free(inputMat);
 	free(inputGradTemp);
 
-	delete device;
 }
 
 
@@ -588,7 +586,7 @@ TEST(DeConv2d, half_GPU) {
 	size_t outputWidth = (inputWidth - 1) * strideW + 1 - strideW + filterW;
 	size_t outputChannel = 32;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
 	auto inputGrad = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
@@ -614,7 +612,6 @@ TEST(DeConv2d, half_GPU) {
 	transposeConv2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 	transposeConv2d.backwardGPU(inputTensor, &output, &outputGrad, 1, &filterGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

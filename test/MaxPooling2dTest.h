@@ -118,7 +118,7 @@ TEST(MaxPooling2d, backwardCPU) {
 TEST(MaxPooling2d, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 1 * 32 * 32 * 64);
 	auto inputGradPtr = (real*)malloc(sizeof(real) * 1 * 32 * 32 * 64);
@@ -144,8 +144,8 @@ TEST(MaxPooling2d, GPU_float) {
 	maxPooling2d.forwardGPU(inputTensor, &output);
 	maxPooling2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 1 * 15 * 15 * 64);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 1 * 32 * 32 * 64);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 1 * 15 * 15 * 64);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 1 * 32 * 32 * 64);
 
 	for (int i = 0; i < 15; ++i) {
 		for (int j = 0; j < 15; ++j) {
@@ -214,8 +214,6 @@ TEST(MaxPooling2d, GPU_float) {
 	freeTensor(device, inputGrad);
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
-
-	delete device;
 }
 
 
@@ -224,7 +222,7 @@ TEST(MaxPooling2d, GPU_float) {
 TEST(MaxPooling2d, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 1, 32, 32, 64);
 	auto inputGrad = createTensorGPU<real>(device, 1, 32, 32, 64);
@@ -243,8 +241,6 @@ TEST(MaxPooling2d, half_GPU) {
 
 	maxPooling2d.forwardGPU(inputTensor, &output);
 	maxPooling2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
-
-	delete device;
 }
 
 #endif // HAVE_HALF

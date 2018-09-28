@@ -74,7 +74,7 @@ TEST(MultiplyScalar, backwardCPU) {
 TEST(MultiplyScalar, GPU_float) {
     typedef float real;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto inputPtr = (real*)malloc(sizeof(real) * 10 * 500 * 200);
     auto inputGradPtr = (real*)malloc(sizeof(real) * 10 * 500 * 200);
@@ -100,8 +100,8 @@ TEST(MultiplyScalar, GPU_float) {
 	multiplyScalar.forwardGPU(inputTensor, &output);
 	multiplyScalar.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 500 * 200);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 500 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 500 * 200);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 500 * 200);
 
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {
@@ -124,8 +124,6 @@ TEST(MultiplyScalar, GPU_float) {
 	freeTensor(device, inputGrad);
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
-
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -133,7 +131,7 @@ TEST(MultiplyScalar, GPU_float) {
 TEST(MultiplyScalar, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 10, 500, 200);
 	auto inputGrad = createTensorGPU<real>(device, 10, 500, 200);
@@ -152,8 +150,6 @@ TEST(MultiplyScalar, half_GPU) {
 
 	multiplyScalar.forwardGPU(inputTensor, &output);
 	multiplyScalar.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
-
-	delete device;
 }
 
 #endif // HAVE_HALF

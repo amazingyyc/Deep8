@@ -74,7 +74,7 @@ TEST(Exp, backwardCPU) {
 TEST(Exp, GPU_double) {
     typedef double real;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     int dim0 = 10, dim1 = 400, dim2 = 200;
 
@@ -103,8 +103,8 @@ TEST(Exp, GPU_double) {
 	expFunc.forwardGPU(inputValues, &output);
 	expFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * dim0 * dim1 * dim2);
-    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
     for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
         ASSERT_TRUE(std::abs(std::exp(inputPtr[i]) - outputPtr[i]) < 1e-6);
@@ -128,7 +128,6 @@ TEST(Exp, GPU_double) {
 
 	freeFakeVariable(inputVar);
 
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -136,7 +135,7 @@ TEST(Exp, GPU_double) {
 TEST(Exp, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	int dim0 = 10, dim1 = 400, dim2 = 200;
 
@@ -159,7 +158,6 @@ TEST(Exp, half_GPU) {
 	expFunc.forwardGPU(inputValues, &output);
 	expFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

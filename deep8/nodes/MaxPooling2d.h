@@ -358,7 +358,7 @@ protected:
 		int padTop  = (padY / 2);
 		int padLeft = (padX / 2);
 
-		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device), inputs[0]->data(), inputs[0]->shape, output->data(), output->shape,
+		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device()), inputs[0]->data(), inputs[0]->shape, output->data(), output->shape,
 			(int)filterHeight, (int)filterWidth, padTop, padLeft, (int)strideY, (int)strideX);
 #else
 		DEEP8_RUNTIME_ERROR("the MaxPooling2d needs CUDNN");
@@ -509,7 +509,7 @@ protected:
 		int padTop  = (padY / 2);
 		int padLeft = (padX / 2);
 
-		backwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device),
+		backwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device()),
 			inputs[0]->data(), iGradient->data(), iGradient->shape,
 			output->data(), outputGradient->data(), output->shape,
 			(int)filterHeight, (int)filterWidth, padTop, padLeft, (int)strideY, (int)strideX);

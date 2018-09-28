@@ -74,7 +74,7 @@ TEST(AddScalar, backwardCPU_float) {
 
 /**Test forward on GPU*/
 TEST(AddScalar, forwardGPU_float) {
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     int dim0 = 10, dim1 = 500, dim2 = 200;
     float scalar = 5.5;
@@ -94,7 +94,7 @@ TEST(AddScalar, forwardGPU_float) {
 
 	addScalar.forwardGPU(inputTensor, &output);
 
-	device->copyFromGPUToCPU(output.raw(), cpuOutputPtr, sizeof(float) * dim0 * dim1 * dim2);
+	device.copyFromGPUToCPU(output.raw(), cpuOutputPtr, sizeof(float) * dim0 * dim1 * dim2);
 
 	for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
 		ASSERT_EQ(cpuInputPtr[i] + scalar, cpuOutputPtr[i]);
@@ -108,14 +108,13 @@ TEST(AddScalar, forwardGPU_float) {
 	free(cpuInputPtr);
 	free(cpuOutputPtr);
 
-	delete device;
 }
 
 /**test backward on GPU*/
 TEST(AddScalar, backwardGPU_double) {
     typedef double real;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     int dim0 = 10, dim1 = 500, dim2 = 200;
     float scalar = 5.5;
@@ -145,7 +144,7 @@ TEST(AddScalar, backwardGPU_double) {
 	addScalar.forwardGPU(inputValues, &outputValue);
 	addScalar.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
-    device->copyFromGPUToCPU(inputGrad.raw(), cpuInputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device.copyFromGPUToCPU(inputGrad.raw(), cpuInputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
     for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
 	    ASSERT_EQ(cpuOutputGradPtr[i], cpuInputGradPtr[i]);
@@ -163,13 +162,12 @@ TEST(AddScalar, backwardGPU_double) {
 
 	freeFakeVariable(inputVar);
 
-	delete device;
 }
 
 #ifdef HAVE_HALF
 
 TEST(AddScalar, half_GPU) {
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	int dim0 = 10, dim1 = 500, dim2 = 200;
 	half scalar = 5.5;
@@ -190,7 +188,6 @@ TEST(AddScalar, half_GPU) {
 	addScalar.forwardGPU(inputTensor, &output);
 	addScalar.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

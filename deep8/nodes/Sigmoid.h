@@ -25,7 +25,7 @@ __global__ void SigmoidForwardKernel(const real *X, real *Y, const int N) {
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		Y[i] = 0.5 + 0.5 * cuTanh(0.5 * X[i]);
+		Y[i] = real(0.5) + real(0.5) * cuTanh(real(0.5) * X[i]);
 	}
 }
 
@@ -35,7 +35,7 @@ __global__ void SigmoidBackwardKernel(real *xGrad, const real *yGrad, const real
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		xGrad[i] += yGrad[i] * Y[i] * (1 - Y[i]);
+		xGrad[i] += yGrad[i] * Y[i] * (real(1) - Y[i]);
 	}
 }
 

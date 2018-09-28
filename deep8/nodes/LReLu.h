@@ -35,7 +35,7 @@ __global__ void LReLuForwardKernel(const real *X, const real a, real *Y, const i
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		Y[i] = X[i] > 0 ? X[i] : a * X[i];
+		Y[i] = X[i] > real(0) ? X[i] : a * X[i];
 	}
 }
 
@@ -45,7 +45,7 @@ __global__ void LReLuBackwardKernel(real *xGrad, const real *X, const real a, co
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		xGrad[i] += yGrad[i] * (X[i] > 0 ? 1 : a);
+		xGrad[i] += yGrad[i] * (X[i] > real(0) ? real(1) : a);
 	}
 }
 

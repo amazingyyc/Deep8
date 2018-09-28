@@ -109,7 +109,7 @@ TEST(Multiply, backwardCPU) {
 TEST(Multiply, GPU_float) {
     typedef float real;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto input0Ptr = (real*)malloc(sizeof(real) * 10 * 100 * 200);
     auto input0GradPtr = (real*)malloc(sizeof(real) * 10 * 100 * 200);
@@ -145,9 +145,9 @@ TEST(Multiply, GPU_float) {
 	multiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
 	multiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 100 * 200);
-	device->copyFromGPUToCPU(input0Grad.pointer, input0GradPtr, sizeof(real) * 10 * 100 * 200);
-	device->copyFromGPUToCPU(input1Grad.pointer, input1GradPtr, sizeof(real) * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 100 * 200);
+	device.copyFromGPUToCPU(input0Grad.raw(), input0GradPtr, sizeof(real) * 10 * 100 * 200);
+	device.copyFromGPUToCPU(input1Grad.raw(), input1GradPtr, sizeof(real) * 200);
 
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 100; ++j) {
@@ -199,8 +199,6 @@ TEST(Multiply, GPU_float) {
 
 	freeFakeVariable(inputVar0);
 	freeFakeVariable(inputVar1);
-
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -208,7 +206,7 @@ TEST(Multiply, GPU_float) {
 TEST(Multiply, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input0 = createTensorGPU<real>(device, 10, 100, 200);
 	auto input0Grad = createTensorGPU<real>(device, 10, 100, 200);
@@ -232,7 +230,6 @@ TEST(Multiply, half_GPU) {
 	multiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
 	multiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

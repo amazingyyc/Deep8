@@ -75,7 +75,7 @@ TEST(TanH, backwardCPU) {
 TEST(TanH, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 	auto inputGradPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
@@ -101,8 +101,8 @@ TEST(TanH, GPU_float) {
 	tanhFunc.forwardGPU(inputTensor, &output);
 	tanhFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 400 * 200);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		ASSERT_EQ(tanh(inputPtr[i]), outputPtr[i]);
@@ -123,8 +123,6 @@ TEST(TanH, GPU_float) {
 	freeTensor(device, inputGrad);
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
-
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -132,7 +130,7 @@ TEST(TanH, GPU_float) {
 TEST(TanH, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 10, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 10, 400, 200);
@@ -150,7 +148,6 @@ TEST(TanH, half_GPU) {
 	tanhFunc.forwardGPU(inputTensor, &output);
 	tanhFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

@@ -39,7 +39,7 @@ TEST(Linear, forwardCPU) {
 TEST(Linear, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 	auto outputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
@@ -60,7 +60,7 @@ TEST(Linear, GPU_float) {
 
 	linear.forwardGPU(inputTensor, &output);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		ASSERT_EQ(inputPtr[i] * a + b, outputPtr[i]);
@@ -74,7 +74,6 @@ TEST(Linear, GPU_float) {
 
 	freeFakeVariable(inputVar);
 
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -82,7 +81,7 @@ TEST(Linear, GPU_float) {
 TEST(Linear, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 10, 400, 200);
 	auto output = createTensorGPU<real>(device, 10, 400, 200);
@@ -100,7 +99,6 @@ TEST(Linear, half_GPU) {
 
 	linear.forwardGPU(inputTensor, &output);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

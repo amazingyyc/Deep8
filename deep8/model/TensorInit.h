@@ -310,7 +310,7 @@ public:
     template <typename T>
     static void gaussian(Tensor<T> &tensor, T mean = 0.0, T stddev = 1.0) {
         if (DeviceType::CPU == tensor.device()->type) {
-            // gaussianCPU(tensor, mean, stddev);
+            gaussianCPU(tensor, mean, stddev);
         } else {
 #ifdef HAVE_CUDA
             gaussianGPU(tensor, mean, stddev);

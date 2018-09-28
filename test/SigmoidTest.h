@@ -75,7 +75,7 @@ TEST(Sigmoid, backwardCPU) {
 TEST(Sigmoid, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 	auto inputGradPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
@@ -101,8 +101,8 @@ TEST(Sigmoid, GPU_float) {
 	sigmoid.forwardGPU(inputTensor, &output);
 	sigmoid.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 400 * 200);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		float temp = 1.f / (1.f + std::exp(-1.f * inputPtr[i]));
@@ -125,8 +125,6 @@ TEST(Sigmoid, GPU_float) {
 	freeTensor(device, inputGrad);
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
-
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -134,7 +132,7 @@ TEST(Sigmoid, GPU_float) {
 TEST(LReLU, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 10, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 10, 400, 200);
@@ -151,8 +149,6 @@ TEST(LReLU, half_GPU) {
 
 	sigmoid.forwardGPU(inputTensor, &output);
 	sigmoid.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
-
-	delete device;
 }
 
 #endif // HAVE_HALF

@@ -85,7 +85,7 @@ TEST(Log, backwardCPU) {
 TEST(Log, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 	auto inputGradPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
@@ -104,7 +104,7 @@ TEST(Log, GPU_float) {
 		}
 	}
 
-	device->copyFromCPUToGPU(inputPtr, input.pointer, sizeof(real) * 10 * 400 * 200);
+	device.copyFromCPUToGPU(inputPtr, input.raw(), sizeof(real) * 10 * 400 * 200);
 
 	/**create fake Add Function*/
 	auto inputVar = createFakeVariable<GPUDevice, real>(device);
@@ -119,8 +119,8 @@ TEST(Log, GPU_float) {
 	logFunc.forwardGPU(inputValues, &output);
 	logFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400* 200);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 400* 200);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		ASSERT_TRUE(std::abs(std::log(inputPtr[i]) - outputPtr[i]) < 1e-6);
@@ -143,8 +143,6 @@ TEST(Log, GPU_float) {
 	freeTensor(device, outputGrad);
 
 	freeFakeVariable(inputVar);
-
-	delete device;
 }
 
 
@@ -153,7 +151,7 @@ TEST(Log, GPU_float) {
 TEST(Log, half_GPU) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 10, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 10, 400, 200);
@@ -172,8 +170,6 @@ TEST(Log, half_GPU) {
 
 	logFunc.forwardGPU(inputValues, &output);
 	logFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
-
-	delete device;
 }
 
 #endif // HAVE_HALF

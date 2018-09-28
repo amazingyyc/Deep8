@@ -99,7 +99,7 @@ TEST(AvgPooling2d, backwardCPU_float) {
 #ifdef HAVE_CUDA
 
 TEST(AvgPooling2d, forwardGPU_float) {
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto cpuInputPtr  = (float*)malloc(sizeof(float) * 1 * 32 * 32 * 64);
     auto cpuOutputPtr = (float*)malloc(sizeof(float) * 1 * 16 * 16 * 64);
@@ -116,7 +116,7 @@ TEST(AvgPooling2d, forwardGPU_float) {
 
     vagPooling.forwardGPU(inputTensor, &output);
 
-    device->copyFromGPUToCPU(output.raw(), cpuOutputPtr, sizeof(float) * 1 * 16 * 16 * 64);
+    device.copyFromGPUToCPU(output.raw(), cpuOutputPtr, sizeof(float) * 1 * 16 * 16 * 64);
 
     for (int y = 0; y < 16; ++y) {
         for (int x = 0; x < 16; ++x) {
@@ -147,13 +147,12 @@ TEST(AvgPooling2d, forwardGPU_float) {
 	free(cpuInputPtr);
 	free(cpuOutputPtr);
 
-    delete device;
 }
 
 TEST(AvgPooling2d, backwardGPU_float) {
     typedef float real;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto cpuInputValuePtr = (real*)malloc(sizeof(real) * 1 * 32 * 32 * 64);
 	auto cpuInputGradPtr  = (real*)malloc(sizeof(real) * 1 * 32 * 32 * 64);
@@ -179,7 +178,7 @@ TEST(AvgPooling2d, backwardGPU_float) {
 
 	vagPooling.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
-    device->copyFromGPUToCPU(inputGrad.raw(), cpuInputGradPtr, sizeof(float) * 1 * 32 * 32 * 64);
+    device.copyFromGPUToCPU(inputGrad.raw(), cpuInputGradPtr, sizeof(float) * 1 * 32 * 32 * 64);
 
 	auto tempinputgradptr = (real*)malloc(sizeof(real) * 1 * 32 * 32 * 64);
 	memset(tempinputgradptr, 0, sizeof(real) * 1 * 32 * 32 * 64);
@@ -220,7 +219,6 @@ TEST(AvgPooling2d, backwardGPU_float) {
 
 	freeFakeVariable(inputVar);
 
-    delete device;
 }
 
 #ifdef HAVE_HALF
@@ -228,7 +226,7 @@ TEST(AvgPooling2d, backwardGPU_float) {
 TEST(AvgPooling2d, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputValue = createTensorGPU<real>(device, 1, 32, 32, 64);
 	auto inputGrad = createTensorGPU<real>(device, 1, 32, 32, 64);
@@ -247,7 +245,6 @@ TEST(AvgPooling2d, half_GPU) {
 	vagPooling.forwardGPU(inputValues, &outputValue);
 	vagPooling.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

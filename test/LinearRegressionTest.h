@@ -23,7 +23,7 @@ TEST(LinearRegression, test) {
 	auto outputP = executor.addInputParameter({ 1, 2 }, y);
 	ExpressionF output(&executor, outputP);
 
-    for (int i = 0; i < 300; ++i) {
+    for (int i = 0; i < 3000; ++i) {
         (input * W - output).l1Norm().backward();
 
         /**print the W*/

@@ -207,7 +207,7 @@ protected:
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
 #ifdef HAVE_CUDNN
-		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device), inputs[0]->data(), output->data(), output->shape);
+		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device()), inputs[0]->data(), output->data(), output->shape);
 #else
 		forwardGPUImpl(inputs[0]->data(), output->data(), static_cast<int>(output->size()));
 #endif
@@ -364,7 +364,7 @@ protected:
 #ifdef HAVE_CUDA
 #ifdef HAVE_CUDNN
 
-		backwardGPUCUDNNImpl(static_cast<GPUDevice*>(iGradient->device), 
+		backwardGPUCUDNNImpl(static_cast<GPUDevice*>(iGradient->device()), 
 			inputs[0]->data(), 
 			iGradient->data(), 
 			output->data(), 

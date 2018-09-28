@@ -25,7 +25,7 @@ __global__ void SquareBackwardKernel(real *xGrad, const real *X, const real *yGr
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		xGrad[i] += 2 * yGrad[i] * X[i];
+		xGrad[i] += real(2.0) * yGrad[i] * X[i];
 	}
 }
 

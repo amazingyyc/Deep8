@@ -473,7 +473,7 @@ protected:
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
 
-		auto device = static_cast<GPUDevice*>(output->device);
+		auto device = static_cast<GPUDevice*>(output->device());
 
 		auto x = inputs[0];
 		auto filter = inputs[1];
@@ -726,7 +726,7 @@ protected:
 		
 		DEEP8_ARGUMENT_CHECK(0 == index || 1 == index, "the index is error");
 
-		auto device = static_cast<GPUDevice*>(iGradient->device);
+		auto device = static_cast<GPUDevice*>(iGradient->device());
 
 		auto xShape = inputs[0]->shape;
 		auto wShape = inputs[1]->shape;

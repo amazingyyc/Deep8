@@ -36,7 +36,7 @@ __global__ void TanHBackwardKernel(real *xGrad, const real *yGrad, const real *Y
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		xGrad[i] += yGrad[i] * (1.0 - Y[i] * Y[i]);
+		xGrad[i] += yGrad[i] * (real(1.0) - Y[i] * Y[i]);
 	}
 }
 
