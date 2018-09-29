@@ -61,21 +61,21 @@ public:
     void forward() override {
 		DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->output->type, "the output must be Variable type");
 
-		auto output = static_cast<Variable<T>*>(this->output);
-		auto input  = static_cast<Variable<T>*>(this->inputs[0]);
+		auto x = static_cast<Variable<T>*>(this->inputs[0]);
+		auto y = static_cast<Variable<T>*>(this->output);
 
-		DEEP8_ARGUMENT_CHECK(this->outputShape == output->value.shape, "the output shape is error");
+		y->outputShape = this->outputShape;
+		
+		y->updateGradient = x->updateGradient;
+		y->value.storage  = x->value.storage;
+		y->value.offset   = x->value.offset;
+		y->value.shape    = this->outputShape;
 
-		output->updateGradient = input->updateGradient;
-		output->shared = true;
-		
-		output->value.shape   = this->outputShape;
-		output->value.pointer = input->value.pointer;
-		output->value.device  = input->value.device;
-		
-		output->gradient.shape   = this->outputShape;
-		output->gradient.pointer = input->gradient.pointer;
-		output->gradient.device  = input->gradient.device;
+		if (x->updateGradient) {
+			y->gradient.storage = x->gradient.storage;
+			y->gradient.offset  = x->gradient.offset;
+			y->gradient.shape   = this->outputShape;
+		}
     }
 
     void backward() override {

@@ -11,12 +11,19 @@ public:
      */
     Node *output;
 
+	/**
+	 * if a Function shared is true means the output Variable shared the memory with the input Variable
+	 * default is false
+	 */
+	bool shared;
+
+
 protected:
-    explicit FunctionBase(): Node() {
+    explicit FunctionBase(): Node(), output(nullptr), shared(false) {
         this->type = NodeType::Function;
     }
 
-    explicit FunctionBase(std::vector<Node*> &inputs): Node(inputs), output(nullptr) {
+    explicit FunctionBase(std::vector<Node*> &inputs): Node(inputs), output(nullptr), shared(false) {
         this->type = NodeType::Function;
     }
 

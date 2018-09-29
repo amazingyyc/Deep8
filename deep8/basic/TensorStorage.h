@@ -34,8 +34,10 @@ public:
     }
 
 	explicit TensorStorage(const TensorStorage &other) {
-		(*other.refPtr)++;
-
+		if (nullptr != other.refPtr) {
+			(*other.refPtr)++;
+		}
+		
 		ptr    = other.ptr;
 		refPtr = other.refPtr;
 		size   = other.size;
@@ -53,7 +55,9 @@ public:
     }
 
     TensorStorage &operator=(const TensorStorage &other) {
-        (*other.refPtr)++;
+		if (nullptr != other.refPtr) {
+			(*other.refPtr)++;
+		}
 
         if (nullptr != refPtr) {
             (*refPtr)--;
