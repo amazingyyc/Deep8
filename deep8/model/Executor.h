@@ -97,13 +97,9 @@ protected:
 		}
 	}
 
-	Variable<T>* createVariableByFunction(Node *function) {
+	Variable<T>* createVariableByFunction(FunctionBase *function) {
 		if (function->shared) {
-			Tensor<T> value(function->outputShape);
-			Tensor<T> gradient(function->outputShape);
-
-			auto variable = new Variable<T>(function, value, gradient);
-			variable->shared = true;
+			auto variable = new Variable<T>(function, function->outputShape);
 
 			return variable;
 		} else {

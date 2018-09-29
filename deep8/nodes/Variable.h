@@ -84,13 +84,20 @@ protected:
     }
 
 public:
+	explicit Variable(Node *input, Shape &shape) : VariableBase(false) {
+		this->inputs.emplace_back(input);
+		this->outputShape = shape;
+
+		DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
+
+		for (auto i : inputs) {
+			DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
+			DEEP8_ARGUMENT_CHECK(i->outputShape == this->outputShape, "the shape of the input, pointer and gradient must be same")
+		}
+	}
+
     explicit Variable(Node *input, Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(true) {
         this->inputs.emplace_back(input);
-
-        check();
-    }
-
-    explicit Variable(std::vector<Node*> &inputs, Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(inputs, true) {
         check();
     }
 

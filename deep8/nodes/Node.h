@@ -37,21 +37,15 @@ public:
     Shape outputShape;
 
     /**
-     * if a Variable or Function shared is true means the output Variable shared the memory with the input Variable
-     * default is false
-     */
-    bool shared;
-
-    /**
      * @brief what kind type of this Node, default is unknow
      */
     NodeType type;
 
 protected:
-    explicit Node(): outputShape(), shared(false), type(NodeType::Unknow) {
+    explicit Node(): outputShape(), type(NodeType::Unknow) {
     }
 
-    explicit Node(std::vector<Node*> &inputs): inputs(std::move(inputs)), outputShape(), shared(false), type(NodeType::Unknow) {
+    explicit Node(std::vector<Node*> &inputs): inputs(std::move(inputs)), outputShape(), type(NodeType::Unknow) {
     }
 
 public:
