@@ -47,16 +47,60 @@ protected:
 
 protected:
 
-	Tensor<T> createTensorWithShape(Shape &shape) {
-		auto ptr = device->malloc(sizeof(T) * shape.size());
+	template <typename real>
+	Tensor<real> createTensorWithShapeCPU(Shape &shape) {
+		size_t size = sizeof(real) * shape.size();
 
-		return Tensor<T>(ptr, shape, device);
+		auto ptr    = device->malloc(size);
+		auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+
+		TensorStorage storage(ptr, refPtr, size, device);
+
+		return Tensor<real>(storage, 0, shape);
+	}
+
+
+#ifdef HAVE_HALF
+	template <>
+	Tensor<half> createTensorWithShapeCPU(Shape &shape) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	}
+#endif
+
+#ifdef HAVE_CUDA
+
+	template <typename real>
+	Tensor<real> createTensorWithShapeGPU(Shape &shape) {
+		size_t size = sizeof(real) * shape.size();
+
+		auto gpuDevice = (GPUDevice*)device;
+
+		auto ptr = gpuDevice->malloc(size);
+		auto refPtr = (size_t*) gpuDevice->mallocCPU(sizeof(size_t));
+
+		TensorStorage storage(ptr, refPtr, size, device);
+
+		return Tensor<real>(storage, 0, shape);
+	}
+
+#endif
+
+	Tensor<T> createTensorWithShape(Shape &shape) {
+		if (DeviceType::CPU == device->type) {
+			return createTensorWithShapeCPU<T>(shape);
+		} else {
+#ifdef HAVE_CUDA
+			return createTensorWithShapeGPU<T>(shape);
+#else
+			DEEP8_RUNTIME_ERROR("without a GPU");
+#endif
+		}
 	}
 
 	Variable<T>* createVariableByFunction(Node *function) {
 		if (function->shared) {
-			Tensor<T> value(nullptr, function->outputShape, device);
-			Tensor<T> gradient(nullptr, function->outputShape, device);
+			Tensor<T> value(function->outputShape);
+			Tensor<T> gradient(function->outputShape);
 
 			auto variable = new Variable<T>(function, value, gradient);
 			variable->shared = true;
@@ -70,7 +114,7 @@ protected:
 
 			return variable;
 		}
-    }
+	}
 
 public:
 	virtual ~Executor() {

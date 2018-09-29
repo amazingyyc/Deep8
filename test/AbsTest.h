@@ -6,7 +6,7 @@ using namespace std;
 namespace Deep8 {
 
 TEST(Abs, forwardCPU_double) {
-	auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto input = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
 	auto output = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
@@ -28,12 +28,10 @@ TEST(Abs, forwardCPU_double) {
 	freeTensor(device, output);
 
 	freeFakeVariable(inputVar1);
-
-	delete device;
 }
 
 TEST(Abs, backwardCPU_float) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto inputValue = createTensor<CPUDevice, float>(device, size_t(10), size_t(400), size_t(200));
     auto inputGrad  = createTensor<CPUDevice, float>(device, size_t(10), size_t(400), size_t(200));
@@ -74,14 +72,12 @@ TEST(Abs, backwardCPU_float) {
     freeTensor(device, outputGrad);
 
     freeFakeVariable(inputVar);
-
-    delete device;
 }
 
 #ifdef HAVE_CUDA
 
 TEST(Abs, forwardGPU_double) {
-	auto device = new GPUDevice(0);
+	GPUDevice device;
 
 	size_t dim0 = 10, dim1 = 400, dim2 = 200;
 
@@ -100,7 +96,7 @@ TEST(Abs, forwardGPU_double) {
 
 	absFunc.forwardGPU(inputTensor, &output);
 
-	device->copyFromGPUToCPU(output.pointer, cpuOuputPtr, sizeof(double) * dim0 * dim1 * dim2);
+	device.copyFromGPUToCPU(output.raw(), cpuOuputPtr, sizeof(double) * dim0 * dim1 * dim2);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		ASSERT_EQ(std::abs(cpuInputPtr[i]), cpuOuputPtr[i]);
@@ -114,14 +110,12 @@ TEST(Abs, forwardGPU_double) {
 	free(cpuInputPtr);
 	free(cpuOuputPtr);
 
-	delete device;
-
 }
 
 TEST(Abs, backwardGPU_double) {
 	typedef double real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	size_t dim0 = 10, dim1 = 400, dim2 = 200;
 
@@ -150,7 +144,7 @@ TEST(Abs, backwardGPU_double) {
 	absFunc.forwardGPU(inputValues, &outputValue);
 	absFunc.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(inputGrad.pointer, cpuInputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+	device.copyFromGPUToCPU(inputGrad.raw(), cpuInputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 	    real temp;
@@ -177,8 +171,6 @@ TEST(Abs, backwardGPU_double) {
 	freeTensor(device, outputGrad);
 
 	freeFakeVariable(inputVar);
-
-	delete device;
 }
 
 
@@ -188,7 +180,7 @@ TEST(Abs, backwardGPU_double) {
 TEST(Abs, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	size_t dim0 = 10, dim1 = 400, dim2 = 200;
 
@@ -216,7 +208,6 @@ TEST(Abs, half_GPU) {
 	freeTensor(device, outputValue);
 	freeTensor(device, outputGrad);
 
-	delete device;
 }
 
 #endif

@@ -68,7 +68,7 @@ protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 		typedef typename Eigen::internal::traits<Eigen::Tensor<T, 4, Eigen::RowMajor>>::Index TensorIndex;
 
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
         auto input = inputs[0];
 
@@ -177,7 +177,7 @@ protected:
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
         DEEP8_ARGUMENT_CHECK(outputGradient->shape.dim(3) == iGradient->shape.dim(3), "the input channel and output channel must be same");
 
-        auto device = static_cast<CPUDevice*>(iGradient->device)->eigenDevice;
+        auto device = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
 
         auto input = inputs[0];
 
@@ -358,7 +358,7 @@ protected:
 		int padTop  = (padY / 2);
 		int padLeft = (padX / 2);
 
-		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device), inputs[0]->data(), inputs[0]->shape, output->data(), output->shape,
+		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device()), inputs[0]->data(), inputs[0]->shape, output->data(), output->shape,
 			(int)filterHeight, (int)filterWidth, padTop, padLeft, (int)strideY, (int)strideX);
 #else
 		DEEP8_RUNTIME_ERROR("the MaxPooling2d needs CUDNN");
@@ -509,7 +509,7 @@ protected:
 		int padTop  = (padY / 2);
 		int padLeft = (padX / 2);
 
-		backwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device),
+		backwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device()),
 			inputs[0]->data(), iGradient->data(), iGradient->shape,
 			output->data(), outputGradient->data(), output->shape,
 			(int)filterHeight, (int)filterWidth, padTop, padLeft, (int)strideY, (int)strideX);

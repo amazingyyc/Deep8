@@ -36,7 +36,7 @@ __global__ void TanHBackwardKernel(real *xGrad, const real *yGrad, const real *Y
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		xGrad[i] += yGrad[i] * (1.0 - Y[i] * Y[i]);
+		xGrad[i] += yGrad[i] * (real(1.0) - Y[i] * Y[i]);
 	}
 }
 
@@ -59,7 +59,7 @@ public:
 
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
         eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(TanHForwardExpr<T>());
     }
@@ -74,7 +74,7 @@ protected:
             DEEP8_RUNTIME_ERROR("the index of TanH backwardCPU is error");
         }
 
-		auto device = static_cast<CPUDevice*>(iGradient->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
 
         eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(output), TanHBackwardExpr<T>());
     }

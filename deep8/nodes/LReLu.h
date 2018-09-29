@@ -35,7 +35,7 @@ __global__ void LReLuForwardKernel(const real *X, const real a, real *Y, const i
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		Y[i] = X[i] > 0 ? X[i] : a * X[i];
+		Y[i] = X[i] > real(0) ? X[i] : a * X[i];
 	}
 }
 
@@ -45,7 +45,7 @@ __global__ void LReLuBackwardKernel(real *xGrad, const real *X, const real a, co
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		xGrad[i] += yGrad[i] * (X[i] > 0 ? 1 : a);
+		xGrad[i] += yGrad[i] * (X[i] > real(0) ? real(1) : a);
 	}
 }
 
@@ -72,7 +72,7 @@ public:
 protected:
 	template <typename real>
 	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 		eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(LReLuForwardExpr<T>(a));
 	}
 
@@ -91,7 +91,7 @@ protected:
 	void backwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, const Tensor<real> *output, const Tensor<real> *outputGradient, size_t index, Tensor<real> *iGradient) {
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-		auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
 		eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), LReLuBackwardExpr<T>(a));
 	}
 

@@ -176,7 +176,7 @@ protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
          typedef typename Eigen::internal::traits<Eigen::Tensor<T, 4, Eigen::RowMajor>>::Index TensorIndex;
 
-		 auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		 auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
 		 auto input = inputs[0];
          auto filter = inputs[1];
@@ -239,7 +239,7 @@ protected:
 					Tensor<T> *iGradient) override {
          typedef typename Eigen::internal::traits<Eigen::Tensor<T, 4, Eigen::RowMajor>>::Index TensorIndex;
 
-		 auto device = static_cast<CPUDevice*>(iGradient->device)->eigenDevice;
+		 auto device = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
 
 		 auto batch = (TensorIndex)inputs[0]->shape.batch();
 
@@ -458,7 +458,7 @@ protected:
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
-    auto device = static_cast<GPUDevice*>(output->device);
+    auto device = static_cast<GPUDevice*>(output->device());
 
     auto x = inputs[0];
     auto filter = inputs[1];
@@ -724,7 +724,7 @@ protected:
 #ifdef HAVE_CUDA
     DEEP8_ARGUMENT_CHECK(0 == index || 1 == index, "the index is error");
 
-    auto device = static_cast<GPUDevice*>(iGradient->device);
+    auto device = static_cast<GPUDevice*>(iGradient->device());
 
     auto xShape = inputs[0]->shape;
     auto wShape = inputs[1]->shape;

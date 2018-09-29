@@ -6,16 +6,18 @@ namespace Deep8 {
 class TensorBase {
 public:
 	virtual bool isScalar() = 0;
-	virtual void zero() = 0;
+	virtual void zero()     = 0;
 
 	virtual size_t nDims() const = 0;
-	virtual size_t size() const  = 0;
-	virtual size_t batchSize() const  = 0;
+	virtual size_t size()  const = 0;
+
+	virtual size_t batchSize() const = 0;
+
 	virtual size_t batch() const  = 0;
-	virtual size_t row() const  = 0;
-	virtual size_t col() const  = 0;
+	virtual size_t row()   const  = 0;
+	virtual size_t col()   const  = 0;
+
 	virtual size_t dim(size_t d) const  = 0;
-	virtual void free() = 0;
 };
 
 /**
@@ -25,30 +27,69 @@ public:
 template <typename T>
 class Tensor: public TensorBase {
 public:
-	/**the pointer of memory*/
-	void *pointer;
+	/**real store the data*/
+	TensorStorage storage;
+
+	/**
+	 * the memory offset of storage
+	 * the storage size must be >= offset + sizeof(T) * shape.size()
+	 */
+	size_t offset;
 
 	/**the shape of this Tensor*/
 	Shape shape;
 
-	/**the device of CPU or GPU*/
-	Device *device;
+public:
+	explicit Tensor() : storage(), offset(0), shape() {
+	}
+
+	explicit Tensor(Shape &s) : storage(), offset(0), shape(s) {
+	}
+
+	explicit Tensor(TensorStorage &ts, size_t off, Shape &s) : storage(ts), offset(off), shape(s) {
+	}
+
+	explicit Tensor(TensorStorage &ts, size_t off, std::initializer_list<size_t> list) : storage(ts), offset(off), shape(list) {
+	}
+
+	~Tensor() = default;
 
 public:
-	Tensor() : TensorBase() {
+	DeviceType DeviceType() {
+		return storage.device->type;
 	}
 
-	explicit Tensor(void *v, Shape &s, Device *d) : pointer(v), shape(s), device(d) {
+	Device* device() {
+		return storage.device;
 	}
 
-	explicit Tensor(void *v, std::initializer_list<size_t> list, Device *d) : pointer(v), shape(list), device(d) {
+	Device* device() const {
+		return storage.device;
 	}
 
-	void free() override {
-		if (nullptr != pointer) {
-		    device->free(pointer);
-		    pointer = nullptr;
-		}
+
+	size_t* refPtr() const {
+		return storage.refPtr;
+	}
+
+	size_t refCount() {
+		return storage.refPtr[0];
+	}
+
+	void* raw() {
+		return (byte*)(storage.ptr) + offset;
+	}
+
+	void* raw() const {
+		return (byte*)(storage.ptr) + offset;
+	}
+
+	T* data() {
+		return static_cast<T*>(raw());
+	}
+
+	T* data() const {
+		return static_cast<T*>(raw());
 	}
 
 	bool isScalar() override {
@@ -56,10 +97,10 @@ public:
 	}
 
 	void zero() override {
-		device->zero(pointer, sizeof(T) * shape.size());
+		storage.device->zero(this->raw(), sizeof(T) * shape.size());
 	}
 
-	size_t nDims() const override{
+	size_t nDims() const override {
 		return shape.nDims();
 	}
 
@@ -90,31 +131,21 @@ public:
 	T scalar() {
 		DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor must be a scalar");
 
-		if (DeviceType::CPU == device->type) {
-			return (static_cast<T*>(pointer))[0];
+		if (DeviceType::CPU == device()->type) {
+			return data()[0];
 		} else {
 #ifdef HAVE_CUDA
-			T scalarValue;
+			T scalar;
 
-			static_cast<GPUDevice*>(device)->copyFromGPUToCPU(pointer, &scalarValue, sizeof(T));
+			static_cast<GPUDevice*>(device)->copyFromGPUToCPU(raw(), &scalar, sizeof(T));
 
-			return scalarValue;
+			return scalar;
 #else
 			DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
 #endif
 		}
 	}
-
-    T* data() {
-        return static_cast<T*>(pointer);
-    }
-
-	T* data() const {
-		return static_cast<T*>(pointer);
-	}
 };
-
-typedef Tensor<float> TensorF;
 
 }
 

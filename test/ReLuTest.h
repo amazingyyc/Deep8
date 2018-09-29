@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(ReLu, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, 10, 400, 200);
     auto output = createTensor<CPUDevice, float>(device, 10, 400, 200);
@@ -33,11 +33,10 @@ TEST(ReLu, forwardCPU) {
 
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(ReLu, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto inputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
 	auto inputGrad = createTensor<CPUDevice, float>(device, 10, 400, 200);
@@ -72,7 +71,6 @@ TEST(ReLu, backwardCPU) {
 
     freeFakeVariable(inputVar);
 
-    delete device;
 }
 
 #ifdef HAVE_CUDA
@@ -80,7 +78,7 @@ TEST(ReLu, backwardCPU) {
 TEST(ReLu, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 	auto inputGradPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
@@ -106,8 +104,8 @@ TEST(ReLu, GPU_float) {
 	relu.forwardGPU(inputTensor, &output);
 	relu.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 400 * 200);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 400 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 400 * 200);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		if (inputPtr[i] < 0) {
@@ -134,8 +132,6 @@ TEST(ReLu, GPU_float) {
 	freeTensor(device, inputGrad);
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
-
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -143,7 +139,7 @@ TEST(ReLu, GPU_float) {
 TEST(ReLU, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 10, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 10, 400, 200);
@@ -160,8 +156,6 @@ TEST(ReLU, half_GPU) {
 
 	relu.forwardGPU(inputTensor, &output);
 	relu.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
-
-	delete device;
 }
 
 #endif // HAVE_HALF

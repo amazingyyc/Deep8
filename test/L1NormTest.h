@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(L1Norm, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, long double>(device, size_t(10), size_t(200));
     auto output = createTensor<CPUDevice, long double>(device, size_t(10), size_t(1));
@@ -38,11 +38,10 @@ TEST(L1Norm, forwardCPU) {
 
 	freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(L1Norm, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto inputValue = createTensor<CPUDevice, float>(device, size_t(400), size_t(200));
 	auto inputGrad = createTensor<CPUDevice, float>(device, size_t(400), size_t(200));
@@ -85,7 +84,6 @@ TEST(L1Norm, backwardCPU) {
 
 	freeFakeVariable(inputVar);
 
-    delete device;
 }
 
 
@@ -94,7 +92,7 @@ TEST(L1Norm, backwardCPU) {
 TEST(L1Norm, GPU_float) {
     typedef float real;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto inputPtr = (float*)malloc(sizeof(float) * 400 * 200);
     auto inputGradPtr = (float*)malloc(sizeof(float) * 400 * 200);
@@ -121,8 +119,8 @@ TEST(L1Norm, GPU_float) {
 	l1norm.forwardGPU(inputValues, &output);
 	l1norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 400);
-    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
+    device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 400);
+    device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
 
     for (int i = 0; i < 400; ++i) {
         real temp = 0;
@@ -163,7 +161,6 @@ TEST(L1Norm, GPU_float) {
 
 	freeFakeVariable(inputVar);
 
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -171,7 +168,7 @@ TEST(L1Norm, GPU_float) {
 TEST(L1Norm, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 400, 200);
@@ -195,7 +192,6 @@ TEST(L1Norm, half_GPU) {
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

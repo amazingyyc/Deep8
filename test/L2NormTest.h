@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(L2Norm, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, long double>(device, 10, 200);
     auto output = createTensor<CPUDevice, long double>(device, 10, 1);
@@ -37,11 +37,10 @@ TEST(L2Norm, forwardCPU) {
 
 	freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(L2Norm, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto inputValue = createTensor<CPUDevice, float>(device, 400, 200);
 	auto inputGrad = createTensor<CPUDevice, float>(device, 400, 200);
@@ -79,7 +78,6 @@ TEST(L2Norm, backwardCPU) {
 
 	freeFakeVariable(inputVar);
 
-    delete device;
 }
 
 #ifdef HAVE_CUDA
@@ -87,7 +85,7 @@ TEST(L2Norm, backwardCPU) {
 TEST(L2Norm, GPU_float) {
     typedef float real;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto inputPtr = (float*)malloc(sizeof(float) * 400 * 200);
     auto inputGradPtr = (float*)malloc(sizeof(float) * 400 * 200);
@@ -114,8 +112,8 @@ TEST(L2Norm, GPU_float) {
 	l2norm.forwardGPU(inputValues, &output);
 	l2norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 400);
-    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
+    device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 400);
+    device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
 
     for (int i = 0; i < 10; ++i) {
         real temp = 0;
@@ -152,7 +150,6 @@ TEST(L2Norm, GPU_float) {
 
 	freeFakeVariable(inputVar);
 
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -160,7 +157,7 @@ TEST(L2Norm, GPU_float) {
 TEST(L2Norm, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 400, 200);
@@ -179,7 +176,6 @@ TEST(L2Norm, half_GPU) {
 	l2norm.forwardGPU(inputValues, &output);
 	l2norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

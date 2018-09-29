@@ -118,7 +118,7 @@ public:
 
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-        auto eigenDevice = static_cast<CPUDevice*>(output->device)->eigenDevice;
+        auto eigenDevice = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
         auto input = inputs[0];
         auto batch = input->batch();
@@ -137,7 +137,7 @@ protected:
 					Tensor<T> *iGradient) override {
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
 
-        auto eigenDevice = static_cast<CPUDevice*>(iGradient->device)->eigenDevice;
+        auto eigenDevice = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
 
         auto batch = iGradient->batch();
         auto size  = iGradient->size() / batch;

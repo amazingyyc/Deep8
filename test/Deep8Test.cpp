@@ -14,6 +14,7 @@
 //#include "AddScalarTest.h"
 //#include "AvgPooling2dTest.h"
 //#include "Conv2dTest.h"
+//#include "DeConv2dTest.h"
 //#include "DivideTest.h"
 //#include "DivideScalarTest.h"
 //#include "ExpTest.h"
@@ -36,6 +37,7 @@
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
 #include "LinearRegressionTest.h"
+//#include "CPUMemoryPoolTest.h"
 
 using namespace Deep8;
 

@@ -33,7 +33,7 @@ __global__ void SoftmaxForwardFindMaxKernel(const real *x, real *y, const int ba
 
 	if (blockSize >= 1024) {
 		if (threaId < 512) {
-			shared[threaId] = max(shared[threaId], shared[threaId + 512]);
+			shared[threaId] = cuMax(shared[threaId], shared[threaId + 512]);
 		}
 
 		__syncthreads();
@@ -41,7 +41,7 @@ __global__ void SoftmaxForwardFindMaxKernel(const real *x, real *y, const int ba
 
 	if (blockSize >= 512) {
 		if (threaId < 256) {
-			shared[threaId] = max(shared[threaId], shared[threaId + 256]);
+			shared[threaId] = cuMax(shared[threaId], shared[threaId + 256]);
 		}
 
 		__syncthreads();
@@ -49,7 +49,7 @@ __global__ void SoftmaxForwardFindMaxKernel(const real *x, real *y, const int ba
 
 	if (blockSize >= 256) {
 		if (threaId < 128) {
-			shared[threaId] = max(shared[threaId], shared[threaId + 128]);
+			shared[threaId] = cuMax(shared[threaId], shared[threaId + 128]);
 		}
 
 		__syncthreads();
@@ -57,7 +57,7 @@ __global__ void SoftmaxForwardFindMaxKernel(const real *x, real *y, const int ba
 
 	if (blockSize >= 128) {
 		if (threaId < 64) {
-			shared[threaId] = max(shared[threaId], shared[threaId + 64]);
+			shared[threaId] = cuMax(shared[threaId], shared[threaId + 64]);
 		}
 
 		__syncthreads();
@@ -256,36 +256,30 @@ protected:
 
 	template <typename real>
 	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto cpuDevice = static_cast<CPUDevice*>(output->device);
+		auto cpuDevice = static_cast<CPUDevice*>(output->device());
 		auto eigenDevice = cpuDevice->eigenDevice;
 
 		auto shape = output->shape;
 
-		auto maxPtr = static_cast<real*>(cpuDevice->malloc(sizeof(real)));
-		auto sumPtr = static_cast<real*>(cpuDevice->malloc(sizeof(real)));
+		auto batch = (int) shape.batch();
+		auto size  = (int) shape.batchSize();
 
-		Tensor<real> maxValue(maxPtr, { 1 }, cpuDevice);
-		Tensor<real> sumValue(sumPtr, { 1 }, cpuDevice);
+		auto tempPtr = (real*)cpuDevice->malloc(sizeof(real) * batch);
 
-		auto batch = shape.batch();
-		auto size = shape.size() / batch;
+		Eigen::array<int, 1> reduceDims = { 1 };
+		Eigen::array<int, 2> reshape    = { batch, 1 };
+		Eigen::array<int, 2> broad      = { 1, size };
 
-		Tensor<real> inputRow(inputs[0]->data(), { size }, cpuDevice);
-		Tensor<real> outputRow(output->data(), { size }, cpuDevice);
+		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> t(tempPtr, batch, 1);
+		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> x(inputs[0]->data(), batch, size);
+		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> y(output->data(), batch, size);
 
-		for (size_t b = 0; b < batch; ++b) {
-			eTScalar(maxValue).device(*eigenDevice) = eTVec(inputRow).maximum();
-			eTVec(outputRow).device(*eigenDevice) = (eTVec(inputRow) - maxValue.scalar()).exp();
+		t.device(*eigenDevice) = x.maximum(reduceDims).reshape(reshape);
+		y.device(*eigenDevice) = (x - t.broadcast(broad)).exp();
+		t.device(*eigenDevice) = y.sum(reduceDims).reshape(reshape);
+		y.device(*eigenDevice) = y / t.broadcast(broad);
 
-			eTScalar(sumValue).device(*eigenDevice) = eTVec(outputRow).sum();
-			eTVec(outputRow).device(*eigenDevice) = eTVec(outputRow) / sumValue.scalar();
-
-			inputRow.pointer = static_cast<int8_t*>(inputRow.pointer) + size * sizeof(real);
-			outputRow.pointer = static_cast<int8_t*>(outputRow.pointer) + size * sizeof(real);
-		}
-
-		cpuDevice->free(maxPtr);
-		cpuDevice->free(sumPtr);
+		cpuDevice->free(tempPtr);
 	}
 
 #ifdef HAVE_HALF
@@ -301,40 +295,32 @@ protected:
 		const Tensor<real> *outputGradient,
 		size_t index,
 		Tensor<real> *iGradient) {
+
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
 
-		auto cpuDevice = static_cast<CPUDevice*>(iGradient->device);
+		auto cpuDevice = static_cast<CPUDevice*>(iGradient->device());
 		auto eigenDevice = cpuDevice->eigenDevice;
 
 		auto shape = outputGradient->shape;
 
-		auto batch = shape.batch();
-		auto size = shape.size() / batch;
+		auto batch = (int)shape.batch();
+		auto size = (int)shape.batchSize();
 
-		auto sumPtr = static_cast<real*>(cpuDevice->malloc(sizeof(T) * batch));
+		Eigen::array<int, 1> sumDims = { 1 };
+		Eigen::array<int, 2> reshape = { batch, 1 };
+		Eigen::array<int, 2> broad = { 1, size };
 
-		Tensor<real> sum(sumPtr, { batch }, cpuDevice);
+		auto sptr = (real*)cpuDevice->malloc(sizeof(real) * batch);
 
-		Eigen::array<size_t, 1> sumDims = { 1 };
-		Eigen::array<size_t, 2> reShapeDims = { batch, size };
-		Eigen::array<size_t, 1> sumReShapeDims = { batch };
+		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> s(sptr, batch, 1);
+		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> dx(iGradient->data(), batch, size);
+		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> y(output->data(), batch, size);
+		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> dy(outputGradient->data(), batch, size);
 
-		eTVec(sum).device(*eigenDevice) = (eTVec(outputGradient).reshape(reShapeDims) * eTVec(output).reshape(reShapeDims)).sum(sumDims).reshape(sumReShapeDims);
+		s.device(*eigenDevice) = (y * dy).sum(sumDims).reshape(reshape);
+		dx.device(*eigenDevice) += (dy - s.broadcast(broad)) * y;
 
-		Tensor<real> outputGradientRow(outputGradient->data(), { size }, cpuDevice);
-		Tensor<real> outputValueRow(output->data(), { size }, cpuDevice);
-		Tensor<real> iGradientRow(iGradient->data(), { size }, cpuDevice);
-
-		for (size_t b = 0; b < batch; ++b) {
-			eTVec(iGradientRow).device(*eigenDevice) += (eTVec(outputGradientRow) -
-				sum.data()[b]) * eTVec(outputValueRow);
-
-			outputGradientRow.pointer = static_cast<int8_t*>(outputGradientRow.pointer) + size * sizeof(real);
-			outputValueRow.pointer    = static_cast<int8_t*>(outputValueRow.pointer) + size * sizeof(real);
-			iGradientRow.pointer      = static_cast<int8_t*>(iGradientRow.pointer) + size * sizeof(real);
-		}
-
-		cpuDevice->free(sumPtr);
+		cpuDevice->free(sptr);
 	}
 
 #ifdef HAVE_HALF
@@ -541,7 +527,7 @@ protected:
 
     void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
-		forwardGPUImpl(static_cast<GPUDevice*>(output->device), inputs[0]->data(), output->data(), output->shape);
+		forwardGPUImpl(static_cast<GPUDevice*>(output->device()), inputs[0]->data(), output->data(), output->shape);
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif
@@ -668,7 +654,7 @@ protected:
 #ifdef HAVE_CUDA
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
 
-		backwardGPUImpl(static_cast<GPUDevice*>(iGradient->device), iGradient->data(), output->data(), outputGradient->data(), iGradient->shape);
+		backwardGPUImpl(static_cast<GPUDevice*>(iGradient->device()), iGradient->data(), output->data(), outputGradient->data(), iGradient->shape);
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
 #endif

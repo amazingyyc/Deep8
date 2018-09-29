@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(SumElements, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, 400, 200);
     auto output = createTensor<CPUDevice, float>(device, 400, 1);
@@ -39,11 +39,10 @@ TEST(SumElements, forwardCPU) {
 
 	freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(SumElements, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
 	auto inputValue = createTensor<CPUDevice, float>(device, 400, 200);
 	auto inputGrad = createTensor<CPUDevice, float>(device, 400, 200);
@@ -79,7 +78,6 @@ TEST(SumElements, backwardCPU) {
 
 	freeFakeVariable(inputVar);
 
-    delete device;
 }
 
 #ifdef HAVE_CUDA
@@ -87,7 +85,7 @@ TEST(SumElements, backwardCPU) {
 TEST(SumElements, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 400 * 200);
 	auto inputGradPtr = (real*)malloc(sizeof(real) * 400 * 200);
@@ -113,8 +111,8 @@ TEST(SumElements, GPU_float) {
 	sumElements.forwardGPU(inputTensor, &output);
 	sumElements.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 400 * 1);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 400 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 400 * 1);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
 
 
 	for (int i = 0; i < 400; ++i) {
@@ -146,7 +144,6 @@ TEST(SumElements, GPU_float) {
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
 
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -154,7 +151,7 @@ TEST(SumElements, GPU_float) {
 TEST(SumElements, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 400, 200);
@@ -172,7 +169,6 @@ TEST(SumElements, half_GPU) {
 	sumElements.forwardGPU(inputTensor, &output);
 	sumElements.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

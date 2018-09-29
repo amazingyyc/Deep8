@@ -29,7 +29,7 @@ TEST(Conv2d, forwardCPU_float) {
 	size_t outputWidth  = (inputWidth - realFilterW)  / static_cast<size_t>(strideW) + 1;
 	size_t outputChannel = 32;
 
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
     auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
@@ -85,8 +85,6 @@ TEST(Conv2d, forwardCPU_float) {
 
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
-
-    delete device;
 }
 
 TEST(Conv2d, backwardCPU_float) {
@@ -113,7 +111,7 @@ TEST(Conv2d, backwardCPU_float) {
 	size_t outputWidth  = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
 	size_t outputChannel = 32;
 
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
     auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
@@ -144,11 +142,11 @@ TEST(Conv2d, backwardCPU_float) {
     int64_t padTop    = -padY / 2;
     int64_t padLeft   = -padX / 2;
 
-    auto *inputMat = (float*)device->malloc(sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
-    auto *inputGradTemp = (float*)device->malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+    auto *inputMat = (float*)device.malloc(sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    auto *inputGradTemp = (float*)device.malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
 
-    device->zero(inputGradTemp, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
-    device->zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    device.zero(inputGradTemp, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+    device.zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
 
     /**
      * test the inputGrad
@@ -195,7 +193,7 @@ TEST(Conv2d, backwardCPU_float) {
     /**
      * test the filterGrad
      */
-    device->zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
+    device.zero(inputMat, sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
 
     for (int64_t row = 0; row < batch * outputHeight * outputWidth; ++row) {
         int64_t b = row / (outputHeight * outputWidth);
@@ -242,10 +240,8 @@ TEST(Conv2d, backwardCPU_float) {
     freeFakeVariable(inputVar0);
     freeFakeVariable(inputVar1);
 
-    device->free(inputMat);
-    device->free(inputGradTemp);
-
-    delete device;
+    device.free(inputMat);
+    device.free(inputGradTemp);
 }
 
 #ifdef HAVE_CUDA
@@ -274,7 +270,7 @@ TEST(Conv2d, forwardGPU_float) {
 	size_t outputWidth  = (inputWidth - realFilterW)  / static_cast<size_t>(strideW) + 1;
 	size_t outputChannel = 32;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto inputPtr  = (float*)malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
     auto filterPtr = (float*)malloc(sizeof(float) * outputChannel * filterH * filterW * inputChannel);
@@ -294,7 +290,7 @@ TEST(Conv2d, forwardGPU_float) {
 
     conv2d.forwardGPU(inputTensor, &output);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
 
     int64_t padY = std::max<int64_t>(0, (outputHeight - 1) * static_cast<int64_t>(strideH) + realFilterH - inputHeight);
     int64_t padX = std::max<int64_t>(0, (outputWidth  - 1) * static_cast<int64_t>(strideW) + realFilterW - inputWidth);
@@ -341,7 +337,6 @@ TEST(Conv2d, forwardGPU_float) {
 	free(filterPtr);
 	free(outputPtr);
 
-	delete device;
 }
 
 TEST(Conv2d, backwardGPU_float) {
@@ -368,7 +363,7 @@ TEST(Conv2d, backwardGPU_float) {
 	size_t outputWidth  = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
 	size_t outputChannel = 32;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto inputValuePtr = (float*)malloc(sizeof(float)*batch * inputHeight * inputWidth * inputChannel);
     auto inputGradPtr = (float*)malloc(sizeof(float)*batch * inputHeight * inputWidth * inputChannel);
@@ -412,8 +407,8 @@ TEST(Conv2d, backwardGPU_float) {
 	int64_t padTop = -padY / 2;
 	int64_t padLeft = -padX / 2;
 
-    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
-	device->copyFromGPUToCPU(filterGrad.pointer, filterGradPtr, sizeof(float) * outputChannel * filterH * filterW * inputChannel);
+    device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
+	device.copyFromGPUToCPU(filterGrad.raw(), filterGradPtr, sizeof(float) * outputChannel * filterH * filterW * inputChannel);
 
     auto *inputMat = (float*)malloc(sizeof(float) * batch * outputHeight * outputWidth * filterH * filterW * inputChannel);
     auto *inputGradTemp = (float*)malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
@@ -520,7 +515,6 @@ TEST(Conv2d, backwardGPU_float) {
     free(inputMat);
     free(inputGradTemp);
 
-    delete device;
 }
 
 
@@ -550,7 +544,7 @@ TEST(Conv2d, half_GPU) {
 	size_t outputWidth = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
 	size_t outputChannel = 32;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
 	auto inputGrad = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
@@ -573,7 +567,6 @@ TEST(Conv2d, half_GPU) {
 	conv2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 	conv2d.backwardGPU(inputTensor, &output, &outputGrad, 1, &filterGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

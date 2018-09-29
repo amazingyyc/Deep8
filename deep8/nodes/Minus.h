@@ -164,7 +164,7 @@ public:
 
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-        auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+        auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
         auto xShape = inputs[0]->shape;
         auto yShape = inputs[1]->shape;
@@ -227,7 +227,7 @@ protected:
                      Tensor<T> *iGradient) override {
         DEEP8_ARGUMENT_CHECK(0 == index || 1 == index, "the index is error");
 
-        auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
+        auto *device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
 
         auto zShape = outputGradient->shape;
 
@@ -297,7 +297,7 @@ protected:
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
-		auto device = static_cast<GPUDevice*>(output->device);
+		auto device = static_cast<GPUDevice*>(output->device());
 
 		auto x = inputs[0];
 		auto y = inputs[1];
@@ -408,7 +408,7 @@ protected:
 #ifdef HAVE_CUDA
 		DEEP8_ARGUMENT_CHECK(0 == index || 1 == index, "the index is error");
 
-		auto device = static_cast<GPUDevice*>(iGradient->device);
+		auto device = static_cast<GPUDevice*>(iGradient->device());
 
 		int inShape[MAX_TENSOR_DIMS];
 		int outShape[MAX_TENSOR_DIMS];

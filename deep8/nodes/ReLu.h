@@ -53,7 +53,7 @@ public:
 protected:
 	template <typename real>
 	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 		eTVec(output).device(*device) = eTVec(inputs[0]).cwiseMax(T(0));
 	}
 
@@ -76,7 +76,7 @@ protected:
 						Tensor<real> *iGradient) {
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index of ReLu backwardCPU is error");
 
-		auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
 		eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), ReLuBackwardExpr<real>());
 	}
 
@@ -207,7 +207,7 @@ protected:
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
 #ifdef HAVE_CUDA
 #ifdef HAVE_CUDNN
-		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device), inputs[0]->data(), output->data(), output->shape);
+		forwardGPUCUDNNImpl(static_cast<GPUDevice*>(output->device()), inputs[0]->data(), output->data(), output->shape);
 #else
 		forwardGPUImpl(inputs[0]->data(), output->data(), static_cast<int>(output->size()));
 #endif
@@ -364,7 +364,7 @@ protected:
 #ifdef HAVE_CUDA
 #ifdef HAVE_CUDNN
 
-		backwardGPUCUDNNImpl(static_cast<GPUDevice*>(iGradient->device), 
+		backwardGPUCUDNNImpl(static_cast<GPUDevice*>(iGradient->device()), 
 			inputs[0]->data(), 
 			iGradient->data(), 
 			output->data(), 

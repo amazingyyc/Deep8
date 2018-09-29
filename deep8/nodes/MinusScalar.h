@@ -51,7 +51,7 @@ public:
 protected:
 	template <typename real>
 	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
 		eTVec(output).device(*device) = eTVec(inputs[0]) - scalar;
 	}
@@ -73,7 +73,7 @@ protected:
 		const Tensor<T> *outputGradient,
 		size_t index,
 		Tensor<T> *iGradient) override {
-		auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
 
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
@@ -147,7 +147,7 @@ protected:
 #ifdef HAVE_CUDA
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-		auto device = static_cast<GPUDevice*>(iGradient->device);
+		auto device = static_cast<GPUDevice*>(iGradient->device());
 
 		backwardGPUImpl(device->cublasHandle, iGradient->data(), outputGradient->data(), static_cast<int>(iGradient->size()));
 #else

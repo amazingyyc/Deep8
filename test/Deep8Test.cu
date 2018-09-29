@@ -37,8 +37,9 @@
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
 //#include "LinearRegressionTest.h"
-//#include "LinearRegressionGPUTest.h"
-#include "LinearRegressionHalfTest.h"
+#include "LinearRegressionGPUTest.h"
+//#include "LinearRegressionHalfTest.h"
+//#include "GPUMemoryPoolTest.h"
 
 using namespace Deep8;
 

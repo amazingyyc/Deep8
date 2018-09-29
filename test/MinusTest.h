@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(Minus, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto x = createTensor<CPUDevice, float>(device, 10, 500, 200);
     auto y = createTensor<CPUDevice, float>(device, 1, 200);
@@ -37,11 +37,11 @@ TEST(Minus, forwardCPU) {
     freeFakeVariable(inputVar2);
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(Minus, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
+
 
 	auto inputValue1 = createTensor<CPUDevice, float>(device, 10, 500, 200);
 	auto inputValue2 = createTensor<CPUDevice, float>(device, 1, 200);
@@ -93,14 +93,13 @@ TEST(Minus, backwardCPU) {
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
 
-    delete device;
 }
 #ifdef HAVE_CUDA
 
 TEST(Minus, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input0Ptr = (real*)malloc(sizeof(real) * 10 * 500 * 200);
 	auto input0GradPtr = (real*)malloc(sizeof(real) * 10 * 500 * 200);
@@ -136,9 +135,9 @@ TEST(Minus, GPU_float) {
 	minus.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
 	minus.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 500 * 200);
-	device->copyFromGPUToCPU(input0Grad.pointer, input0GradPtr, sizeof(real) * 10 * 500 * 200);
-	device->copyFromGPUToCPU(input1Grad.pointer, input1GradPtr, sizeof(real) * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 500 * 200);
+	device.copyFromGPUToCPU(input0Grad.raw(), input0GradPtr, sizeof(real) * 10 * 500 * 200);
+	device.copyFromGPUToCPU(input1Grad.raw(), input1GradPtr, sizeof(real) * 200);
 
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 500; ++j) {
@@ -180,8 +179,6 @@ TEST(Minus, GPU_float) {
 
 	freeFakeVariable(inputVar0);
 	freeFakeVariable(inputVar1);
-
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -189,7 +186,7 @@ TEST(Minus, GPU_float) {
 TEST(Minus, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input0 = createTensorGPU<real>(device, 10, 500, 200);
 	auto input0Grad = createTensorGPU<real>(device, 10, 500, 200);
@@ -212,8 +209,6 @@ TEST(Minus, half_GPU) {
 	minus.forwardGPU(inputValues, &output);
 	minus.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
 	minus.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
-
-	delete device;
 }
 
 #endif // HAVE_HALF

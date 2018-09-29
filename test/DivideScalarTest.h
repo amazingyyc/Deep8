@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(DivideScalar, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
     auto output = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
@@ -33,11 +33,10 @@ TEST(DivideScalar, forwardCPU) {
 
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(DivideScalar, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto inputValue1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
     auto inputGrad1  = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
@@ -68,7 +67,6 @@ TEST(DivideScalar, backwardCPU) {
 
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 #ifdef HAVE_CUDA
@@ -76,7 +74,7 @@ TEST(DivideScalar, backwardCPU) {
 TEST(DivideScalar, GPU_double) {
     typedef double real;
 
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     int dim0 = 10, dim1 = 500, dim2 = 200;
     real scalar = 5.5;
@@ -106,8 +104,8 @@ TEST(DivideScalar, GPU_double) {
 	divideScalar.forwardGPU(inputValues, &output);
 	divideScalar.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * dim0 * dim1 * dim2);
-    device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * dim0 * dim1 * dim2);
+    device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {
@@ -133,7 +131,6 @@ TEST(DivideScalar, GPU_double) {
 
 	freeFakeVariable(inputVar);
 
-	delete device;
 }
 
 
@@ -142,7 +139,7 @@ TEST(DivideScalar, GPU_double) {
 TEST(DivideScalar, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	int dim0 = 10, dim1 = 500, dim2 = 200;
 	real scalar = 5.5;
@@ -166,7 +163,6 @@ TEST(DivideScalar, half_GPU) {
 	divideScalar.forwardGPU(inputValues, &output);
 	divideScalar.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

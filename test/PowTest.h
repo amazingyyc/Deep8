@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(Pow, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, 10, 500, 200);
     auto output = createTensor<CPUDevice, float>(device, 10, 500, 200);
@@ -34,11 +34,10 @@ TEST(Pow, forwardCPU) {
 
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 TEST(Pow, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto inputValue1 = createTensor<CPUDevice, float>(device, 10, 500, 200);
     auto inputGrad1  = createTensor<CPUDevice, float>(device, 10, 500, 200);
@@ -70,7 +69,6 @@ TEST(Pow, backwardCPU) {
 
     freeFakeVariable(inputVar1);
 
-    delete device;
 }
 
 #ifdef HAVE_CUDA
@@ -78,7 +76,7 @@ TEST(Pow, backwardCPU) {
 TEST(Pow, GPU_float) {
 	typedef float real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputPtr = (real*)malloc(sizeof(real) * 10 * 500 * 200);
 	auto inputGradPtr = (real*)malloc(sizeof(real) * 10 * 500 * 200);
@@ -104,8 +102,8 @@ TEST(Pow, GPU_float) {
 	powFunc.forwardGPU(inputTensor, &output);
 	powFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
-	device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(real) * 10 * 500 * 200);
-	device->copyFromGPUToCPU(inputGrad.pointer, inputGradPtr, sizeof(real) * 10 * 500 * 200);
+	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 500 * 200);
+	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 500 * 200);
 
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 500; ++j) {
@@ -130,8 +128,6 @@ TEST(Pow, GPU_float) {
 	freeTensor(device, inputGrad);
 	freeTensor(device, output);
 	freeTensor(device, outputGrad);
-
-	delete device;
 }
 
 #ifdef HAVE_HALF
@@ -139,7 +135,7 @@ TEST(Pow, GPU_float) {
 TEST(Pow, half_GPU) {
 	typedef half real;
 
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input = createTensorGPU<real>(device, 10, 500, 200);
 	auto inputGrad = createTensorGPU<real>(device, 10, 500, 200);
@@ -156,8 +152,6 @@ TEST(Pow, half_GPU) {
 
 	powFunc.forwardGPU(inputTensor, &output);
 	powFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
-
-	delete device;
 }
 
 #endif // HAVE_HALF

@@ -9,7 +9,7 @@ namespace Deep8 {
  * @brief test the Add forwardCPU function
  */
 TEST(Add, forwardCPU_float) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto t1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
     auto t2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
@@ -39,12 +39,10 @@ TEST(Add, forwardCPU_float) {
 
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
-
-    delete device;
 }
 
 TEST(Add, backwardCPU_float) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto inputValue1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
     auto inputValue2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
@@ -95,14 +93,12 @@ TEST(Add, backwardCPU_float) {
 
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
-
-    delete device;
 }
 
 #ifdef HAVE_CUDA
 
 TEST(Add, forwardGPU_float) {
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto t1Ptr = (float*)malloc(sizeof(float) * 10 * 500 * 200);
 	auto t2Ptr = (float*)malloc(sizeof(float) * 1 * 200);
@@ -122,7 +118,7 @@ TEST(Add, forwardGPU_float) {
 
 	add.forwardGPU(inputTensor, &t3);
 
-	device->copyFromGPUToCPU(t3.pointer, t3Ptr, sizeof(float) * 10 * 500 * 200);
+	device.copyFromGPUToCPU(t3.raw(), t3Ptr, sizeof(float) * 10 * 500 * 200);
 
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 500; ++j) {
@@ -143,11 +139,10 @@ TEST(Add, forwardGPU_float) {
 	free(t2Ptr);
 	free(t3Ptr);
 
-	delete device;
 }
 
 TEST(Add, backwardGPU_float) {
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputValue1CPU = (float*)malloc(sizeof(float) * 10 * 500 * 200);
 	auto inputValue2CPU = (float*)malloc(sizeof(float) * 1  * 200);
@@ -180,8 +175,8 @@ TEST(Add, backwardGPU_float) {
 	add.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
 	add.backwardGPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad2);
 
-	device->copyFromGPUToCPU(inputGrad1.pointer, inputGrad1CPU, sizeof(float) * 10 * 500 * 200);
-	device->copyFromGPUToCPU(inputGrad2.pointer, inputGrad2CPU, sizeof(float) * 1 * 200);
+	device.copyFromGPUToCPU(inputGrad1.raw(), inputGrad1CPU, sizeof(float) * 10 * 500 * 200);
+	device.copyFromGPUToCPU(inputGrad2.raw(), inputGrad2CPU, sizeof(float) * 1 * 200);
 
 	for (int i = 0; i < 10 * 500 * 200; ++i) {
 		ASSERT_EQ(inputGrad1CPU[i], outputGradCPU[i]);
@@ -215,15 +210,13 @@ TEST(Add, backwardGPU_float) {
 
 	freeFakeVariable(inputVar1);
 	freeFakeVariable(inputVar2);
-
-	delete device;
 }
 
 
 #ifdef HAVE_HALF
 
 TEST(Add, half_GPU) {
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto inputValue1 = createTensorGPU<half>(device, (10), (500), (200));
 	auto inputValue2 = createTensorGPU<half>(device, 1, 200);
@@ -245,7 +238,6 @@ TEST(Add, half_GPU) {
 	add.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
 	add.backwardGPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad2);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

@@ -298,7 +298,7 @@ protected:
         }
 
 		auto variable   = *parameters.begin();
-		auto device     = variable->value.device;
+		auto device     = variable->value.device();
 		auto deviceType = device->type;
 
         if (DeviceType::CPU == deviceType) {
@@ -311,6 +311,33 @@ protected:
 #endif
 		}
     }
+
+	Tensor<T> createTensorCPU(CPUDevice *device, Shape &shape) {
+		auto storageSize = sizeof(T) * shape.size();
+
+		auto ptr    = device->malloc(storageSize);
+		auto refPtr = (size_t*)device->malloc(sizeof(size_t));
+
+		TensorStorage storage(ptr, refPtr, storageSize, device);
+
+		return Tensor<T>(storage, 0, shape);
+	}
+
+#ifdef HAVE_CUDA
+
+	Tensor<T> createTensorGPU(GPUDevice *device, Shape &shape) {
+		auto storageSize = sizeof(T) * shape.size();
+
+		auto ptr    = device->malloc(storageSize);
+		auto refPtr = (size_t*)device->mallocCPU(sizeof(size_t));
+
+		TensorStorage storage(ptr, refPtr, storageSize, device);
+		
+		return Tensor<T>(storage, 0, shape);
+	}
+
+#endif // HAVE_CUDA
+
 
 	/**the sub class implement the function*/
     virtual void trainingCPU(Parameter<T> *parameter, T scale) {
@@ -338,7 +365,7 @@ public:
                 continue;
             }
 
-            if (DeviceType::CPU == node->value.device->type) {
+            if (DeviceType::CPU == node->value.device()->type) {
                 trainingCPU(node, scale);
             } else {
                 trainingGPU(node, scale);
@@ -372,7 +399,7 @@ protected:
         auto value    = parameter->value;
         auto gradient = parameter->gradient;
 
-        auto device = static_cast<CPUDevice*>(value.device)->eigenDevice;
+        auto device = static_cast<CPUDevice*>(value.device())->eigenDevice;
 
         eTVec(value).device(*device) -= eTVec(gradient) * (this->learningRate * scale);
     }
@@ -392,7 +419,7 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<GPUDevice*>(value.device);
+		auto device = static_cast<GPUDevice*>(value.device());
 
 		float alpha = -1 * (this->learningRate * scale);
 
@@ -404,7 +431,7 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<GPUDevice*>(value.device);
+		auto device = static_cast<GPUDevice*>(value.device());
 
 		double alpha = -1 * (this->learningRate * scale);
 
@@ -467,10 +494,6 @@ public:
 #endif
 
     ~AdagradTrainer() override {
-       for (auto item : accumulate) {
-           item.second.free();
-       }
-
        accumulate.clear();
     }
 
@@ -480,13 +503,11 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<CPUDevice*>(value.device);
+		auto device = static_cast<CPUDevice*>(value.device());
 		auto eigenDevice = device->eigenDevice;
 
 		if (accumulate.find(parameter) == accumulate.end()) {
-			auto ptr = device->malloc(sizeof(real) * gradient.size());
-
-			Tensor<real> square(ptr, gradient.shape, device);
+			auto square = createTensorCPU(device, gradient.shape);
 			square.zero();
 
 			accumulate[parameter] = square;
@@ -515,13 +536,11 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<GPUDevice*>(value.device);
+		auto device = static_cast<GPUDevice*>(value.device());
 		auto size   = (int) gradient.size();
 
 		if (accumulate.find(parameter) == accumulate.end()) {
-			auto ptr = device->malloc(sizeof(T) * size);
-
-			Tensor<T> square(ptr, gradient.shape, device);
+			auto square = createTensorGPU(device, gradient.shape);
 			square.zero();
 
 			accumulate[parameter] = square;
@@ -537,7 +556,6 @@ protected:
 #endif // HAVE_CUDA
 
 };
-
 
 #ifdef HAVE_CUDA
 
@@ -584,14 +602,6 @@ public:
 #endif
 
    ~AdamTrainer() override {
-       for (auto item : m) {
-           item.second.free();
-       }
-
-       for (auto item : v) {
-           item.second.free();
-       }
-
        m.clear();
        v.clear();
    }
@@ -619,19 +629,17 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<GPUDevice*>(value.device);
+		auto device = static_cast<GPUDevice*>(value.device());
 
 		if (m.find(parameter) == m.end()) {
-			auto ptr = device->malloc(sizeof(T) * gradient.size());
-			Tensor<T> mt(ptr, gradient.shape, device);
+			auto mt = createTensorGPU(device, gradient.shape);
 			mt.zero();
 
 			m[parameter] = mt;
 		}
 
 		if (v.find(parameter) == v.end()) {
-			auto ptr = device->malloc(sizeof(T) * gradient.size());
-			Tensor<T> vt(ptr, gradient.shape, device);
+			auto vt = createTensorGPU(device, gradient.shape);
 			vt.zero();
 
 			v[parameter] = vt;
@@ -657,20 +665,18 @@ protected:
 		auto value    = parameter->value;
         auto gradient = parameter->gradient;
 
-		auto device = static_cast<CPUDevice*>(value.device);
+		auto device = static_cast<CPUDevice*>(value.device());
 		auto eigenDevice = device->eigenDevice;
 
 		if (m.find(parameter) == m.end()) {
-			auto ptr = device->malloc(sizeof(real) * gradient.size());
-			Tensor<real> mt(ptr, gradient.shape, device);
+			auto mt = createTensorCPU(device, gradient.shape);
 			mt.zero();
 
 			m[parameter] = mt;
 		}
 
 		if (v.find(parameter) == v.end()) {
-			auto ptr = device->malloc(sizeof(real) * gradient.size());
-			Tensor<real> vt(ptr, gradient.shape, device);
+			auto vt = createTensorCPU(device, gradient.shape);
 			vt.zero();
 
 			v[parameter] = vt;
@@ -741,10 +747,6 @@ public:
 #endif
 
    ~RMSPropTrainer() {
-       for (auto item : v) {
-           item.second.free();
-       }
-
        v.clear();
    }
 
@@ -755,11 +757,10 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<GPUDevice*>(value.device);
-
+		auto device = static_cast<GPUDevice*>(value.device());
+		
 		if (v.find(parameter) == v.end()) {
-			auto ptr = device->malloc(sizeof(T) * gradient.size());
-			Tensor<T> vt(ptr, gradient.shape, device);
+			auto vt = createTensorGPU(device, gradient.shape);
 			vt.zero();
 
 			v[parameter] = vt;
@@ -782,12 +783,11 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<CPUDevice*>(value.device);
+		auto device = static_cast<CPUDevice*>(value.device());
 		auto eigenDevice = device->eigenDevice;
 
 		if (v.find(parameter) == v.end()) {
-			auto ptr = device->malloc(sizeof(real) * gradient.size());
-			Tensor<real> vt(ptr, gradient.shape, device);
+			auto vt = createTensorCPU(device, gradient.shape);
 			vt.zero();
 
 			v[parameter] = vt;
@@ -838,10 +838,6 @@ public:
    }
 
    ~MomentumTrainer() {
-       for (auto item : momentum) {
-           item.second.free();
-       }
-
        momentum.clear();
    }
 
@@ -853,11 +849,10 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<GPUDevice*>(value.device);
+		auto device = static_cast<GPUDevice*>(value.device());
 
 		if (momentum.find(parameter) == momentum.end()) {
-			auto ptr = device->malloc(sizeof(T) * gradient.size());
-			Tensor<T> m(ptr, gradient.shape, device);
+			auto m = createTensorGPU(device, gradient.shape);
 			m.zero();
 
 			momentum[parameter] = m;
@@ -879,12 +874,11 @@ protected:
 		auto value    = parameter->value;
 		auto gradient = parameter->gradient;
 
-		auto device = static_cast<CPUDevice*>(value.device);
+		auto device = static_cast<CPUDevice*>(value.device());
 		auto eigenDevice = device->eigenDevice;
 
 		if (momentum.find(parameter) == momentum.end()) {
-			auto ptr = device->malloc(sizeof(real) * gradient.size());
-			Tensor<real> m(ptr, gradient.shape, device);
+			auto m = createTensorCPU(device, gradient.shape);
 			m.zero();
 
 			momentum[parameter] = m;

@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(Divide, forwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto t1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
     auto t2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
@@ -42,12 +42,10 @@ TEST(Divide, forwardCPU) {
 
     freeFakeVariable(inputVar1);
     freeFakeVariable(inputVar2);
-
-    delete device;
 }
 
 TEST(Divide, backwardCPU) {
-    auto device = new CPUDevice();
+	CPUDevice device;
 
     auto inputValue0 = createTensor<CPUDevice, double>(device, size_t(10), size_t(100), size_t(200));
     auto inputValue1 = createTensor<CPUDevice, double>(device, size_t(1), size_t(200));
@@ -114,14 +112,12 @@ TEST(Divide, backwardCPU) {
 
     freeFakeVariable(inputVar0);
     freeFakeVariable(inputVar1);
-
-    delete device;
 }
 
 #ifdef HAVE_CUDA
 
 TEST(Divide, GPU_float) {
-    auto device = new GPUDevice();
+	GPUDevice device;
 
     auto input1Ptr = (float*)malloc(sizeof(float) * 10 * 100 * 200);
     auto input1GradPtr = (float*)malloc(sizeof(float) * 10 * 100 * 200);
@@ -150,7 +146,7 @@ TEST(Divide, GPU_float) {
 		}
 	}
 
-	device->copyFromCPUToGPU(input2Ptr, input2.pointer, sizeof(float) * 200);
+	device.copyFromCPUToGPU(input2Ptr, input2.raw(), sizeof(float) * 200);
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
     Divide<float> divide(inputs);
@@ -164,9 +160,9 @@ TEST(Divide, GPU_float) {
     divide.backwardGPU(inputValues, &output, &outputGrad, 0, &input1Grad);
     divide.backwardGPU(inputValues, &output, &outputGrad, 1, &input2Grad);
 
-    device->copyFromGPUToCPU(output.pointer, outputPtr, sizeof(float) * 10 * 100 * 200);
-    device->copyFromGPUToCPU(input1Grad.pointer, input1GradPtr, sizeof(float) * 10 * 100 * 200);
-    device->copyFromGPUToCPU(input2Grad.pointer, input2GradPtr, sizeof(float) * 1 * 200);
+    device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(float) * 10 * 100 * 200);
+    device.copyFromGPUToCPU(input1Grad.raw(), input1GradPtr, sizeof(float) * 10 * 100 * 200);
+    device.copyFromGPUToCPU(input2Grad.raw(), input2GradPtr, sizeof(float) * 1 * 200);
 
 	for (int i = 0; i < 10; ++i) {
 		for (int j = 0; j < 100; ++j) {
@@ -216,13 +212,12 @@ TEST(Divide, GPU_float) {
 	freeFakeVariable(inputVar1);
 	freeFakeVariable(inputVar2);
 
-	delete device;
 }
 
 #ifdef HAVE_HALF
 
 TEST(Divide, half_GPU) {
-	auto device = new GPUDevice();
+	GPUDevice device;
 
 	auto input1 = createTensorGPU<half>(device, 10, 100, 200);
 	auto input1Grad = createTensorGPU<half>(device, 10, 100, 200);
@@ -248,7 +243,6 @@ TEST(Divide, half_GPU) {
 	divide.backwardGPU(inputValues, &output, &outputGrad, 0, &input1Grad);
 	divide.backwardGPU(inputValues, &output, &outputGrad, 1, &input2Grad);
 
-	delete device;
 }
 
 #endif // HAVE_HALF

@@ -103,7 +103,7 @@ public:
 
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-        auto eigenDevice = static_cast<CPUDevice*>(output->device)->eigenDevice;
+        auto eigenDevice = static_cast<CPUDevice*>(output->device())->eigenDevice;
 
         auto input = inputs[0];
         auto batch = input->batch();
@@ -124,7 +124,7 @@ protected:
             DEEP8_RUNTIME_ERROR("the index of SumElements backwardCPU is error");
         }
 
-        auto eigenDevice = static_cast<CPUDevice*>(iGradient->device)->eigenDevice;
+        auto eigenDevice = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
 
         auto batch = iGradient->batch();
         auto size  = iGradient->size() / batch;
@@ -182,7 +182,7 @@ protected:
 		int batch = (int)inputs[0]->shape.batch();
 		int size  = (int)inputs[0]->shape.size() / batch;
 
-		forwardGPUImpl(static_cast<GPUDevice*>(output->device), inputs[0]->data(), output->data(), batch, size);
+		forwardGPUImpl(static_cast<GPUDevice*>(output->device()), inputs[0]->data(), output->data(), batch, size);
 
 #else
 		DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");

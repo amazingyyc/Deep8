@@ -25,7 +25,7 @@ __global__ void SigmoidForwardKernel(const real *X, real *Y, const int N) {
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		Y[i] = 0.5 + 0.5 * cuTanh(0.5 * X[i]);
+		Y[i] = real(0.5) + real(0.5) * cuTanh(real(0.5) * X[i]);
 	}
 }
 
@@ -35,7 +35,7 @@ __global__ void SigmoidBackwardKernel(real *xGrad, const real *yGrad, const real
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		xGrad[i] += yGrad[i] * Y[i] * (1 - Y[i]);
+		xGrad[i] += yGrad[i] * Y[i] * (real(1) - Y[i]);
 	}
 }
 
@@ -59,7 +59,7 @@ public:
 protected:
 	template <typename real>
 	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
 		eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(SigmoidForwardExpr<T>());
 	}
 
@@ -83,7 +83,7 @@ protected:
 		Tensor<real> *iGradient) {
 		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Sigmoid backwardCPU is error");
 
-		auto device = static_cast<CPUDevice*>(iGradient->device)->eigenDevice;
+		auto device = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
 		eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(output), SigmoidBackwardExpr<T>());
 	}
 

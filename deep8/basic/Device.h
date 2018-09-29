@@ -75,8 +75,7 @@ public:
 class GPUDevice : public Device {
 public:
 	/**the GPU memory allocator*/
-	GPUMemoryAllocator *gpuMemoryAllocator;
-
+	GPUMemoryPool *memoryPool;
 
 	/**the GPU device id*/
 	int deviceId;
@@ -111,10 +110,10 @@ public:
 	explicit GPUDevice() : GPUDevice(0) {
 	}
 
-	explicit GPUDevice(int deviceId) : Device(DeviceType::GPU), deviceId(deviceId) {
+	explicit GPUDevice(int id) : Device(DeviceType::GPU), deviceId(id) {
 		CUDA_CHECK(cudaSetDevice(deviceId));
 
-		gpuMemoryAllocator = new GPUMemoryAllocator(deviceId);
+		memoryPool = new GPUMemoryPool(deviceId);
 		
 		CUBLAS_CHECK(cublasCreate(&cublasHandle));
 
@@ -126,7 +125,7 @@ public:
 #endif
 
 #ifdef HAVE_HALF
-		void *ptr = gpuMemoryAllocator->malloc(sizeof(float) * 3 + sizeof(double) * 3 + sizeof(half) * 3);
+		void *ptr = memoryPool->malloc(sizeof(float) * 3 + sizeof(double) * 3 + sizeof(half) * 3);
 
 		floatOne = (float*)ptr;
 		floatZero = floatOne + 1;
@@ -144,12 +143,12 @@ public:
 		double numberD[3] = { 1, 0, -1 };
 		half   numberH[3] = { 1.0, 0.0, -1.0 };
 
-		gpuMemoryAllocator->copyFromCPUToGPU(&numberF[0], floatOne,  sizeof(float)  * 3);
-		gpuMemoryAllocator->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
-		gpuMemoryAllocator->copyFromCPUToGPU(&numberH[0], halfOne,   sizeof(half)   * 3);
+		memoryPool->copyFromCPUToGPU(&numberF[0], floatOne,  sizeof(float)  * 3);
+		memoryPool->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
+		memoryPool->copyFromCPUToGPU(&numberH[0], halfOne,   sizeof(half)   * 3);
 
 #else
-		void *ptr = gpuMemoryAllocator->malloc(sizeof(float) * 3 + sizeof(double) * 3);
+		void *ptr = memoryPool->malloc(sizeof(float) * 3 + sizeof(double) * 3);
 
 		floatOne = (float*)ptr;
 		floatZero = floatOne + 1;
@@ -162,15 +161,15 @@ public:
 		float numberF[3] = { 1, 0, -1 };
 		double numberD[3] = { 1, 0, -1 };
 
-		gpuMemoryAllocator->copyFromCPUToGPU(&numberF[0], floatOne, sizeof(float) * 3);
-		gpuMemoryAllocator->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
+		memoryPool->copyFromCPUToGPU(&numberF[0], floatOne, sizeof(float) * 3);
+		memoryPool->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
 #endif // HAVE_HALF
 	}
 
 	~GPUDevice() {
-		gpuMemoryAllocator->free(floatOne);
+		memoryPool->free(floatOne);
 
-		delete gpuMemoryAllocator;
+		delete memoryPool;
 
 		CUBLAS_CHECK(cublasDestroy(cublasHandle));
 		CURAND_CHECK(curandDestroyGenerator(curandGenerator));
@@ -181,31 +180,39 @@ public:
 	}
 
 	void* malloc(size_t size) override {
-		return gpuMemoryAllocator->malloc(size);
+		return memoryPool->malloc(size);
 	}
 
 	void free(void *ptr) override {
-		gpuMemoryAllocator->free(ptr);
+		memoryPool->free(ptr);
+	}
+
+	void *mallocCPU(size_t size) {
+		return memoryPool->mallocCPU(size);
+	}
+
+	void freeCPU(void *ptr) {
+		memoryPool->freeCPU(ptr);
 	}
 
 	void zero(void *ptr, size_t size) override {
-		gpuMemoryAllocator->zero(ptr, size);
+		memoryPool->zero(ptr, size);
 	}
 
 	void copy(const void *from, void *to, size_t size) override {
-		gpuMemoryAllocator->copy(from, to, size);
+		memoryPool->copy(from, to, size);
 	}
 
 	void copyFromCPUToGPU(const void *from, void *to, size_t size) {
-		gpuMemoryAllocator->copyFromCPUToGPU(from, to, size);
+		memoryPool->copyFromCPUToGPU(from, to, size);
 	}
 
 	void copyFromGPUToCPU(const void *from, void *to, size_t size) {
-		gpuMemoryAllocator->copyFromGPUToCPU(from, to, size);
+		memoryPool->copyFromGPUToCPU(from, to, size);
 	}
 
 	void copyFromGPUToGPU(const void *from, void *to, size_t size) {
-		gpuMemoryAllocator->copyFromGPUToGPU(from, to, size);
+		memoryPool->copyFromGPUToGPU(from, to, size);
 	}
 
 	template<typename T>
