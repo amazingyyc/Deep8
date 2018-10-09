@@ -1,6 +1,8 @@
 #ifndef DEEP8_MEMORYPOOL_H
 #define DEEP8_MEMORYPOOL_H
 
+#include "../utils/MathUtils.h"
+
 namespace Deep8 {
 
 /**

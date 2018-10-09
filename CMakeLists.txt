@@ -6,7 +6,7 @@ set(HAVE_GPU false)
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
 else()
-	project(Deep8 LANGUAGES CXX)
+    project(Deep8 LANGUAGES CXX)
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -65,10 +65,10 @@ else()
 endif()
 
 # fix for MSVC
-if(MSVC)
-	message(STATUS "set /bigobj to avoid compile error")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /Gy")
-endif()
+# if(MSVC)
+#	message(STATUS "set /bigobj to avoid compile error")
+#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /Gy")
+# endif()
 
 # set the Maro for Eigen Compile
 if (HAVE_GPU AND HAVE_CUDA)
@@ -161,6 +161,11 @@ set ( DEEP8_HEAD_FILES
 		deep8/utils/Utils.h
 		deep8/model/Executor.h )
 
+set ( DEEP8_SRC_FILES
+
+		deep8/nodes/Function.cpp 
+		deep8/nodes/Minus.cpp)
+
 # Deep8 test
 include_directories(test)
 
@@ -239,7 +244,8 @@ if (HAVE_GPU AND HAVE_CUDA)
 else()
 	message(STATUS "can not find CUDA only compile for CPU")
 
-	add_executable(Deep8 ${DEEP8_TEST_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
+	# add_executable(Deep8 ${DEEP8_SRC_FILES} ${DEEP8_TEST_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
+	add_executable(Deep8 ${DEEP8_SRC_FILES} ${DEEP8_TEST_SRC_FILES})
 	target_link_libraries(Deep8 gtest)
 
 endif()

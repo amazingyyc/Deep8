@@ -1,6 +1,19 @@
 #ifndef DEEP8_NODE_H
 #define DEEP8_NODE_H
 
+#include "../basic/Basic.h"
+#include "../basic/Exception.h"
+#include "../basic/CudaException.h"
+#include "../basic/MemoryAllocator.h"
+#include "../basic/Shape.h"
+#include "../basic/MemoryPool.h"
+#include "../basic/Device.h"
+#include "../basic/TensorStorage.h"
+#include "../basic/Tensor.h"
+
+#include "../utils/ShapeUtils.h"
+#include "../utils/TensorUtils.h"
+
 namespace Deep8 {
 
 enum class NodeType {
@@ -49,7 +62,7 @@ protected:
     }
 
 public:
-    virtual ~Node() = default;
+	virtual ~Node() {} ;
 
     /**
      * @brief for different Node the forward do different operation

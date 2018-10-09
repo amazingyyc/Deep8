@@ -1,6 +1,8 @@
 #ifndef DEEP8_DEVICE_H
 #define DEEP8_DEVICE_H
 
+#include "../utils/Utils.h"
+
 namespace Deep8 {
 
 /**
