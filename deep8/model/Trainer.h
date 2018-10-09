@@ -507,7 +507,7 @@ protected:
 		auto eigenDevice = device->eigenDevice;
 
 		if (accumulate.find(parameter) == accumulate.end()) {
-			auto square = createTensorCPU(device, gradient.shape);
+			auto square = this->createTensorCPU(device, gradient.shape);
 			square.zero();
 
 			accumulate[parameter] = square;

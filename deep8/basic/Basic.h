@@ -62,11 +62,22 @@
 #endif
 
 #define EIGEN_NO_CUDA
-
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 /**define the byte type*/
 typedef unsigned char byte;
+
+#ifdef HAVE_HALF
+
+#define DEEP8_DECLARATION_INSTANCE(name)    \
+            template class name<float>;     \
+            template class name<double>;    \
+            template class name<half>;
+#else
+#define DEEP8_DECLARATION_INSTANCE(name)    \
+            template class name<float>;     \
+            template class name<double>;
+#endif
 
 #endif

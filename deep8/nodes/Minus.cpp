@@ -122,11 +122,6 @@ void Minus<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	}
 }
 
-template class Minus<float>;
-template class Minus<double>;
-
-#ifdef HAVE_HALF
-template class Minus<half>;
-#endif
+DEEP8_DECLARATION_INSTANCE(Minus)
 
 }

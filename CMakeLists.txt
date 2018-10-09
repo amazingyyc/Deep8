@@ -164,7 +164,18 @@ set ( DEEP8_HEAD_FILES
 set ( DEEP8_SRC_FILES
 
 		deep8/nodes/Function.cpp 
-		deep8/nodes/Minus.cpp)
+		deep8/nodes/Minus.cpp
+		deep8/nodes/MatrixMultiply.cpp
+		deep8/nodes/L1Norm.cpp
+		deep8/nodes/Abs.cpp
+		deep8/nodes/AddScalar.cpp
+		deep8/nodes/Add.cpp
+		deep8/nodes/AvgPooling2d.cpp
+		deep8/nodes/Conv2d.cpp
+		deep8/nodes/DeConv2d.cpp
+		deep8/nodes/Divide.cpp
+		deep8/nodes/DivideScalar.cpp
+		deep8/nodes/Exp.cpp deep8/nodes/L2Norm.cpp)
 
 # Deep8 test
 include_directories(test)
@@ -244,8 +255,7 @@ if (HAVE_GPU AND HAVE_CUDA)
 else()
 	message(STATUS "can not find CUDA only compile for CPU")
 
-	# add_executable(Deep8 ${DEEP8_SRC_FILES} ${DEEP8_TEST_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
-	add_executable(Deep8 ${DEEP8_SRC_FILES} ${DEEP8_TEST_SRC_FILES})
+	add_executable(Deep8 ${DEEP8_SRC_FILES} ${DEEP8_TEST_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
 	target_link_libraries(Deep8 gtest)
 
 endif()
