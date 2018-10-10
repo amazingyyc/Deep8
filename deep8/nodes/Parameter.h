@@ -1,6 +1,8 @@
 #ifndef DEEP8_PARAMETER_H
 #define DEEP8_PARAMETER_H
 
+#include "Variable.h"
+
 namespace Deep8 {
 
 /**
@@ -21,12 +23,8 @@ public:
     }
 
 protected:
-    void check() override {
-        DEEP8_ARGUMENT_CHECK(this->value.device()->type == this->gradient.device()->type, "the values and gradient must be the same type");
-        DEEP8_ARGUMENT_CHECK(this->value.shape == this->gradient.shape, "the shape if Value and Gradient must be same");
+	void check() override;
 
-        this->outputShape = this->value.shape;
-    }
 };
 
 }

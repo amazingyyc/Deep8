@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU false)
+set(HAVE_GPU true)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -73,8 +73,8 @@ endif()
 # set the Maro for Eigen Compile
 if (HAVE_GPU AND HAVE_CUDA)
 	message(STATUS "find the GPU add set Eigen use multi-threads")
-	# add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH)
-	add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS)
+	add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH)
+	# add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS)
 	
 	if (HAVE_CUDNN)
 		add_definitions(-DHAVE_CUDNN)
@@ -162,17 +162,23 @@ set ( DEEP8_HEAD_FILES
 		deep8/model/Executor.h )
 
 set ( DEEP8_SRC_FILES
+
+		deep8/basic/MemoryAllocator.cpp
+		deep8/basic/TensorStorage.cpp
+		deep8/basic/Tensor.cpp
 		
 		deep8/nodes/Abs.cpp 
 		deep8/nodes/Add.cpp 
 		deep8/nodes/AddScalar.cpp 
 		deep8/nodes/AvgPooling2d.cpp 
+		deep8/nodes/ConstantParameter.cpp 
 		deep8/nodes/Conv2d.cpp 
 		deep8/nodes/DeConv2d.cpp 
 		deep8/nodes/Divide.cpp 
 		deep8/nodes/DivideScalar.cpp 
 		deep8/nodes/Exp.cpp 
 		deep8/nodes/Function.cpp 
+		deep8/nodes/InputParameter.cpp 
 		deep8/nodes/L1Norm.cpp 
 		deep8/nodes/L2Norm.cpp 
 		deep8/nodes/Linear.cpp 
@@ -184,6 +190,7 @@ set ( DEEP8_SRC_FILES
 		deep8/nodes/MinusScalar.cpp 
 		deep8/nodes/Multiply.cpp 
 		deep8/nodes/MultiplyScalar.cpp 
+		deep8/nodes/Parameter.cpp 
 		deep8/nodes/Pow.cpp 
 		deep8/nodes/ReLu.cpp 
 		deep8/nodes/ReShape.cpp 
@@ -193,7 +200,18 @@ set ( DEEP8_SRC_FILES
 		deep8/nodes/Softmax.cpp 
 		deep8/nodes/Square.cpp 
 		deep8/nodes/SumElements.cpp 
-		deep8/nodes/TanH.cpp )
+		deep8/nodes/TanH.cpp 
+		deep8/nodes/Variable.cpp 
+		)
+
+set ( DEEP8_CUDA_SRC_FILES
+
+		deep8/basic/MemoryAllocator.cu
+		deep8/basic/TensorStorage.cu
+		deep8/basic/Tensor.cu
+
+		deep8/nodes/L1Norm.cu
+		)
 
 # Deep8 test
 include_directories(test)
@@ -259,11 +277,10 @@ if (HAVE_GPU AND HAVE_CUDA)
 
 	# enable cudnn
 	if (HAVE_CUDNN)
-		# list(APPEND CUDA_NVCC_FLAGS "-DHAVE_CUDNN")
 		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_CUDNN")
 	endif()
 
-	add_executable(Deep8  ${DEEP8_TEST_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
+	add_executable(Deep8 ${DEEP8_CUDA_SRC_FILES} ${DEEP8_SRC_FILES} ${DEEP8_TEST_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
 
 	# add cuBlas library
 	cuda_add_cublas_to_target(Deep8)

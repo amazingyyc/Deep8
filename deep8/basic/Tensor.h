@@ -1,6 +1,8 @@
 #ifndef DEEP8_TENSOR_H
 #define DEEP8_TENSOR_H
 
+#include "TensorStorage.h"
+
 namespace Deep8 {
 
 class TensorBase {
@@ -55,96 +57,45 @@ public:
 	~Tensor() = default;
 
 public:
-	DeviceType DeviceType() {
-		return storage.device->type;
-	}
+	DeviceType DeviceType();
+	Device* device();
 
-	Device* device() {
-		return storage.device;
-	}
-
-	Device* device() const {
-		return storage.device;
-	}
+	Device* device() const;
 
 
-	size_t* refPtr() const {
-		return storage.refPtr;
-	}
+	size_t* refPtr() const;
 
-	size_t refCount() {
-		return storage.refPtr[0];
-	}
+	size_t refCount();
 
-	void* raw() {
-		return (byte*)(storage.ptr) + offset;
-	}
+	void* raw();
 
-	void* raw() const {
-		return (byte*)(storage.ptr) + offset;
-	}
+	void* raw() const;
 
-	T* data() {
-		return static_cast<T*>(raw());
-	}
+	T* data();
 
-	T* data() const {
-		return static_cast<T*>(raw());
-	}
+	T* data() const;
 
-	bool isScalar() override {
-		return 1 == shape.size();
-	}
+	bool isScalar() override;
 
-	void zero() override {
-		storage.device->zero(this->raw(), sizeof(T) * shape.size());
-	}
+	void zero() override;
 
-	size_t nDims() const override {
-		return shape.nDims();
-	}
+	size_t nDims() const override;
 
-	size_t size() const override {
-		return shape.size();
-	}
+	size_t size() const override;
 
-	size_t batchSize() const override {
-		return shape.batchSize();
-	}
+	size_t batchSize() const override;
 
-	size_t batch() const override {
-		return shape.batch();
-	}
+	size_t batch() const override;
 
-	size_t row() const override {
-		return shape.row();
-	}
+	size_t row() const override;
 
-	size_t col() const override {
-		return shape.col();
-	}
+	size_t col() const override;
 
-	size_t dim(size_t d) const override {
-		return shape.dim(d);
-	}
+	size_t dim(size_t d) const override;
 
-	T scalar() {
-		DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor must be a scalar");
-
-		if (DeviceType::CPU == device()->type) {
-			return data()[0];
-		} else {
-#ifdef HAVE_CUDA
-			T scalar;
-
-			static_cast<GPUDevice*>(device)->copyFromGPUToCPU(raw(), &scalar, sizeof(T));
-
-			return scalar;
-#else
-			DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
-		}
-	}
+	T scalarCPU();
+	T scalarGPU();
+	T scalar();
 };
 
 }

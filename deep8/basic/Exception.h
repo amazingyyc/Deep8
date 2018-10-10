@@ -1,7 +1,3 @@
-/**
- * @brief a simple exception function
- */
-
 #ifndef DEEP8_EXCEPTION_H
 #define DEEP8_EXCEPTION_H
 

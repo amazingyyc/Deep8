@@ -1,6 +1,8 @@
 #ifndef DEEP8_CUDAEXCEPTION_H
 #define DEEP8_CUDAEXCEPTION_H
 
+#include "Exception.h"
+
 #ifdef HAVE_CUDA
 
 namespace Deep8 {

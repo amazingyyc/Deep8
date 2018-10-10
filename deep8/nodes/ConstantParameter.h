@@ -1,6 +1,8 @@
 #ifndef DEEP8_CONSTANTPARAMETER_H
 #define DEEP8_CONSTANTPARAMETER_H
 
+#include "Parameter.h"
+
 namespace Deep8 {
 
 /**
@@ -14,13 +16,8 @@ public:
 		this->outputShape = value.shape;
     }
 
-    void zeroGradient() override {
-    }
-
-	bool isScalar() override {
-		return this->value.isScalar();
-	}
-
+	void zeroGradient() override;
+	bool isScalar() override;
 };
 
 

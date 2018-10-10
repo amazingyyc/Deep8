@@ -1,6 +1,8 @@
 #ifndef DEEP8_UTILS_H
 #define DEEP8_UTILS_H
 
+#include "../basic/Basic.h"
+
 namespace Deep8 {
 
 static int getDeviceThreadNum() {

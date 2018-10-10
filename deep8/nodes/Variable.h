@@ -1,6 +1,8 @@
 #ifndef DEEP8_VARIABLE_H
 #define DEEP8_VARIABLE_H
 
+#include "Node.h"
+
 namespace Deep8 {
 
 class VariableBase : public Node {
@@ -102,60 +104,26 @@ public:
     }
 
 protected:
-    virtual void check() {
-        DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
-
-		DEEP8_ARGUMENT_CHECK(value.device()->type == gradient.device()->type, "the values and gradient must be the same type");
-		DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape if Value and Gradient must be same");
-        
-        for (auto i : inputs) {
-            DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
-            DEEP8_ARGUMENT_CHECK(i->outputShape == value.shape, "the shape of the input, pointer and gradient must be same")
-        }
-
-        outputShape = value.shape;
-    }
+	virtual void check();
 
 public:
-	~Variable() override {
-    }
 
 	/**
 	 * set the Gradient to be 0
 	 */
-	void zeroGradient() override {
-		gradient.zero();
-	}
+	void zeroGradient() override;
 
 	/**
 	 * get the device type
 	 */
-	DeviceType deviceType() override {
-		return value.device()->type;
-	}
+	DeviceType deviceType() override;
 
 	/**
 	 * set the gradient be 1 for backward process
 	 */
-	void setGradientOne() override {
-		DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
+	void setGradientOne() override;
 
-		if (DeviceType::CPU == gradient.device()->type) {
-			gradient.data()[0] = T(1);
-		} else {
-#ifdef HAVE_CUDA
-			auto device = static_cast<GPUDevice*>(gradient.device());
-
-			device->copyFromGPUToGPU(device->gpuOne<T>(), gradient.raw(), sizeof(T));
-#else
-			DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
-		}
-	}
-
-	bool isScalar() override {
-		return value.isScalar() && gradient.isScalar();
-	}
+	bool isScalar() override;
 };
 
 }

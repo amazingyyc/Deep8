@@ -1,6 +1,8 @@
 #ifndef DEEP8_CUDAMATHUTILS_H
 #define DEEP8_CUDAMATHUTILS_H
 
+#include "../basic/CudaHeads.h"
+
 #ifdef HAVE_CUDA
 
 namespace Deep8 {

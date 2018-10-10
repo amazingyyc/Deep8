@@ -43,24 +43,6 @@
 #include <zconf.h>
 #endif
 
-#ifdef HAVE_CUDA
-
-#include <cuda_runtime.h>
-#include <cublas_v2.h>
-#include <curand.h>
-#include <math_functions.h>
-#include <cuda_occupancy.h>
-
-#ifdef HAVE_CUDNN
-#include <cudnn.h>
-#endif
-
-#ifdef HAVE_HALF
-#include <cuda_fp16.h>
-#endif
-
-#endif
-
 #define EIGEN_NO_CUDA
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -69,7 +51,6 @@
 typedef unsigned char byte;
 
 #ifdef HAVE_HALF
-
 #define DEEP8_DECLARATION_INSTANCE(name)    \
             template class name<float>;     \
             template class name<double>;    \
@@ -79,5 +60,31 @@ typedef unsigned char byte;
             template class name<float>;     \
             template class name<double>;
 #endif
+
+
+//#ifdef HAVE_HALF
+//#define DEEP8_DECLARATION_GPU_FUNC(name)	\
+///**template void name<half>::forwardGPU(const std::vector<const Tensor<half>*> &, Tensor<half> *);			\*/
+//template void name<float>::forwardGPU(const std::vector<const Tensor<float>*> &, Tensor<float> *);		\
+//template void name<double>::forwardGPU(const std::vector<const Tensor<double>*> &, Tensor<double> *);	\
+///**template void name<half>::backwardGPU(const std::vector<const Tensor<half>*>&, const Tensor<half>*, const Tensor<half>*, size_t, Tensor<half>*);			\*/
+//template void name<float>::backwardGPU(const std::vector<const Tensor<float>*>&, const Tensor<float>*, const Tensor<float>*, size_t, Tensor<float>*);		\
+//template void name<double>::backwardGPU(const std::vector<const Tensor<double>*>&, const Tensor<double>*, const Tensor<double>*, size_t, Tensor<double>*);
+//#else
+#define DEEP8_DECLARATION_GPU_FUNC(name)	\
+template void name<float>::forwardGPU(const std::vector<const Tensor<float>*> &inputs, Tensor<float> *output);		\
+template void name<double>::forwardGPU(const std::vector<const Tensor<double>*> &inputs, Tensor<double> *output);		\
+template void name<float>::backwardGPU(const std::vector<const Tensor<float>*> &inputs, const Tensor<float> *output, const Tensor<float> *outputGradient, size_t index, Tensor<float> *iGradient);	\
+template void name<double>::backwardGPU(const std::vector<const Tensor<double>*> &inputs, const Tensor<double> *output, const Tensor<double> *outputGradient, size_t index, Tensor<double> *iGradient);
+//#endif
+
+
+
+
+
+
+
+
+
 
 #endif

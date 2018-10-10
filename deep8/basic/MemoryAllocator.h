@@ -67,25 +67,10 @@ public:
     explicit CPUMemoryAllocator(size_t align) : MemoryAllocator(align) {
     }
 
-    void *malloc(size_t size) override {
-        void *ptr = _mm_malloc(size, align);
-
-		DEEP8_ASSERT(nullptr != ptr, "system allocate memory error! size is:" << size);
-
-        return ptr;
-    }
-
-    void free(void *ptr) override {
-        _mm_free(ptr);
-    }
-
-    void zero(void *ptr, size_t size) override {
-        memset(ptr, 0, size);
-    }
-
-    void copy(const void *from, void *to, size_t size) override {
-        memcpy(to, from, size);
-    }
+	void *malloc(size_t size) override;
+	void free(void *ptr) override;
+	void zero(void *ptr, size_t size) override;
+	void copy(const void *from, void *to, size_t size) override;
 };
 
 
@@ -101,53 +86,25 @@ public:
 	explicit GPUMemoryAllocator(int deviceId) : deviceId(deviceId) {
 	}
 
-	void *malloc(size_t size) override {
-		void *ptr;
-
-		CUDA_CHECK(cudaSetDevice(deviceId));
-		CUDA_CHECK(cudaMalloc(&ptr, size));
-
-		return ptr;
-	}
-
-	void free(void *ptr) override {
-		CUDA_CHECK(cudaSetDevice(deviceId));
-		CUDA_CHECK(cudaFree(ptr));
-	}
-
-    void zero(void *ptr, size_t size) override {
-		CUDA_CHECK(cudaSetDevice(deviceId));
-		CUDA_CHECK(cudaMemset(ptr, 0, size));
-	}
+	void *malloc(size_t size) override;
+	void free(void *ptr) override;
+	void zero(void *ptr, size_t size) override;
 
 	/**
 	 * for GPU the copy function is between the GPU Device
 	 */
-	void copy(const void *from, void *to, size_t size) override {
-		CUDA_CHECK(cudaSetDevice(deviceId));
-		CUDA_CHECK(cudaMemcpy(to, from, size, cudaMemcpyDeviceToDevice));
-	}
+	void copy(const void *from, void *to, size_t size) override;
 
 	/**
 	 * copy memory from host to GPU
 	 */
-	void copyFromCPUToGPU(const void *from, void *to, size_t size) {
-		CUDA_CHECK(cudaSetDevice(deviceId));
-		CUDA_CHECK(cudaMemcpy(to, from, size, cudaMemcpyHostToDevice));
-	}
+	void copyFromCPUToGPU(const void *from, void *to, size_t size);
 
 	/**
 	 * copy memory from GPU to Host
 	 */
-	void copyFromGPUToCPU(const void *from, void *to, size_t size) {
-		CUDA_CHECK(cudaSetDevice(deviceId));
-		CUDA_CHECK(cudaMemcpy(to, from, size, cudaMemcpyDeviceToHost));
-	}
-
-	void copyFromGPUToGPU(const void *from, void *to, size_t size) {
-		CUDA_CHECK(cudaSetDevice(deviceId));
-		CUDA_CHECK(cudaMemcpy(to, from, size, cudaMemcpyDeviceToDevice));
-	}
+	void copyFromGPUToCPU(const void *from, void *to, size_t size);
+	void copyFromGPUToGPU(const void *from, void *to, size_t size);
 };
 
 
