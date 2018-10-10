@@ -162,20 +162,38 @@ set ( DEEP8_HEAD_FILES
 		deep8/model/Executor.h )
 
 set ( DEEP8_SRC_FILES
-
+		
+		deep8/nodes/Abs.cpp 
+		deep8/nodes/Add.cpp 
+		deep8/nodes/AddScalar.cpp 
+		deep8/nodes/AvgPooling2d.cpp 
+		deep8/nodes/Conv2d.cpp 
+		deep8/nodes/DeConv2d.cpp 
+		deep8/nodes/Divide.cpp 
+		deep8/nodes/DivideScalar.cpp 
+		deep8/nodes/Exp.cpp 
 		deep8/nodes/Function.cpp 
-		deep8/nodes/Minus.cpp
-		deep8/nodes/MatrixMultiply.cpp
-		deep8/nodes/L1Norm.cpp
-		deep8/nodes/Abs.cpp
-		deep8/nodes/AddScalar.cpp
-		deep8/nodes/Add.cpp
-		deep8/nodes/AvgPooling2d.cpp
-		deep8/nodes/Conv2d.cpp
-		deep8/nodes/DeConv2d.cpp
-		deep8/nodes/Divide.cpp
-		deep8/nodes/DivideScalar.cpp
-		deep8/nodes/Exp.cpp deep8/nodes/L2Norm.cpp)
+		deep8/nodes/L1Norm.cpp 
+		deep8/nodes/L2Norm.cpp 
+		deep8/nodes/Linear.cpp 
+		deep8/nodes/Log.cpp 
+		deep8/nodes/LReLu.cpp 
+		deep8/nodes/MatrixMultiply.cpp 
+		deep8/nodes/MaxPooling2d.cpp 
+		deep8/nodes/Minus.cpp 
+		deep8/nodes/MinusScalar.cpp 
+		deep8/nodes/Multiply.cpp 
+		deep8/nodes/MultiplyScalar.cpp 
+		deep8/nodes/Pow.cpp 
+		deep8/nodes/ReLu.cpp 
+		deep8/nodes/ReShape.cpp 
+		deep8/nodes/ScalarDivide.cpp 
+		deep8/nodes/ScalarMinus.cpp 
+		deep8/nodes/Sigmoid.cpp 
+		deep8/nodes/Softmax.cpp 
+		deep8/nodes/Square.cpp 
+		deep8/nodes/SumElements.cpp 
+		deep8/nodes/TanH.cpp )
 
 # Deep8 test
 include_directories(test)

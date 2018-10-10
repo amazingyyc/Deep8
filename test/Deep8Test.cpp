@@ -2,8 +2,8 @@
 #include <gtest/gtest.h>
 
 /**hack complier*/
-#define private public
-#define protected public
+//#define private public
+//#define protected public
 
 #include "Deep8.h"
 

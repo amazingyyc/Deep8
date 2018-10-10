@@ -1,6 +1,8 @@
 #ifndef DEEP8_SQUARE_H
 #define DEEP8_SQUARE_H
 
+#include "Function.h"
+
 namespace Deep8 {
 
 /**
@@ -39,34 +41,11 @@ public:
 		check();
 	}
 
-	void check() override {
-		Function<T>::check();
-
-		DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Square Function needs only 1 input");
-
-		this->outputShape = this->inputs[0]->outputShape;
-	}
+	void check() override;
 
 protected:
-	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
-
-		eTVec(output).device(*device) = eTVec(inputs[0]).square();
-	}
-
-	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-		const Tensor<T> *output,
-		const Tensor<T> *outputGradient,
-		size_t index,
-		Tensor<T> *iGradient) override {
-		if (0 != index) {
-			DEEP8_RUNTIME_ERROR("the index of Linear backwardCPU is error");
-		}
-
-		auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
-
-		eTVec(iGradient).device(*device) += eTVec(outputGradient) * eTVec(inputs[0]) * T(2);
-	}
+	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
+	void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
 
 #ifdef HAVE_CUDA
 	template <typename real>

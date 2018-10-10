@@ -1,35 +1,15 @@
 #ifndef DEEP8_SCALARDIVIDE_H
 #define DEEP8_SCALARDIVIDE_H
 
+#include "Function.h"
+
 namespace Deep8 {
 
 /*****************************************************************************/
  /**Y = scalar / X*/
  /*****************************************************************************/
 
-template <typename T>
-struct ScalarDivideForwardExpr {
-	T scalar;
 
-	explicit ScalarDivideForwardExpr(T s) : scalar(s) {
-	}
-
-	inline T operator()(T in) const {
-		return scalar / in;
-	}
-};
-
-template <typename T>
-struct ScalarDivideBackwardExpr {
-	T scalar;
-
-	explicit ScalarDivideBackwardExpr(T s) : scalar(s) {
-	}
-
-	inline T operator()(T in) const {
-		return -scalar / (in * in);
-	}
-};
 
 #ifdef HAVE_CUDA
 
@@ -64,32 +44,16 @@ public:
 		check();
 	}
 
-	void check() override {
-		Function<T>::check();
-
-		DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the inputs size must be 1 in ScalarDivide Function");
-
-		this->outputShape = this->inputs[0]->outputShape;
-	}
+	void check() override;
 
 protected:
-	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-		auto device = static_cast<CPUDevice*>(output->device)->eigenDevice;
-
-		eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(ScalarDivideForwardExpr<T>(scalar));
-	}
+	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
 	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 					const Tensor<T> *output,
 					const Tensor<T> *outputGradient,
 					size_t index,
-					Tensor<T> *iGradient) override {
-		DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
-
-		auto device = static_cast<CPUDevice*>(outputGradient->device)->eigenDevice;
-
-		eTVec(iGradient).device(*device) += eTVec(outputGradient) * eTVec(inputs[0]).unaryExpr(ScalarDivideBackwardExpr<T>(scalar));
-	}
+					Tensor<T> *iGradient) override;
 
 #ifdef HAVE_CUDA
 	template <typename real>

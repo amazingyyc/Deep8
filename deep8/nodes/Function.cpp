@@ -24,9 +24,9 @@ void Function<T>::forward() {
 	}
 
 	if (DeviceType::CPU == deviceType) {
-		forwardCPU(inputValues, outputValue);
+		this->forwardCPU(inputValues, outputValue);
 	} else {
-		forwardGPU(inputValues, outputValue);
+		this->forwardGPU(inputValues, outputValue);
 	}
 }
 
@@ -56,7 +56,7 @@ void Function<T>::backward() {
 			auto inputVariable = static_cast<Variable<T>*>(inputs[i]);
 
 			if (inputVariable->updateGradient) {
-				backwardCPU(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
+				this->backwardCPU(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
 			}
 		}
 	} else {
@@ -64,17 +64,12 @@ void Function<T>::backward() {
 			auto inputVariable = static_cast<Variable<T>*>(inputs[i]);
 
 			if (inputVariable->updateGradient) {
-				backwardGPU(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
+				this->backwardGPU(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
 			}
 		}
 	}
 }
 
-template class Function<float>;
-template class Function<double>;
-
-#ifdef HAVE_HALF
-template class Function<half>;
-#endif
+DEEP8_DECLARATION_INSTANCE(Function)
 
 }

@@ -1,14 +1,10 @@
 #ifndef DEEP8_RELU_H
 #define DEEP8_RELU_H
 
+#include "Function.h"
+
 namespace Deep8 {
 
-template <typename T>
-struct ReLuBackwardExpr {
-    inline T operator()(T outputGrad, T in) const {
-        return outputGrad * (in > 0 ? 1.0 : 0);
-    }
-};
 
 #ifdef HAVE_CUDA
 
@@ -41,63 +37,15 @@ public:
         check();
     }
 
-    void check() override {
-        Function<T>::check();
-
-        DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReLu Function needs only 1 input");
-
-        /**the ReLu output shape equal the input*/
-        this->outputShape = this->inputs[0]->outputShape;
-    }
+	void check() override;
 
 protected:
-	template <typename real>
-	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
-		eTVec(output).device(*device) = eTVec(inputs[0]).cwiseMax(T(0));
-	}
-
-#ifdef HAVE_HALF
-	template <>
-	void forwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-		DEEP8_RUNTIME_ERROR("CPU not support half");
-	}
-#endif // HAVE_HALF
-
-    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-		forwardCPUImpl(inputs, output);
-    }
-
-	template <typename real>
-	void backwardCPUImpl(const std::vector<const Tensor<real>*> &inputs,
-						const Tensor<real> *output,
-						const Tensor<real> *outputGradient,
-						size_t index,
-						Tensor<real> *iGradient) {
-		DEEP8_ARGUMENT_CHECK(0 == index, "the index of ReLu backwardCPU is error");
-
-		auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
-		eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), ReLuBackwardExpr<real>());
-	}
-
-#ifdef HAVE_HALF
-	template <>
-	void backwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs,
-		const Tensor<half> *output,
-		const Tensor<half> *outputGradient,
-		size_t index,
-		Tensor<half> *iGradient) {
-		DEEP8_RUNTIME_ERROR("CPU not support half");
-	}
-#endif // HAVE_HALF
-
-    void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-                     const Tensor<T> *output,
-                     const Tensor<T> *outputGradient,
-                     size_t index,
-                     Tensor<T> *iGradient) override {
-		backwardCPUImpl(inputs, output, outputGradient, index, iGradient);
-    }
+	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
+	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
+					const Tensor<T> *output,
+					const Tensor<T> *outputGradient,
+					size_t index,
+					Tensor<T> *iGradient) override;
 
 #ifdef HAVE_CUDA
 	template <typename real>

@@ -36,7 +36,7 @@ void L2Norm<T>::backwardCPU(const std::vector<const Tensor <T> *> &inputs,
     auto eigenDevice = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
 
     auto batch = iGradient->batch();
-    auto size = iGradient->batchSize();
+    auto size  = iGradient->batchSize();
 
     Eigen::array<size_t, 2> outputDims = {batch, 1};
     Eigen::array<size_t, 2> outputBroad = {1, size};

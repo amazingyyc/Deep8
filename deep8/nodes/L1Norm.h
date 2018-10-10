@@ -5,8 +5,6 @@
 
 namespace Deep8 {
 
-
-
 #ifdef HAVE_CUDA
 
 template <int blockSize, typename real> 

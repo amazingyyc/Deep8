@@ -1,6 +1,8 @@
 #ifndef DEEP8_SOFTMAX_H
 #define DEEP8_SOFTMAX_H
 
+#include "Function.h"
+
 namespace Deep8 {
 
 #ifdef HAVE_CUDA
@@ -243,108 +245,16 @@ public:
         check();
     }
 
-    void check() override {
-        Function<T>::check();
-
-        DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Softmax Function needs only 1 input");
-        DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.nDims() >= 2, "the input dimension must be >= 2");
-
-        this->outputShape = this->inputs[0]->outputShape;
-    }
+	void check() override;
 
 protected:
+	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
-	template <typename real>
-	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto cpuDevice = static_cast<CPUDevice*>(output->device());
-		auto eigenDevice = cpuDevice->eigenDevice;
-
-		auto shape = output->shape;
-
-		auto batch = (int) shape.batch();
-		auto size  = (int) shape.batchSize();
-
-		auto tempPtr = (real*)cpuDevice->malloc(sizeof(real) * batch);
-
-		Eigen::array<int, 1> reduceDims = { 1 };
-		Eigen::array<int, 2> reshape    = { batch, 1 };
-		Eigen::array<int, 2> broad      = { 1, size };
-
-		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> t(tempPtr, batch, 1);
-		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> x(inputs[0]->data(), batch, size);
-		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> y(output->data(), batch, size);
-
-		t.device(*eigenDevice) = x.maximum(reduceDims).reshape(reshape);
-		y.device(*eigenDevice) = (x - t.broadcast(broad)).exp();
-		t.device(*eigenDevice) = y.sum(reduceDims).reshape(reshape);
-		y.device(*eigenDevice) = y / t.broadcast(broad);
-
-		cpuDevice->free(tempPtr);
-	}
-
-#ifdef HAVE_HALF
-	template <>
-	void forwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-		DEEP8_RUNTIME_ERROR("CPU not support half");
-	}
-#endif // HAVE_HALF
-
-	template <typename real>
-	void backwardCPUImpl(const std::vector<const Tensor<real>*> &inputs,
-		const Tensor<real> *output,
-		const Tensor<real> *outputGradient,
-		size_t index,
-		Tensor<real> *iGradient) {
-
-		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
-
-		auto cpuDevice = static_cast<CPUDevice*>(iGradient->device());
-		auto eigenDevice = cpuDevice->eigenDevice;
-
-		auto shape = outputGradient->shape;
-
-		auto batch = (int)shape.batch();
-		auto size = (int)shape.batchSize();
-
-		Eigen::array<int, 1> sumDims = { 1 };
-		Eigen::array<int, 2> reshape = { batch, 1 };
-		Eigen::array<int, 2> broad = { 1, size };
-
-		auto sptr = (real*)cpuDevice->malloc(sizeof(real) * batch);
-
-		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> s(sptr, batch, 1);
-		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> dx(iGradient->data(), batch, size);
-		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> y(output->data(), batch, size);
-		Eigen::TensorMap<Eigen::Tensor<real, 2, Eigen::RowMajor>> dy(outputGradient->data(), batch, size);
-
-		s.device(*eigenDevice) = (y * dy).sum(sumDims).reshape(reshape);
-		dx.device(*eigenDevice) += (dy - s.broadcast(broad)) * y;
-
-		cpuDevice->free(sptr);
-	}
-
-#ifdef HAVE_HALF
-	template <>
-	void backwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs,
-		const Tensor<half> *output,
-		const Tensor<half> *outputGradient,
-		size_t index,
-		Tensor<half> *iGradient) {
-		DEEP8_RUNTIME_ERROR("CPU not support half");
-	}
-#endif // HAVE_HALF
-
-    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-		forwardCPUImpl(inputs, output);
-    }
-
-    void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
+	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 					const Tensor<T> *output,
 					const Tensor<T> *outputGradient,
 					size_t index,
-					Tensor<T> *iGradient) override {
-		backwardCPUImpl(inputs, output, outputGradient, index, iGradient);
-    }
+					Tensor<T> *iGradient) override;
 
 #ifdef HAVE_CUDA
 

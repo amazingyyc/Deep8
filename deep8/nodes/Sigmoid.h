@@ -1,21 +1,9 @@
 #ifndef DEEP8_SIGMOID_H
 #define DEEP8_SIGMOID_H
 
+#include "Function.h"
+
 namespace Deep8 {
-
-template <typename T>
-struct SigmoidForwardExpr {
-    inline T operator()(T in) const {
-        return T(0.5) + T(0.5) * tanh(T(0.5) * in);
-    }
-};
-
-template <typename T>
-struct SigmoidBackwardExpr {
-    inline T operator()(T outputGrad, T output) const {
-        return outputGrad * output * (T(1) - output);
-    }
-};
 
 #ifdef HAVE_CUDA
 
@@ -48,63 +36,16 @@ public:
         check();
     }
 
-    void check() override {
-        Function<T>::check();
-
-        DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Sigmoid Function needs only 1 input");
-
-        this->outputShape = this->inputs[0]->outputShape;
-    }
+	void check() override;
 
 protected:
-	template <typename real>
-	void forwardCPUImpl(const std::vector<const Tensor<real>*> &inputs, Tensor<real> *output) {
-		auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
-		eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(SigmoidForwardExpr<T>());
-	}
-
-#ifdef HAVE_HALF
-	template <>
-	void forwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-		DEEP8_RUNTIME_ERROR("CPU not support half");
-	}
-#endif // HAVE_HALF
-
-    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {
-		forwardCPUImpl(inputs, output);
-    }
-
-
-	template <typename real>
-	void backwardCPUImpl(const std::vector<const Tensor<real>*> &inputs,
-		const Tensor<real> *output,
-		const Tensor<real> *outputGradient,
-		size_t index,
-		Tensor<real> *iGradient) {
-		DEEP8_ARGUMENT_CHECK(0 == index, "the index of Sigmoid backwardCPU is error");
-
-		auto device = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
-		eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(output), SigmoidBackwardExpr<T>());
-	}
-
-#ifdef HAVE_HALF
-	template <>
-	void backwardCPUImpl<half>(const std::vector<const Tensor<half>*> &inputs,
-		const Tensor<half> *output,
-		const Tensor<half> *outputGradient,
-		size_t index,
-		Tensor<half> *iGradient) {
-		DEEP8_RUNTIME_ERROR("CPU not support half");
-	}
-#endif // HAVE_HALF
+	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
 	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-					const Tensor<T> *output,
-					const Tensor<T> *outputGradient,
-					size_t index,
-					Tensor<T> *iGradient) override {
-		backwardCPUImpl(inputs, output, outputGradient, index, iGradient);
-    }
+						const Tensor<T> *output,
+						const Tensor<T> *outputGradient,
+						size_t index,
+						Tensor<T> *iGradient) override;
 
 #ifdef HAVE_CUDA
 
