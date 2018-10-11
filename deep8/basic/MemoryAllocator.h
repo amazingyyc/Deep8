@@ -1,6 +1,9 @@
 #ifndef DEEP8_MEMORYALLOCATOR_H
 #define DEEP8_MEMORYALLOCATOR_H
 
+#include "Basic.h"
+#include "Exception.h"
+
 namespace Deep8 {
 
 #define DEFAULT_ALIGN 32
@@ -54,6 +57,17 @@ public:
      * copy size memory
      */
     virtual void copy(const void *from, void *to, size_t size) = 0;
+
+	/**
+	 * copy memory from host to GPU
+	 */
+	virtual void copyFromCPUToGPU(const void *from, void *to, size_t size) = 0;
+
+	/**
+	 * copy memory from GPU to Host
+	 */
+	virtual void copyFromGPUToCPU(const void *from, void *to, size_t size) = 0;
+	virtual void copyFromGPUToGPU(const void *from, void *to, size_t size) = 0;
 };
 
 /**
@@ -67,49 +81,44 @@ public:
     explicit CPUMemoryAllocator(size_t align) : MemoryAllocator(align) {
     }
 
-	void *malloc(size_t size) override;
-	void free(void *ptr) override;
-	void zero(void *ptr, size_t size) override;
-	void copy(const void *from, void *to, size_t size) override;
-};
+	void *malloc(size_t size) override {
+		void *ptr = _mm_malloc(size, align);
 
+		DEEP8_ASSERT(nullptr != ptr, "system allocate memory error! size is:" << size);
 
-#ifdef HAVE_CUDA
-
-/**
- * GPU memory allocator
- */
-class GPUMemoryAllocator : public MemoryAllocator {
-public:
-	int deviceId;
-
-	explicit GPUMemoryAllocator(int deviceId) : deviceId(deviceId) {
+		return ptr;
 	}
 
-	void *malloc(size_t size) override;
-	void free(void *ptr) override;
-	void zero(void *ptr, size_t size) override;
+	void free(void *ptr) override {
+		_mm_free(ptr);
+	}
 
-	/**
-	 * for GPU the copy function is between the GPU Device
-	 */
-	void copy(const void *from, void *to, size_t size) override;
+	void zero(void *ptr, size_t size) override {
+		memset(ptr, 0, size);
+	}
+
+	void copy(const void *from, void *to, size_t size) override {
+		memcpy(to, from, size);
+	}
 
 	/**
 	 * copy memory from host to GPU
 	 */
-	void copyFromCPUToGPU(const void *from, void *to, size_t size);
+	void copyFromCPUToGPU(const void *from, void *to, size_t size) override {
+		DEEP8_RUNTIME_ERROR("can not call this function from GPUMemoryAllocator");
+	}
 
 	/**
 	 * copy memory from GPU to Host
 	 */
-	void copyFromGPUToCPU(const void *from, void *to, size_t size);
-	void copyFromGPUToGPU(const void *from, void *to, size_t size);
+	void copyFromGPUToCPU(const void *from, void *to, size_t size) override {
+		DEEP8_RUNTIME_ERROR("can not call this function from GPUMemoryAllocator");
+	}
+
+	void copyFromGPUToGPU(const void *from, void *to, size_t size) override {
+		DEEP8_RUNTIME_ERROR("can not call this function from GPUMemoryAllocator");
+	}
 };
-
-
-#endif
-
 
 }
 

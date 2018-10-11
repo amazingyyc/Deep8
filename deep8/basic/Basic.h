@@ -12,7 +12,7 @@
 #endif
 
 #if DEEP8_CUDACC_VER >= 70500
-#define HAVE_HALF
+// #define HAVE_HALF
 #endif
 
 #define DEEP8_CUDA_FUNC __device__

@@ -20,7 +20,6 @@ public:
 	 */
 	bool shared;
 
-
 protected:
     explicit FunctionBase(): Node(), output(nullptr), shared(false) {
         this->type = NodeType::Function;

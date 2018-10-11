@@ -1,7 +1,6 @@
 #ifndef DEEP8_TENSORUTILS_H
 #define DEEP8_TENSORUTILS_H
 
-
 namespace Deep8 {
 
 /**

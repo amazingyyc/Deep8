@@ -94,18 +94,21 @@ size_t Tensor<T>::dim(size_t d) const {
 
 template <typename T>
 T Tensor<T>::scalar() {
-	if (DeviceType::CPU == device()->type) {
-		return scalarCPU();
-	} else {
-		return scalarGPU();
-	}
-}
-
-template <typename T>
-T Tensor<T>::scalarCPU() {
 	DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor must be a scalar");
 
-	return data()[0];
+	if (DeviceType::CPU == device()->type) {
+		return data()[0];
+	} else {
+#ifdef HAVE_CUDA
+		T scalar;
+
+		device()->copyFromGPUToCPU(raw(), &scalar, sizeof(T));
+
+		return scalar;
+#else 
+		DEEP8_RUNTIME_ERROR("can not call GPU function withou a GPU");
+#endif
+	}
 }
 
 template class Tensor<float>;

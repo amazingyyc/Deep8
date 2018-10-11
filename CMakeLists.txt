@@ -163,54 +163,73 @@ set ( DEEP8_HEAD_FILES
 
 set ( DEEP8_SRC_FILES
 
-		deep8/basic/MemoryAllocator.cpp
 		deep8/basic/TensorStorage.cpp
 		deep8/basic/Tensor.cpp
-		
-		deep8/nodes/Abs.cpp 
-		deep8/nodes/Add.cpp 
-		deep8/nodes/AddScalar.cpp 
-		deep8/nodes/AvgPooling2d.cpp 
-		deep8/nodes/ConstantParameter.cpp 
-		deep8/nodes/Conv2d.cpp 
-		deep8/nodes/DeConv2d.cpp 
-		deep8/nodes/Divide.cpp 
-		deep8/nodes/DivideScalar.cpp 
-		deep8/nodes/Exp.cpp 
-		deep8/nodes/Function.cpp 
-		deep8/nodes/InputParameter.cpp 
-		deep8/nodes/L1Norm.cpp 
-		deep8/nodes/L2Norm.cpp 
-		deep8/nodes/Linear.cpp 
-		deep8/nodes/Log.cpp 
-		deep8/nodes/LReLu.cpp 
-		deep8/nodes/MatrixMultiply.cpp 
-		deep8/nodes/MaxPooling2d.cpp 
-		deep8/nodes/Minus.cpp 
-		deep8/nodes/MinusScalar.cpp 
-		deep8/nodes/Multiply.cpp 
-		deep8/nodes/MultiplyScalar.cpp 
-		deep8/nodes/Parameter.cpp 
-		deep8/nodes/Pow.cpp 
-		deep8/nodes/ReLu.cpp 
-		deep8/nodes/ReShape.cpp 
-		deep8/nodes/ScalarDivide.cpp 
-		deep8/nodes/ScalarMinus.cpp 
-		deep8/nodes/Sigmoid.cpp 
-		deep8/nodes/Softmax.cpp 
-		deep8/nodes/Square.cpp 
-		deep8/nodes/SumElements.cpp 
-		deep8/nodes/TanH.cpp 
-		deep8/nodes/Variable.cpp 
+
+		deep8/model/Executor.cpp
+		deep8/model/DefaultExecutor.cpp
+		deep8/model/Trainer.cpp
+
+		deep8/nodes/Function.cpp
+		deep8/nodes/Abs.cpp
+		deep8/nodes/Variable.cpp
+		deep8/nodes/Parameter.cpp
+		deep8/nodes/InputParameter.cpp
+		deep8/nodes/ConstantParameter.cpp
+	
+		# deep8/basic/MemoryAllocator.cpp
+		# deep8/basic/TensorStorage.cpp
+		# deep8/basic/Tensor.cpp
+		# 
+		# deep8/nodes/Abs.cpp 
+		# deep8/nodes/Add.cpp 
+		# deep8/nodes/AddScalar.cpp 
+		# deep8/nodes/AvgPooling2d.cpp 
+		# deep8/nodes/ConstantParameter.cpp 
+		# deep8/nodes/Conv2d.cpp 
+		# deep8/nodes/DeConv2d.cpp 
+		# deep8/nodes/Divide.cpp 
+		# deep8/nodes/DivideScalar.cpp 
+		# deep8/nodes/Exp.cpp 
+		# deep8/nodes/Function.cpp 
+		# deep8/nodes/InputParameter.cpp 
+		# deep8/nodes/L1Norm.cpp 
+		# deep8/nodes/L2Norm.cpp 
+		# deep8/nodes/Linear.cpp 
+		# deep8/nodes/Log.cpp 
+		# deep8/nodes/LReLu.cpp 
+		# deep8/nodes/MatrixMultiply.cpp 
+		# deep8/nodes/MaxPooling2d.cpp 
+		# deep8/nodes/Minus.cpp 
+		# deep8/nodes/MinusScalar.cpp 
+		# deep8/nodes/Multiply.cpp 
+		# deep8/nodes/MultiplyScalar.cpp 
+		# deep8/nodes/Parameter.cpp 
+		# deep8/nodes/Pow.cpp 
+		# deep8/nodes/ReLu.cpp 
+		# deep8/nodes/ReShape.cpp 
+		# deep8/nodes/ScalarDivide.cpp 
+		# deep8/nodes/ScalarMinus.cpp 
+		# deep8/nodes/Sigmoid.cpp 
+		# deep8/nodes/Softmax.cpp 
+		# deep8/nodes/Square.cpp 
+		# deep8/nodes/SumElements.cpp 
+		# deep8/nodes/TanH.cpp 
+		# deep8/nodes/Variable.cpp 
 		)
 
 set ( DEEP8_CUDA_SRC_FILES
 
-		deep8/basic/MemoryAllocator.cu
-		deep8/basic/TensorStorage.cu
-		deep8/basic/Tensor.cu
+		deep8/model/Executor.cu
+		deep8/model/Trainer.cu
 
-		deep8/nodes/L1Norm.cu
+		deep8/nodes/Abs.cu
+
+		# deep8/basic/MemoryAllocator.cu
+		# deep8/basic/TensorStorage.cu
+		# deep8/basic/Tensor.cu
+		# 
+		# deep8/nodes/L1Norm.cu
 		)
 
 # Deep8 test
@@ -255,7 +274,7 @@ set (DEEP8_TEST_SRC_FILES
 		test/Deep8Test.cpp)
 
 set (DEEP8_TEST_CUDA_SRC_FILES
-		test/Deep8Test.cu)
+		test/Deep8Test.cpp)
 
 
 if (HAVE_GPU AND HAVE_CUDA)
@@ -280,7 +299,8 @@ if (HAVE_GPU AND HAVE_CUDA)
 		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_CUDNN")
 	endif()
 
-	add_executable(Deep8 ${DEEP8_CUDA_SRC_FILES} ${DEEP8_SRC_FILES} ${DEEP8_TEST_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
+	# add_executable(Deep8 ${DEEP8_CUDA_SRC_FILES} ${DEEP8_SRC_FILES} ${DEEP8_TEST_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
+	add_executable(Deep8 ${DEEP8_CUDA_SRC_FILES} ${DEEP8_SRC_FILES} ${DEEP8_TEST_CUDA_SRC_FILES})
 
 	# add cuBlas library
 	cuda_add_cublas_to_target(Deep8)

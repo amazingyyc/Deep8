@@ -1,11 +1,12 @@
-#ifndef DEEP8_CUDAEXCEPTION_H
-#define DEEP8_CUDAEXCEPTION_H
+#ifndef DEEP8_GPUEXCEPTION_H
+#define DEEP8_GPUEXCEPTION_H
 
 #include "Exception.h"
-
-#ifdef HAVE_CUDA
+#include "GPUBasic.h"
 
 namespace Deep8 {
+
+#ifdef HAVE_CUDA
 
 #define CUDA_CHECK(cudaExecute)							\
 {														\
@@ -53,8 +54,8 @@ namespace Deep8 {
 
 #endif
 
-}
-
 #endif
+
+}
 
 #endif

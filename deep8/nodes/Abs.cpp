@@ -16,6 +16,11 @@ struct AbsBackwardExpr {
 };
 
 template <typename T>
+Abs<T>::Abs(std::vector<Node *> &inputs) : Function<T>(inputs) {
+	check();
+}
+
+template <typename T>
 void Abs<T>::check() {
     Function<T>::check();
 
@@ -32,11 +37,7 @@ void Abs<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *
 }
 
 template <typename T>
-void Abs<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-                 const Tensor<T> *output,
-                 const Tensor<T> *outputGradient,
-                 size_t index,
-                 Tensor<T> *iGradient) {
+void Abs<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of Abs backwardCPU is error");
 
     auto eigenDevice = static_cast<CPUDevice *>(output->device())->eigenDevice;
@@ -44,6 +45,6 @@ void Abs<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
     eTVec(iGradient).device(*eigenDevice) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), AbsBackwardExpr<T>());
 }
 
-DEEP8_DECLARATION_INSTANCE(Abs)
+DEEP8_DECLARATION_INSTANCE(Abs);
 
 }

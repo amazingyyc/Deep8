@@ -1,8 +1,9 @@
 #ifndef DEEP8_GPUDEVICE_H
 #define DEEP8_GPUDEVICE_H
 
-#include "CudaHeads.h"
 #include "Device.h"
+#include "MemoryPool.h"
+#include "GPUMemoryPool.h"
 
 namespace Deep8 {
 
@@ -28,20 +29,19 @@ public:
 #endif
 
 	/**the GPU memroy contains 1, 0, -1*/
-	float *floatOne;
-	float *floatZero;
-	float *floatMinusOne;
+	float *oneFloat;
+	float *zeroFloat;
+	float *minusOneFloat;
 
-	double *doubleOne;
-	double *doubleZero;
-	double *doubleMinusOne;
+	double *oneDouble;
+	double *zeroDouble;
+	double *minusOneDouble;
 
 #ifdef HAVE_HALF
-	half *halfOne;
-	half *halfZero;
-	half *halfMinusOne;
-#endif // HAVE_HALF
-
+	half *oneHalf;
+	half *zeroHalf;
+	half *minusOneHalf;
+#endif
 
 	explicit GPUDevice() : GPUDevice(0) {
 	}
@@ -63,47 +63,48 @@ public:
 #ifdef HAVE_HALF
 		void *ptr = memoryPool->malloc(sizeof(float) * 3 + sizeof(double) * 3 + sizeof(half) * 3);
 
-		floatOne = (float*)ptr;
-		floatZero = floatOne + 1;
-		floatMinusOne = floatZero + 1;
+		oneFloat = (float*)ptr;
+		zeroFloat = oneFloat + 1;
+		minusOneFloat = zeroFloat + 1;
 
-		doubleOne = (double*)(floatMinusOne + 1);
-		doubleZero = doubleOne + 1;
-		doubleMinusOne = doubleZero + 1;
+		oneDouble = (double*)(minusOneFloat + 1);
+		zeroDouble = oneDouble + 1;
+		minusOneDouble = zeroDouble + 1;
 
-		halfOne = (half*)(doubleMinusOne + 1);
-		halfZero = halfOne + 1;
-		halfMinusOne = halfZero + 1;
+		oneHalf = (half*)(minusOneDouble + 1);
+		zeroHalf = oneHalf + 1;
+		minusOneHalf = zeroHalf + 1;
 
 		float  numberF[3] = { 1, 0, -1 };
 		double numberD[3] = { 1, 0, -1 };
 		half   numberH[3] = { 1.0, 0.0, -1.0 };
 
-		memoryPool->copyFromCPUToGPU(&numberF[0], floatOne, sizeof(float) * 3);
-		memoryPool->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
-		memoryPool->copyFromCPUToGPU(&numberH[0], halfOne, sizeof(half) * 3);
+		memoryPool->copyFromCPUToGPU(&numberF[0], oneFloat, sizeof(float) * 3);
+		memoryPool->copyFromCPUToGPU(&numberD[0], oneDouble, sizeof(double) * 3);
+		memoryPool->copyFromCPUToGPU(&numberH[0], oneHalf, sizeof(half) * 3);
 
 #else
 		void *ptr = memoryPool->malloc(sizeof(float) * 3 + sizeof(double) * 3);
 
-		floatOne = (float*)ptr;
-		floatZero = floatOne + 1;
-		floatMinusOne = floatZero + 1;
+		oneFloat = (float*)ptr;
+		zeroFloat = oneFloat + 1;
+		minusOneFloat = zeroFloat + 1;
 
-		doubleOne = (double*)(floatMinusOne + 1);
-		doubleZero = doubleOne + 1;
-		doubleMinusOne = doubleZero + 1;
+		oneDouble = (double*)(minusOneFloat + 1);
+		zeroDouble = oneDouble + 1;
+		minusOneDouble = zeroDouble + 1;
 
 		float numberF[3] = { 1, 0, -1 };
 		double numberD[3] = { 1, 0, -1 };
 
-		memoryPool->copyFromCPUToGPU(&numberF[0], floatOne, sizeof(float) * 3);
-		memoryPool->copyFromCPUToGPU(&numberD[0], doubleOne, sizeof(double) * 3);
-#endif // HAVE_HALF
+		memoryPool->copyFromCPUToGPU(&numberF[0], oneFloat, sizeof(float) * 3);
+		memoryPool->copyFromCPUToGPU(&numberD[0], oneDouble, sizeof(double) * 3);
+#endif
+
 	}
 
 	~GPUDevice() {
-		memoryPool->free(floatOne);
+		memoryPool->free(oneFloat);
 
 		delete memoryPool;
 
@@ -151,73 +152,21 @@ public:
 		memoryPool->copyFromGPUToGPU(from, to, size);
 	}
 
-	template<typename T>
-	void *gpuOne() {
-		DEEP8_RUNTIME_ERROR("get GPU number value error");
-	}
-
-	template <>
-	void *gpuOne<float>() {
-		return floatOne;
-	}
-
-	template <>
-	void *gpuOne<double>() {
-		return doubleOne;
-	}
-
+	void* gpuOneHalf() override {
 #ifdef HAVE_HALF
-	template <>
-	void *gpuOne<half>() {
-		return halfOne;
-	}
-#endif // HAVE_HALF
-
-
-	template<typename T>
-	void *gpuZero() {
-		DEEP8_RUNTIME_ERROR("get GPU number value error");
+		return oneHalf;
+#else
+		DEEP8_RUNTIME_ERROR("not support half");
+#endif
 	}
 
-	template <>
-	void *gpuZero<float>() {
-		return floatZero;
+	void* gpuOneFloat() override {
+		return oneFloat;
 	}
 
-	template <>
-	void *gpuZero<double>() {
-		return doubleZero;
+	void* gpuOneDouble() override {
+		return oneDouble;
 	}
-
-#ifdef HAVE_HALF
-	template <>
-	void *gpuZero<half>() {
-		return halfZero;
-	}
-#endif // HAVE_HALF
-
-	template<typename T>
-	void *gpuMinusOne() {
-		DEEP8_RUNTIME_ERROR("get GPU number value error");
-	}
-
-	template <>
-	void *gpuMinusOne<float>() {
-		return floatMinusOne;
-	}
-
-	template <>
-	void *gpuMinusOne<double>() {
-		return doubleMinusOne;
-	}
-
-#ifdef HAVE_HALF
-	template <>
-	void *gpuMinusOne<half>() {
-		return halfMinusOne;
-	}
-#endif // HAVE_HALF
-
 };
 
 #endif

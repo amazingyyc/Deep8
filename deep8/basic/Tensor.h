@@ -1,6 +1,9 @@
 #ifndef DEEP8_TENSOR_H
 #define DEEP8_TENSOR_H
 
+#include "Basic.h"
+#include "Exception.h"
+#include "Shape.h"
 #include "TensorStorage.h"
 
 namespace Deep8 {
@@ -58,8 +61,8 @@ public:
 
 public:
 	DeviceType DeviceType();
-	Device* device();
 
+	Device* device();
 	Device* device() const;
 
 
@@ -93,8 +96,6 @@ public:
 
 	size_t dim(size_t d) const override;
 
-	T scalarCPU();
-	T scalarGPU();
 	T scalar();
 };
 

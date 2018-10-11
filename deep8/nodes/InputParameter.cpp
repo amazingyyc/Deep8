@@ -15,7 +15,7 @@ void InputParameter<T>::feed(const T *ptr) {
 		this->value.device()->copy(ptr, this->value.raw(), sizeof(T) * this->value.size());
 	} else {
 #ifdef HAVE_CUDA
-		static_cast<GPUDevice*>(value.device())->copyFromCPUToGPU(ptr, value.raw(), sizeof(T) * value.size());
+		value.device()->copyFromCPUToGPU(ptr, value.raw(), sizeof(T) * value.size());
 #else
 		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
 #endif

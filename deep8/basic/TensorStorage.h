@@ -52,9 +52,6 @@ public:
     }
 
 protected:
-
-	void freeCPU();
-	void freeGPU();
 	void free();
 };
 

@@ -1,6 +1,8 @@
 #ifndef DEEP8_DEFAULTEXECUTOR_H
 #define DEEP8_DEFAULTEXECUTOR_H
 
+#include "Executor.h"
+
 namespace Deep8 {
 
 /**
@@ -31,99 +33,17 @@ protected:
 	bool clearFlag;
 
 public:
-	explicit DefaultExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true) :
-		Executor<T>(tr, deviceType), clearFlag(flag) {
-	}
+	explicit DefaultExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true);
 
-	Node *addFunction(FunctionBase *function) override {
-		auto variable = Executor<T>::addFunction(function);
+	Node *addFunction(FunctionBase *function) override;
 
-		function->forward();
+	void clearIntermediaryNodes();
 
-		return variable;
-	}
+	void forward(Expression<T> &e) override;
+	void forward(Node *) override;
 
-	void clearIntermediaryNodes() {
-		for (auto item : this->nonParameterCollection) {
-			this->nodeCollection.erase(item);
-
-			delete item;
-		}
-
-		this->nonParameterCollection.clear();
-	}
-
-	void forward(Expression<T> &e) override {
-		DEEP8_RUNTIME_ERROR("the DefaultExecutor can not call the forward");
-	}
-
-	void forward(Node *) override {
-		DEEP8_RUNTIME_ERROR("the DefaultExecutor can not call the forward");
-	}
-
-	void backward(Expression<T> &e) override {
-		backward(e.node);
-	}
-
-	void backward(Node *last) override {
-		DEEP8_ARGUMENT_CHECK(nullptr != last && last->type == NodeType::Variable, "the last node must be a Variable");
-
-		auto lastVariable = static_cast<VariableBase*>(last);
-
-		DEEP8_ARGUMENT_CHECK(lastVariable->isScalar(), "the last Variable gradient must be scalar");
-
-		/**
-		 * first loop zero all the Gradient of Variable
-		 */
-		std::queue<Node*> queues;
-		queues.push(last);
-
-		while (!queues.empty()) {
-			auto size = queues.size();
-
-			for (unsigned long i = 0; i < size; ++i) {
-				auto node = queues.front();
-				queues.pop();
-
-				if (NodeType::Variable == node->type) {
-					static_cast<VariableBase*>(node)->zeroGradient();
-				}
-
-				for (auto input : node->inputs) {
-					queues.push(input);
-				}
-			}
-		}
-
-		/**set the last Variable Gradient is 1*/
-		lastVariable->setGradientOne();
-
-		/**calculate the gradient for the Variable*/
-		queues.push(last);
-
-		while (!queues.empty()) {
-			auto size = queues.size();
-
-			for (std::queue<Node*>::size_type i = 0; i < size; ++i) {
-				auto node = queues.front();
-				queues.pop();
-
-				node->backward();
-
-				for (auto input : node->inputs) {
-					queues.push(input);
-				}
-			}
-		}
-
-		/**update the parameter*/
-		this->trainer->training(this->parameterCollection);
-
-		/**clear the function and variable*/
-		if (clearFlag) {
-			this->clearIntermediaryNodes();
-		}
-	}
+	void backward(Expression<T> &e) override;
+	void backward(Node *last) override;
 };
 
 }

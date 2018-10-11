@@ -3,7 +3,6 @@
 
 #include "../basic/Basic.h"
 #include "../basic/Exception.h"
-#include "../basic/CudaException.h"
 #include "../basic/MemoryAllocator.h"
 #include "../basic/Shape.h"
 #include "../basic/MemoryPool.h"

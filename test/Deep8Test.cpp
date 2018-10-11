@@ -5,9 +5,9 @@
 //#define private public
 //#define protected public
 
-#include "Deep8.h"
+// #include "Deep8.h"
 
-#include "TestUtils.h"
+//#include "TestUtils.h"
 
 //#include "AbsTest.h"
 //#include "AddTest.h"
@@ -36,8 +36,9 @@
 //#include "SquareTest.h"
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
-#include "LinearRegressionTest.h"
+// #include "LinearRegressionTest.h"
 //#include "CPUMemoryPoolTest.h"
+#include "CompileTest.h"
 
 using namespace Deep8;
 

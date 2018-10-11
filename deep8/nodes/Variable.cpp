@@ -38,20 +38,59 @@ DeviceType Variable<T>::deviceType() {
  */
 template <typename T>
 void Variable<T>::setGradientOne() {
+	DEEP8_RUNTIME_ERROR("must definition the function");
+}
+
+template <>
+void Variable<float>::setGradientOne() {
 	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
 
 	if (DeviceType::CPU == gradient.device()->type) {
-		gradient.data()[0] = T(1);
+		gradient.data()[0] = 1;
 	} else {
 #ifdef HAVE_CUDA
-		auto device = static_cast<GPUDevice*>(gradient.device());
-
-		device->copyFromGPUToGPU(device->gpuOne<T>(), gradient.raw(), sizeof(T));
+		auto device = gradient.device();
+		device->copyFromGPUToGPU(device->gpuOneFloat(), gradient.raw(), sizeof(float));
 #else
 		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
 #endif
 	}
 }
+
+template <>
+void Variable<double>::setGradientOne() {
+	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
+
+	if (DeviceType::CPU == gradient.device()->type) {
+		gradient.data()[0] = 1;
+	} else {
+#ifdef HAVE_CUDA
+		auto device = gradient.device();
+		device->copyFromGPUToGPU(device->gpuOneDouble(), gradient.raw(), sizeof(double));
+#else
+		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
+#endif
+	}
+}
+
+#ifdef HAVE_HALF
+template <>
+void Variable<half>::setGradientOne() {
+	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
+
+	if (DeviceType::CPU == gradient.device()->type) {
+		DEEP8_RUNTIME_ERROR("CPU not support half");
+	} else {
+#ifdef HAVE_CUDA
+		auto device = gradient.device();
+		device->copyFromGPUToGPU(device->gpuOneHalf(), gradient.raw(), sizeof(half));
+#else
+		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
+#endif
+	}
+}
+#endif // HAVE_HALF
+
 
 template <typename T>
 bool Variable<T>::isScalar() {

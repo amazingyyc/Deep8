@@ -1,6 +1,9 @@
 #ifndef DEEP8_SHAPE_H
 #define DEEP8_SHAPE_H
 
+#include "Basic.h"
+#include "Exception.h"
+
 namespace Deep8 {
 
 /**

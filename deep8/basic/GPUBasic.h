@@ -1,5 +1,5 @@
-#ifndef DEEP8_CUDAHEADS_H
-#define DEEP8_CUDAHEADS_H
+#ifndef DEEP8_GPUBASIC_H
+#define DEEP8_GPUBASIC_H
 
 #include "Basic.h"
 
