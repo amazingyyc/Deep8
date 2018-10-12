@@ -75,49 +75,28 @@ public:
  */
 class CPUMemoryAllocator: public MemoryAllocator {
 public:
-    explicit CPUMemoryAllocator(): CPUMemoryAllocator(DEFAULT_ALIGN) {
-    }
+	explicit CPUMemoryAllocator();
 
-    explicit CPUMemoryAllocator(size_t align) : MemoryAllocator(align) {
-    }
+	explicit CPUMemoryAllocator(size_t align);
 
-	void *malloc(size_t size) override {
-		void *ptr = _mm_malloc(size, align);
+	void *malloc(size_t size) override;
 
-		DEEP8_ASSERT(nullptr != ptr, "system allocate memory error! size is:" << size);
+	void free(void *ptr) override;
 
-		return ptr;
-	}
+	void zero(void *ptr, size_t size) override;
 
-	void free(void *ptr) override {
-		_mm_free(ptr);
-	}
-
-	void zero(void *ptr, size_t size) override {
-		memset(ptr, 0, size);
-	}
-
-	void copy(const void *from, void *to, size_t size) override {
-		memcpy(to, from, size);
-	}
+	void copy(const void *from, void *to, size_t size) override;
 
 	/**
 	 * copy memory from host to GPU
 	 */
-	void copyFromCPUToGPU(const void *from, void *to, size_t size) override {
-		DEEP8_RUNTIME_ERROR("can not call this function from GPUMemoryAllocator");
-	}
+	void copyFromCPUToGPU(const void *from, void *to, size_t size) override;
 
 	/**
 	 * copy memory from GPU to Host
 	 */
-	void copyFromGPUToCPU(const void *from, void *to, size_t size) override {
-		DEEP8_RUNTIME_ERROR("can not call this function from GPUMemoryAllocator");
-	}
-
-	void copyFromGPUToGPU(const void *from, void *to, size_t size) override {
-		DEEP8_RUNTIME_ERROR("can not call this function from GPUMemoryAllocator");
-	}
+	void copyFromGPUToCPU(const void *from, void *to, size_t size) override;
+	void copyFromGPUToGPU(const void *from, void *to, size_t size) override;
 };
 
 }

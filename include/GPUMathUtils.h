@@ -1,7 +1,7 @@
 #ifndef DEEP8_GPUMATHUTILS_H
 #define DEEP8_GPUMATHUTILS_H
 
-#include "../basic/GPUBasic.h"
+#include "GPUBasic.h"
 
 #ifdef HAVE_CUDA
 

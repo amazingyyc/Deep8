@@ -1,6 +1,6 @@
-#include "../basic/CudaHeads.h"
-#include "../utils/CudaMathUtils.h"
-#include "../basic/GPUDevice.h"
+#include "GPUBasic.h"
+#include "GPUMathUtils.h"
+#include "GPUDevice.h"
 #include "L1Norm.h"
 
 namespace Deep8 {
@@ -167,30 +167,30 @@ void L1Norm<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const T
 }
 
 #ifdef HAVE_HALF
-//template <>
-//void L1Norm<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs, const Tensor<half> *output, const Tensor<half> *outputGradient, size_t index, Tensor<half> *iGradient) override {
-//#ifdef HAVE_CUDA
-//	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
-//
-//	auto shape = iGradient->shape;
-//
-//	int N = (int)shape.size();
-//	int batch = (int)shape.batch();
-//	int size = N / batch;
-//
-//	auto x = inputs[0]->data();
-//	auto dx = iGradient->data();
-//	auto dy = outputGradient->data();
-//
-//	int blockSize = 1024;
-//	int grideSize = (N + blockSize - 1) / blockSize;
-//
-//	L1NormBackwardKernel<half> << <grideSize, blockSize >> > (x, dx, dy, size, N);
-//
-//#else
-//	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-//#endif
-//}
+template <>
+void L1Norm<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs, const Tensor<half> *output, const Tensor<half> *outputGradient, size_t index, Tensor<half> *iGradient) {
+#ifdef HAVE_CUDA
+	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
+
+	auto shape = iGradient->shape;
+
+	int N = (int)shape.size();
+	int batch = (int)shape.batch();
+	int size = N / batch;
+
+	auto x = inputs[0]->data();
+	auto dx = iGradient->data();
+	auto dy = outputGradient->data();
+
+	int blockSize = 1024;
+	int grideSize = (N + blockSize - 1) / blockSize;
+
+	L1NormBackwardKernel<half> << <grideSize, blockSize >> > (x, dx, dy, size, N);
+
+#else
+	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
+#endif
+}
 #endif
 
 DEEP8_DECLARATION_GPU_FUNC(L1Norm)

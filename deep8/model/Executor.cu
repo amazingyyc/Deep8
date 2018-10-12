@@ -1,4 +1,4 @@
-#include "../basic/GPUDevice.h"
+#include "GPUDevice.h"
 #include "Executor.h"
 
 namespace Deep8 {
@@ -14,5 +14,8 @@ void Executor<T>::initDeviceGPU() {
 
 template void Executor<float>::initDeviceGPU();
 template void Executor<double>::initDeviceGPU();
+#ifdef HAVE_HALF
+template void Executor<half>::initDeviceGPU();
+#endif
 
 }

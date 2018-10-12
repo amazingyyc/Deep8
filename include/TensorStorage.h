@@ -25,31 +25,14 @@ public:
     size_t size;
 
 	explicit TensorStorage();
+
 	explicit TensorStorage(void *p, size_t *refP, size_t s, Device *d);
+
 	explicit TensorStorage(const TensorStorage &other);
 
 	~TensorStorage();
 
-    TensorStorage &operator=(const TensorStorage &other) {
-		if (nullptr != other.refPtr) {
-			(*other.refPtr)++;
-		}
-
-        if (nullptr != refPtr) {
-            (*refPtr)--;
-
-            if (0 == (*refPtr)) {
-                free();
-            }
-        }
-
-        ptr    = other.ptr;
-        refPtr = other.refPtr;
-        size   = other.size;
-        device = other.device;
-
-        return *this;
-    }
+	TensorStorage& operator=(const TensorStorage &other);
 
 protected:
 	void free();

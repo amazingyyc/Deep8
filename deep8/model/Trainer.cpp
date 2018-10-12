@@ -143,8 +143,166 @@ void SGDTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
 	eTVec(value).device(*device) -= eTVec(gradient) * (this->learningRate * scale);
 }
 
+#ifdef HAVE_HALF
+template <>
+void SGDTrainer<half>::trainingCPU(Parameter<half> *parameter, half scale) {
+	DEEP8_RUNTIME_ERROR("CPU not support half");
+}
+#endif
+
 DEEP8_DECLARATION_INSTANCE(SGDTrainer)
 
+/**********************************************************************/
+/**AdagradTrainer*/
+/**********************************************************************/
 
+template <typename T>
+void AdagradTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
+	auto value    = parameter->value;
+	auto gradient = parameter->gradient;
+
+	auto device = static_cast<CPUDevice*>(value.device());
+	auto eigenDevice = device->eigenDevice;
+
+	if (accumulate.find(parameter) == accumulate.end()) {
+		auto square = this->createTensorCPU(device, gradient.shape);
+		square.zero();
+
+		accumulate[parameter] = square;
+	}
+
+	auto square = accumulate[parameter];
+
+	eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
+	eTVec(square).device(*eigenDevice) += eTVec(gradient).square();
+	eTVec(value).device(*eigenDevice) -= eTVec(gradient) / (eTVec(square) + epsilon).sqrt() * this->learningRate;
+}
+
+#ifdef HAVE_HALF
+template <>
+void AdagradTrainer<half>::trainingCPU(Parameter<half> *parameter, half scale) {
+	DEEP8_RUNTIME_ERROR("CPU not support half");
+}
+#endif
+
+DEEP8_DECLARATION_INSTANCE(AdagradTrainer)
+
+
+/**********************************************************************/
+/**AdamTrainer*/
+/**********************************************************************/
+template <typename T>
+void AdamTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
+	auto value    = parameter->value;
+	auto gradient = parameter->gradient;
+
+	auto device = static_cast<CPUDevice*>(value.device());
+	auto eigenDevice = device->eigenDevice;
+
+	if (m.find(parameter) == m.end()) {
+		auto mt = createTensorCPU(device, gradient.shape);
+		mt.zero();
+
+		m[parameter] = mt;
+	}
+
+	if (v.find(parameter) == v.end()) {
+		auto vt = createTensorCPU(device, gradient.shape);
+		vt.zero();
+
+		v[parameter] = vt;
+	}
+
+	auto mt = m[parameter];
+	auto vt = v[parameter];
+
+	eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
+
+	eTVec(mt).device(*eigenDevice) = eTVec(mt) * beta1 + eTVec(gradient) * (1 - beta1);
+	eTVec(vt).device(*eigenDevice) = eTVec(vt) * beta2 + eTVec(gradient).square() * (1 - beta2);
+
+	auto realLearningRate = this->learningRate * sqrt(1 - std::pow(beta2, T(this->times))) / (1 - std::pow(beta1, T(this->times)));
+
+	eTVec(value).device(*eigenDevice) -= eTVec(mt) / (eTVec(vt).sqrt() + epsilon) * realLearningRate;
+}
+
+#ifdef HAVE_HALF
+template <>
+void AdamTrainer<half>::trainingCPU(Parameter<half> *parameter, half scale) {
+	DEEP8_RUNTIME_ERROR("CPU not support half");
+}
+#endif
+
+DEEP8_DECLARATION_INSTANCE(AdamTrainer)
+
+
+/**********************************************************************/
+/**RMSPropTrainer*/
+/**********************************************************************/
+template <typename T>
+void RMSPropTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
+	auto value = parameter->value;
+	auto gradient = parameter->gradient;
+
+	auto device = static_cast<CPUDevice*>(value.device());
+	auto eigenDevice = device->eigenDevice;
+
+	if (v.find(parameter) == v.end()) {
+		auto vt = createTensorCPU(device, gradient.shape);
+		vt.zero();
+
+		v[parameter] = vt;
+	}
+
+	auto vt = v[parameter];
+
+	eTVec(gradient).device(*eigenDevice) = eTVec(gradient) * scale;
+	eTVec(vt).device(*eigenDevice) = eTVec(vt) * decay + eTVec(gradient).square() * (1 - decay);
+	eTVec(value).device(*eigenDevice) -= eTVec(gradient) / (eTVec(vt) + epsilon).sqrt() * this->learningRate;
+}
+
+#ifdef HAVE_HALF
+template <>
+void RMSPropTrainer<half>::trainingCPU(Parameter<half> *parameter, half scale) {
+	DEEP8_RUNTIME_ERROR("CPU not support half");
+}
+#endif
+
+DEEP8_DECLARATION_INSTANCE(RMSPropTrainer)
+
+
+
+/**********************************************************************/
+/**MomentumTrainer*/
+/**********************************************************************/
+template <typename T>
+void MomentumTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
+	auto value = parameter->value;
+	auto gradient = parameter->gradient;
+
+	auto device = static_cast<CPUDevice*>(value.device());
+	auto eigenDevice = device->eigenDevice;
+
+	if (momentum.find(parameter) == momentum.end()) {
+		auto m = createTensorCPU(device, gradient.shape);
+		m.zero();
+
+		momentum[parameter] = m;
+	}
+
+	auto m = momentum[parameter];
+
+	eTVec(m).device(*eigenDevice) = eTVec(m) * alpha - eTVec(gradient) * this->learningRate * scale;
+	eTVec(value).device(*eigenDevice) += eTVec(m);
+}
+
+#ifdef HAVE_HALF
+template <>
+void MomentumTrainer<half>::trainingCPU(Parameter<half> *parameter, half scale) {
+	DEEP8_RUNTIME_ERROR("CPU not support half");
+}
+#endif
+
+DEEP8_DECLARATION_INSTANCE(MomentumTrainer)
 
 }

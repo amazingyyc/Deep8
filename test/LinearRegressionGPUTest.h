@@ -1,6 +1,11 @@
 #ifndef DEEP8_LINEARREGRESSIONGPUTEST_H
 #define DEEP8_LINEARREGRESSIONGPUTEST_H
 
+#include "DefaultExecutor.h"
+#include "Trainer.h"
+#include "Device.h"
+#include "Expression.h"
+
 namespace Deep8 {
 
 #ifdef HAVE_CUDA
@@ -14,16 +19,16 @@ TEST(LinearRegression, GPU_Test) {
     float x[4] = {4, -1, 2, 1};
     float y[2] = {10, 8};
 
-	DefaultExecutorF executor(new MomentumTrainerF(), DeviceType::GPU);
+	DefaultExecutor<float> executor(new MomentumTrainer<float>(), DeviceType::GPU);
 
 	auto wP = executor.addParameter({1, 2});
-    ExpressionF W(&executor, wP);
+    Expression<float> W(&executor, wP);
 
     auto inputP = executor.addInputParameter({1, 2, 2}, x);
-    ExpressionF input(&executor, inputP);
+    Expression<float> input(&executor, inputP);
 
     auto outputP = executor.addInputParameter({1, 2}, y);
-    ExpressionF output(&executor, outputP);
+    Expression<float> output(&executor, outputP);
 
 	float wPtr[2];
 
@@ -31,7 +36,7 @@ TEST(LinearRegression, GPU_Test) {
 		auto t3 = (input * W - output).l1Norm();
 		t3.backward();
 
-		((GPUDevice*)(wP->value.device()))->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(float) * 2);
+		wP->value.device()->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(float) * 2);
         std::cout << i + 1 << " => " << "[" << wPtr[0] << "," << wPtr[1] << "]" << std::endl;
 	}
 

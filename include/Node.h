@@ -1,17 +1,17 @@
 #ifndef DEEP8_NODE_H
 #define DEEP8_NODE_H
 
-#include "../basic/Basic.h"
-#include "../basic/Exception.h"
-#include "../basic/MemoryAllocator.h"
-#include "../basic/Shape.h"
-#include "../basic/MemoryPool.h"
-#include "../basic/Device.h"
-#include "../basic/TensorStorage.h"
-#include "../basic/Tensor.h"
+#include "Basic.h"
+#include "Exception.h"
+#include "MemoryAllocator.h"
+#include "Shape.h"
+#include "MemoryPool.h"
+#include "Device.h"
+#include "TensorStorage.h"
+#include "Tensor.h"
 
-#include "../utils/ShapeUtils.h"
-#include "../utils/TensorUtils.h"
+#include "ShapeUtils.h"
+#include "TensorUtils.h"
 
 namespace Deep8 {
 

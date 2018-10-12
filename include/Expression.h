@@ -2,6 +2,9 @@
 #define DEEP8_EXPRESSION_H
 
 #include "Executor.h"
+#include "MatrixMultiply.h"
+#include "Minus.h"
+#include "L1Norm.h"
 
 namespace Deep8 {
 
@@ -24,9 +27,9 @@ public:
 	explicit Expression(Executor<T> *exe, Node *n) : executor(exe), node(n) {
 	}
 
-	//void backward() {
-	//	executor->backward(node);
-	//}
+	void backward() {
+		executor->backward(node);
+	}
 
 	///**one operand function*/
 	//Expression<T> abs() {
@@ -39,10 +42,10 @@ public:
 	//	return Expression<T>(executor, executor->addFunction(new Exp<T>(inputs)));
 	//}
 
-	//Expression<T> l1Norm() {
-	//	std::vector<Node*> inputs = { node };
-	//	return Expression<T>(executor, executor->addFunction(new L1Norm<T>(inputs)));
-	//}
+	Expression<T> l1Norm() {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new L1Norm<T>(inputs)));
+	}
 
 	//Expression<T> l2Norm() {
 	//	std::vector<Node*> inputs = { node };
@@ -146,12 +149,12 @@ public:
 //	return Expression<T>(x.executor, x.executor->addFunction(new AddScalar<T>(inputs, scalar)));
 //}
 //
-///**minus operator*/
-//template <typename T>
-//Expression<T> operator - (const Expression<T> &x, const Expression<T> &y) {
-//	std::vector<Node*> inputs = { x.node, y.node };
-//	return Expression<T>(x.executor, x.executor->addFunction(new Minus<T>(inputs)));
-//}
+/**minus operator*/
+template <typename T>
+Expression<T> operator - (const Expression<T> &x, const Expression<T> &y) {
+	std::vector<Node*> inputs = { x.node, y.node };
+	return Expression<T>(x.executor, x.executor->addFunction(new Minus<T>(inputs)));
+}
 //
 //template <typename T>
 //Expression<T> operator - (const Expression<T> &x, T scalar) {
@@ -165,14 +168,14 @@ public:
 //	return Expression<T>(x.executor, x.executor->addFunction(new ScalarMinus<T>(inputs, scalar)));
 //}
 //
-///**
-// * the * operator will be a Matrix Multiply not a CWise Multiply
-// */
-//template <typename T>
-//Expression<T> operator * (const Expression<T> &x, const Expression<T> &y) {
-//	std::vector<Node*> inputs = { x.node, y.node };
-//	return Expression<T>(x.executor, x.executor->addFunction(new MatrixMultiply<T>(inputs)));
-//}
+/**
+ * the * operator will be a Matrix Multiply not a CWise Multiply
+ */
+template <typename T>
+Expression<T> operator * (const Expression<T> &x, const Expression<T> &y) {
+	std::vector<Node*> inputs = { x.node, y.node };
+	return Expression<T>(x.executor, x.executor->addFunction(new MatrixMultiply<T>(inputs)));
+}
 //
 //template <typename T>
 //Expression<T> operator * (const Expression<T> &x, T scalar) {

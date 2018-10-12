@@ -39,11 +39,7 @@ void L1Norm<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 }
 
 template <typename T>
-void L1Norm<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-                 const Tensor<T> *output,
-                 const Tensor<T> *outputGradient,
-                 size_t index,
-                 Tensor<T> *iGradient) {
+void L1Norm<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
 
     auto eigenDevice = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
@@ -59,6 +55,7 @@ void L1Norm<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
             eTVec(outputGradient).reshape(outputGradientDims).broadcast(broadDims).binaryExpr(eTVec(inputs[0]).reshape(iGradientDims), L1NormBackwardExpr<T>());
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(L1Norm)
 DEEP8_DECLARATION_INSTANCE(L1Norm)
 
 }

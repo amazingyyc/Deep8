@@ -1,6 +1,8 @@
 #ifndef DEEP8_TENSORUTILS_H
 #define DEEP8_TENSORUTILS_H
 
+#include "Tensor.h"
+
 namespace Deep8 {
 
 /**

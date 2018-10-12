@@ -1,5 +1,6 @@
 #include "Trainer.h"
-#include "../basic/GPUDevice.h"
+#include "GPUDevice.h"
+#include "GPUMathUtils.h"
 
 namespace Deep8 {
 
@@ -143,7 +144,7 @@ double Trainer<double>::clipGradientScaleGPU(Device *d, std::unordered_set<Param
 	return scale;
 
 #else
-DEEP8_RUNTIME_ERROR("does not have a GPU");
+	DEEP8_RUNTIME_ERROR("does not have a GPU");
 #endif
 }
 
@@ -254,6 +255,7 @@ __global__ void SGDTrainerKernel(real *gradient, const real scale, const real le
 
 template <>
 void SGDTrainer<float>::trainingGPU(Parameter<float> *parameter, float scale) {
+#ifdef HAVE_CUDA
 	auto value    = parameter->value;
 	auto gradient = parameter->gradient;
 
@@ -262,10 +264,14 @@ void SGDTrainer<float>::trainingGPU(Parameter<float> *parameter, float scale) {
 	float alpha = -1 * (this->learningRate * scale);
 
 	CUBLAS_CHECK(cublasSaxpy(device->cublasHandle, (int)value.size(), &alpha, gradient.data(), 1, value.data(), 1));
+#else 
+	DEEP8_RUNTIME_ERROR("does not have a GPU");
+#endif
 }
 
 template <>
 void SGDTrainer<double>::trainingGPU(Parameter<double> *parameter, double scale) {
+#ifdef HAVE_CUDA
 	auto value = parameter->value;
 	auto gradient = parameter->gradient;
 
@@ -274,6 +280,9 @@ void SGDTrainer<double>::trainingGPU(Parameter<double> *parameter, double scale)
 	double alpha = -1 * (this->learningRate * scale);
 
 	CUBLAS_CHECK(cublasDaxpy(device->cublasHandle, (int)value.size(), &alpha, gradient.data(), 1, value.data(), 1));
+#else 
+	DEEP8_RUNTIME_ERROR("does not have a GPU");
+#endif
 }
 
 #ifdef HAVE_HALF
@@ -290,5 +299,237 @@ void SGDTrainer<half>::trainingGPU(Parameter<half> *parameter, half scale) {
 }
 #endif
 
+/**********************************************************************/
+/**AdagradTrainer*/
+/**********************************************************************/
+#ifdef HAVE_CUDA
+template <typename real>
+__global__ void AdagradTrainerKernel(real *gradient, real scale, real *square, real *value, real epsilon, real learningRate, int N) {
+	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		gradient[i] *= scale;
+		square[i] += gradient[i] * gradient[i];
+		value[i] -= learningRate * gradient[i] / cuSqrt(square[i] + epsilon);
+	}
+}
+#endif
+
+template <typename T>
+void AdagradTrainer<T>::trainingGPU(Parameter<T> *parameter, T scale) {
+#ifdef HAVE_CUDA
+	auto value = parameter->value;
+	auto gradient = parameter->gradient;
+
+	auto device = static_cast<GPUDevice*>(value.device());
+	auto size = (int)gradient.size();
+
+	if (accumulate.find(parameter) == accumulate.end()) {
+		auto square = createTensorGPU(device, gradient.shape);
+		square.zero();
+
+		accumulate[parameter] = square;
+	}
+
+	auto square = accumulate[parameter];
+
+	int blockSize = 1024;
+	int grideSize = (size + blockSize - 1) / blockSize;
+
+	AdagradTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, square.data(), value.data(), epsilon, learningRate, size);
+#else 
+	DEEP8_RUNTIME_ERROR("does not have a GPU");
+#endif
+}
+
+template void AdagradTrainer<float>::trainingGPU(Parameter<float> *parameter, float scale);
+template void AdagradTrainer<double>::trainingGPU(Parameter<double> *parameter, double scale);
+#ifdef HAVE_HALF
+template void AdagradTrainer<half>::trainingGPU(Parameter<half> *parameter, half scale);
+#endif
+
+
+/**********************************************************************/
+/**AdamTrainer*/
+/**********************************************************************/
+#ifdef HAVE_CUDA
+template <typename real>
+__global__ void AdamTrainerKernel(real *gradient, real scale, real *mt, real *vt, real *value, real beta1, real beta2, real epsilon, real learningRate, int N) {
+	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		gradient[i] *= scale;
+		mt[i] = mt[i] * beta1 + (real(1.0) - beta1) * gradient[i];
+		vt[i] = vt[i] * beta2 + gradient[i] * gradient[i] * (real(1.0) - beta2);
+		value[i] -= mt[i] / (cuSqrt(vt[i]) + epsilon) * learningRate;
+	}
+}
+#endif
+
+template <typename T>
+T AdamTrainer<T>::calculateRealLearningRate(T learningRate, T beta1, T beta2, int64_t times) {
+	return learningRate * std::sqrt(1.0 - std::pow(beta2, T(times))) / (1 - std::pow(beta1, T(times)));
+}
+
+#ifdef HAVE_HALF
+template <>
+half AdamTrainer<half>::calculateRealLearningRate(half learningRate, half beta1, half beta2, int64_t times) {
+	float learningRateF = __half2float(learningRate);
+	float beta1F = __half2float(beta1);
+	float beta2F = __half2float(beta2);
+
+	return __float2half(calculateRealLearningRate(learningRateF, beta1F, beta2F, times));
+}
+#endif
+
+template <typename T>
+void AdamTrainer<T>::trainingGPU(Parameter<T> *parameter, T scale) {
+#ifdef HAVE_CUDA
+	auto value = parameter->value;
+	auto gradient = parameter->gradient;
+
+	auto device = static_cast<GPUDevice*>(value.device());
+
+	if (m.find(parameter) == m.end()) {
+		auto mt = createTensorGPU(device, gradient.shape);
+		mt.zero();
+
+		m[parameter] = mt;
+	}
+
+	if (v.find(parameter) == v.end()) {
+		auto vt = createTensorGPU(device, gradient.shape);
+		vt.zero();
+
+		v[parameter] = vt;
+	}
+
+	int size = (int)gradient.size();
+
+	auto mt = m[parameter];
+	auto vt = v[parameter];
+
+	int blockSize = 1024;
+	int grideSize = (size + blockSize - 1) / blockSize;
+
+	auto realLearningRate = calculateRealLearningRate(this->learningRate, beta1, beta2, this->times);
+
+	AdamTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, mt.data(), vt.data(), value.data(), beta1, beta2, epsilon, realLearningRate, size);
+#else 
+DEEP8_RUNTIME_ERROR("does not have a GPU");
+#endif
+}
+
+template void AdamTrainer<float>::trainingGPU(Parameter<float> *parameter, float scale);
+template void AdamTrainer<double>::trainingGPU(Parameter<double> *parameter, double scale);
+#ifdef HAVE_HALF
+template void AdamTrainer<half>::trainingGPU(Parameter<half> *parameter, half scale);
+#endif
+
+
+/**********************************************************************/
+/**RMSPropTrainer*/
+/**********************************************************************/
+#ifdef HAVE_CUDA
+template <typename real>
+__global__ void RMSPropTrainerKernel(real *gradient, real scale, real *vt, real *value, real decay, real epsilon, real learningRate, int N) {
+	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		gradient[i] *= scale;
+		vt[i] = vt[i] * decay + gradient[i] * gradient[i] * (real(1.0) - decay);
+		value[i] -= gradient[i] / cuSqrt(vt[i] + epsilon) * learningRate;
+	}
+}
+#endif
+
+template <typename T>
+void RMSPropTrainer<T>::trainingGPU(Parameter<T> *parameter, T scale) {
+#ifdef HAVE_CUDA
+	auto value = parameter->value;
+	auto gradient = parameter->gradient;
+
+	auto device = static_cast<GPUDevice*>(value.device());
+
+	if (v.find(parameter) == v.end()) {
+		auto vt = createTensorGPU(device, gradient.shape);
+		vt.zero();
+
+		v[parameter] = vt;
+	}
+
+	auto vt = v[parameter];
+
+	int size = (int)gradient.size();
+
+	int blockSize = 1024;
+	int grideSize = (size + blockSize - 1) / blockSize;
+
+	RMSPropTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, vt.data(), value.data(), decay, epsilon, learningRate, size);
+#else 
+DEEP8_RUNTIME_ERROR("does not have a GPU");
+#endif
+}
+
+template void RMSPropTrainer<float>::trainingGPU(Parameter<float> *parameter, float scale);
+template void RMSPropTrainer<double>::trainingGPU(Parameter<double> *parameter, double scale);
+#ifdef HAVE_HALF
+template void RMSPropTrainer<half>::trainingGPU(Parameter<half> *parameter, half scale);
+#endif
+
+
+/**********************************************************************/
+/**MomentumTrainer*/
+/**********************************************************************/
+#ifdef HAVE_CUDA
+template <typename real>
+__global__ void MomentumTrainerKernel(real *gradient, real scale, real *m, real *value, real alpha, real learningRate, int N) {
+	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	for (int i = start; i < N; i += stride) {
+		m[i] = m[i] * alpha - gradient[i] * learningRate * scale;
+		value[i] += m[i];
+	}
+}
+#endif
+
+
+template <typename T>
+void MomentumTrainer<T>::trainingGPU(Parameter<T> *parameter, T scale) {
+#ifdef HAVE_CUDA
+	auto value = parameter->value;
+	auto gradient = parameter->gradient;
+
+	auto device = static_cast<GPUDevice*>(value.device());
+
+	if (momentum.find(parameter) == momentum.end()) {
+		auto m = createTensorGPU(device, gradient.shape);
+		m.zero();
+
+		momentum[parameter] = m;
+	}
+
+	auto m = momentum[parameter];
+
+	int size = (int)gradient.size();
+
+	int blockSize = 1024;
+	int grideSize = (size + blockSize - 1) / blockSize;
+
+	MomentumTrainerKernel<T> << <grideSize, blockSize >> > (gradient.data(), scale, m.data(), value.data(), alpha, learningRate, size);
+#else 
+	DEEP8_RUNTIME_ERROR("does not have a GPU");
+#endif
+}
+
+template void MomentumTrainer<float>::trainingGPU(Parameter<float> *parameter, float scale);
+template void MomentumTrainer<double>::trainingGPU(Parameter<double> *parameter, double scale);
+#ifdef HAVE_HALF
+template void MomentumTrainer<half>::trainingGPU(Parameter<half> *parameter, half scale);
+#endif
 
 }

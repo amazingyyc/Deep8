@@ -45,26 +45,17 @@ public:
 	Shape shape;
 
 public:
-	explicit Tensor() : storage(), offset(0), shape() {
-	}
-
-	explicit Tensor(Shape &s) : storage(), offset(0), shape(s) {
-	}
-
-	explicit Tensor(TensorStorage &ts, size_t off, Shape &s) : storage(ts), offset(off), shape(s) {
-	}
-
-	explicit Tensor(TensorStorage &ts, size_t off, std::initializer_list<size_t> list) : storage(ts), offset(off), shape(list) {
-	}
-
-	~Tensor() = default;
+	explicit Tensor();
+	explicit Tensor(Shape &s);
+	explicit Tensor(TensorStorage &ts, size_t off, Shape &s);
+	explicit Tensor(TensorStorage &ts, size_t off, std::initializer_list<size_t> list);
 
 public:
 	DeviceType DeviceType();
 
 	Device* device();
-	Device* device() const;
 
+	Device* device() const;
 
 	size_t* refPtr() const;
 

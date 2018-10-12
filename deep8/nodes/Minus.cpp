@@ -122,6 +122,8 @@ void Minus<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	}
 }
 
+
+DEEP8_RE_DECLARATION_HALF_FUNC(Minus)
 DEEP8_DECLARATION_INSTANCE(Minus)
 
 }

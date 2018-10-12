@@ -38,7 +38,7 @@
 //#include "TanHTest.h"
 // #include "LinearRegressionTest.h"
 //#include "CPUMemoryPoolTest.h"
-#include "CompileTest.h"
+#include "LinearRegressionGPUTest.h"
 
 using namespace Deep8;
 

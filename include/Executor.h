@@ -1,14 +1,14 @@
 #ifndef DEEP8_EXECUTOR_H
 #define DEEP8_EXECUTOR_H
 
-#include "../basic/Basic.h"
-#include "../basic/Exception.h"
-#include "../basic/Device.h"
-#include "../basic/Tensor.h"
-#include "../nodes/Function.h"
-#include "../nodes/Variable.h"
-#include "../nodes/Parameter.h"
-#include "../nodes/InputParameter.h"
+#include "Basic.h"
+#include "Exception.h"
+#include "Device.h"
+#include "Tensor.h"
+#include "Function.h"
+#include "Variable.h"
+#include "Parameter.h"
+#include "InputParameter.h"
 #include "Trainer.h"
 
 namespace Deep8 {

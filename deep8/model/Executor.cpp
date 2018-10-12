@@ -1,4 +1,5 @@
 #include "Executor.h"
+#include "TensorInit.h"
 
 namespace Deep8 {
 
@@ -42,15 +43,6 @@ Tensor<T> Executor<T>::createTensorWithShapeCPU(Shape &shape) {
 
 	return Tensor<T>(storage, 0, shape);
 }
-
-
-//#ifdef HAVE_HALF
-//	template <>
-//	Tensor<half> createTensorWithShapeCPU(Shape &shape) {
-//		DEEP8_RUNTIME_ERROR("CPU not support half");
-//	}
-//#endif
-
 
 template <typename T>
 Tensor<T> Executor<T>::createTensorWithShapeGPU(Shape &shape) {
@@ -111,7 +103,7 @@ Parameter<T>* Executor<T>::addParameter(Shape &shape) {
 	parameterCollection.insert(parameter);
 
 	/**init the parameter*/
-	// TensorInit::gaussian(value);
+	TensorInit<T>().gaussian(value);
 
 	return parameter;
 }

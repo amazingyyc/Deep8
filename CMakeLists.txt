@@ -23,6 +23,11 @@ if (HAVE_GPU AND CUDA_FOUND)
 	message(STATUS "find the CUDA, the version is => ${CUDA_VERSION}, the path is => ${CUDA_TOOLKIT_ROOT_DIR}")
 	set(HAVE_CUDA TRUE)
 
+	if (CUDA_HAS_FP16)
+	message(STATUS "support half")
+	set(HAVE_HALF TRUE)
+	endif()
+
 	# include the CUDA head dir
 	message(STATUS "include the CUDA head files => ${CUDA_INCLUDE_DIRS}")
 	include_directories(SYSTEM ${CUDA_INCLUDE_DIRS})
@@ -74,10 +79,13 @@ endif()
 if (HAVE_GPU AND HAVE_CUDA)
 	message(STATUS "find the GPU add set Eigen use multi-threads")
 	add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH)
-	# add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS)
 	
 	if (HAVE_CUDNN)
 		add_definitions(-DHAVE_CUDNN)
+	endif()
+
+	if (HAVE_HALF)
+		add_definitions(-DHAVE_HALF)
 	endif()
 else()
 	message(STATUS "do not have GPU only support CPU")
@@ -98,80 +106,88 @@ add_subdirectory(third_party/googletest)
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 # deep8
-include_directories(deep8)
+include_directories(include)
 include_directories(deep8/basic)
 include_directories(deep8/model)
 include_directories(deep8/nodes)
-include_directories(deep8/utils)
 
 set ( DEEP8_HEAD_FILES
 
-		deep8/Deep8.h
-
-		deep8/basic/Device.h
-		deep8/basic/Exception.h
-		deep8/basic/MemoryAllocator.h
-		deep8/basic/MemoryPool.h
-        deep8/basic/Shape.h
-		deep8/basic/TensorStorage.h
-		deep8/basic/Tensor.h
-		deep8/basic/CudaException.h
-
-		deep8/model/Executor.h
-		deep8/model/DefaultExecutor.h
-		deep8/model/Expression.h
-		deep8/model/Trainer.h
-		deep8/model/TensorInit.h
-
-		deep8/nodes/Abs.h
-		deep8/nodes/Add.h
-		deep8/nodes/AvgPooling2d.h
-		deep8/nodes/ConstantParameter.h
-		deep8/nodes/Conv2d.h
-		deep8/nodes/DeConv2d.h
-		deep8/nodes/Divide.h
-		deep8/nodes/Exp.h
-		deep8/nodes/Function.h
-		deep8/nodes/InputParameter.h
-		deep8/nodes/L1Norm.h
-		deep8/nodes/L2Norm.h
-		deep8/nodes/Linear.h
-		deep8/nodes/Log.h
-		deep8/nodes/LReLu.h
-		deep8/nodes/MatrixMultiply.h
-		deep8/nodes/MaxPooling2d.h
-		deep8/nodes/Minus.h
-		deep8/nodes/Multiply.h
-		deep8/nodes/Node.h
-		deep8/nodes/Parameter.h
-		deep8/nodes/Pow.h
-		deep8/nodes/ReLu.h
-		deep8/nodes/ReShape.h
-		deep8/nodes/Sigmoid.h
-		deep8/nodes/Softmax.h
-		deep8/nodes/Square.h
-		deep8/nodes/SumElements.h
-		deep8/nodes/TanH.h
-		deep8/nodes/Variable.h
-
-		deep8/utils/CudaMathUtils.h
-		deep8/utils/MathUtils.h
-		deep8/utils/ShapeUtils.h
-		deep8/utils/TensorUtils.h
-		deep8/utils/Utils.h
-		deep8/model/Executor.h )
+		# deep8/Deep8.h
+		# 
+		# deep8/basic/Device.h
+		# deep8/basic/Exception.h
+		# deep8/basic/MemoryAllocator.h
+		# deep8/basic/MemoryPool.h
+        # deep8/basic/Shape.h
+		# deep8/basic/TensorStorage.h
+		# deep8/basic/Tensor.h
+		# deep8/basic/CudaException.h
+		# 
+		# deep8/model/Executor.h
+		# deep8/model/DefaultExecutor.h
+		# deep8/model/Expression.h
+		# deep8/model/Trainer.h
+		# deep8/model/TensorInit.h
+		# 
+		# deep8/nodes/Abs.h
+		# deep8/nodes/Add.h
+		# deep8/nodes/AvgPooling2d.h
+		# deep8/nodes/ConstantParameter.h
+		# deep8/nodes/Conv2d.h
+		# deep8/nodes/DeConv2d.h
+		# deep8/nodes/Divide.h
+		# deep8/nodes/Exp.h
+		# deep8/nodes/Function.h
+		# deep8/nodes/InputParameter.h
+		# deep8/nodes/L1Norm.h
+		# deep8/nodes/L2Norm.h
+		# deep8/nodes/Linear.h
+		# deep8/nodes/Log.h
+		# deep8/nodes/LReLu.h
+		# deep8/nodes/MatrixMultiply.h
+		# deep8/nodes/MaxPooling2d.h
+		# deep8/nodes/Minus.h
+		# deep8/nodes/Multiply.h
+		# deep8/nodes/Node.h
+		# deep8/nodes/Parameter.h
+		# deep8/nodes/Pow.h
+		# deep8/nodes/ReLu.h
+		# deep8/nodes/ReShape.h
+		# deep8/nodes/Sigmoid.h
+		# deep8/nodes/Softmax.h
+		# deep8/nodes/Square.h
+		# deep8/nodes/SumElements.h
+		# deep8/nodes/TanH.h
+		# deep8/nodes/Variable.h
+		# 
+		# deep8/utils/CudaMathUtils.h
+		# deep8/utils/MathUtils.h
+		# deep8/utils/ShapeUtils.h
+		# deep8/utils/TensorUtils.h
+		# deep8/utils/Utils.h
+		# deep8/model/Executor.h 
+		)
 
 set ( DEEP8_SRC_FILES
-
-		deep8/basic/TensorStorage.cpp
-		deep8/basic/Tensor.cpp
+		
+		deep8/model/Device.cpp
+		deep8/model/MemoryAllocator.cpp
+		deep8/model/MemoryPool.cpp
+		deep8/model/Shape.cpp
+		deep8/model/TensorStorage.cpp
+		deep8/model/Tensor.cpp
 
 		deep8/model/Executor.cpp
 		deep8/model/DefaultExecutor.cpp
 		deep8/model/Trainer.cpp
+		deep8/model/TensorInit.cpp
 
 		deep8/nodes/Function.cpp
 		deep8/nodes/Abs.cpp
+		deep8/nodes/L1Norm.cpp
+		deep8/nodes/MatrixMultiply.cpp
+		deep8/nodes/Minus.cpp
 		deep8/nodes/Variable.cpp
 		deep8/nodes/Parameter.cpp
 		deep8/nodes/InputParameter.cpp
@@ -220,10 +236,18 @@ set ( DEEP8_SRC_FILES
 
 set ( DEEP8_CUDA_SRC_FILES
 
+		deep8/model/GPUDevice.cu
+		deep8/model/GPUMemoryAllocator.cu
+		deep8/model/GPUMemoryPool.cu
+
 		deep8/model/Executor.cu
 		deep8/model/Trainer.cu
+		deep8/model/TensorInit.cu
 
 		deep8/nodes/Abs.cu
+		deep8/nodes/L1Norm.cu
+		deep8/nodes/MatrixMultiply.cu
+		deep8/nodes/Minus.cu
 
 		# deep8/basic/MemoryAllocator.cu
 		# deep8/basic/TensorStorage.cu
@@ -297,6 +321,10 @@ if (HAVE_GPU AND HAVE_CUDA)
 	# enable cudnn
 	if (HAVE_CUDNN)
 		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_CUDNN")
+	endif()
+
+	if (HAVE_HALF)
+		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_HALF")
 	endif()
 
 	# add_executable(Deep8 ${DEEP8_CUDA_SRC_FILES} ${DEEP8_SRC_FILES} ${DEEP8_TEST_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
