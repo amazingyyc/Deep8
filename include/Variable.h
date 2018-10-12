@@ -13,28 +13,16 @@ public:
 	bool updateGradient;
 
 protected:
-	explicit VariableBase(): updateGradient(false) {
-		this->type = NodeType::Variable;
-	}
+	explicit VariableBase();
+	explicit VariableBase(bool update);
+	explicit VariableBase(std::vector<Node*> &inputs, bool update);
 
-	explicit VariableBase(bool update) : updateGradient(update) {
-		this->type = NodeType::Variable;
-	}
-
-	explicit VariableBase(std::vector<Node*> &inputs, bool update) : Node(inputs), updateGradient(update) {
-		this->type = NodeType::Variable;
-	}
 public:
 	/**
 	 * @brief the Variable do nothing in forward and backward process
 	 */
-	void forward() override {
-
-	}
-
-	void backward() override {
-
-	}
+	void forward() override;
+	void backward() override;
 
 	/**
 	 * set the Gradient to be 0
@@ -76,32 +64,13 @@ public:
 	Tensor<T> gradient;
 
 protected:
-    explicit Variable(): VariableBase(false) {
-    }
-
-    explicit Variable(Tensor<T> &v): value(v), VariableBase(false) {
-    }
-
-    explicit Variable(Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(true) {
-    }
+    explicit Variable();
+    explicit Variable(Tensor<T> &v);
+    explicit Variable(Tensor<T> &v, Tensor<T> &g);
 
 public:
-	explicit Variable(Node *input, Shape &shape) : VariableBase(false) {
-		this->inputs.emplace_back(input);
-		this->outputShape = shape;
-
-		DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
-
-		for (auto i : inputs) {
-			DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
-			DEEP8_ARGUMENT_CHECK(i->outputShape == this->outputShape, "the shape of the input, pointer and gradient must be same")
-		}
-	}
-
-    explicit Variable(Node *input, Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(true) {
-        this->inputs.emplace_back(input);
-        check();
-    }
+	explicit Variable(Node *input, Shape &shape);
+    explicit Variable(Node *input, Tensor<T> &v, Tensor<T> &g);
 
 protected:
 	virtual void check();

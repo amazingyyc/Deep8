@@ -6,6 +6,7 @@
 namespace Deep8 {
 
 #ifdef HAVE_CUDA
+
 template <int blockSize, typename real>
 __global__ void L1NormForwardKernel(const real *x, real *y, const int batch, const int size) {
 	SharedMemory<real> shareMemory;
@@ -84,12 +85,9 @@ __global__ void L1NormBackwardKernel(const real *x, real *xGrad, const real *yGr
 		}
 	}
 }
-#endif
 
 template <typename T>
 void L1Norm<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-#ifdef HAVE_CUDA
-
 	auto shape = inputs[0]->shape;
 	int batch  = (int)shape.batch();
 	int size   = (int)shape.size() / batch;
@@ -130,15 +128,10 @@ void L1Norm<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 	} else {
 		DEEP8_RUNTIME_ERROR("the block size is error");
 	}
-
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
 
 template <typename T>
 void L1Norm<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
-#ifdef HAVE_CUDA
 	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
 
 	auto shape = iGradient->shape;
@@ -160,16 +153,11 @@ void L1Norm<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const T
 	grideSize = (N + blockSize - 1) / blockSize;
 
 	L1NormBackwardKernel<T> << <grideSize, blockSize >> > (x, dx, dy, size, N);
-
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
 
 #ifdef HAVE_HALF
 template <>
 void L1Norm<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs, const Tensor<half> *output, const Tensor<half> *outputGradient, size_t index, Tensor<half> *iGradient) {
-#ifdef HAVE_CUDA
 	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
 
 	auto shape = iGradient->shape;
@@ -186,13 +174,11 @@ void L1Norm<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs, c
 	int grideSize = (N + blockSize - 1) / blockSize;
 
 	L1NormBackwardKernel<half> << <grideSize, blockSize >> > (x, dx, dy, size, N);
-
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
 #endif
 
 DEEP8_DECLARATION_GPU_FUNC(L1Norm)
+
+#endif
 
 }

@@ -21,39 +21,30 @@ public:
 	bool shared;
 
 protected:
-    explicit FunctionBase(): Node(), output(nullptr), shared(false) {
-        this->type = NodeType::Function;
-    }
+    explicit FunctionBase();
+    explicit FunctionBase(std::vector<Node*> &inputs);
 
-    explicit FunctionBase(std::vector<Node*> &inputs): Node(inputs), output(nullptr), shared(false) {
-        this->type = NodeType::Function;
-    }
-
-    virtual void check() {
-        for (auto item : inputs) {
-            DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be Variable type");
-        }
-    }
+    virtual void check();
 
 public:
-    void forward() override {}
-    void backward() override {}
+    void forward() override;
+    void backward() override;
 };
 
 template <typename T>
 class Function: public FunctionBase {
 protected:
-    explicit Function(): FunctionBase() {
-    }
-
-    explicit Function(std::vector<Node*> &inputs): FunctionBase(inputs) {
-    }
+    explicit Function();
+    explicit Function(std::vector<Node*> &inputs);
 
 protected:
 	virtual void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output);
-	virtual void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output);
 	virtual void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient);
+
+#ifdef HAVE_CUDA
+    virtual void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output);
 	virtual void backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient);
+#endif
 
 public:
 	void forward() override;

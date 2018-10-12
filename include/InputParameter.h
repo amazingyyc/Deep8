@@ -11,10 +11,7 @@ namespace Deep8 {
 template <typename T>
 class InputParameter: public Parameter<T> {
 public:
-    explicit InputParameter(Tensor<T> &value): Parameter<T>(value) {
-        this->updateGradient = false;
-        this->outputShape    = this->value.shape;
-    }
+    explicit InputParameter(Tensor<T> &value);
 
 public:
 

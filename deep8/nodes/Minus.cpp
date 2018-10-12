@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+Minus<T>::Minus(std::vector<Node *> &inputs): Function<T>(inputs) {
+		check();
+}
+
+template <typename T>
 void Minus<T>::check() {
 	Function<T>::check();
 

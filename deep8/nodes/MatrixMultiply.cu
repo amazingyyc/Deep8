@@ -112,21 +112,13 @@ void MatrixMultiply<half>::forwardGPUImpl(Device* d, const half *A, const Shape 
 		}
 	}
 }
-
-#endif
 #endif
 
 template <typename T>
 void MatrixMultiply<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-#ifdef HAVE_CUDA
 	forwardGPUImpl(output->device(), inputs[0]->data(), inputs[0]->shape, inputs[1]->data(), inputs[1]->shape, output->data(), output->shape);
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
 
-
-#ifdef HAVE_CUDA
 template <>
 void MatrixMultiply<float>::backwardGPUImpl0(Device* d, float *aGrad, const Shape &aShape, const float *B, const Shape &bShape, const float *cGrad, const Shape &cShape) {
 	auto device = (GPUDevice*)d;
@@ -235,7 +227,7 @@ void MatrixMultiply<half>::backwardGPUImpl0(Device* d, half *aGrad, const Shape 
 		}
 	}
 }
-#endif // HAVE_HALF
+#endif
 
 template <>
 void MatrixMultiply<float>::backwardGPUImpl1(Device* d, const float *A, const Shape &aShape, float *bGrad, const Shape &bShape, const float *cGrad, const Shape &cShape) {
@@ -345,12 +337,10 @@ void MatrixMultiply<half>::backwardGPUImpl1(Device* d, const half *A, const Shap
 		}
 	}
 }
-#endif // HAVE_HALF
 #endif
 
 template <typename T>
 void MatrixMultiply<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
-#ifdef HAVE_CUDA
 	auto device = static_cast<GPUDevice*>(iGradient->device());
 
 	if (0 == index) {
@@ -360,12 +350,10 @@ void MatrixMultiply<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 	} else {
 		DEEP8_RUNTIME_ERROR("the index is error");
 	}
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
 
-
 DEEP8_DECLARATION_GPU_FUNC(MatrixMultiply)
+
+#endif
 
 }

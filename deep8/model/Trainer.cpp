@@ -6,6 +6,10 @@ namespace Deep8 {
 /**********************************************************************/
 /**Trainer*/
 /**********************************************************************/
+template <typename T>
+Trainer<T>::Trainer(T lr, bool cg, T ct):
+		learningRate(lr), clipGradient(cg), clipThreshold(ct), times(0) {
+}
 
 template <typename T>
 T Trainer<T>::clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
@@ -86,22 +90,6 @@ Tensor<T> Trainer<T>::createTensorCPU(Device *device, Shape &shape) {
 }
 
 template <typename T>
-Tensor<T> Trainer<T>::createTensorGPU(Device *device, Shape &shape) {
-#ifdef HAVE_CUDA
-	auto storageSize = sizeof(T) * shape.size();
-
-	auto ptr = device->malloc(storageSize);
-	auto refPtr = (size_t*)device->mallocCPU(sizeof(size_t));
-
-	TensorStorage storage(ptr, refPtr, storageSize, device);
-
-	return Tensor<T>(storage, 0, shape);
-#else
-	DEEP8_RUNTIME_ERROR("does not have a GPU");
-#endif
-}
-
-template <typename T>
 void Trainer<T>::training(std::unordered_set<Parameter<T>*> &parameters) {
 	if (parameters.empty()) {
 		return;
@@ -123,7 +111,11 @@ void Trainer<T>::training(std::unordered_set<Parameter<T>*> &parameters) {
 		if (DeviceType::CPU == node->value.device()->type) {
 			trainingCPU(node, scale);
 		} else {
+#ifdef HAVE_CUDA
 			trainingGPU(node, scale);
+#else
+			DEEP8_RUNTIME_ERROR("does not have a GPU");
+#endif
 		}
 	}
 }
@@ -133,6 +125,10 @@ DEEP8_DECLARATION_INSTANCE(Trainer)
 /**********************************************************************/
 /**SGDTrainer*/
 /**********************************************************************/
+template <typename T>
+SGDTrainer<T>::SGDTrainer(T lr, bool cg, T ct): Trainer<T>(lr, cg, ct) {
+}
+
 template <typename T>
 void SGDTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
 	auto value    = parameter->value;
@@ -155,6 +151,28 @@ DEEP8_DECLARATION_INSTANCE(SGDTrainer)
 /**********************************************************************/
 /**AdagradTrainer*/
 /**********************************************************************/
+template <typename T>
+AdagradTrainer<T>::AdagradTrainer(T learningRate, T epsilon, bool clipGradient, T clipThreshold)
+		:Trainer<T>(learningRate, clipGradient, clipThreshold), epsilon(epsilon) {
+		check(epsilon);
+}
+
+template <typename T>
+void AdagradTrainer<T>::check(T epsilon) {
+	DEEP8_ARGUMENT_CHECK(0 != epsilon, "epsilon can not be 0");
+}
+
+#ifdef HAVE_HALF
+template <>
+void AdagradTrainer<half>::check(half epsilon) {
+	DEEP8_ARGUMENT_CHECK(0 != __half2float(epsilon), "epsilon can not be 0");
+}
+#endif
+
+template <typename T>
+AdagradTrainer<T>::~AdagradTrainer() {
+	accumulate.clear();
+}
 
 template <typename T>
 void AdagradTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
@@ -192,6 +210,30 @@ DEEP8_DECLARATION_INSTANCE(AdagradTrainer)
 /**AdamTrainer*/
 /**********************************************************************/
 template <typename T>
+AdamTrainer<T>::AdamTrainer(T learningRate, T beta1, T beta2, T epsilon, bool clipGradient, T clipThreshold):
+		Trainer<T>(learningRate, clipGradient, clipThreshold), beta1(beta1), beta2(beta2), epsilon(epsilon) {
+	check(epsilon);
+}
+
+template <typename T>
+void AdamTrainer<T>::check(T epsilon) {
+	DEEP8_ARGUMENT_CHECK(0 != epsilon, "epsilon can not be 0");
+}
+
+#ifdef HAVE_HALF
+template <>
+   void AdamTrainer<half>::check(half epsilon) {
+	   DEEP8_ARGUMENT_CHECK(0 != __half2float(epsilon), "epsilon can not be 0");
+   }
+#endif
+
+template <typename T>
+AdamTrainer<T>::~AdamTrainer() {
+	m.clear();
+	v.clear();
+}
+
+template <typename T>
 void AdamTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
 	auto value    = parameter->value;
 	auto gradient = parameter->gradient;
@@ -200,14 +242,14 @@ void AdamTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
 	auto eigenDevice = device->eigenDevice;
 
 	if (m.find(parameter) == m.end()) {
-		auto mt = createTensorCPU(device, gradient.shape);
+		auto mt = this->createTensorCPU(device, gradient.shape);
 		mt.zero();
 
 		m[parameter] = mt;
 	}
 
 	if (v.find(parameter) == v.end()) {
-		auto vt = createTensorCPU(device, gradient.shape);
+		auto vt = this->createTensorCPU(device, gradient.shape);
 		vt.zero();
 
 		v[parameter] = vt;
@@ -240,6 +282,29 @@ DEEP8_DECLARATION_INSTANCE(AdamTrainer)
 /**RMSPropTrainer*/
 /**********************************************************************/
 template <typename T>
+RMSPropTrainer<T>::RMSPropTrainer(T learningRate, T decay, T epsilon, bool clipGradient, T clipThreshold):
+		Trainer<T>(learningRate, clipGradient, clipThreshold), decay(decay), epsilon(epsilon) {
+	check(epsilon);
+}
+
+template <typename T>
+void RMSPropTrainer<T>::check(T epsilon) {
+	DEEP8_ARGUMENT_CHECK(0 != epsilon, "epsilon can not be 0");
+}
+
+#ifdef HAVE_HALF
+template <>
+void RMSPropTrainer<half>::check(half epsilon) {
+   DEEP8_ARGUMENT_CHECK(0 != __half2float(epsilon), "epsilon can not be 0");
+}
+#endif
+
+template <typename T>
+RMSPropTrainer<T>::~RMSPropTrainer() {
+	v.clear();
+}
+
+template <typename T>
 void RMSPropTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
 	auto value = parameter->value;
 	auto gradient = parameter->gradient;
@@ -248,7 +313,7 @@ void RMSPropTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
 	auto eigenDevice = device->eigenDevice;
 
 	if (v.find(parameter) == v.end()) {
-		auto vt = createTensorCPU(device, gradient.shape);
+		auto vt = this->createTensorCPU(device, gradient.shape);
 		vt.zero();
 
 		v[parameter] = vt;
@@ -270,11 +335,19 @@ void RMSPropTrainer<half>::trainingCPU(Parameter<half> *parameter, half scale) {
 
 DEEP8_DECLARATION_INSTANCE(RMSPropTrainer)
 
-
-
 /**********************************************************************/
 /**MomentumTrainer*/
 /**********************************************************************/
+template <typename T>
+MomentumTrainer<T>::MomentumTrainer(T learningRate, T alpha, bool clipGradient, T clipThreshold):
+		Trainer<T>(learningRate, clipGradient, clipThreshold), alpha(alpha) {
+}
+
+template <typename T>
+MomentumTrainer<T>::~MomentumTrainer() {
+	momentum.clear();
+}
+
 template <typename T>
 void MomentumTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
 	auto value = parameter->value;
@@ -284,7 +357,7 @@ void MomentumTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
 	auto eigenDevice = device->eigenDevice;
 
 	if (momentum.find(parameter) == momentum.end()) {
-		auto m = createTensorCPU(device, gradient.shape);
+		auto m = this->createTensorCPU(device, gradient.shape);
 		m.zero();
 
 		momentum[parameter] = m;

@@ -2,6 +2,11 @@
 
 namespace Deep8 {
 
+template <typename T>
+InputParameter<T>::InputParameter(Tensor<T> &value): Parameter<T>(value) {
+	this->updateGradient = false;
+	this->outputShape    = this->value.shape;
+}
 
 /**
  * feed the data into the InputParameter Node

@@ -47,10 +47,15 @@ protected:
 protected:
 	/**init device*/
 	void initDeviceCPU();
+
+#ifdef HAVE_CUDA
 	void initDeviceGPU();
 
-	Tensor<T> createTensorWithShapeCPU(Shape &shape);
 	Tensor<T> createTensorWithShapeGPU(Shape &shape);
+#endif
+
+	Tensor<T> createTensorWithShapeCPU(Shape &shape);
+
 	Tensor<T> createTensorWithShape(Shape &shape);
 
 	Variable<T>* createVariableByFunction(FunctionBase *function);

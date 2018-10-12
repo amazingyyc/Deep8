@@ -136,9 +136,6 @@ __global__ void MinusBackwardKernel1(real *inGrad, const int *inShape, const int
 	}
 }
 
-#endif
-
-#ifdef HAVE_CUDA
 template <typename T>
 void Minus<T>::forwardGPUImpl(const T *x, const int *xshape, const int *xdims,
 							  const T *y, const int *yshape, const int *ydims,
@@ -165,11 +162,9 @@ void Minus<half>::forwardGPUImpl(const half *x, const int *xshape, const int *xd
 	MinusForwardKernel<half> << <grideSize, blockSize >> > (x, xshape, xdims, y, yshape, ydims, z, zshape, zdims, N);
 }
 #endif
-#endif
 
 template <typename T>
 void Minus<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-#ifdef HAVE_CUDA
 	auto device = static_cast<GPUDevice*>(output->device());
 
 	auto x = inputs[0];
@@ -217,13 +212,7 @@ void Minus<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T>
 	forwardGPUImpl(x->data(), xshapePtr, xdimsPtr, y->data(), yshapePtr, ydimsPtr, z->data(), zshapePtr, zdimsPtr, static_cast<int>(z->shape.size()));
 
 	device->free(cudaPtr);
-
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
-
-#ifdef HAVE_CUDA
 
 template <typename T>
 void Minus<T>::backwardGPUImpl0(T *inGrad, const int *inShape, const int *inDims, const T *outGrad, const int *outShape, const int *outDims, const int N) {
@@ -262,7 +251,6 @@ void Minus<T>::backwardGPUImpl1(T *inGrad, const int *inShape, const int *inDims
 }
 
 #ifdef HAVE_HALF
-
 template <>
 void Minus<half>::backwardGPUImpl1(half *inGrad, const int *inShape, const int *inDims, const half *outGrad, const int *outShape, const int *outDims, const int N) {
 	int blockSize = 1024;
@@ -271,11 +259,9 @@ void Minus<half>::backwardGPUImpl1(half *inGrad, const int *inShape, const int *
 	MinusBackwardKernel1<half> << <grideSize, blockSize >> > (inGrad, inShape, inDims, outGrad, outShape, outDims, N);
 }
 #endif
-#endif
 
 template <typename T>
 void Minus<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
-#ifdef HAVE_CUDA
 	DEEP8_ARGUMENT_CHECK(0 == index || 1 == index, "the index is error");
 
 	auto device = static_cast<GPUDevice*>(iGradient->device());
@@ -316,11 +302,9 @@ void Minus<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Te
 	}
 
 	device->free(cudaPtr);
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
 
 DEEP8_DECLARATION_GPU_FUNC(Minus)
 
+#endif
 }

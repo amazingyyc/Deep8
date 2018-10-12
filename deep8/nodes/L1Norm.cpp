@@ -16,8 +16,13 @@ struct L1NormBackwardExpr {
 };
 
 template <typename T>
+L1Norm<T>::L1Norm(std::vector<Node *> &inputs): Function<T>(inputs) {
+    check();
+}
+
+template <typename T>
 void L1Norm<T>::check() {
-    Function < T > ::check();
+    Function<T>::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L1Norm Function needs only 1 input");
 

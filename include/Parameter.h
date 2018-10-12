@@ -11,16 +11,11 @@ namespace Deep8 {
 template <typename T>
 class Parameter: public Variable<T> {
 protected:
-    explicit Parameter(): Variable<T>() {
-    }
-
-    explicit Parameter(Tensor<T> &value): Variable<T>(value) {
-    }
+    explicit Parameter();
+    explicit Parameter(Tensor<T> &value);
 
 public:
-    explicit Parameter(Tensor<T> &value, Tensor<T> &gradient): Variable<T>(value, gradient) {
-        check();
-    }
+    explicit Parameter(Tensor<T> &value, Tensor<T> &gradient);
 
 protected:
 	void check() override;

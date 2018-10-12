@@ -11,10 +11,7 @@ namespace Deep8 {
 template <typename T>
 class ConstantParameter: public Parameter<T> {
 public:
-    explicit ConstantParameter(Tensor<T> &value): Parameter<T>(value) {
-        this->updateGradient = false;
-		this->outputShape = value.shape;
-    }
+    explicit ConstantParameter(Tensor<T> &value);
 
 	void zeroGradient() override;
 	bool isScalar() override;

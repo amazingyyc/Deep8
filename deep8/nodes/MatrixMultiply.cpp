@@ -1,6 +1,10 @@
 #include "MatrixMultiply.h"
 
 namespace Deep8 {
+template <typename T>
+MatrixMultiply<T>::MatrixMultiply(std::vector<Node *> &inputs) : Function<T>(inputs) {
+        check();
+}
 
 template <typename T>
 void MatrixMultiply<T>::check() {

@@ -1,15 +1,20 @@
+#include "Device.h"
 #include "Executor.h"
 #include "TensorInit.h"
 
 namespace Deep8 {
 
 template <typename T>
-Executor<T>::Executor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU) 
+Executor<T>::Executor(Trainer<T> *tr, DeviceType deviceType)
 	:trainer(tr), nodeCollection(), parameterCollection(), nonParameterCollection() {
 	if (deviceType == DeviceType::CPU) {
 		initDeviceCPU();
 	} else {
+#ifdef HAVE_CUDA
 		initDeviceGPU();
+#else
+		DEEP8_RUNTIME_ERROR("not have a GPU");
+#endif
 	}
 }
 
@@ -44,17 +49,7 @@ Tensor<T> Executor<T>::createTensorWithShapeCPU(Shape &shape) {
 	return Tensor<T>(storage, 0, shape);
 }
 
-template <typename T>
-Tensor<T> Executor<T>::createTensorWithShapeGPU(Shape &shape) {
-	size_t size = sizeof(T) * shape.size();
 
-	auto ptr = device->malloc(size);
-	auto refPtr = (size_t*)device->mallocCPU(sizeof(size_t));
-
-	TensorStorage storage(ptr, refPtr, size, device);
-
-	return Tensor<T>(storage, 0, shape);
-}
 
 template <typename T>
 Tensor<T> Executor<T>::createTensorWithShape(Shape &shape) {
@@ -109,14 +104,14 @@ Parameter<T>* Executor<T>::addParameter(Shape &shape) {
 }
 
 template <typename T>
-InputParameter<T>* Executor<T>::addInputParameter(std::initializer_list<size_t> list, T *ptr = nullptr) {
+InputParameter<T>* Executor<T>::addInputParameter(std::initializer_list<size_t> list, T *ptr) {
 	Shape shape(list);
 
 	return addInputParameter(shape, ptr);
 }
 
 template <typename T>
-InputParameter<T>* Executor<T>::addInputParameter(Shape &shape, T *ptr = nullptr) {
+InputParameter<T>* Executor<T>::addInputParameter(Shape &shape, T *ptr) {
 	auto value = createTensorWithShape(shape);
 
 	auto inputParameter = new InputParameter<T>(value);

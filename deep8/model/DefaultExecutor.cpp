@@ -4,7 +4,7 @@
 namespace Deep8 {
 
 template <typename T>
-DefaultExecutor<T>::DefaultExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true) :
+DefaultExecutor<T>::DefaultExecutor(Trainer<T> *tr, DeviceType deviceType, bool flag) :
 	Executor<T>(tr, deviceType), clearFlag(flag) {
 }
 
@@ -105,6 +105,5 @@ void DefaultExecutor<T>::backward(Node *last) {
 }
 
 DEEP8_DECLARATION_INSTANCE(DefaultExecutor)
-
 
 }

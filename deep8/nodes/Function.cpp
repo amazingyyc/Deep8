@@ -2,33 +2,58 @@
 
 namespace Deep8 {
 
+FunctionBase::FunctionBase(): Node(), output(nullptr), shared(false) {
+	this->type = NodeType::Function;
+}
+
+FunctionBase::FunctionBase(std::vector<Node*> &inputs): Node(inputs), output(nullptr), shared(false) {
+	this->type = NodeType::Function;
+}
+
+void FunctionBase::check() {
+	for (auto item : inputs) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be Variable type");
+	}
+}
+
+void FunctionBase::forward() {
+}
+
+void FunctionBase::backward() {
+}
+
+
+template <typename T>
+Function<T>::Function(): FunctionBase() {
+}
+
+template <typename T>
+Function<T>::Function(std::vector<Node*> &inputs): FunctionBase(inputs) {
+}
+
 template <typename T>
 void Function<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
 	DEEP8_RUNTIME_ERROR("can not call this forwardCPU by Function class");
 }
 
+
+
+template <typename T>
+void Function<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
+	DEEP8_RUNTIME_ERROR("can not call this backwardCPU by Function class");
+}
+
+#ifdef HAVE_CUDA
 template <typename T>
 void Function<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
 	DEEP8_RUNTIME_ERROR("can not call this forwardGPU by Function class");
 }
 
 template <typename T>
-void Function<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-	const Tensor<T> *output,
-	const Tensor<T> *outputGradient,
-	size_t index,
-	Tensor<T> *iGradient) {
-	DEEP8_RUNTIME_ERROR("can not call this backwardCPU by Function class");
-}
-
-template <typename T>
-void Function<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
-	const Tensor<T> *output,
-	const Tensor<T> *outputGradient,
-	size_t index,
-	Tensor<T> *iGradient) {
+void Function<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
 	DEEP8_RUNTIME_ERROR("can not call this backwardGPU by Function class");
 }
+#endif
 
 template <typename T>
 void Function<T>::forward() {
@@ -54,7 +79,11 @@ void Function<T>::forward() {
 	if (DeviceType::CPU == deviceType) {
 		this->forwardCPU(inputValues, outputValue);
 	} else {
+#ifdef HAVE_CUDA
 		this->forwardGPU(inputValues, outputValue);
+#else
+		DEEP8_RUNTIME_ERROR("not have a GPU");
+#endif
 	}
 }
 
@@ -92,7 +121,11 @@ void Function<T>::backward() {
 			auto inputVariable = static_cast<Variable<T>*>(inputs[i]);
 
 			if (inputVariable->updateGradient) {
+#ifdef HAVE_CUDA
 				this->backwardGPU(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
+#else
+				DEEP8_RUNTIME_ERROR("not have a GPU");
+#endif
 			}
 		}
 	}

@@ -31,11 +31,8 @@ __global__ void AbsBackwardKernel(const real *x, real *xGrad, const real *yGrad,
 	}
 }
 
-#endif
-
 template <typename T>
 void Abs<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-#ifdef HAVE_CUDA
 	auto x = inputs[0]->data();
 	auto y = output->data();
 	const int N = (int)output->shape.size();
@@ -49,10 +46,6 @@ void Abs<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *
 	grideSize = (N + blockSize - 1) / blockSize;
 
 	AbsForwardKernel<T> << <grideSize, blockSize >> > (x, y, N);
-
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
 
 #ifdef HAVE_HALF
@@ -75,8 +68,6 @@ void Abs<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 						const Tensor<T> *outputGradient,
 						size_t index,
 						Tensor<T> *iGradient) {
-
-#ifdef HAVE_CUDA
 	DEEP8_ARGUMENT_CHECK(0 == index, "the index of Abs backward is error!");
 
 	auto x = inputs[0]->data();
@@ -94,10 +85,6 @@ void Abs<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 	grideSize = (N + blockSize - 1) / blockSize;
 
 	AbsBackwardKernel<T> << <grideSize, blockSize >> > (x, dx, dy, N);
-
-#else
-	DEEP8_RUNTIME_ERROR("can not call the GPU function without a GPU");
-#endif
 }
 
 #ifdef HAVE_HALF
@@ -123,5 +110,7 @@ void Abs<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
 #endif
 
 DEEP8_DECLARATION_GPU_FUNC(Abs);
+
+#endif
 
 }

@@ -2,6 +2,58 @@
 
 namespace Deep8 {
 
+VariableBase::VariableBase(): updateGradient(false) {
+	this->type = NodeType::Variable;
+}
+
+VariableBase::VariableBase(bool update) : updateGradient(update) {
+	this->type = NodeType::Variable;
+}
+
+VariableBase::VariableBase(std::vector<Node*> &inputs, bool update) : Node(inputs), updateGradient(update) {
+	this->type = NodeType::Variable;
+}
+
+/**
+ * @brief the Variable do nothing in forward and backward process
+ */
+void VariableBase::forward() {
+}
+
+void VariableBase::backward() {
+}
+
+template <typename T>
+Variable<T>::Variable(): VariableBase(false) {
+}
+
+template <typename T>
+Variable<T>::Variable(Tensor<T> &v): value(v), VariableBase(false) {
+}
+
+template <typename T>
+Variable<T>::Variable(Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(true) {
+}
+
+template <typename T>
+Variable<T>::Variable(Node *input, Shape &shape) : VariableBase(false) {
+	this->inputs.emplace_back(input);
+	this->outputShape = shape;
+
+	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
+
+	for (auto i : inputs) {
+		DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
+		DEEP8_ARGUMENT_CHECK(i->outputShape == this->outputShape, "the shape of the input, pointer and gradient must be same")
+	}
+}
+
+template <typename T>
+Variable<T>::Variable(Node *input, Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(true) {
+	this->inputs.emplace_back(input);
+	check();
+}
+
 template <typename T>
 void Variable<T>::check() {
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");

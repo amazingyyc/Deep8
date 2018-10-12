@@ -95,6 +95,59 @@ void TensorInit<half>::positiveUnitballCPU(Tensor<half> &tensor) {
 }
 #endif
 
+/**set tensor to constant*/
+template <typename T>
+void TensorInit<T>::constant(Tensor<T> &tensor, T v) {
+	if (DeviceType::CPU == tensor.device()->type) {
+		constantCPU(tensor, v);
+	} else {
+#ifdef HAVE_CUDA
+		constantGPU(tensor, v);
+#else
+		DEEP8_RUNTIME_ERROR("not have a GPU");
+#endif
+	}
+}
+
+template <typename T>
+void TensorInit<T>::uniform(Tensor<T> &tensor, T left, T right) {
+	if (DeviceType::CPU == tensor.device()->type) {
+		uniformCPU(tensor, left, right);
+	} else {
+#ifdef HAVE_CUDA
+		uniformGPU(tensor);
+#else
+		DEEP8_RUNTIME_ERROR("not have a GPU");
+#endif
+	}
+}
+
+template <typename T>
+void TensorInit<T>::gaussian(Tensor<T> &tensor, T mean, T stddev) {
+	if (DeviceType::CPU == tensor.device()->type) {
+		gaussianCPU(tensor, mean, stddev);
+	} else {
+#ifdef HAVE_CUDA
+		gaussianGPU(tensor, mean, stddev);
+#else
+		DEEP8_RUNTIME_ERROR("not have a GPU");
+#endif
+	}
+}
+
+template <typename T>
+void TensorInit<T>::positiveUnitball(Tensor<T> &tensor) {
+	if (DeviceType::CPU == tensor.device()->type) {
+		positiveUnitballCPU(tensor);
+	} else {
+#ifdef HAVE_CUDA
+		positiveUnitballGPU(tensor);
+#else
+		DEEP8_RUNTIME_ERROR("not have a GPU");
+#endif
+	}
+}
+
 DEEP8_DECLARATION_INSTANCE(TensorInit)
 
 }

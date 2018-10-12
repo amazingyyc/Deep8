@@ -36,9 +36,9 @@
 //#include "SquareTest.h"
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
-// #include "LinearRegressionTest.h"
+#include "LinearRegressionTest.h"
 //#include "CPUMemoryPoolTest.h"
-#include "LinearRegressionGPUTest.h"
+//#include "LinearRegressionGPUTest.h"
 
 using namespace Deep8;
 

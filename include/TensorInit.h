@@ -17,44 +17,19 @@ private:
 	void gaussianCPU(Tensor<T> &tensor, T mean, T stddev);
 	void positiveUnitballCPU(Tensor<T> &tensor);
 
+#ifdef HAVE_CUDA
 	void constantGPU(Tensor<T> &tensor, T v);
 	void uniformGPU(Tensor<T> &tensor);
 	void gaussianGPU(Tensor<T> &tensor, T mean, T stddev);
 	void positiveUnitballGPU(Tensor<T> &tensor);
+#endif
 
 public:
     /**set tensor to constant*/
-    void constant(Tensor<T> &tensor, T v) {
-        if (DeviceType::CPU == tensor.device()->type) {
-            constantCPU(tensor, v);
-        } else {
-            constantGPU(tensor, v);
-        }
-    }
-
-    void uniform(Tensor<T> &tensor, T left = 0.0, T right = 1.0) {
-        if (DeviceType::CPU == tensor.device()->type) {
-            uniformCPU(tensor, left, right);
-        } else {
-            uniformGPU(tensor);
-        }
-    }
-
-    void gaussian(Tensor<T> &tensor, T mean = 0.0, T stddev = 1.0) {
-        if (DeviceType::CPU == tensor.device()->type) {
-            gaussianCPU(tensor, mean, stddev);
-        } else {
-            gaussianGPU(tensor, mean, stddev);
-        }
-    }
-
-    void positiveUnitball(Tensor<T> &tensor) {
-        if (DeviceType::CPU == tensor.device()->type) {
-            positiveUnitballCPU(tensor);
-        } else {
-            positiveUnitballGPU(tensor);
-        }
-    }
+    void constant(Tensor<T> &tensor, T v);
+    void uniform(Tensor<T> &tensor, T left = 0.0, T right = 1.0);
+    void gaussian(Tensor<T> &tensor, T mean = 0.0, T stddev = 1.0);
+    void positiveUnitball(Tensor<T> &tensor);
 };
 
 }

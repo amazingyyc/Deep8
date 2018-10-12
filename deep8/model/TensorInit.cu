@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 #ifdef HAVE_CUDA
+
 template <typename real>
 __global__ void TensorInitConstantKernel(real *value, real scalar, int N) {
 	int start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -34,35 +35,26 @@ __global__ void TensorInitConvertFloatToHalf(const float *from, half* to, int N)
 	}
 }
 #endif
-#endif
 
 
 template <>
 void TensorInit<float>::constantGPU(Tensor<float> &tensor, float v) {
-#ifdef HAVE_CUDA
 	int N = (int)tensor.size();
 
 	int blockSize = 1024;
 	int grideSize = (N + blockSize - 1) / blockSize;
 
 	TensorInitConstantKernel<float> << <grideSize, blockSize >> > (tensor.data(), v, N);
-#else
-	DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
 }
 
 template <>
 void TensorInit<double>::constantGPU(Tensor<double> &tensor, double v) {
-#ifdef HAVE_CUDA
 	int N = (int)tensor.size();
 
 	int blockSize = 1024;
 	int grideSize = (N + blockSize - 1) / blockSize;
 
 	TensorInitConstantKernel<double> << <grideSize, blockSize >> > (tensor.data(), v, N);
-#else
-	DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
 }
 
 #ifdef HAVE_HALF
@@ -79,22 +71,14 @@ void TensorInit<half>::constantGPU(Tensor<half> &tensor, half v) {
 
 template <>
 void TensorInit<float>::uniformGPU(Tensor<float> &tensor) {
-#ifdef HAVE_CUDA
 	auto device = static_cast<GPUDevice*>(tensor.device());
 	CURAND_CHECK(curandGenerateUniform(device->curandGenerator, tensor.data(), (size_t)tensor.size()));
-#else
-	DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
 }
 
 template <>
 void TensorInit<double>::uniformGPU(Tensor<double> &tensor) {
-#ifdef HAVE_CUDA
 	auto device = static_cast<GPUDevice*>(tensor.device());
 	CURAND_CHECK(curandGenerateUniformDouble(device->curandGenerator, tensor.data(), (size_t)tensor.size()));
-#else
-DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
 }
 
 #ifdef HAVE_HALF
@@ -119,24 +103,16 @@ void TensorInit<half>::uniformGPU(Tensor<half> &tensor) {
 
 template <>
 void TensorInit<float>::gaussianGPU(Tensor<float> &tensor, float mean, float stddev) {
-#ifdef HAVE_CUDA
 	auto device = static_cast<GPUDevice*>(tensor.device());
 
 	CURAND_CHECK(curandGenerateNormal(device->curandGenerator, tensor.data(), (size_t)tensor.size(), mean, stddev));
-#else
-	DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
 }
 
 template <>
 void TensorInit<double>::gaussianGPU(Tensor<double> &tensor, double mean, double stddev) {
-#ifdef HAVE_CUDA
 	auto device = static_cast<GPUDevice*>(tensor.device());
 
 	CURAND_CHECK(curandGenerateNormalDouble(device->curandGenerator, tensor.data(), (size_t)tensor.size(), mean, stddev));
-#else
-DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
 }
 
 #ifdef HAVE_HALF
@@ -161,7 +137,6 @@ void TensorInit<half>::gaussianGPU(Tensor<half> &tensor, half mean, half stddev)
 
 template <>
 void TensorInit<float>::positiveUnitballGPU(Tensor<float> &tensor) {
-#ifdef HAVE_CUDA
 	auto device = static_cast<GPUDevice*>(tensor.device());
 	int N = (int)tensor.size();
 
@@ -177,14 +152,10 @@ void TensorInit<float>::positiveUnitballGPU(Tensor<float> &tensor) {
 
 		TensorInitPositiveUnitballKernel<float> << <grideSize, blockSize >> > (tensor.data(), sum, N);
 	}
-#else
-DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
 }
 
 template <>
 void TensorInit<double>::positiveUnitballGPU(Tensor<double> &tensor) {
-#ifdef HAVE_CUDA
 	auto device = static_cast<GPUDevice*>(tensor.device());
 	int N = (int)tensor.size();
 
@@ -200,9 +171,6 @@ void TensorInit<double>::positiveUnitballGPU(Tensor<double> &tensor) {
 
 		TensorInitPositiveUnitballKernel<double> << <grideSize, blockSize >> > (tensor.data(), sum, N);
 	}
-#else
-DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
 }
 
 #ifdef HAVE_HALF
@@ -230,6 +198,8 @@ void TensorInit<half>::positiveUnitballGPU(Tensor<half> &tensor) {
 
 	device->free(ptr);
 }
+#endif
+
 #endif
 
 }
