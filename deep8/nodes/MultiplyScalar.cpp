@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+MultiplyScalar<T>::MultiplyScalar(std::vector<Node *> &inputs, T scalar) : Function<T>(inputs), scalar(scalar) {
+	check();
+}
+
+template <typename T>
 void MultiplyScalar<T>::check() {
 	Function<T>::check();
 
@@ -31,6 +36,7 @@ void MultiplyScalar<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient) * scalar;
 }
 
-DEEP8_DECLARATION_INSTANCE(MultiplyScalar)
+DEEP8_RE_DECLARATION_HALF_FUNC(MultiplyScalar);
+DEEP8_DECLARATION_INSTANCE(MultiplyScalar);
 
 }

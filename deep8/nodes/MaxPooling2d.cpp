@@ -3,6 +3,12 @@
 namespace Deep8 {
 
 template <typename T>
+MaxPooling2d<T>::MaxPooling2d(std::vector<Node *> &inputs, bool covered, size_t filterH, size_t filterW, size_t strideH, size_t strideW )
+		:Function<T>(inputs), covered(covered), filterHeight(filterH), filterWidth(filterW), strideY(strideH), strideX(strideW) {
+	check();
+}
+
+template <typename T>
 void MaxPooling2d<T>::check() {
 	Function<T>::check();
 
@@ -237,6 +243,7 @@ void MaxPooling2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	barrier.Wait();
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(MaxPooling2d)
 DEEP8_DECLARATION_INSTANCE(MaxPooling2d)
 
 }

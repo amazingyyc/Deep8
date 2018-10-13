@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+Square<T>::Square(std::vector<Node*> &inputs): Function<T>(inputs) {
+	check();
+}
+
+template <typename T>
 void Square<T>::check() {
 	Function<T>::check();
 
@@ -29,7 +34,7 @@ void Square<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const T
 	eTVec(iGradient).device(*device) += eTVec(outputGradient) * eTVec(inputs[0]) * T(2);
 }
 
-
-DEEP8_DECLARATION_INSTANCE(Square)
+DEEP8_RE_DECLARATION_HALF_FUNC(Square);
+DEEP8_DECLARATION_INSTANCE(Square);
 
 }

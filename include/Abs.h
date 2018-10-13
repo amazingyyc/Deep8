@@ -17,12 +17,12 @@ public:
     void check() override;
 
 protected:
-	virtual void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-	virtual void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
+	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
+	void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
 
 #ifdef HAVE_CUDA
-	virtual void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-	virtual void backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
+	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
+	void backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
 #endif
 };
 

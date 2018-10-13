@@ -3,6 +3,24 @@
 namespace Deep8 {
 
 template <typename T>
+ReShape<T>::ReShape(std::vector<Node *> &inputs, Shape &shape): Function<T>(inputs), reShape(shape) {
+	this->shared = true;
+	check();
+}
+
+template <typename T>
+ReShape<T>::ReShape(std::vector<Node *> &inputs, std::initializer_list<size_t> shape): Function<T>(inputs), reShape(shape) {
+	this->shared = true;
+	check();
+}
+
+template <typename T>
+ReShape<T>::ReShape(std::vector<Node *> &inputs, std::vector<size_t> shape): Function<T>(inputs), reShape(shape) {
+	this->shared = true;
+	check();
+}
+
+template <typename T>
 void ReShape<T>::check() {
 	Function<T>::check();
 
@@ -12,6 +30,28 @@ void ReShape<T>::check() {
 
 	this->outputShape = reShape;
 }
+
+template <typename T>
+void ReShape<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {}
+
+template <typename T>
+void ReShape<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
+				 const Tensor<T> *output,
+				 const Tensor<T> *outputGradient,
+				 size_t index,
+				 Tensor<T> *iGradient) {}
+
+#ifdef HAVE_CUDA
+template <typename T>
+void ReShape<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {}
+
+template <typename T>
+void ReShape<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
+							 const Tensor<T> *output,
+							 const Tensor<T> *outputGradient,
+							 size_t index,
+							 Tensor<T> *iGradient) {}
+#endif
 
 template <typename T>
 void ReShape<T>::forward() {

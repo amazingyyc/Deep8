@@ -107,107 +107,18 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 # deep8
 include_directories(include)
-include_directories(deep8/basic)
-include_directories(deep8/model)
-include_directories(deep8/nodes)
-
-
-set ( DEEP8_SRC_FILES
-		
-		deep8/model/Device.cpp
-		deep8/model/MemoryAllocator.cpp
-		deep8/model/MemoryPool.cpp
-		deep8/model/Shape.cpp
-		deep8/model/TensorStorage.cpp
-		deep8/model/Tensor.cpp
-
-		deep8/model/Executor.cpp
-		deep8/model/DefaultExecutor.cpp
-		deep8/model/Trainer.cpp
-		deep8/model/TensorInit.cpp
-
-		deep8/nodes/Function.cpp
-		deep8/nodes/Abs.cpp
-		deep8/nodes/L1Norm.cpp
-		deep8/nodes/MatrixMultiply.cpp
-		deep8/nodes/Minus.cpp
-		deep8/nodes/Variable.cpp
-		deep8/nodes/Parameter.cpp
-		deep8/nodes/InputParameter.cpp
-		deep8/nodes/ConstantParameter.cpp
-	
-		# deep8/basic/MemoryAllocator.cpp
-		# deep8/basic/TensorStorage.cpp
-		# deep8/basic/Tensor.cpp
-		# 
-		# deep8/nodes/Abs.cpp 
-		# deep8/nodes/Add.cpp 
-		# deep8/nodes/AddScalar.cpp 
-		# deep8/nodes/AvgPooling2d.cpp 
-		# deep8/nodes/ConstantParameter.cpp 
-		# deep8/nodes/Conv2d.cpp 
-		# deep8/nodes/DeConv2d.cpp 
-		# deep8/nodes/Divide.cpp 
-		# deep8/nodes/DivideScalar.cpp 
-		# deep8/nodes/Exp.cpp 
-		# deep8/nodes/Function.cpp 
-		# deep8/nodes/InputParameter.cpp 
-		# deep8/nodes/L1Norm.cpp 
-		# deep8/nodes/L2Norm.cpp 
-		# deep8/nodes/Linear.cpp 
-		# deep8/nodes/Log.cpp 
-		# deep8/nodes/LReLu.cpp 
-		# deep8/nodes/MatrixMultiply.cpp 
-		# deep8/nodes/MaxPooling2d.cpp 
-		# deep8/nodes/Minus.cpp 
-		# deep8/nodes/MinusScalar.cpp 
-		# deep8/nodes/Multiply.cpp 
-		# deep8/nodes/MultiplyScalar.cpp 
-		# deep8/nodes/Parameter.cpp 
-		# deep8/nodes/Pow.cpp 
-		# deep8/nodes/ReLu.cpp 
-		# deep8/nodes/ReShape.cpp 
-		# deep8/nodes/ScalarDivide.cpp 
-		# deep8/nodes/ScalarMinus.cpp 
-		# deep8/nodes/Sigmoid.cpp 
-		# deep8/nodes/Softmax.cpp 
-		# deep8/nodes/Square.cpp 
-		# deep8/nodes/SumElements.cpp 
-		# deep8/nodes/TanH.cpp 
-		# deep8/nodes/Variable.cpp 
-		)
-
-set ( DEEP8_CUDA_SRC_FILES
-
-		deep8/model/GPUDevice.cu
-		deep8/model/GPUMemoryAllocator.cu
-		deep8/model/GPUMemoryPool.cu
-
-		deep8/model/Executor.cu
-		deep8/model/Trainer.cu
-		deep8/model/TensorInit.cu
-
-		deep8/nodes/Abs.cu
-		deep8/nodes/L1Norm.cu
-		deep8/nodes/MatrixMultiply.cu
-		deep8/nodes/Minus.cu
-
-		# deep8/basic/MemoryAllocator.cu
-		# deep8/basic/TensorStorage.cu
-		# deep8/basic/Tensor.cu
-		# 
-		# deep8/nodes/L1Norm.cu
-		)
 
 # Deep8 test
 include_directories(test)
 
-set (DEEP8_TEST_SRC_FILES test/Deep8Test.cpp)
-set (DEEP8_TEST_CUDA_SRC_FILES test/Deep8Test.cpp)
-
 file(GLOB DEEP8_HEAD_FILES "include/*.h")
 file(GLOB DEEP8_TEST_HEAD_FILES "test/*.h")
 
+file(GLOB_RECURSE DEEP8_SRC_FILES "deep8/*.cpp")
+file(GLOB_RECURSE DEEP8_CUDA_SRC_FILES "deep8/*.cu")
+
+set (DEEP8_TEST_SRC_FILES test/Deep8Test.cpp)
+set (DEEP8_TEST_CUDA_SRC_FILES test/Deep8Test.cpp)
 
 if (HAVE_GPU AND HAVE_CUDA)
 	message(STATUS "compile with the CUDA")
@@ -223,7 +134,6 @@ if (HAVE_GPU AND HAVE_CUDA)
 	#	message(STATUS ${CUDA_NVCC_FLAGS})
 	#endif()
 
-	
 	string(APPEND CMAKE_CUDA_FLAGS " -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_62,code=sm_62 -gencode arch=compute_70,code=sm_70  -gencode arch=compute_72,code=sm_72 -DVERBOSE -DEIGEN_USE_THREADS -DHAVE_CUDA -D_FORCE_INLINES")
 
 	# enable cudnn

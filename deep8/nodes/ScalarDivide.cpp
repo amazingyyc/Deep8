@@ -27,6 +27,11 @@ struct ScalarDivideBackwardExpr {
 };
 
 template <typename T>
+ScalarDivide<T>::ScalarDivide(std::vector<Node*> &inputs, T scalar) : Function<T>(inputs), scalar(scalar) {
+	check();
+}
+
+template <typename T>
 void ScalarDivide<T>::check() {
 	Function<T>::check();
 
@@ -55,6 +60,7 @@ void ScalarDivide<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient) * eTVec(inputs[0]).unaryExpr(ScalarDivideBackwardExpr<T>(scalar));
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(ScalarDivide);
 DEEP8_DECLARATION_INSTANCE(ScalarDivide)
 
 }

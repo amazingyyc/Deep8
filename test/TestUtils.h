@@ -3,6 +3,11 @@
 
 #include <stdarg.h>
 
+#include "Shape.h"
+#include "Tensor.h"
+#include "Variable.h"
+#include "Parameter.h"
+
 namespace Deep8 {
 
 #if HAVE_CUDA

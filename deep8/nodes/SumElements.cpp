@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+SumElements<T>::SumElements(std::vector<Node *> &inputs): Function<T>(inputs) {
+		check();
+}
+
+template <typename T>
 void SumElements<T>::check() {
 	Function<T>::check();
 
@@ -47,6 +52,7 @@ void SumElements<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).reshape(iGradientDims).device(*eigenDevice) += eTVec(outputGradient).reshape(outputGradientDims).broadcast(broadDims);
 }
 
-DEEP8_DECLARATION_INSTANCE(SumElements)
+DEEP8_RE_DECLARATION_HALF_FUNC(SumElements);
+DEEP8_DECLARATION_INSTANCE(SumElements);
 
 }

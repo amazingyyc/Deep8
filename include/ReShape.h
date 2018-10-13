@@ -10,39 +10,32 @@ class ReShape: public Function<T> {
 public:
     Shape reShape;
 
-    explicit ReShape(std::vector<Node *> &inputs, Shape &shape): Function<T>(inputs), reShape(shape) {
-        this->shared = true;
-        check();
-    }
+    explicit ReShape(std::vector<Node *> &inputs, Shape &shape);
 
-    explicit ReShape(std::vector<Node *> &inputs, std::initializer_list<size_t> shape): Function<T>(inputs), reShape(shape) {
-        this->shared = true;
-        check();
-    }
+    explicit ReShape(std::vector<Node *> &inputs, std::initializer_list<size_t> shape);
 
-    explicit ReShape(std::vector<Node *> &inputs, std::vector<size_t> shape): Function<T>(inputs), reShape(shape) {
-        this->shared = true;
-        check();
-    }
+    explicit ReShape(std::vector<Node *> &inputs, std::vector<size_t> shape);
 
 	void check() override;
 
 protected:
-    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {}
-
-    void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override {}
+    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
                      const Tensor<T> *output,
                      const Tensor<T> *outputGradient,
                      size_t index,
-                     Tensor<T> *iGradient) override {}
+                     Tensor<T> *iGradient) override;
+
+#ifdef HAVE_CUDA
+    void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                      const Tensor<T> *output,
                      const Tensor<T> *outputGradient,
                      size_t index,
-                     Tensor<T> *iGradient) override {}
+                     Tensor<T> *iGradient) override;
+#endif
 
 public:
 	void forward() override;

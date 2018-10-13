@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+Multiply<T>::Multiply(std::vector<Node *> &inputs) : Function<T>(inputs) {
+	check();
+}
+
+template <typename T>
 void Multiply<T>::check() {
 	Function<T>::check();
 
@@ -135,6 +140,7 @@ void Multiply<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	}
 }
 
-DEEP8_DECLARATION_INSTANCE(Multiply)
+DEEP8_RE_DECLARATION_HALF_FUNC(Multiply);
+DEEP8_DECLARATION_INSTANCE(Multiply);
 
 }

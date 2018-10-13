@@ -8,15 +8,15 @@ namespace Deep8 {
 TEST(L1Norm, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, long double>(device, size_t(10), size_t(200));
-    auto output = createTensor<CPUDevice, long double>(device, size_t(10), size_t(1));
+    auto input  = createTensor<CPUDevice, double>(device, size_t(10), size_t(200));
+    auto output = createTensor<CPUDevice, double>(device, size_t(10), size_t(1));
 
-    auto inputVar1 = createFakeVariable<CPUDevice, long double>(device);
+    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
 
     std::vector<Node*> inputs = {&inputVar1};
-    L1Norm<long double> l1Norm(inputs);
+    L1Norm<double> l1Norm(inputs);
 
-    std::vector<const Tensor<long double>*> inputTensor = {&input};
+    std::vector<const Tensor<double>*> inputTensor = {&input};
 
     l1Norm.forwardCPU(inputTensor, &output);
 
@@ -34,7 +34,6 @@ TEST(L1Norm, forwardCPU) {
 
     freeTensor(device, input);
     freeTensor(device, output);
-
 
 	freeFakeVariable(inputVar1);
 

@@ -16,9 +16,9 @@ TensorStorage::TensorStorage(const TensorStorage &other) {
 		(*other.refPtr)++;
 	}
 
-	ptr = other.ptr;
+	ptr    = other.ptr;
 	refPtr = other.refPtr;
-	size = other.size;
+	size   = other.size;
 	device = other.device;
 }
 
@@ -45,9 +45,9 @@ TensorStorage& TensorStorage::operator=(const TensorStorage &other) {
 		}
 	}
 
-	ptr = other.ptr;
+	ptr    = other.ptr;
 	refPtr = other.refPtr;
-	size = other.size;
+	size   = other.size;
 	device = other.device;
 
 	return *this;
@@ -58,9 +58,9 @@ void TensorStorage::free() {
 		device->free(ptr);
 		device->free(refPtr);
 
-		ptr = nullptr;
+		ptr    = nullptr;
 		refPtr = nullptr;
-		size = 0;
+		size   = 0;
 
 		device = nullptr;
 	} else {
@@ -68,13 +68,13 @@ void TensorStorage::free() {
 		device->free(ptr);
 		device->freeCPU(refPtr);
 
-		ptr = nullptr;
+		ptr    = nullptr;
 		refPtr = nullptr;
-		size = 0;
+		size   = 0;
 
 		device = nullptr;
 #else
-		DEEP8_RUNTIME_ERROR("can not call GPU function withou a GPU");
+		DEEP8_RUNTIME_ERROR("can not call GPU function without a GPU");
 #endif
 	}
 }

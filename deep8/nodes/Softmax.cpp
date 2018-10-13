@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+Softmax<T>::Softmax(std::vector<Node *> &inputs): Function<T>(inputs) {
+		check();
+}
+
+template <typename T>
 void Softmax<T>::check() {
 	Function<T>::check();
 
@@ -40,13 +45,6 @@ void Softmax<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 	cpuDevice->free(tempPtr);
 }
 
-#ifdef HAVE_HALF
-template <>
-void Softmax<half>::forwardCPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif // HAVE_HALF
-
 template <typename T>
 void Softmax<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 				const Tensor<T> *output,
@@ -80,14 +78,7 @@ void Softmax<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	cpuDevice->free(sptr);
 }
 
-#ifdef HAVE_HALF
-template <>
-void Softmax<half>::backwardCPU(const std::vector<const Tensor<half>*> &inputs, const Tensor<half> *output, const Tensor<half> *outputGradient, size_t index, Tensor<half> *iGradient) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif // HAVE_HALF
-
+DEEP8_RE_DECLARATION_HALF_FUNC(Softmax);
 DEEP8_DECLARATION_INSTANCE(Softmax)
-
 
 }

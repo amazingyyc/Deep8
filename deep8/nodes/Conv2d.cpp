@@ -3,8 +3,14 @@
 namespace Deep8 {
 
 template <typename T>
+Conv2d<T>::Conv2d(std::vector<Node *> &inputs, bool covered, size_t strideH, size_t strideW, size_t dilationH , size_t dilationW)
+        :Function<T>(inputs), covered(covered), strideY(strideH), strideX(strideW), dilationY(dilationH), dilationX(dilationW) {
+    check();
+}
+
+template <typename T>
 void Conv2d<T>::check() {
-    Function < T > ::check();
+    Function<T>::check();
 
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "need 2 inputs node");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride can not smaller than 1");
@@ -289,6 +295,7 @@ void Conv2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
     }
 }
 
-DEEP8_DECLARATION_INSTANCE(Conv2d)
+DEEP8_RE_DECLARATION_HALF_FUNC(Conv2d);
+DEEP8_DECLARATION_INSTANCE(Conv2d);
 
 }

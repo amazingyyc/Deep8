@@ -3,8 +3,14 @@
 namespace Deep8 {
 
 template <typename T>
+AvgPooling2d<T>::AvgPooling2d(std::vector<Node *> &inputs, bool covered , size_t filterH, size_t filterW, size_t strideH, size_t strideW):
+Function<T>(inputs), covered(covered), filterHeight(filterH), filterWidth(filterW), strideY(strideH), strideX(strideW) {
+    check();
+}
+
+template <typename T>
 void AvgPooling2d<T>::check() {
-    Function < T > ::check();
+    Function<T>::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the AvgPooling2d only need 1 input");
     DEEP8_ARGUMENT_CHECK(filterHeight >= 1 && filterWidth >= 1 && strideY >= 1 && strideX >= 1,
@@ -251,6 +257,7 @@ void AvgPooling2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
     barrier.Wait();
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(AvgPooling2d);
 DEEP8_DECLARATION_INSTANCE(AvgPooling2d)
 
 }

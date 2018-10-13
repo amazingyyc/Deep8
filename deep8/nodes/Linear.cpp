@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+Linear<T>::Linear(std::vector<Node*> &inputs, T a, T b):Function<T>(inputs), a(a), b(b) {
+	check();
+}
+
+template <typename T>
 void Linear<T>::check() {
 	Function<T>::check();
 
@@ -31,6 +36,7 @@ void Linear<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient) * a;
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(Linear);
 DEEP8_DECLARATION_INSTANCE(Linear)
 
 }

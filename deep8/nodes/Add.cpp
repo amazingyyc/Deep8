@@ -113,6 +113,7 @@ void Add<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
     }
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(Add);
 DEEP8_DECLARATION_INSTANCE(Add)
 
 }

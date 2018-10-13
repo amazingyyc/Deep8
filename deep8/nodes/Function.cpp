@@ -36,8 +36,6 @@ void Function<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor
 	DEEP8_RUNTIME_ERROR("can not call this forwardCPU by Function class");
 }
 
-
-
 template <typename T>
 void Function<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
 	DEEP8_RUNTIME_ERROR("can not call this backwardCPU by Function class");

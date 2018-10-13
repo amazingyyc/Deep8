@@ -8,9 +8,6 @@ namespace Deep8 {
 /**
  * Z = X - Y
  */
-
-
-
 template <typename T>
 class Minus: public Function<T> {
 public:

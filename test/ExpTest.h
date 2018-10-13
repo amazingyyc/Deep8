@@ -9,15 +9,21 @@ namespace Deep8 {
 TEST(Exp, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
-    auto output = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+    auto input  = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
+    auto output = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
 
-    auto inputVar1 = createFakeVariable<CPUDevice, long double>(device);
+    for (int i = 0; i < 10 * 400 * 200; ++i) {
+        if (input.data()[i] > 10) {
+            input.data()[i] = 10;
+        }
+    }
+
+    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
 
     std::vector<Node*> inputs = {&inputVar1};
-    Exp<long double> expFunc(inputs);
+    Exp<double> expFunc(inputs);
 
-    std::vector<const Tensor<long double>*> inputTensor = {&input};
+    std::vector<const Tensor<double>*> inputTensor = {&input};
 
     expFunc.forwardCPU(inputTensor, &output);
 
@@ -29,33 +35,38 @@ TEST(Exp, forwardCPU) {
     freeTensor(device, output);
 
     freeFakeVariable(inputVar1);
-
 }
 
 TEST(Exp, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
-	auto inputGrad = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+	auto inputValue = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
+	auto inputGrad = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
 
-    auto outputValue = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
-    auto outputGrad  = createTensor<CPUDevice, long double>(device, size_t(10), size_t(400), size_t(200));
+    auto outputValue = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
+    auto outputGrad  = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
+
+    for (int i = 0; i < 10 * 400 * 200; ++i) {
+        if (inputValue.data()[i] > 10) {
+            inputValue.data()[i] = 10;
+        }
+    }
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, long double>(device);
+    auto inputVar = createFakeVariable<CPUDevice, double>(device);
 
     std::vector<Node*> inputs = {&inputVar};
-    Exp<long double> expFunc(inputs);
+    Exp<double> expFunc(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<long double>*> inputValues = {&inputValue};
+    std::vector<const Tensor<double>*> inputValues = {&inputValue};
 
     expFunc.forwardCPU(inputValues, &outputValue);
     expFunc.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        long double temp = std::exp(inputValue.data()[i]) * outputGrad.data()[i];
+        double temp = std::exp(inputValue.data()[i]) * outputGrad.data()[i];
 
         ASSERT_TRUE(std::abs(temp - inputGrad.data()[i]) < 1e-6);
     }

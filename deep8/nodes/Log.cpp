@@ -3,6 +3,18 @@
 namespace Deep8 {
 
 template <typename T>
+struct LogBackwardExpr {
+	inline T operator()(T outputGrad, T input) const {
+		return outputGrad / input;
+	}
+};
+
+template <typename T>
+Log<T>::Log(std::vector<Node *> &inputs): Function<T>(inputs) {
+	check();
+}
+
+template <typename T>
 void Log<T>::check() {
 	Function<T>::check();
 
@@ -31,6 +43,7 @@ void Log<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), LogBackwardExpr<T>());
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(Log);
 DEEP8_DECLARATION_INSTANCE(Log)
 
 }

@@ -36,27 +36,27 @@ TEST(Sigmoid, forwardCPU) {
 TEST(Sigmoid, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, long double>(device, 10, 400, 200);
-	auto inputGrad = createTensor<CPUDevice, long double>(device, 10, 400, 200);
+	auto inputValue = createTensor<CPUDevice, double>(device, 10, 400, 200);
+	auto inputGrad = createTensor<CPUDevice, double>(device, 10, 400, 200);
 
-    auto outputValue = createTensor<CPUDevice, long double>(device, 10, 400, 200);
-    auto outputGrad  = createTensor<CPUDevice, long double>(device, 10, 400, 200);
+    auto outputValue = createTensor<CPUDevice, double>(device, 10, 400, 200);
+    auto outputGrad  = createTensor<CPUDevice, double>(device, 10, 400, 200);
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, long double>(device);
+    auto inputVar = createFakeVariable<CPUDevice, double>(device);
 
     std::vector<Node*> inputs = {&inputVar};
-    Sigmoid<long double> sigmoid(inputs);
+    Sigmoid<double> sigmoid(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<long double>*> inputValues = {&inputValue};
+    std::vector<const Tensor<double>*> inputValues = {&inputValue};
 
     sigmoid.forwardCPU(inputValues, &outputValue);
     sigmoid.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        long double temp = outputGrad.data()[i] * outputValue.data()[i] * (1 - outputValue.data()[i]);
+        double temp = outputGrad.data()[i] * outputValue.data()[i] * (1 - outputValue.data()[i]);
 
         ASSERT_EQ(inputGrad.data()[i], temp);
     }
@@ -111,7 +111,7 @@ TEST(Sigmoid, GPU_float) {
 	}
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
-		long double temp = outputGradPtr[i] * outputPtr[i] * (1 - outputPtr[i]);
+		real temp = outputGradPtr[i] * outputPtr[i] * (1 - outputPtr[i]);
 
 		ASSERT_EQ(inputGradPtr[i], temp);
 	}

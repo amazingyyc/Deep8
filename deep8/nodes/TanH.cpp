@@ -17,6 +17,11 @@ struct TanHBackwardExpr {
 };
 
 template <typename T>
+TanH<T>::TanH(std::vector<Node *> &inputs) : Function<T>(inputs) {
+		check();
+}
+
+template <typename T>
 void TanH<T>::check() {
 	Function<T>::check();
 
@@ -48,7 +53,7 @@ void TanH<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(output), TanHBackwardExpr<T>());
 }
 
-DEEP8_DECLARATION_INSTANCE(TanH)
-
+DEEP8_RE_DECLARATION_HALF_FUNC(TanH);
+DEEP8_DECLARATION_INSTANCE(TanH);
 
 }

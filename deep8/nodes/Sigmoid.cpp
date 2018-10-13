@@ -17,6 +17,11 @@ struct SigmoidBackwardExpr {
 };
 
 template <typename T>
+Sigmoid<T>::Sigmoid(std::vector<Node*> &inputs): Function<T>(inputs) {
+		check();
+}
+
+template <typename T>
 void Sigmoid<T>::check() {
 	Function<T>::check();
 
@@ -31,14 +36,6 @@ void Sigmoid<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 	eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(SigmoidForwardExpr<T>());
 }
 
-#ifdef HAVE_HALF
-template <>
-void Sigmoid<half>::forwardCPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif // HAVE_HALF
-
-
 template <typename T>
 void Sigmoid<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 				const Tensor<T> *output,
@@ -51,17 +48,7 @@ void Sigmoid<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(output), SigmoidBackwardExpr<T>());
 }
 
-#ifdef HAVE_HALF
-template <>
-void Sigmoid<half>::backwardCPU(const std::vector<const Tensor<half>*> &inputs,
-								const Tensor<half> *output,
-								const Tensor<half> *outputGradient,
-								size_t index,
-								Tensor<half> *iGradient) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif // HAVE_HALF
-
-DEEP8_DECLARATION_INSTANCE(Sigmoid)
+DEEP8_RE_DECLARATION_HALF_FUNC(Sigmoid);
+DEEP8_DECLARATION_INSTANCE(Sigmoid);
 
 }

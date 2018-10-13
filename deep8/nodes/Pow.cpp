@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+Pow<T>::Pow(std::vector<Node*> &inputs, T scalar) : Function<T>(inputs), scalar(scalar) {
+	check();
+}
+
+template <typename T>
 void Pow<T>::check() {
 	Function<T>::check();
 
@@ -17,12 +22,6 @@ void Pow<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *
 	eTVec(output).device(*device) = eTVec(inputs[0]).pow(scalar);
 }
 
-#ifdef HAVE_HALF
-template <>
-void Pow<half>::forwardCPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif
 
 template <typename T>
 void Pow<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
@@ -37,13 +36,7 @@ void Pow<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient) * eTVec(inputs[0]).pow(scalar - T(1)) * scalar;
 }
 
-#ifdef HAVE_HALF
-template <>
-void Pow<half>::backwardCPU<half>(const std::vector<const Tensor<half>*> &inputs, const Tensor<half> *output, const Tensor<half> *outputGradient, size_t index, Tensor<half> *iGradient) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif // HAVE_HALF
-
+DEEP8_RE_DECLARATION_HALF_FUNC(Pow);
 DEEP8_DECLARATION_INSTANCE(Pow)
 
 }

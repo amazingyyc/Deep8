@@ -45,7 +45,7 @@ void Abs<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tens
     eTVec(iGradient).device(*eigenDevice) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), AbsBackwardExpr<T>());
 }
 
-DEEP8_RE_DECLARATION_HALF_FUNC(Abs)
+DEEP8_RE_DECLARATION_HALF_FUNC(Abs);
 DEEP8_DECLARATION_INSTANCE(Abs);
 
 }

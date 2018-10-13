@@ -3,8 +3,13 @@
 namespace Deep8 {
 
 template <typename T>
+Divide<T>::Divide(std::vector<Node *> &inputs) : Function<T>(inputs) {
+        check();
+}
+
+template <typename T>
 void Divide<T>::check() {
-    Function < T > ::check();
+    Function<T>::check();
 
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the inputs size must be 2 in Divide Function");
 
@@ -193,6 +198,7 @@ void Divide<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
     }
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(Divide);
 DEEP8_DECLARATION_INSTANCE(Divide)
 
 }

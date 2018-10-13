@@ -10,6 +10,11 @@ struct ReLuBackwardExpr {
 };
 
 template <typename T>
+ReLu<T>::ReLu(std::vector<Node *> &inputs) : Function<T>(inputs) {
+	check();
+}
+
+template <typename T>
 void ReLu<T>::check() {
 	Function<T>::check();
 
@@ -25,13 +30,6 @@ void ReLu<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> 
 	eTVec(output).device(*device) = eTVec(inputs[0]).cwiseMax(T(0));
 }
 
-#ifdef HAVE_HALF
-template <>
-void ReLu<half>::forwardCPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif // HAVE_HALF
-
 template <typename T>
 void ReLu<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 				const Tensor<T> *output,
@@ -44,17 +42,7 @@ void ReLu<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), ReLuBackwardExpr<T>());
 }
 
-#ifdef HAVE_HALF
-template <>
-void ReLu<half>::backwardCPU(const std::vector<const Tensor<half>*> &inputs,
-							const Tensor<half> *output,
-							const Tensor<half> *outputGradient,
-							size_t index,
-							Tensor<half> *iGradient) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif // HAVE_HALF
-
+DEEP8_RE_DECLARATION_HALF_FUNC(ReLu);
 DEEP8_DECLARATION_INSTANCE(ReLu)
 
 }

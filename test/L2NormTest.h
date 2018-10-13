@@ -8,20 +8,20 @@ namespace Deep8 {
 TEST(L2Norm, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, long double>(device, 10, 200);
-    auto output = createTensor<CPUDevice, long double>(device, 10, 1);
+    auto input  = createTensor<CPUDevice, double>(device, 10, 200);
+    auto output = createTensor<CPUDevice, double>(device, 10, 1);
 
-    auto inputVar1 = createFakeVariable<CPUDevice, long double>(device);
+    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
 
     std::vector<Node*> inputs = {&inputVar1};
-    L2Norm<long double> l2Norm(inputs);
+    L2Norm<double> l2Norm(inputs);
 
-    std::vector<const Tensor<long double>*> inputTensor = {&input};
+    std::vector<const Tensor<double>*> inputTensor = {&input};
 
     l2Norm.forwardCPU(inputTensor, &output);
 
     for (int i = 0; i < 10; ++i) {
-        long double temp = 0;
+        double temp = 0;
 
         auto inputPtr = input.data() + i * 200;
 

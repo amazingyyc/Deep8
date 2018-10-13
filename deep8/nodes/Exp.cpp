@@ -3,8 +3,13 @@
 namespace Deep8 {
 
 template <typename T>
+Exp<T>::Exp(std::vector<Node *> &inputs): Function<T>(inputs) {
+    check();
+}
+
+template <typename T>
 void Exp<T>::check() {
-    Function < T > ::check();
+    Function<T>::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Exp Function needs only 1 input");
 
@@ -31,6 +36,7 @@ void Exp<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
     eTVec(iGradient).device(*device) += (eTVec(output) * eTVec(outputGradient));
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(Exp);
 DEEP8_DECLARATION_INSTANCE(Exp)
 
 }

@@ -2,6 +2,11 @@
 
 namespace Deep8 {
 
+template <typename T>
+L2Norm<T>::L2Norm(std::vector<Node *> &inputs): Function<T>(inputs) {
+    check();
+}
+
 template<typename T>
 void L2Norm<T>::check() {
     Function<T>::check();
@@ -46,6 +51,7 @@ void L2Norm<T>::backwardCPU(const std::vector<const Tensor <T> *> &inputs,
             (eTVec(outputGradient).reshape(outputDims) / eTVec(output).reshape(outputDims)).broadcast(outputBroad) * eTVec(inputs[0]).reshape(iGradientDims);
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(L2Norm);
 DEEP8_DECLARATION_INSTANCE(L2Norm)
 
 }

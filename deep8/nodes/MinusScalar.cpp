@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+MinusScalar<T>::MinusScalar(std::vector<Node *> &inputs, T scalar) : Function<T>(inputs), scalar(scalar) {
+	check();
+}
+
+template <typename T>
 void MinusScalar<T>::check() {
 	Function<T>::check();
 
@@ -18,13 +23,6 @@ void MinusScalar<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Ten
 	eTVec(output).device(*device) = eTVec(inputs[0]) - scalar;
 }
 
-#ifdef HAVE_HALF
-template <>
-void MinusScalar<half>::forwardCPU<half>(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-	DEEP8_RUNTIME_ERROR("CPU not support half");
-}
-#endif // HAVE_HALF
-
 template <typename T>
 void MinusScalar<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 								const Tensor<T> *output,
@@ -38,6 +36,7 @@ void MinusScalar<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient);
 }
 
-DEEP8_DECLARATION_INSTANCE(MinusScalar)
+DEEP8_RE_DECLARATION_HALF_FUNC(MinusScalar);
+DEEP8_DECLARATION_INSTANCE(MinusScalar);
 
 }

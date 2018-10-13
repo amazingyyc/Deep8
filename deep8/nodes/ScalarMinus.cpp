@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+ScalarMinus<T>::ScalarMinus(std::vector<Node*> &inputs, T scalar) : Function<T>(inputs), scalar(scalar) {
+	check();
+}
+
+template <typename T>
 void ScalarMinus<T>::check() {
 	Function<T>::check();
 
@@ -31,6 +36,7 @@ void ScalarMinus<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) -= eTVec(outputGradient);
 }
 
+DEEP8_RE_DECLARATION_HALF_FUNC(ScalarMinus);
 DEEP8_DECLARATION_INSTANCE(ScalarMinus)
 
 }
