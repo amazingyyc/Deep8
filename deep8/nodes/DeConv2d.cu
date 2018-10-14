@@ -175,8 +175,8 @@ void DeConv2d<half>::forwardGPUImpl(Device *d, const half *x, const half *filter
     int k = inputChannel;
     int n = outputChannel * filterHeight * filterWidth;
 
-    half alpha = 1;
-    half beta = 0;
+    half alpha(1.0);
+    half beta(0.0);
 
     auto yMat = (half*)device->malloc(sizeof(half) * m * n);
 
@@ -334,8 +334,8 @@ void DeConv2d<half>::backwardGPUInputImpl(Device *d, half *dx, const half *filte
     int n = outputChannel * filterHeight * filterWidth;
     int k = inputChannel;
 
-    half alpha = 1;
-    half beta = 1;
+    half alpha(1.0);
+    half beta(1.0);
 
     CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, k, m, n, &alpha, filter, k, dyMat, n, &beta, dx, k));
 
@@ -445,8 +445,8 @@ void DeConv2d<half>::backwardGPUFilterImpl(Device *d, const half *x, half *dw, c
     int n = outputChannel * filterHeight * filterWidth;
     int k = inputChannel;
 
-    half alpha = 1;
-    half beta = 1;
+    half alpha(1.0);
+    half beta(1.0);
 
     CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, k, n, m, &alpha, x, k, dyMat, n, &beta, dw, k));
 
@@ -500,20 +500,20 @@ void DeConv2d<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
 DEEP8_DECLARATION_GPU_FUNC(DeConv2d);
 
-template void DeConv2d<float>::forwardGPUImpl(Device* *device, const float *x, const float *filter, float *y,
+template void DeConv2d<float>::forwardGPUImpl(Device *device, const float *x, const float *filter, float *y,
         int batch, int inputHeight, int inputWidth, int inputChannel,
 		int outputHeight, int outputWidth, int outputChannel,
 		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,
 		int padTop, int padLeft);
 
-template void DeConv2d<double>::forwardGPUImpl(Device* *device, const double *x, const double *filter, double *y,
+template void DeConv2d<double>::forwardGPUImpl(Device *device, const double *x, const double *filter, double *y,
         int batch, int inputHeight, int inputWidth, int inputChannel,
 		int outputHeight, int outputWidth, int outputChannel,
 		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,
 		int padTop, int padLeft);
 
 #ifdef HAVE_HALF
-template void DeConv2d<half>::forwardGPUImpl(Device* *device, const half *x, const half *filter, half *y,
+template void DeConv2d<half>::forwardGPUImpl(Device *device, const half *x, const half *filter, half *y,
         int batch, int inputHeight, int inputWidth, int inputChannel,
 		int outputHeight, int outputWidth, int outputChannel,
 		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,

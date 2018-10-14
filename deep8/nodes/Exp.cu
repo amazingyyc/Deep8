@@ -48,8 +48,8 @@ void Exp<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *
 #ifdef HAVE_HALF
 template <>
 void Exp<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-    auto X = inputs[0]->data();
-    auto Y = output->data();
+    auto x = inputs[0]->data();
+    auto y = output->data();
     auto N = (int)output->size();
 
     int blockSize = 1024;

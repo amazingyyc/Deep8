@@ -24,11 +24,12 @@ Tensor<T> Executor<T>::createTensorWithShapeGPU(Shape &shape) {
 
 template void Executor<float>::initDeviceGPU();
 template void Executor<double>::initDeviceGPU();
-template void Executor<float>::createTensorWithShapeGPU(Shape&);
-template void Executor<double>::createTensorWithShapeGPU(Shape&);
+template Tensor<float> Executor<float>::createTensorWithShapeGPU(Shape&);
+template Tensor<double> Executor<double>::createTensorWithShapeGPU(Shape&);
+
 #ifdef HAVE_HALF
 template void Executor<half>::initDeviceGPU();
-template void Executor<half>::createTensorWithShapeGPU(Shape&);
+template Tensor<half> Executor<half>::createTensorWithShapeGPU(Shape&);
 #endif
 
 #endif

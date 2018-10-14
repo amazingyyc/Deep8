@@ -62,7 +62,7 @@ protected:
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
 #ifdef HAVE_CUDNN
-	void backwardGPUCUDNNImpl(GPUDevice *device, const T *x, T *dx, const Shape &xShape, const T *y, const T *dy, const Shape &yShape,
+	void backwardGPUCUDNNImpl(Device *device, const T *x, T *dx, const Shape &xShape, const T *y, const T *dy, const Shape &yShape,
 								int windowsHeight, int windowsWidth,
 								int verticalPadding, int horizontalPadding,
 								int verticalStride, int horizontalStride);

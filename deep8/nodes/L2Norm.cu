@@ -172,7 +172,7 @@ void L2Norm<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs, c
     int blockSize = 1024;
     int grideSize = (N + blockSize - 1) / blockSize;
 
-    L2NormBackwardKernel<T> << <grideSize, blockSize >> > (x, dx, y, dy, size, N);
+    L2NormBackwardKernel<half> << <grideSize, blockSize >> > (x, dx, y, dy, size, N);
 }
 #endif
 

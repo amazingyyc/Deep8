@@ -57,7 +57,7 @@ protected:
 
 #ifdef HAVE_CUDA
 
-    void forwardGPUImpl(Device* *device, const T *x, const T *filter, T *y,
+    void forwardGPUImpl(Device *device, const T *x, const T *filter, T *y,
         int batch, int inputHeight, int inputWidth, int inputChannel,
 		int outputHeight, int outputWidth, int outputChannel,
 		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,

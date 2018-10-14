@@ -30,8 +30,8 @@ __global__ void AddScalarBackwardKernel(real *xGrad, const real *yGrad, const in
 
 template <typename T>
 void AddScalar<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
+    auto X = inputs[0]->data();
+    auto Y = output->data();
     auto N = static_cast<int>(output->size());
 
     int minGrideSize;
@@ -55,7 +55,7 @@ void AddScalar<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs,
     int blockSize = 1024;
     int grideSize = (N + blockSize - 1) / blockSize;
 
-    AddScalarForwardKernel<half> << <grideSize, blockSize >> > (X, scalar, Y, N);
+    AddScalarForwardKernel<half> << <grideSize, blockSize >> > (x, scalar, y, N);
 }
 #endif
 

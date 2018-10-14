@@ -89,7 +89,6 @@ template void name<double>::backwardGPU(const std::vector<const Tensor<double>*>
 #define DEEP8_RE_DECLARATION_HALF_FUNC(name)
 #endif
 
-/**hack complier*/
 #define private public
 #define protected public
 

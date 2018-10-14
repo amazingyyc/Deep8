@@ -12,9 +12,7 @@ namespace Deep8 {
 template <typename T>
 class Add: public Function<T> {
 public:
-    explicit Add(std::vector<Node *> &inputs) : Function<T>(inputs) {
-        check();
-    }
+	explicit Add(std::vector<Node *> &inputs);
 
     void check() override;
 

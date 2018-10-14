@@ -48,7 +48,7 @@ void Function<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor
 }
 
 template <typename T>
-void Function<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
+void Function<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
 	DEEP8_RUNTIME_ERROR("can not call this backwardGPU by Function class");
 }
 #endif

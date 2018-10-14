@@ -3,6 +3,11 @@
 namespace Deep8 {
 
 template <typename T>
+Add<T>::Add(std::vector<Node *> &inputs) : Function<T>(inputs) {
+	check();
+}
+
+template <typename T>
 void Add<T>::check() {
     Function<T>::check();
 

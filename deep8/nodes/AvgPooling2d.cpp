@@ -158,6 +158,29 @@ void AvgPooling2d<T>::backwardCPUImpl(T *inputGrad,
     }
 }
 
+#ifdef HAVE_HALF
+template <>
+void AvgPooling2d<half>::backwardCPUImpl(half *inputGrad,
+										half *outputGrad,
+										int64_t batch,
+										int64_t startChannel,
+										int64_t endChannel,
+										int64_t inputHeight,
+										int64_t inputWidth,
+										int64_t outputHeight,
+										int64_t outputWidth,
+										int64_t channel,
+										int64_t filterH,
+										int64_t filterW,
+										int64_t strideH,
+										int64_t strideW,
+										int64_t padTop,
+										int64_t padLeft) {
+	DEEP8_RUNTIME_ERROR("CPU not support half");
+}
+#endif
+
+
 template <typename T>
 void AvgPooling2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
                  const Tensor<T> *output,

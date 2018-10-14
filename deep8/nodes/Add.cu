@@ -195,7 +195,7 @@ void Add<half>:: backwardGPUImpl(half *inGrad, const int *inShape, const int *in
 #endif
 
 template <typename T>
-void Add<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override {
+void Add<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index || 1 == index, "the index is error");
 
     auto device = static_cast<GPUDevice*>(iGradient->device());
@@ -237,6 +237,25 @@ void Add<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tens
 }
 
 DEEP8_DECLARATION_GPU_FUNC(Add);
+
+template void Add<float>::forwardGPUImpl(const float *x, const int *xdims, const int *xstrides,
+										 const float *y, const int *ydims, const int *ystrides,
+										       float *z, const int *zdims, const int *zstrides, const int N);
+template void Add<double>::forwardGPUImpl(const double *x, const int *xdims, const int *xstrides,
+										  const double *y, const int *ydims, const int *ystrides,
+												double *z, const int *zdims, const int *zstrides, const int N);
+
+#ifdef HAVE_HALF
+template void Add<half>::forwardGPUImpl(const half *x, const int *xdims, const int *xstrides,
+										const half *y, const int *ydims, const int *ystrides,
+										half *z, const int *zdims, const int *zstrides, const int N);
+#endif
+
+template void Add<float>::backwardGPUImpl(float *inGrad, const int *inShape, const int *inDims, const float *outGrad, const int *outShape, const int *outDims, const int N);
+template void Add<double>::backwardGPUImpl(double *inGrad, const int *inShape, const int *inDims, const double *outGrad, const int *outShape, const int *outDims, const int N);
+#ifdef HAVE_HALF
+template void Add<half>::backwardGPUImpl(half *inGrad, const int *inShape, const int *inDims, const half *outGrad, const int *outShape, const int *outDims, const int N);
+#endif
 
 #endif
 

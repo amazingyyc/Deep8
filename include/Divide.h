@@ -15,8 +15,6 @@ public:
 protected:
 	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
-
-
 	template <int diffCount>
 	void backwardCPUImpl0(Eigen::ThreadPoolDevice *device,const Tensor<T> *yTensor, const Tensor<T> *outputGradient, Tensor<T> *iGradient);
 

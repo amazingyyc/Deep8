@@ -148,7 +148,7 @@ void Conv2d<double>::forwardGPUImpl(Device* d, const double *x, const double *fi
 
     CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dIm2ColKernel<double>, 0, size));
 
-    grideSize = (N + blockSize - 1) / blockSize;
+    grideSize = (size + blockSize - 1) / blockSize;
 
     auto xCol = (double*)device->malloc(sizeof(double) * size * inputChannel);
 
@@ -171,7 +171,7 @@ void Conv2d<double>::forwardGPUImpl(Device* d, const double *x, const double *fi
 
 #ifdef HAVE_HALF
 template <>
-void Conv2d<half>::forwardGPUImpl(Device* device, const half *x, const half *filter, half *y,
+void Conv2d<half>::forwardGPUImpl(Device* d, const half *x, const half *filter, half *y,
                             int batch, int inputHeight, int inputWidth, int inputChannel,
                             int outputHeight, int outputWidth, int outputChannel,
                             int filterHeight, int filterWidth, int strideY, int strideX,
@@ -193,8 +193,8 @@ void Conv2d<half>::forwardGPUImpl(Device* device, const half *x, const half *fil
 		int k = filterHeight * filterWidth * inputChannel;
 		int n = outputChannel;
 
-		half alpha(1);
-		half beta(0);
+		half alpha(1.0);
+		half beta(0.0);
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, n, m, k, &alpha, filter, k, xCol, k, &beta, y, n));
 
@@ -326,8 +326,8 @@ void Conv2d<half>::backwardGPUInputImpl(Device* d, half *dx, const half *w, cons
 		int k = outputChannel;
 		int n = batch * outputHeight * outputWidth;
 
-		half alpha = 1;
-		half beta = 0;
+		half alpha(1.0);
+		half beta(0.0);
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, w, m, dy, k, &beta, xCol, m));
 
@@ -437,8 +437,8 @@ void Conv2d<half>::backwardGPUFilterImpl(Device* d, const half *x, half *dw, con
     int k = batch * outputHeight * outputWidth;
     int n = outputChannel;
 
-    half alpha = 1;
-    half beta = 1;
+    half alpha(1.0);
+    half beta(1.0);
 
     CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, m, n, k, &alpha, xCol, m, dy, n, &beta, dw, m));
 

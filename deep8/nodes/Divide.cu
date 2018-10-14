@@ -359,6 +359,7 @@ void Divide<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
 DEEP8_DECLARATION_GPU_FUNC(Divide);
 
+
 #endif
 
 }

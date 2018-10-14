@@ -1,6 +1,8 @@
 #ifndef DEEP8_DEEP8_H
 #define DEEP8_DEEP8_H
 
+#include "Basic.h"
+
 //#include "basic/Basic.h"
 //#include "basic/Exception.h"
 //#include "basic/CudaException.h"
