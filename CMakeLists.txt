@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU false)
+set(HAVE_GPU true)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -145,8 +145,7 @@ if (HAVE_GPU AND HAVE_CUDA)
 		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_HALF")
 	endif()
 
-	# add_executable(Deep8 ${DEEP8_CUDA_SRC_FILES} ${DEEP8_SRC_FILES} ${DEEP8_TEST_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
-	add_executable(Deep8 ${DEEP8_CUDA_SRC_FILES} ${DEEP8_SRC_FILES} ${DEEP8_TEST_CUDA_SRC_FILES})
+	add_executable(Deep8 ${DEEP8_CUDA_SRC_FILES} ${DEEP8_SRC_FILES} ${DEEP8_TEST_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_TEST_HEAD_FILES})
 
 	# add cuBlas library
 	cuda_add_cublas_to_target(Deep8)

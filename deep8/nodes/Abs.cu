@@ -1,6 +1,7 @@
 #include "Exception.h"
 #include "GPUException.h"
 #include "GPUMathUtils.h"
+#include "GPUDevice.h"
 #include "Abs.h"
 
 namespace Deep8 {

@@ -1,3 +1,7 @@
+#include "Exception.h"
+#include "GPUException.h"
+#include "GPUMathUtils.h"
+#include "GPUDevice.h"
 #include "ScalarDivide.h"
 
 namespace Deep8 {

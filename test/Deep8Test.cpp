@@ -32,7 +32,7 @@
 #include "SquareTest.h"
 #include "SumElementsTest.h"
 #include "TanHTest.h"
-#include "LinearRegressionTest.h"
+//#include "LinearRegressionTest.h"
 //#include "LinearRegressionGPUTest.h"
 
 using namespace Deep8;
