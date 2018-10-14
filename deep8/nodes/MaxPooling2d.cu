@@ -77,8 +77,8 @@ void MaxPooling2d<half>::forwardGPUCUDNNImpl(Device *d, const half *x, const Sha
                         int verticalStride, int horizontalStride) {
     auto device = (GPUDevice*)d;
 
-    half alpha = 1;
-    half beta = 0;
+    half alpha(1.0);
+    half beta(0.0);
 
     cudnnPoolingDescriptor_t poolingDesc;
     CUDNN_CHECK(cudnnCreatePoolingDescriptor(&poolingDesc));
@@ -216,8 +216,8 @@ void MaxPooling2d<half>::backwardGPUCUDNNImpl(Device *d, const half *x, half *dx
                                     int verticalStride, int horizontalStride) {
     auto device = (GPUDevice*)d;
 
-    half alpha = 1;
-    half beta = 1;
+    half alpha(1.0);
+    half beta(1.0);
 
     cudnnPoolingDescriptor_t poolingDesc;
     CUDNN_CHECK(cudnnCreatePoolingDescriptor(&poolingDesc));
@@ -300,17 +300,17 @@ template void MaxPooling2d<half>::forwardGPUCUDNNImpl(Device *device, const half
 							int verticalStride,  int horizontalStride);
 #endif
 
-template void MaxPooling2d<float>::void backwardGPUCUDNNImpl(Device *device, const float *x, float *dx, const Shape &xShape, const float *y, const float *dy, const Shape &yShape,
+template void MaxPooling2d<float>::backwardGPUCUDNNImpl(Device *device, const float *x, float *dx, const Shape &xShape, const float *y, const float *dy, const Shape &yShape,
 								int windowsHeight, int windowsWidth,
 								int verticalPadding, int horizontalPadding,
 								int verticalStride, int horizontalStride);
 
-template void MaxPooling2d<double>::void backwardGPUCUDNNImpl(Device *device, const double *x, double *dx, const Shape &xShape, const double *y, const double *dy, const Shape &yShape,
+template void MaxPooling2d<double>::backwardGPUCUDNNImpl(Device *device, const double *x, double *dx, const Shape &xShape, const double *y, const double *dy, const Shape &yShape,
 								int windowsHeight, int windowsWidth,
 								int verticalPadding, int horizontalPadding,
 								int verticalStride, int horizontalStride);
 #ifdef HAVE_HALF
-template void MaxPooling2d<half>::void backwardGPUCUDNNImpl(Device *device, const half *x, half *dx, const Shape &xShape, const half *y, const half *dy, const Shape &yShape,
+template void MaxPooling2d<half>::backwardGPUCUDNNImpl(Device *device, const half *x, half *dx, const Shape &xShape, const half *y, const half *dy, const Shape &yShape,
 								int windowsHeight, int windowsWidth,
 								int verticalPadding, int horizontalPadding,
 								int verticalStride, int horizontalStride);

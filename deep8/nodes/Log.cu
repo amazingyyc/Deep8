@@ -59,32 +59,6 @@ void Log<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tenso
 }
 #endif
 
-
-template <typename real>
-void backwardGPUImpl(real *xGrad, const real *x, const real *yGrad, const int N) {
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LogBackwardKernel<real>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    LogBackwardKernel<T> << <grideSize, blockSize >> > (xGrad, x, yGrad, N);
-}
-
-#ifdef HAVE_HALF
-
-template <>
-	void backwardGPUImpl<half>(half *xGrad, const half *x, const half *yGrad, const int N) {
-		int blockSize = 1024;
-		int grideSize = (N + blockSize - 1) / blockSize;
-
-		LogBackwardKernel<half> << <grideSize, blockSize >> > (xGrad, x, yGrad, N);
-	}
-#endif // HAVE_HALF
-#endif // HAVE_CUDA
-
 template <typename T>
 void Log<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                          const Tensor<T> *output,

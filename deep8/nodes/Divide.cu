@@ -2,7 +2,7 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
-#include "Device.h"
+#include "Divide.h"
 
 namespace Deep8 {
 
@@ -275,16 +275,16 @@ void Divide<T>::backwardGPUImplY(const T *x, const int *xshape, const int *xdims
     int blockSize;
     int grideSize;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, DivideBackwardKernelY<real>, 0, N));
+    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, DivideBackwardKernelY<T>, 0, N));
 
     grideSize = (N + blockSize - 1) / blockSize;
 
-    DivideBackwardKernelY<real> << <grideSize, blockSize >> > (x, xshape, xdims, y, yGrad, yshape, ydims, zGrad, zshape, zdims, N);
+    DivideBackwardKernelY<T> << <grideSize, blockSize >> > (x, xshape, xdims, y, yGrad, yshape, ydims, zGrad, zshape, zdims, N);
 }
 
 #ifdef HAVE_HALF
 template <>
-void Divide<T>::backwardGPUImplY(const half *x, const int *xshape, const int *xdims,
+void Divide<half>::backwardGPUImplY(const half *x, const int *xshape, const int *xdims,
                             const half *y, half *yGrad, const int *yshape, const int *ydims,
                             const half *zGrad, const int *zshape, const int *zdims, const int N) {
     int blockSize = 1024;
@@ -376,7 +376,7 @@ template void Divide<float>::backwardGPUImplX(float *xGrad,  const int *xshape, 
                                         const float *y,      const int *yshape, const int *ydims,
                                         const float *zGrad,  const int *zshape, const int *zdims, const int N);
 
-template void Divide<float>:: backwardGPUImplY(const float *x, const int *xshape, const int *xdims,
+template void Divide<float>::backwardGPUImplY(const float *x, const int *xshape, const int *xdims,
                                       const float *y, float *yGrad, const int *yshape, const int *ydims,
                                       const float *zGrad, const int *zshape, const int *zdims, const int N);
 
@@ -384,7 +384,7 @@ template void Divide<double>::backwardGPUImplX(double *xGrad,  const int *xshape
                                         const double *y,      const int *yshape, const int *ydims,
                                         const double *zGrad,  const int *zshape, const int *zdims, const int N);
 
-template void Divide<double>:: backwardGPUImplY(const double *x, const int *xshape, const int *xdims,
+template void Divide<double>::backwardGPUImplY(const double *x, const int *xshape, const int *xdims,
                                       const double *y, double *yGrad, const int *yshape, const int *ydims,
                                       const double *zGrad, const int *zshape, const int *zdims, const int N);
 

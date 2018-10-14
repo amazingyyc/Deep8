@@ -55,7 +55,7 @@ void DivideScalar<half>::forwardGPU(const std::vector<const Tensor<half>*> &inpu
     int blockSize = 1024;
     int grideSize = (N + blockSize - 1) / blockSize;
 
-    DivideScalarForwardKernel<T> << <grideSize, blockSize >> > (X, scalar, Y, N);
+    DivideScalarForwardKernel<half> << <grideSize, blockSize >> > (X, scalar, Y, N);
 }
 #endif
 
@@ -69,7 +69,7 @@ void DivideScalar<float>::backwardGPU(const std::vector<const Tensor<float>*> &i
 
     auto device = static_cast<GPUDevice*>(iGradient->device());
 
-    auto realScalar = 1.0 / scalar;
+    float realScalar = 1.0 / scalar;
 
     CUBLAS_CHECK(cublasSaxpy(device->cublasHandle, (int)iGradient->size(), &realScalar, outputGradient->data(), 1, iGradient->data(), 1));
 }

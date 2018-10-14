@@ -30,8 +30,8 @@ __global__ void ExpBackwardKernel(real *xGrad, const real *yGrad, const real *Y,
 
 template <typename T>
 void Exp<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto X = inputs[0]->data();
-    auto Y = output->data();
+    auto x = inputs[0]->data();
+    auto y = output->data();
     auto N = (int)output->size();
 
     int minGrideSize;
