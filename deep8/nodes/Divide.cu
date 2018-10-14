@@ -359,6 +359,44 @@ void Divide<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
 DEEP8_DECLARATION_GPU_FUNC(Divide);
 
+template void Divide<float>::forwardGPUImpl(const float *x, const int *xshape, const int *xdims,
+						                const float *y, const int *yshape, const int *ydims,
+							            float *z, const int *zshape, const int *zdims, const int N);
+
+template void Divide<double>::forwardGPUImpl(const double *x, const int *xshape, const int *xdims,
+						                const double *y, const int *yshape, const int *ydims,
+							            double *z, const int *zshape, const int *zdims, const int N);
+#ifdef HAVE_HALF
+template void Divide<half>::forwardGPUImpl(const half *x, const int *xshape, const int *xdims,
+						                const half *y, const int *yshape, const int *ydims,
+							            half *z, const int *zshape, const int *zdims, const int N);
+#endif
+
+template void Divide<float>::backwardGPUImplX(float *xGrad,  const int *xshape, const int *xdims,
+                                        const float *y,      const int *yshape, const int *ydims,
+                                        const float *zGrad,  const int *zshape, const int *zdims, const int N);
+
+template void Divide<float>:: backwardGPUImplY(const float *x, const int *xshape, const int *xdims,
+                                      const float *y, float *yGrad, const int *yshape, const int *ydims,
+                                      const float *zGrad, const int *zshape, const int *zdims, const int N);
+
+template void Divide<double>::backwardGPUImplX(double *xGrad,  const int *xshape, const int *xdims,
+                                        const double *y,      const int *yshape, const int *ydims,
+                                        const double *zGrad,  const int *zshape, const int *zdims, const int N);
+
+template void Divide<double>:: backwardGPUImplY(const double *x, const int *xshape, const int *xdims,
+                                      const double *y, double *yGrad, const int *yshape, const int *ydims,
+                                      const double *zGrad, const int *zshape, const int *zdims, const int N);
+
+#ifdef HAVE_HALF
+template void Divide<half>::backwardGPUImplX(half *xGrad,  const int *xshape, const int *xdims,
+                                        const half *y,      const int *yshape, const int *ydims,
+                                        const half *zGrad,  const int *zshape, const int *zdims, const int N);
+
+template void Divide<half>:: backwardGPUImplY(const half *x, const int *xshape, const int *xdims,
+                                      const half *y, half *yGrad, const int *yshape, const int *ydims,
+                                      const half *zGrad, const int *zshape, const int *zdims, const int N);
+#endif
 
 #endif
 

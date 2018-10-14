@@ -136,18 +136,18 @@ set(DEEP8_SRC_FILES
 		deep8/nodes/AvgPooling2d.cpp
 		deep8/nodes/Conv2d.cpp
 		deep8/nodes/DeConv2d.cpp
-		#deep8/nodes/Divide.cpp
-		#deep8/nodes/DivideScalar.cpp
-		#deep8/nodes/Exp.cpp
+		deep8/nodes/Divide.cpp
+		deep8/nodes/DivideScalar.cpp
+		deep8/nodes/Exp.cpp
 		deep8/nodes/Function.cpp
 		deep8/nodes/InputParameter.cpp
-		# deep8/nodes/L1Norm.cpp
-		# deep8/nodes/L2Norm.cpp
-		# deep8/nodes/Linear.cpp
-		# deep8/nodes/Log.cpp
-		# deep8/nodes/LReLu.cpp
-		# deep8/nodes/MatrixMultiply.cpp
-		# deep8/nodes/MaxPooling2d.cpp
+		deep8/nodes/L1Norm.cpp
+		deep8/nodes/L2Norm.cpp
+		deep8/nodes/Linear.cpp
+		deep8/nodes/Log.cpp
+		deep8/nodes/LReLu.cpp
+		deep8/nodes/MatrixMultiply.cpp
+		deep8/nodes/MaxPooling2d.cpp
 		# deep8/nodes/Minus.cpp
 		# deep8/nodes/MinusScalar.cpp
 		# deep8/nodes/Multiply.cpp
@@ -182,16 +182,16 @@ set(DEEP8_CUDA_SRC_FILES
 		deep8/nodes/AvgPooling2d.cu
 		deep8/nodes/Conv2d.cu
 		deep8/nodes/DeConv2d.cu
-		#deep8/nodes/Divide.cu
-		#deep8/nodes/DivideScalar.cu
-		#deep8/nodes/Exp.cu
-		# deep8/nodes/L1Norm.cu
-		# deep8/nodes/L2Norm.cu
-		# deep8/nodes/Linear.cu
-		# deep8/nodes/Log.cu
-		# deep8/nodes/LReLu.cu
-		# deep8/nodes/MatrixMultiply.cu
-		# deep8/nodes/MaxPooling2d.cu
+		deep8/nodes/Divide.cu
+		deep8/nodes/DivideScalar.cu
+		deep8/nodes/Exp.cu
+		deep8/nodes/L1Norm.cu
+		deep8/nodes/L2Norm.cu
+		deep8/nodes/Linear.cu
+		deep8/nodes/Log.cu
+		deep8/nodes/LReLu.cu
+		deep8/nodes/MatrixMultiply.cu
+		deep8/nodes/MaxPooling2d.cu
 		# deep8/nodes/Minus.cu
 		# deep8/nodes/MinusScalar.cu
 		# deep8/nodes/Multiply.cu

@@ -283,6 +283,41 @@ void MaxPooling2d<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
 DEEP8_DECLARATION_GPU_FUNC(MaxPooling2d);
 
+#ifdef HAVE_CUDNN
+template void MaxPooling2d<float>::forwardGPUCUDNNImpl(Device *device, const float *x, const Shape &xShape, float *y, const Shape &yShape,
+							int windowsHeight,   int windowsWidth,
+							int verticalPadding, int horizontalPadding,
+							int verticalStride,  int horizontalStride);
+
+template void MaxPooling2d<double>::forwardGPUCUDNNImpl(Device *device, const double *x, const Shape &xShape, double *y, const Shape &yShape,
+							int windowsHeight,   int windowsWidth,
+							int verticalPadding, int horizontalPadding,
+							int verticalStride,  int horizontalStride);
+#ifdef HAVE_HALF
+template void MaxPooling2d<half>::forwardGPUCUDNNImpl(Device *device, const half *x, const Shape &xShape, half *y, const Shape &yShape,
+							int windowsHeight,   int windowsWidth,
+							int verticalPadding, int horizontalPadding,
+							int verticalStride,  int horizontalStride);
+#endif
+
+template void MaxPooling2d<float>::void backwardGPUCUDNNImpl(Device *device, const float *x, float *dx, const Shape &xShape, const float *y, const float *dy, const Shape &yShape,
+								int windowsHeight, int windowsWidth,
+								int verticalPadding, int horizontalPadding,
+								int verticalStride, int horizontalStride);
+
+template void MaxPooling2d<double>::void backwardGPUCUDNNImpl(Device *device, const double *x, double *dx, const Shape &xShape, const double *y, const double *dy, const Shape &yShape,
+								int windowsHeight, int windowsWidth,
+								int verticalPadding, int horizontalPadding,
+								int verticalStride, int horizontalStride);
+#ifdef HAVE_HALF
+template void MaxPooling2d<half>::void backwardGPUCUDNNImpl(Device *device, const half *x, half *dx, const Shape &xShape, const half *y, const half *dy, const Shape &yShape,
+								int windowsHeight, int windowsWidth,
+								int verticalPadding, int horizontalPadding,
+								int verticalStride, int horizontalStride);
+#endif
+
+#endif
+
 #endif
 
 }

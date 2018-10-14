@@ -30,7 +30,6 @@ protected:
 					Tensor<T> *iGradient) override;
 
 #ifdef HAVE_CUDA
-
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
 	void backwardGPU(const std::vector<const Tensor<T>*> &inputs,

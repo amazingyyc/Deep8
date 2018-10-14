@@ -356,6 +356,22 @@ void MatrixMultiply<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
 DEEP8_DECLARATION_GPU_FUNC(MatrixMultiply)
 
+template void MatrixMultiply<float>::forwardGPUImpl(Device *device, const float *A, const Shape &aShape, const float *B, const Shape &bShape, float *C, const Shape &cShape);
+template void MatrixMultiply<double>::forwardGPUImpl(Device *device, const double *A, const Shape &aShape, const double *B, const Shape &bShape, double *C, const Shape &cShape);
+
+template void MatrixMultiply<float>::backwardGPUImpl0(Device* device, float *aGrad, const Shape &aShape, const float *B, const Shape &bShape, const float *cGrad, const Shape &cShape);
+template void MatrixMultiply<double>::backwardGPUImpl0(Device* device, double *aGrad, const Shape &aShape, const double *B, const Shape &bShape, const double *cGrad, const Shape &cShape);
+
+template void MatrixMultiply<float>::backwardGPUImpl1(Device* device, const float *A, const Shape &aShape, float *bGrad, const Shape &bShape, const float *cGrad, const Shape &cShape);
+template void MatrixMultiply<double>::backwardGPUImpl1(Device* device, const double *A, const Shape &aShape, double *bGrad, const Shape &bShape, const double *cGrad, const Shape &cShape);
+
+#ifdef HAVE_HALF
+template void MatrixMultiply<half>::forwardGPUImpl(Device *device, const half *A, const Shape &aShape, const half *B, const Shape &bShape, half *C, const Shape &cShape);
+template void MatrixMultiply<half>::backwardGPUImpl0(Device* device, half *aGrad, const Shape &aShape, const half *B, const Shape &bShape, const half *cGrad, const Shape &cShape);
+template void MatrixMultiply<half>::backwardGPUImpl1(Device* device, const half *A, const Shape &aShape, half *bGrad, const Shape &bShape, const half *cGrad, const Shape &cShape);
+
+#endif
+
 #endif
 
 }
