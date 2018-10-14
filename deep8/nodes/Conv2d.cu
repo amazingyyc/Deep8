@@ -494,6 +494,67 @@ void Conv2d<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
 DEEP8_DECLARATION_GPU_FUNC(Conv2d);
 
+template void Conv2d<float>::forwardGPUImpl(Device* device, const float *x, const float *filter, float *y,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+
+template void Conv2d<double>::forwardGPUImpl(Device* device, const double *x, const double *filter, double *y,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+
+#ifdef HAVE_HALF
+template void Conv2d<half>::forwardGPUImpl(Device* device, const half *x, const half *filter, half *y,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+#endif
+
+template void Conv2d<float>::backwardGPUInputImpl(Device* device, float *dx, const float *w, const float *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+
+template void Conv2d<double>::backwardGPUInputImpl(Device* device, double *dx, const double *w, const double *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+
+#ifdef HAVE_HALF
+template void Conv2d<half>::backwardGPUInputImpl(Device* device, half *dx, const half *w, const half *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+#endif
+
+/**for filter*/
+template void Conv2d<float>::backwardGPUFilterImpl(Device* device, const float *x, float *dw, const float *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+
+template void Conv2d<double>::backwardGPUFilterImpl(Device* device, const double *x, double *dw, const double *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+
+#ifdef HAVE_HALF
+template void Conv2d<half>::backwardGPUFilterImpl(Device* device, const half *x, half *dw, const half *dy,
+		int batch, int inputHeight, int inputWidth, int inputChannel,
+		int outputHeight, int outputWidth, int outputChannel,
+		int filterHeight, int filterWidth, int strideY, int strideX,
+		int padTop, int padLeft, int dilationY, int dilationX);
+#endif
+
 #endif
 
 }

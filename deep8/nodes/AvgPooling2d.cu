@@ -231,6 +231,94 @@ void AvgPooling2d<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
 DEEP8_DECLARATION_GPU_FUNC(AvgPooling2d);
 
+template void AvgPooling2d<float>::forwardGPUImpl(const float *x, float *y,
+                                                const int batch,
+                                                const int inputHeight,
+                                                const int inputWidth,
+                                                const int outputHeight,
+                                                const int outputWidth,
+                                                const int channel,
+                                                const int filterHeight,
+                                                const int filterWidth,
+                                                const int padTop,
+                                                const int padLeft,
+                                                const int strideY,
+                                                const int strideX);
+
+template void AvgPooling2d<double>::forwardGPUImpl(const double *x, double *y,
+                                                    const int batch,
+                                                    const int inputHeight,
+                                                    const int inputWidth,
+                                                    const int outputHeight,
+                                                    const int outputWidth,
+                                                    const int channel,
+                                                    const int filterHeight,
+                                                    const int filterWidth,
+                                                    const int padTop,
+                                                    const int padLeft,
+                                                    const int strideY,
+                                                    const int strideX);
+
+#ifdef HAVE_HALF
+template void AvgPooling2d<half>::forwardGPUImpl(const half *x, half *y,
+                                                    const int batch,
+                                                    const int inputHeight,
+                                                    const int inputWidth,
+                                                    const int outputHeight,
+                                                    const int outputWidth,
+                                                    const int channel,
+                                                    const int filterHeight,
+                                                    const int filterWidth,
+                                                    const int padTop,
+                                                    const int padLeft,
+                                                    const int strideY,
+                                                    const int strideX);
+#endif
+
+template void AvgPooling2d<float>::backwardGPUImpl(float *dx, const float *dy,
+                                                    const int batch,
+                                                    const int inputHeight,
+                                                    const int inputWidth,
+                                                    const int outputHeight,
+                                                    const int outputWidth,
+                                                    const int channel,
+                                                    const int filterHeight,
+                                                    const int filterWidth,
+                                                    const int padTop,
+                                                    const int padLeft,
+                                                    const int strideY,
+                                                    const int strideX);
+
+template void AvgPooling2d<double>::backwardGPUImpl(double *dx, const double *dy,
+                                                    const int batch,
+                                                    const int inputHeight,
+                                                    const int inputWidth,
+                                                    const int outputHeight,
+                                                    const int outputWidth,
+                                                    const int channel,
+                                                    const int filterHeight,
+                                                    const int filterWidth,
+                                                    const int padTop,
+                                                    const int padLeft,
+                                                    const int strideY,
+                                                    const int strideX);
+
+#ifdef HAVE_HALF
+template void AvgPooling2d<half>::backwardGPUImpl(half *dx, const half *dy,
+                                                    const int batch,
+                                                    const int inputHeight,
+                                                    const int inputWidth,
+                                                    const int outputHeight,
+                                                    const int outputWidth,
+                                                    const int channel,
+                                                    const int filterHeight,
+                                                    const int filterWidth,
+                                                    const int padTop,
+                                                    const int padLeft,
+                                                    const int strideY,
+                                                    const int strideX);
+#endif
+
 #endif
 
 }

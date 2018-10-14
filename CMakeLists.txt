@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU true)
+set(HAVE_GPU false)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -114,8 +114,104 @@ include_directories(test)
 file(GLOB DEEP8_HEAD_FILES "include/*.h")
 file(GLOB DEEP8_TEST_HEAD_FILES "test/*.h")
 
-file(GLOB_RECURSE DEEP8_SRC_FILES "deep8/*.cpp")
-file(GLOB_RECURSE DEEP8_CUDA_SRC_FILES "deep8/*.cu")
+#file(GLOB_RECURSE DEEP8_SRC_FILES "deep8/*.cpp")
+#file(GLOB_RECURSE DEEP8_CUDA_SRC_FILES "deep8/*.cu")
+
+set(DEEP8_SRC_FILES
+
+		deep8/model/DefaultExecutor.cpp
+		deep8/model/Executor.cpp
+		deep8/model/Device.cpp
+		deep8/model/MemoryAllocator.cpp
+		deep8/model/MemoryPool.cpp
+		deep8/model/Shape.cpp
+		deep8/model/TensorInit.cpp
+		deep8/model/TensorStorage.cpp
+		deep8/model/Tensor.cpp
+		deep8/model/Trainer.cpp
+
+		deep8/nodes/Abs.cpp
+		deep8/nodes/Add.cpp
+		deep8/nodes/AddScalar.cpp
+		deep8/nodes/AvgPooling2d.cpp
+		deep8/nodes/Conv2d.cpp
+		deep8/nodes/DeConv2d.cpp
+		deep8/nodes/Divide.cpp
+		deep8/nodes/DivideScalar.cpp
+		deep8/nodes/Exp.cpp
+		deep8/nodes/Function.cpp
+		deep8/nodes/InputParameter.cpp
+		deep8/nodes/L1Norm.cpp
+		deep8/nodes/L2Norm.cpp
+		deep8/nodes/Linear.cpp
+		deep8/nodes/Log.cpp
+		deep8/nodes/LReLu.cpp
+		deep8/nodes/MatrixMultiply.cpp
+		deep8/nodes/MaxPooling2d.cpp
+		deep8/nodes/Minus.cpp
+		deep8/nodes/MinusScalar.cpp
+		deep8/nodes/Multiply.cpp
+		deep8/nodes/MultiplyScalar.cpp
+		deep8/nodes/Parameter.cpp
+		deep8/nodes/Pow.cpp
+		deep8/nodes/ReLu.cpp
+		deep8/nodes/ReShape.cpp
+		deep8/nodes/ScalarDivide.cpp
+		deep8/nodes/ScalarMinus.cpp
+		deep8/nodes/Sigmoid.cpp
+		deep8/nodes/Softmax.cpp
+		deep8/nodes/Square.cpp
+		deep8/nodes/SumElements.cpp
+		deep8/nodes/TanH.cpp
+		deep8/nodes/Variable.cpp
+
+		)
+
+set(DEEP8_CUDA_SRC_FILES
+
+		deep8/model/Executor.cu
+		deep8/model/GPUDevice.cu
+		deep8/model/GPUMemoryAllocator.cu
+		deep8/model/GPUMemoryPool.cu
+		deep8/model/TensorInit.cu
+		deep8/model/Trainer.cu
+
+		deep8/nodes/Abs.cu
+		deep8/nodes/Add.cu
+		deep8/nodes/AddScalar.cu
+		deep8/nodes/AvgPooling2d.cu
+		deep8/nodes/Conv2d.cu
+		deep8/nodes/DeConv2d.cu
+		deep8/nodes/Divide.cu
+		deep8/nodes/DivideScalar.cu
+		deep8/nodes/Exp.cu
+		deep8/nodes/L1Norm.cu
+		deep8/nodes/L2Norm.cu
+		deep8/nodes/Linear.cu
+		deep8/nodes/Log.cu
+		deep8/nodes/LReLu.cu
+		deep8/nodes/MatrixMultiply.cu
+		deep8/nodes/MaxPooling2d.cu
+		deep8/nodes/Minus.cu
+		deep8/nodes/MinusScalar.cu
+		deep8/nodes/Multiply.cu
+		deep8/nodes/MultiplyScalar.cu
+		deep8/nodes/Pow.cu
+		deep8/nodes/ReLu.cu
+		deep8/nodes/ScalarDivide.cu
+		deep8/nodes/ScalarMinus.cu
+		deep8/nodes/Sigmoid.cu
+		deep8/nodes/Softmax.cu
+		deep8/nodes/Square.cu
+		deep8/nodes/SumElements.cu
+		deep8/nodes/TanH.cu
+
+		# deep8/basic/MemoryAllocator.cu
+		# deep8/basic/TensorStorage.cu
+		# deep8/basic/Tensor.cu
+		#
+		# deep8/nodes/L1Norm.cu
+		)
 
 set (DEEP8_TEST_SRC_FILES test/Deep8Test.cpp)
 set (DEEP8_TEST_CUDA_SRC_FILES test/Deep8Test.cpp)
