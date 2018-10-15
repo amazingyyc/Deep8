@@ -57,7 +57,7 @@ void Pow<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tenso
     int blockSize = 1024;
     int grideSize = (N + blockSize - 1) / blockSize;
 
-    PowForwardKernel<T> << <grideSize, blockSize >> > (x, scalar, y, N);
+    PowForwardKernel<half> << <grideSize, blockSize >> > (x, scalar, y, N);
 }
 #endif
 
@@ -82,7 +82,7 @@ void Pow<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
     grideSize = (N + blockSize - 1) / blockSize;
 
-    PowBackwardKernel<T> << <grideSize, blockSize >> > (xGrad, x, scalar, yGrad, N);
+    PowBackwardKernel<T> << <grideSize, blockSize >> > (dx, x, scalar, dy, N);
 }
 
 #ifdef HAVE_HALF
@@ -102,7 +102,7 @@ void Pow<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
     int blockSize = 1024;
     int grideSize = (N + blockSize - 1) / blockSize;
 
-    PowBackwardKernel<half> << <grideSize, blockSize >> > (xGrad, x, scalar, yGrad, N);
+    PowBackwardKernel<half> << <grideSize, blockSize >> > (dx, x, scalar, dy, N);
 }
 #endif
 

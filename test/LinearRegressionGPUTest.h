@@ -1,11 +1,6 @@
 #ifndef DEEP8_LINEARREGRESSIONGPUTEST_H
 #define DEEP8_LINEARREGRESSIONGPUTEST_H
 
-#include "DefaultExecutor.h"
-#include "Trainer.h"
-#include "Device.h"
-#include "Expression.h"
-
 namespace Deep8 {
 
 #ifdef HAVE_CUDA
@@ -19,16 +14,16 @@ TEST(LinearRegression, GPU_Test) {
     float x[4] = {4, -1, 2, 1};
     float y[2] = {10, 8};
 
-	DefaultExecutor<float> executor(new MomentumTrainer<float>(), DeviceType::GPU);
+	DefaultExecutorF executor(new AdagradTrainerF(), DeviceType::GPU);
 
 	auto wP = executor.addParameter({1, 2});
-    Expression<float> W(&executor, wP);
+    ExpressionF W(&executor, wP);
 
     auto inputP = executor.addInputParameter({1, 2, 2}, x);
-    Expression<float> input(&executor, inputP);
+    ExpressionF input(&executor, inputP);
 
     auto outputP = executor.addInputParameter({1, 2}, y);
-    Expression<float> output(&executor, outputP);
+    ExpressionF output(&executor, outputP);
 
 	float wPtr[2];
 

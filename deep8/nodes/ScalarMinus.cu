@@ -67,7 +67,7 @@ void ScalarMinus<float>::backwardGPU(const std::vector<const Tensor<float>*> &in
                                      Tensor<float> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-    auto device = static_cast<GPUDevice*>(iGradient->device);
+    auto device = static_cast<GPUDevice*>(iGradient->device());
 
     float alpha = -1;
 
@@ -82,7 +82,7 @@ void ScalarMinus<double>::backwardGPU(const std::vector<const Tensor<double>*> &
                                      Tensor<double> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-    auto device = static_cast<GPUDevice*>(iGradient->device);
+    auto device = static_cast<GPUDevice*>(iGradient->device());
 
     double alpha = -1;
 

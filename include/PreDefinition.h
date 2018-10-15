@@ -3,11 +3,12 @@
 
 namespace Deep8 {
 
-/**define type*/
+/***********************************************************************************/
+/**define float*/
+/***********************************************************************************/
 typedef Variable<float>          VariableF;
 typedef Parameter<float>         ParameterF;
 typedef InputParameter<float>    InputParameterF;
-typedef ConstantParameter<float> ConstantParameterF;
 typedef Abs<float>				 AbsF;
 typedef Add<float>				 AddF;
 typedef AddScalar<float>		 AddScalarF;
@@ -38,6 +39,7 @@ typedef Softmax<float>			 SoftmaxF;
 typedef Square<float>			 SquareF;
 typedef SumElements<float>		 SumElementsF;
 typedef TanH<float>				 TanHF;
+
 typedef SGDTrainer<float>		 SGDTrainerF;
 typedef AdagradTrainer<float>	 AdagradTrainerF;
 typedef AdamTrainer<float>		 AdamTrainerF;
@@ -47,10 +49,13 @@ typedef Executor<float>			 ExecutorF;
 typedef DefaultExecutor<float>   DefaultExecutorF;
 typedef Expression<float>        ExpressionF;
 
+
+/***********************************************************************************/
+/**define double*/
+/***********************************************************************************/
 typedef Variable<double>          VariableD;
 typedef Parameter<double>         ParameterD;
 typedef InputParameter<double>    InputParameterD;
-typedef ConstantParameter<double> ConstantParameterD;
 typedef Abs<double>				  AbsD;
 typedef Add<double>				  AddD;
 typedef AddScalar<double>		  AddScalarD;
@@ -81,6 +86,7 @@ typedef Softmax<double>			  SoftmaxD;
 typedef Square<double>			  SquareD;
 typedef SumElements<double>		  SumElementsD;
 typedef TanH<double>			  TanHD;
+
 typedef SGDTrainer<double>		  SGDTrainerD;
 typedef AdagradTrainer<double>	  AdagradTrainerD;
 typedef AdamTrainer<double>		  AdamTrainerD;
@@ -90,11 +96,13 @@ typedef Executor<double>          ExecutorD;
 typedef DefaultExecutor<double>   DefaultExecutorD;
 typedef Expression<double>        ExpressionD;
 
+/***********************************************************************************/
+/**define half*/
+/***********************************************************************************/
 #ifdef HAVE_HALF
 typedef Variable<half>          VariableH;
 typedef Parameter<half>         ParameterH;
 typedef InputParameter<half>    InputParameterH;
-typedef ConstantParameter<half> ConstantParameterH;
 typedef Abs<half>				AbsH;
 typedef Add<half>				AddH;
 typedef AddScalar<half>		    AddScalarH;
@@ -125,6 +133,7 @@ typedef Softmax<half>	        SoftmaxH;
 typedef Square<half>			SquareH;
 typedef SumElements<half>		SumElementsH;
 typedef TanH<half>			    TanHH;
+
 typedef SGDTrainer<half>		SGDTrainerH;
 typedef AdagradTrainer<half>	AdagradTrainerH;
 typedef AdamTrainer<half>		AdamTrainerH;
@@ -134,6 +143,7 @@ typedef Executor<half>          ExecutorH;
 typedef DefaultExecutor<half>   DefaultExecutorH;
 typedef Expression<half>        ExpressionH;
 #endif
+
 }
 
 #endif

@@ -173,7 +173,7 @@ void SumElements<half>::backwardGPU(const std::vector<const Tensor<half>*> &inpu
     int blockSize = 1024;
     int grideSize = (N + blockSize - 1) / blockSize;
 
-    SumElementsBackwardKernel<T> << <grideSize, blockSize >> > (dx, dy, size, N);
+    SumElementsBackwardKernel<half> << <grideSize, blockSize >> > (dx, dy, size, N);
 }
 #endif
 

@@ -69,7 +69,7 @@ void Linear<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
     auto dx = iGradient->data();
     auto dy = outputGradient->data();
-    auto N = (int)outputGradient->data();
+    auto N = (int)outputGradient->size();
 
     int minGrideSize;
     int blockSize;
@@ -93,7 +93,7 @@ void Linear<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
 
     auto dx = iGradient->data();
     auto dy = outputGradient->data();
-    auto N = (int)outputGradient->data();
+    auto N = (int)outputGradient->size();
 
     int blockSize = 1024;
     int grideSize = (N + blockSize - 1) / blockSize;

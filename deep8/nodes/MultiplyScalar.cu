@@ -113,10 +113,11 @@ void MultiplyScalar<half>::backwardGPU(const std::vector<const Tensor<half>*> &i
                                         Tensor<half> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
+	int N = iGradient->size();
     int blockSize = 1024;
     int grideSize = (N + blockSize - 1) / blockSize;
 
-    MultiplyScalarBackwardKernel<half> << <grideSize, blockSize >> > (iGradient->data(), scalar, outputGradient->data(), (int)iGradient->size());
+    MultiplyScalarBackwardKernel<half> << <grideSize, blockSize >> > (iGradient->data(), scalar, outputGradient->data(), N);
 }
 #endif
 

@@ -5,9 +5,9 @@
 
 #include "TestUtils.h"
 
-#include "AbsTest.h"
-#include "AddTest.h"
-#include "AddScalarTest.h"
+//#include "AbsTest.h"
+//#include "AddTest.h"
+//#include "AddScalarTest.h"
 //#include "AvgPooling2dTest.h"
 //#include "Conv2dTest.h"
 //#include "DeConv2dTest.h"
@@ -32,8 +32,7 @@
 //#include "SquareTest.h"
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
-//#include "LinearRegressionTest.h"
-//#include "LinearRegressionGPUTest.h"
+#include "LinearRegressionTest.h"
 
 using namespace Deep8;
 

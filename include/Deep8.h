@@ -1,68 +1,14 @@
 #ifndef DEEP8_DEEP8_H
 #define DEEP8_DEEP8_H
 
-#include "Basic.h"
+#ifdef HAVE_CUDA
+#include "GPUBasic.h"
+#include "GPUException.h"
+#include "GPUDevice.h"
+#endif
 
-//#include "basic/Basic.h"
-//#include "basic/Exception.h"
-//#include "basic/CudaException.h"
-//#include "basic/MemoryAllocator.h"
-//#include "basic/Shape.h"
-//
-//#include "utils/Utils.h"
-//#include "utils/MathUtils.h"
-//#include "utils/CudaMathUtils.h"
-//
-//#include "basic/MemoryPool.h"
-//#include "basic/Device.h"
-//#include "basic/TensorStorage.h"
-//#include "basic/Tensor.h"
-//
-//#include "utils/ShapeUtils.h"
-//#include "utils/TensorUtils.h"
+#include "Expression.h"
 
-#include "Node.h"
-#include "Variable.h"
-#include "Parameter.h"
-#include "InputParameter.h"
-#include "Function.h"
-
-#include "Abs.h"
-#include "Add.h"
-#include "AddScalar.h"
-#include "AvgPooling2d.h"
-#include "Conv2d.h"
-#include "DeConv2d.h"
-#include "Divide.h"
-#include "DivideScalar.h"
-#include "Exp.h"
-#include "L1Norm.h"
-#include "L2Norm.h"
-#include "Linear.h"
-#include "Log.h"
-#include "LReLu.h"
-#include "MatrixMultiply.h"
-#include "MaxPooling2d.h"
-#include "Minus.h"
-#include "MinusScalar.h"
-#include "Multiply.h"
-#include "MultiplyScalar.h"
-#include "Pow.h"
-#include "ReLu.h"
-#include "ReShape.h"
-#include "ScalarDivide.h"
-#include "ScalarMinus.h"
-#include "Sigmoid.h"
-#include "Softmax.h"
-#include "Square.h"
-#include "SumElements.h"
-#include "TanH.h"
-
-//#include "TensorInit.h"
-//#include "Trainer.h"
-//#include "Executor.h"
-//#include "Expression.h"
-//#include "DefaultExecutor.h"
-//#include "PreDefinition.h"
+#include "PreDefinition.h"
 
 #endif

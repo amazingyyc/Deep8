@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU
-set(HAVE_GPU true)
+set(HAVE_GPU false)
 
 if (HAVE_GPU)
 	project(Deep8 LANGUAGES CXX CUDA)
@@ -148,21 +148,21 @@ set(DEEP8_SRC_FILES
 		deep8/nodes/LReLu.cpp
 		deep8/nodes/MatrixMultiply.cpp
 		deep8/nodes/MaxPooling2d.cpp
-		# deep8/nodes/Minus.cpp
-		# deep8/nodes/MinusScalar.cpp
-		# deep8/nodes/Multiply.cpp
-		# deep8/nodes/MultiplyScalar.cpp
+		deep8/nodes/Minus.cpp
+		deep8/nodes/MinusScalar.cpp
+		deep8/nodes/Multiply.cpp
+		deep8/nodes/MultiplyScalar.cpp
 		deep8/nodes/Parameter.cpp
-		# deep8/nodes/Pow.cpp
-		# deep8/nodes/ReLu.cpp
-		# deep8/nodes/ReShape.cpp
-		# deep8/nodes/ScalarDivide.cpp
-		# deep8/nodes/ScalarMinus.cpp
-		# deep8/nodes/Sigmoid.cpp
-		# deep8/nodes/Softmax.cpp
-		# deep8/nodes/Square.cpp
-		# deep8/nodes/SumElements.cpp
-		# deep8/nodes/TanH.cpp
+		deep8/nodes/Pow.cpp
+		deep8/nodes/ReLu.cpp
+		deep8/nodes/ReShape.cpp
+		deep8/nodes/ScalarDivide.cpp
+		deep8/nodes/ScalarMinus.cpp
+		deep8/nodes/Sigmoid.cpp
+		deep8/nodes/Softmax.cpp
+		deep8/nodes/Square.cpp
+		deep8/nodes/SumElements.cpp
+		deep8/nodes/TanH.cpp
 		deep8/nodes/Variable.cpp
 
 		)
@@ -192,19 +192,19 @@ set(DEEP8_CUDA_SRC_FILES
 		deep8/nodes/LReLu.cu
 		deep8/nodes/MatrixMultiply.cu
 		deep8/nodes/MaxPooling2d.cu
-		# deep8/nodes/Minus.cu
-		# deep8/nodes/MinusScalar.cu
-		# deep8/nodes/Multiply.cu
-		# deep8/nodes/MultiplyScalar.cu
-		# deep8/nodes/Pow.cu
-		# deep8/nodes/ReLu.cu
-		# deep8/nodes/ScalarDivide.cu
-		# deep8/nodes/ScalarMinus.cu
-		# deep8/nodes/Sigmoid.cu
-		# deep8/nodes/Softmax.cu
-		# deep8/nodes/Square.cu
-		# deep8/nodes/SumElements.cu
-		# deep8/nodes/TanH.cu
+		deep8/nodes/Minus.cu
+		deep8/nodes/MinusScalar.cu
+		deep8/nodes/Multiply.cu
+		deep8/nodes/MultiplyScalar.cu
+		deep8/nodes/Pow.cu
+		deep8/nodes/ReLu.cu
+		deep8/nodes/ScalarDivide.cu
+		deep8/nodes/ScalarMinus.cu
+		deep8/nodes/Sigmoid.cu
+		deep8/nodes/Softmax.cu
+		deep8/nodes/Square.cu
+		deep8/nodes/SumElements.cu
+		deep8/nodes/TanH.cu
 		)
 
 set (DEEP8_TEST_SRC_FILES test/Deep8Test.cpp)
