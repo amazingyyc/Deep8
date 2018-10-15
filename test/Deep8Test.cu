@@ -1,10 +1,6 @@
 #include <iostream>
 #include <gtest/gtest.h>
 
-/**hack complier*/
-#define private public
-#define protected public
-
 #include "Deep8.h"
 
 #include "TestUtils.h"
@@ -38,19 +34,20 @@
 //#include "TanHTest.h"
 //#include "LinearRegressionTest.h"
 #include "LinearRegressionGPUTest.h"
-//#include "LinearRegressionHalfTest.h"
-//#include "GPUMemoryPoolTest.h"
 
 using namespace Deep8;
 
-int main(int argc,char *argv[]) {
+int main(int argc, char *argv[]) {
 
-    srand((unsigned)time(NULL));
+	srand((unsigned)time(NULL));
 
-    testing::InitGoogleTest(&argc, argv);
+	testing::InitGoogleTest(&argc, argv);
 
-    RUN_ALL_TESTS();
+	RUN_ALL_TESTS();
+
+#if defined(_MSC_VER)
 	getchar();
+#endif
 
-    return 0;
+	return 0;
 }

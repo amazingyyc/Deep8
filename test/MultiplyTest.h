@@ -42,26 +42,26 @@ TEST(Multiply, forwardCPU) {
 TEST(Multiply, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue0 = createTensor<CPUDevice, long double>(device, 10, 100, 200);
-	auto inputValue1 = createTensor<CPUDevice, long double>(device, 1, 200);
+	auto inputValue0 = createTensor<CPUDevice, double>(device, 10, 100, 200);
+	auto inputValue1 = createTensor<CPUDevice, double>(device, 1, 200);
 
-	auto inputGrad0 = createTensor<CPUDevice, long double>(device, 10, 100, 200);
-	auto inputGrad1 = createTensor<CPUDevice, long double>(device, 1, 200);
+	auto inputGrad0 = createTensor<CPUDevice, double>(device, 10, 100, 200);
+	auto inputGrad1 = createTensor<CPUDevice, double>(device, 1, 200);
 
-    auto outputValue = createTensor<CPUDevice, long double>(device, 10, 100, 200);
-    auto outputGrad  = createTensor<CPUDevice, long double>(device, 10, 100, 200);
+    auto outputValue = createTensor<CPUDevice, double>(device, 10, 100, 200);
+    auto outputGrad  = createTensor<CPUDevice, double>(device, 10, 100, 200);
 
     /**create fake Add Function*/
-    auto inputVar0 = createFakeVariable<CPUDevice, long double>(device);
-    auto inputVar1 = createFakeVariable<CPUDevice, long double>(device);
+    auto inputVar0 = createFakeVariable<CPUDevice, double>(device);
+    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
 
     std::vector<Node*> inputs = {&inputVar0, &inputVar1};
-    Multiply<long double> cwiseMultiply(inputs);
+    Multiply<double> cwiseMultiply(inputs);
 
     zeroTensor(device, inputGrad0);
     zeroTensor(device, inputGrad1);
 
-    std::vector<const Tensor<long double>*> inputValues = {&inputValue0, &inputValue1};
+    std::vector<const Tensor<double>*> inputValues = {&inputValue0, &inputValue1};
 
     cwiseMultiply.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
     cwiseMultiply.backwardCPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
@@ -81,7 +81,7 @@ TEST(Multiply, backwardCPU) {
      * test inputGrad1
      */
     for (int i = 0; i < 200; ++i) {
-        long double temp = 0;
+        double temp = 0;
 
         for (int m = 0; m < 10; ++m) {
             for (int n = 0; n < 100; ++n) {
@@ -92,12 +92,12 @@ TEST(Multiply, backwardCPU) {
         ASSERT_EQ(inputGrad1.data()[i], temp);
     }
 
-    freeTensor<CPUDevice, long double>(device, inputValue0);
-    freeTensor<CPUDevice, long double>(device, inputValue1);
-    freeTensor<CPUDevice, long double>(device, inputGrad0);
-    freeTensor<CPUDevice, long double>(device, inputGrad1);
-    freeTensor<CPUDevice, long double>(device, outputValue);
-    freeTensor<CPUDevice, long double>(device, outputGrad);
+    freeTensor<CPUDevice, double>(device, inputValue0);
+    freeTensor<CPUDevice, double>(device, inputValue1);
+    freeTensor<CPUDevice, double>(device, inputGrad0);
+    freeTensor<CPUDevice, double>(device, inputGrad1);
+    freeTensor<CPUDevice, double>(device, outputValue);
+    freeTensor<CPUDevice, double>(device, outputGrad);
 
     freeFakeVariable(inputVar0);
     freeFakeVariable(inputVar1);
@@ -172,7 +172,7 @@ TEST(Multiply, GPU_float) {
      * test inputGrad1
      */
     for (int i = 0; i < 200; ++i) {
-        long double temp = 0;
+        float temp = 0;
 
         for (int m = 0; m < 10; ++m) {
             for (int n = 0; n < 100; ++n) {

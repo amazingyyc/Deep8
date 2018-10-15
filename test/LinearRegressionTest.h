@@ -1,6 +1,11 @@
 #ifndef DEEP8_LINEARREGRESSIONTEST_H
 #define DEEP8_LINEARREGRESSIONTEST_H
 
+#include "DefaultExecutor.h"
+#include "Trainer.h"
+#include "Device.h"
+#include "Expression.h"
+
 namespace Deep8 {
 
 TEST(LinearRegression, test) {

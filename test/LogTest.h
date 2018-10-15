@@ -8,8 +8,8 @@ namespace Deep8 {
 TEST(Log, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, long double>(device, 10, 400, 200);
-    auto output = createTensor<CPUDevice, long double>(device, 10, 400, 200);
+    auto input  = createTensor<CPUDevice, double>(device, 10, 400, 200);
+    auto output = createTensor<CPUDevice, double>(device, 10, 400, 200);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
         if (input.data()[i] <= 0) {
@@ -17,12 +17,12 @@ TEST(Log, forwardCPU) {
         }
     }
 
-    auto inputVar1 = createFakeVariable<CPUDevice, long double>(device);
+    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
 
     std::vector<Node*> inputs = {&inputVar1};
-    Log<long double> logFunc(inputs);
+    Log<double> logFunc(inputs);
 
-    std::vector<const Tensor<long double>*> inputTensor = {&input};
+    std::vector<const Tensor<double>*> inputTensor = {&input};
 
     logFunc.forwardCPU(inputTensor, &output);
 
@@ -40,11 +40,11 @@ TEST(Log, forwardCPU) {
 TEST(Log, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, long double>(device, 10, 400, 200);
-	auto inputGrad = createTensor<CPUDevice, long double>(device, 10, 400, 200);
+	auto inputValue = createTensor<CPUDevice, double>(device, 10, 400, 200);
+	auto inputGrad = createTensor<CPUDevice, double>(device, 10, 400, 200);
 
-    auto outputValue = createTensor<CPUDevice, long double>(device, 10, 400, 200);
-    auto outputGrad  = createTensor<CPUDevice, long double>(device, 10, 400, 200);
+    auto outputValue = createTensor<CPUDevice, double>(device, 10, 400, 200);
+    auto outputGrad  = createTensor<CPUDevice, double>(device, 10, 400, 200);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
         if (inputValue.data()[i] <= 0) {
@@ -53,20 +53,20 @@ TEST(Log, backwardCPU) {
     }
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, long double>(device);
+    auto inputVar = createFakeVariable<CPUDevice, double>(device);
 
     std::vector<Node*> inputs = {&inputVar};
-    Log<long double> logFunc(inputs);
+    Log<double> logFunc(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<long double>*> inputValues = {&inputValue};
+    std::vector<const Tensor<double>*> inputValues = {&inputValue};
 
     logFunc.forwardCPU(inputValues, &outputValue);
     logFunc.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        long double temp = outputGrad.data()[i] / inputValue.data()[i];
+        double temp = outputGrad.data()[i] / inputValue.data()[i];
 
         ASSERT_TRUE(std::abs(temp - inputGrad.data()[i]) < 1e-6);
     }
