@@ -2,6 +2,8 @@
 
 namespace Deep8 {
 
+#ifdef HAVE_CUDA
+
 GPUMemoryPool::GPUMemoryPool() : GPUMemoryPool(0, DEFAULT_CPU_MEMORY_BLOCK_SIZE_FOR_GPU, DEFAULT_MEMORY_BLOCK_SIZE) {
 }
 
@@ -340,4 +342,7 @@ void GPUMemoryPool::printInfo() {
 	std::cout << cpuMemoryPool->toString() << std::endl;
 	std::cout << "============================================================" << std::endl;
 }
+
+#endif
+
 }

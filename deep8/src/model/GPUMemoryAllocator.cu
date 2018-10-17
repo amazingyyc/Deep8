@@ -2,6 +2,8 @@
 
 namespace Deep8 {
 
+#ifdef HAVE_CUDA
+
 GPUMemoryAllocator::GPUMemoryAllocator(int deviceId) : deviceId(deviceId) {
 }
 
@@ -52,5 +54,7 @@ void GPUMemoryAllocator::copyFromGPUToGPU(const void *from, void *to, size_t siz
 	CUDA_CHECK(cudaSetDevice(deviceId));
 	CUDA_CHECK(cudaMemcpy(to, from, size, cudaMemcpyDeviceToDevice));
 }
+
+#endif
 
 }

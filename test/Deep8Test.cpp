@@ -3,7 +3,7 @@
 
 #include "Deep8.h"
 
-#include "TestUtils.h"
+//#include "TestUtils.h"
 
 //#include "AbsTest.h"
 //#include "AddTest.h"
@@ -33,6 +33,10 @@
 //#include "SumElementsTest.h"
 //#include "TanHTest.h"
 #include "LinearRegressionTest.h"
+
+#ifdef HAVE_CUDA
+#include "LinearRegressionGPUTest.h"
+#endif
 
 using namespace Deep8;
 

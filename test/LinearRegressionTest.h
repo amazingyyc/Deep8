@@ -1,7 +1,7 @@
 #ifndef DEEP8_LINEARREGRESSIONTEST_H
 #define DEEP8_LINEARREGRESSIONTEST_H
 
-#include "DefaultExecutor.h"
+#include "EagerExecutor.h"
 #include "Trainer.h"
 #include "Device.h"
 #include "Expression.h"
@@ -17,7 +17,7 @@ TEST(LinearRegression, test) {
 	float x[4] = { 4, -1, 2, 1 };
 	float y[2] = { 10, 8 };
 
-	DefaultExecutorF executor(new AdagradTrainerF(), DeviceType::CPU);
+	EagerExecutorF executor(new AdagradTrainerF(), DeviceType::CPU);
 
 	auto wP = executor.addParameter({ 1, 2 });
 	ExpressionF W(&executor, wP);
@@ -28,7 +28,7 @@ TEST(LinearRegression, test) {
 	auto outputP = executor.addInputParameter({ 1, 2 }, y);
 	ExpressionF output(&executor, outputP);
 
-    for (int i = 0; i < 3000; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         (input * W - output).l1Norm().backward();
 
         /**print the W*/

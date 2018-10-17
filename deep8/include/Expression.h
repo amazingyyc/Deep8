@@ -37,7 +37,7 @@
 #include "TanH.h"
 
 #include "Executor.h"
-#include "DefaultExecutor.h"
+#include "EagerExecutor.h"
 
 namespace Deep8 {
 

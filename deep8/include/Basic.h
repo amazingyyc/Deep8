@@ -35,7 +35,6 @@
 #include <cuda_fp16.h>
 #endif
 
-#define EIGEN_NO_CUDA
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 

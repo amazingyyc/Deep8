@@ -3,8 +3,6 @@
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
 TEST(LinearRegression, GPU_Test) {
 	/**
      * |4,  -1|   |a|   |10|
@@ -14,7 +12,7 @@ TEST(LinearRegression, GPU_Test) {
     float x[4] = {4, -1, 2, 1};
     float y[2] = {10, 8};
 
-	DefaultExecutorF executor(new AdagradTrainerF(), DeviceType::GPU);
+	EagerExecutorF executor(new AdagradTrainerF(), DeviceType::GPU);
 
 	auto wP = executor.addParameter({1, 2});
     ExpressionF W(&executor, wP);
@@ -27,7 +25,7 @@ TEST(LinearRegression, GPU_Test) {
 
 	float wPtr[2];
 
-	for (int i = 0; i < 3000; ++i) {
+	for (int i = 0; i < 1000; ++i) {
 		auto t3 = (input * W - output).l1Norm();
 		t3.backward();
 
@@ -37,8 +35,6 @@ TEST(LinearRegression, GPU_Test) {
 
 	std::cout << "the result should be around: [3, 2]" << std::endl;
 }
-
-#endif
 
 }
 

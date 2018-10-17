@@ -1,15 +1,15 @@
 #include "Expression.h"
-#include "DefaultExecutor.h"
+#include "EagerExecutor.h"
 
 namespace Deep8 {
 
 template <typename T>
-DefaultExecutor<T>::DefaultExecutor(Trainer<T> *tr, DeviceType deviceType, bool flag) :
+EagerExecutor<T>::EagerExecutor(Trainer<T> *tr, DeviceType deviceType, bool flag) :
 	Executor<T>(tr, deviceType), clearFlag(flag) {
 }
 
 template <typename T>
-Node* DefaultExecutor<T>::addFunction(FunctionBase *function) {
+Node* EagerExecutor<T>::addFunction(FunctionBase *function) {
 	auto variable = Executor<T>::addFunction(function);
 
 	function->forward();
@@ -18,7 +18,7 @@ Node* DefaultExecutor<T>::addFunction(FunctionBase *function) {
 }
 
 template <typename T>
-void DefaultExecutor<T>::clearIntermediaryNodes() {
+void EagerExecutor<T>::clearIntermediaryNodes() {
 	for (auto item : this->nonParameterCollection) {
 		this->nodeCollection.erase(item);
 
@@ -29,22 +29,22 @@ void DefaultExecutor<T>::clearIntermediaryNodes() {
 }
 
 template <typename T>
-void DefaultExecutor<T>::forward(Expression<T> &e) {
-	DEEP8_RUNTIME_ERROR("the DefaultExecutor can not call the forward");
+void EagerExecutor<T>::forward(Expression<T> &e) {
+	DEEP8_RUNTIME_ERROR("the EagerExecutor can not call the forward");
 }
 
 template <typename T>
-void DefaultExecutor<T>::forward(Node *) {
-	DEEP8_RUNTIME_ERROR("the DefaultExecutor can not call the forward");
+void EagerExecutor<T>::forward(Node *) {
+	DEEP8_RUNTIME_ERROR("the EagerExecutor can not call the forward");
 }
 
 template <typename T>
-void DefaultExecutor<T>::backward(Expression<T> &e) {
+void EagerExecutor<T>::backward(Expression<T> &e) {
 	backward(e.node);
 }
 
 template <typename T>
-void DefaultExecutor<T>::backward(Node *last) {
+void EagerExecutor<T>::backward(Node *last) {
 	DEEP8_ARGUMENT_CHECK(nullptr != last && last->type == NodeType::Variable, "the last node must be a Variable");
 
 	auto lastVariable = static_cast<VariableBase*>(last);
@@ -104,6 +104,6 @@ void DefaultExecutor<T>::backward(Node *last) {
 	}
 }
 
-DEEP8_DECLARATION_INSTANCE(DefaultExecutor)
+DEEP8_DECLARATION_INSTANCE(EagerExecutor)
 
 }
