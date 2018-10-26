@@ -22,7 +22,7 @@ if (HAVE_GPU AND HAVE_CUDA)
 	endif()
 else()
 	message(STATUS "do not have GPU only support CPU")
-	add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH)
+	add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
 endif()
 
 # deep8 include

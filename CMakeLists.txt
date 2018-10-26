@@ -5,6 +5,8 @@ set(HAVE_GPU FALSE)
 set(BUILD_PYTHON TRUE)
 set(BUILD_TEST FALSE)
 
+add_definitions(-std=c++11)
+
 if (HAVE_GPU)
 	# find the CUDA
 	find_package(CUDA)
@@ -78,15 +80,14 @@ if (MSVC)
 	set(gtest_force_shared_crt true)
 endif()
 
-message(STATUS "include googletest")
-add_subdirectory(third_party/googletest)
-include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-
 if (BUILD_PYTHON)
 	add_subdirectory(third_party/pybind11)
 	add_subdirectory(python)
 endif()
 
 if (BUILD_TEST)
+    message(STATUS "include googletest")
+    add_subdirectory(third_party/googletest)
+    include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 	add_subdirectory(test)
 endif()

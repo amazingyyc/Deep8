@@ -1,9 +1,4 @@
-project(deep8_python LANGUAGES CXX)
+project(deep8_python)
 
-set(DEEP8_PYTHON_SRC_FILES
-
-	Python.cpp
-	)
-
-add_executable(deep8_python ${DEEP8_PYTHON_SRC_FILES})
-target_link_libraries(deep8_python deep8)
+pybind11_add_module(deep8_python Python.cpp)
+target_link_libraries(deep8_python PRIVATE deep8)
