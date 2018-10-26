@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU and if build the test
-set(HAVE_GPU false)
+set(HAVE_GPU FALSE)
 set(BUILD_TEST TRUE)
 
 if (HAVE_GPU)
@@ -61,10 +61,11 @@ else()
 endif()
 
 # include the Eigen
+include_directories(third_party)
 include_directories(third_party/eigen)
 
 # deep8
-include_directories(include)
+include_directories(deep8/include)
 
 # ad deep8
 add_subdirectory(deep8)
