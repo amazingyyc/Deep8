@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU and if build the test
 set(HAVE_GPU FALSE)
-set(BUILD_TEST TRUE)
+set(BUILD_PYTHON TRUE)
+set(BUILD_TEST FALSE)
 
 if (HAVE_GPU)
 	# find the CUDA
@@ -63,6 +64,7 @@ endif()
 # include the Eigen
 include_directories(third_party)
 include_directories(third_party/eigen)
+include_directories(third_party/pybind11/include)
 
 # deep8
 include_directories(deep8/include)
@@ -79,6 +81,11 @@ endif()
 message(STATUS "include googletest")
 add_subdirectory(third_party/googletest)
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
+if (BUILD_PYTHON)
+	add_subdirectory(third_party/pybind11)
+	add_subdirectory(python)
+endif()
 
 if (BUILD_TEST)
 	add_subdirectory(test)
