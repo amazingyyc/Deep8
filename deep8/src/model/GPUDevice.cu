@@ -2,6 +2,8 @@
 
 namespace Deep8 {
 
+#ifdef HAVE_CUDA
+
 GPUDevice::GPUDevice() : GPUDevice(0) {
 }
  
@@ -126,5 +128,7 @@ void* GPUDevice::gpuOneFloat() {
 void* GPUDevice::gpuOneDouble() {
 	return oneDouble;
 }
+
+#endif
 
 }

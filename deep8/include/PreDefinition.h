@@ -46,7 +46,7 @@ typedef AdamTrainer<float>		 AdamTrainerF;
 typedef RMSPropTrainer<float>    RMSPropTrainerF;
 typedef MomentumTrainer<float>	 MomentumTrainerF;
 typedef Executor<float>			 ExecutorF;
-typedef DefaultExecutor<float>   DefaultExecutorF;
+typedef EagerExecutor<float>     EagerExecutorF;
 typedef Expression<float>        ExpressionF;
 
 
@@ -93,7 +93,7 @@ typedef AdamTrainer<double>		  AdamTrainerD;
 typedef RMSPropTrainer<double>    RMSPropTrainerD;
 typedef MomentumTrainer<double>	  MomentumTrainerD;
 typedef Executor<double>          ExecutorD;
-typedef DefaultExecutor<double>   DefaultExecutorD;
+typedef EagerExecutor<double>	  EagerExecutorD;
 typedef Expression<double>        ExpressionD;
 
 /***********************************************************************************/
@@ -140,7 +140,7 @@ typedef AdamTrainer<half>		AdamTrainerH;
 typedef RMSPropTrainer<half>    RMSPropTrainerH;
 typedef MomentumTrainer<half>	MomentumTrainerH;
 typedef Executor<half>          ExecutorH;
-typedef DefaultExecutor<half>   DefaultExecutorH;
+typedef EagerExecutor<half>     EagerExecutorH;
 typedef Expression<half>        ExpressionH;
 #endif
 

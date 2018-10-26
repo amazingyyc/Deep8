@@ -14,7 +14,7 @@ namespace Deep8 {
  * When create the Function Add DefaultExecutor will calculate the result put it into Z immediately.
  */
 template <typename T>
-class DefaultExecutor : public Executor<T> {
+class EagerExecutor : public Executor<T> {
 protected:
 	/**
 	 * @brief if the Executor will delete the Function and Variable after the backward process.
@@ -33,7 +33,7 @@ protected:
 	bool clearFlag;
 
 public:
-	explicit DefaultExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true);
+	explicit EagerExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true);
 
 	Node *addFunction(FunctionBase *function) override;
 

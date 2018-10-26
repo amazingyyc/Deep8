@@ -9,7 +9,7 @@ namespace Deep8 {
 
 TEST(Compile, test) {
 	SGDTrainer<float> *trainer = new SGDTrainer<float>();
-	auto executor = new DefaultExecutor<float>(trainer, DeviceType::GPU);
+	auto executor = new EagerExecutor<float>(trainer, DeviceType::GPU);
 
 	auto input  = executor->addParameter({ 400, 200 });
 	auto output = executor->addParameter({ 400, 200 });
