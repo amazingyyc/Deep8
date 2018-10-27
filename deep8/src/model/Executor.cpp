@@ -81,7 +81,7 @@ Variable<T>* Executor<T>::createVariableByFunction(FunctionBase *function) {
 }
 
 template <typename T>
-Parameter<T>* Executor<T>::addParameter(std::initializer_list<size_t> list) {
+Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list) {
 	Shape shape(list);
 
 	return addParameter(shape);
@@ -104,14 +104,14 @@ Parameter<T>* Executor<T>::addParameter(Shape &shape) {
 }
 
 template <typename T>
-InputParameter<T>* Executor<T>::addInputParameter(std::initializer_list<size_t> list, T *ptr) {
+InputParameter<T>* Executor<T>::addInputParameter(std::vector<size_t> list, void *ptr) {
 	Shape shape(list);
 
 	return addInputParameter(shape, ptr);
 }
 
 template <typename T>
-InputParameter<T>* Executor<T>::addInputParameter(Shape &shape, T *ptr) {
+InputParameter<T>* Executor<T>::addInputParameter(Shape &shape, void *ptr) {
 	auto value = createTensorWithShape(shape);
 
 	auto inputParameter = new InputParameter<T>(value);

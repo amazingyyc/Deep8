@@ -1,29 +1,12 @@
 if (HAVE_GPU)
-	project(deep8 LANGUAGES CXX CUDA)
+	project(deep8_native LANGUAGES CXX CUDA)
 else()
-    project(deep8 LANGUAGES CXX)
+    project(deep8_native LANGUAGES CXX)
 endif()
 
 message(STATUS "========================================================================================================")
-message(STATUS "Begin compile deep8")
+message(STATUS "Begin compile deep8_native")
 message(STATUS "========================================================================================================")
-
-# set the Maro for Eigen
-if (HAVE_GPU AND HAVE_CUDA)
-	message(STATUS "find the GPU add set Eigen use multi-threads")
-	add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
-	
-	if (HAVE_CUDNN)
-		add_definitions(-DHAVE_CUDNN)
-	endif()
-
-	if (HAVE_HALF)
-		add_definitions(-DHAVE_HALF)
-	endif()
-else()
-	message(STATUS "do not have GPU only support CPU")
-	add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
-endif()
 
 # deep8 include
 include_directories(include)
@@ -135,20 +118,20 @@ if (HAVE_GPU AND HAVE_CUDA)
 		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_HALF")
 	endif()
 
-	add_library(deep8 ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES})
+	add_library(deep8_native SHARED ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES})
 
 	# add cuBlas library
-	cuda_add_cublas_to_target(deep8)
+	cuda_add_cublas_to_target(deep8_native)
 
 	# link the gtest and CUDA library
-	target_link_libraries(deep8 gtest ${CUDA_LIBRARIES})
+	target_link_libraries(deep8_native ${CUDA_LIBRARIES})
 else()
-	add_library(deep8  ${DEEP8_SRC_FILES} ${DEEP8_HEAD_FILES})
+	add_library(deep8_native SHARED ${DEEP8_SRC_FILES} ${DEEP8_HEAD_FILES})
 endif()
 
-install(TARGETS deep8 DESTINATION lib)
+install(TARGETS deep8_native DESTINATION lib)
 install(FILES ${DEEP8_HEAD_FILES} DESTINATION include/deep8)
 
 message(STATUS "========================================================================================================")
-message(STATUS "end compile deep8")
+message(STATUS "end compile deep8_native")
 message(STATUS "========================================================================================================")

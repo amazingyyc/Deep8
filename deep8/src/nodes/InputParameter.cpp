@@ -13,7 +13,7 @@ InputParameter<T>::InputParameter(Tensor<T> &value): Parameter<T>(value) {
  * the pointer's memory must bigger than the value size
  */
 template <typename T>
-void InputParameter<T>::feed(const T *ptr) {
+void InputParameter<T>::feed(const void *ptr) {
 	DEEP8_ARGUMENT_CHECK(nullptr != ptr, "the pointer can not be null");
 
 	if (this->value.device()->type == DeviceType::CPU) {

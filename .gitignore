@@ -2,5 +2,7 @@
 .vs/
 .idea/
 .vscode/
-/.idea/workspace.xml
 build
+CMakeSettings.json
+deep8.egg-info/
+dist/

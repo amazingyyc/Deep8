@@ -68,6 +68,8 @@ public:
 
 	void reShape(std::initializer_list<size_t> list);
 
+	void reShape(std::vector<size_t> list);
+
     /**
      * reShape this same to other Shape, but the batch is special
      */

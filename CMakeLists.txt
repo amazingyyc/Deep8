@@ -5,7 +5,7 @@ set(HAVE_GPU FALSE)
 set(BUILD_PYTHON TRUE)
 set(BUILD_TEST FALSE)
 
-add_definitions(-std=c++11)
+set(CMAKE_CXX_STANDARD 11)
 
 if (HAVE_GPU)
 	# find the CUDA
@@ -63,22 +63,32 @@ else()
 	message(STATUS "can not find the CUDA")
 endif()
 
-# include the Eigen
+# set the Maro for Eigen
+if (HAVE_GPU AND HAVE_CUDA)
+	message(STATUS "find the GPU add set Eigen use multi-threads")
+	add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
+
+	if (HAVE_CUDNN)
+		add_definitions(-DHAVE_CUDNN)
+	endif()
+
+	if (HAVE_HALF)
+		add_definitions(-DHAVE_HALF)
+	endif()
+else()
+	message(STATUS "do not have GPU only support CPU")
+	add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
+endif()
+
+
+# include
 include_directories(third_party)
 include_directories(third_party/eigen)
 include_directories(third_party/pybind11/include)
-
-# deep8
 include_directories(deep8/include)
 
-# ad deep8
+# add deep8
 add_subdirectory(deep8)
-
-# gtest
-if (MSVC)
-	message(STATUS "when use the MSVC set the gtest_force_shared_crt be true to void a compile error")
-	set(gtest_force_shared_crt true)
-endif()
 
 if (BUILD_PYTHON)
 	add_subdirectory(third_party/pybind11)
@@ -86,6 +96,12 @@ if (BUILD_PYTHON)
 endif()
 
 if (BUILD_TEST)
+	# gtest
+	if (MSVC)
+		message(STATUS "when use the MSVC set the gtest_force_shared_crt be true to void a compile error")
+		set(gtest_force_shared_crt true)
+	endif()
+
     message(STATUS "include googletest")
     add_subdirectory(third_party/googletest)
     include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})

@@ -110,7 +110,7 @@ public:
 		return Expression<T>(executor, executor->addFunction(new ReShape<T>(inputs, shape)));
 	}
 
-	Expression<T> reShape(std::initializer_list<size_t> list) {
+	Expression<T> reShape(std::vector<size_t> list) {
 		std::vector<Node*> inputs = { node };
 		return Expression<T>(executor, executor->addFunction(new ReShape<T>(inputs, list)));
 	}

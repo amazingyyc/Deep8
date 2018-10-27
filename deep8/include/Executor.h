@@ -63,11 +63,11 @@ protected:
 public:
 	virtual ~Executor();
 
-	Parameter<T> *addParameter(std::initializer_list<size_t> list);
+	Parameter<T> *addParameter(std::vector<size_t> list);
 	Parameter<T> *addParameter(Shape &shape);
 
-	InputParameter<T> *addInputParameter(std::initializer_list<size_t> list, T *ptr = nullptr);
-	InputParameter<T> *addInputParameter(Shape &shape, T *ptr = nullptr);
+	InputParameter<T> *addInputParameter(std::vector<size_t> list, void *ptr = nullptr);
+	InputParameter<T> *addInputParameter(Shape &shape, void *ptr = nullptr);
 
 	virtual Node *addFunction(FunctionBase *function);
 

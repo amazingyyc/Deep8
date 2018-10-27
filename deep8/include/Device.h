@@ -11,8 +11,8 @@ namespace Deep8 {
  * for now only the CPU is supported
  */
 enum class DeviceType {
-    CPU,
-    GPU,
+    CPU = 0,
+    GPU = 1,
 };
 
 class Device {
