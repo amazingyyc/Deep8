@@ -13,7 +13,7 @@ InputParameter<T>::InputParameter(Tensor<T> &value): Parameter<T>(value) {
  * the pointer's memory must bigger than the value size
  */
 template <typename T>
-void InputParameter<T>::feed(const T *ptr) {
+void InputParameter<T>::feed(const void *ptr) {
 	DEEP8_ARGUMENT_CHECK(nullptr != ptr, "the pointer can not be null");
 
 	if (this->value.device()->type == DeviceType::CPU) {
@@ -34,6 +34,14 @@ void InputParameter<T>::zeroGradient() {
 template <typename T>
 bool InputParameter<T>::isScalar() {
 	return this->value.isScalar();
+}
+
+template <typename T>
+std::string InputParameter<T>::toString() {
+	std::stringstream ss;
+	ss << "Value is " << this->value.toString();
+
+	return ss.str();
 }
 
 DEEP8_DECLARATION_INSTANCE(InputParameter)

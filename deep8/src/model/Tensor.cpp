@@ -1,4 +1,5 @@
 #include "Tensor.h"
+#include "TypeUtils.h"
 
 namespace Deep8 {
 
@@ -19,7 +20,7 @@ Tensor<T>::Tensor(TensorStorage &ts, size_t off, std::initializer_list<size_t> l
 }
 
 template<typename T>
-DeviceType Tensor<T>::DeviceType() {
+DeviceType Tensor<T>::deviceType() {
 	return storage.device->type;
 }
 
@@ -121,10 +122,50 @@ T Tensor<T>::scalar() {
 		device()->copyFromGPUToCPU(raw(), &scalar, sizeof(T));
 
 		return scalar;
-#else 
-		DEEP8_RUNTIME_ERROR("can not call GPU function withou a GPU");
+#else
+		DEEP8_RUNTIME_ERROR("can not call GPU function without a GPU");
 #endif
 	}
+}
+
+template <typename T>
+std::string Tensor<T>::toString() {
+	std::stringstream ss;
+	ss << "Device Type:" << (DeviceType::CPU == deviceType() ? "CPU" : "GPU");
+	ss << ", Data Type:" << typeStr<T>();
+	ss << ", Data Shape:" << shape.toString();
+	ss << ", ptr:" << raw();
+
+    return ss.str();
+}
+
+/**convert the value to string to print*/
+template <typename T>
+std::string Tensor<T>::dataString() {
+	std::stringstream ss;
+	ss << "[";
+
+	if (DeviceType::CPU == deviceType()) {
+		for (size_t i = 0; i < shape.size(); ++i) {
+			ss << data()[i] << ", ";
+		}
+	} else {
+#ifdef HAVE_CUDA
+		std::vector<T> vec(shape.size());
+
+		device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(T) * shape.size());
+
+		for (size_t i = 0; i < shape.size(); ++i) {
+			ss << vec[i] << ", ";
+		}
+#else
+		DEEP8_RUNTIME_ERROR("Can not call GPU function without a GPU");
+#endif
+	}
+
+	ss << "]";
+
+	return ss.str();
 }
 
 DEEP8_DECLARATION_INSTANCE(Tensor);

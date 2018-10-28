@@ -96,6 +96,10 @@ size_t Shape::batchSize() const {
 }
 
 size_t Shape::size() const {
+	if (0 == numDimension) {
+		return 0;
+	}
+
 	size_t ret = 1;
 
 	for (size_t i = 0; i < numDimension; ++i) {
@@ -156,6 +160,15 @@ void Shape::reShape(std::initializer_list<size_t> list) {
 	}
 }
 
+void Shape::reShape(std::vector<size_t> list) {
+	DEEP8_ARGUMENT_CHECK(list.size() <= MAX_TENSOR_DIMS, "the dim of a outputShape must not bigger than: " << MAX_TENSOR_DIMS);
+
+	this->numDimension = 0;
+	for (auto d : list) {
+		dimensions[numDimension++] = d;
+	}
+}
+
 /**
  * reShape this same to other Shape, but the batch is special
  */
@@ -163,6 +176,20 @@ void Shape::reShape(size_t batch, Shape &otherShape) {
 	reShape(otherShape);
 
 	dimensions[0] = batch;
+}
+
+std::string Shape::toString() {
+	std::stringstream ss;
+	ss << "Rank: " << numDimension;
+	ss << ", Dimension: [";
+
+	for (size_t i = 0; i < numDimension; ++i) {
+		ss << dimensions[i] << ", ";
+	}
+
+	ss << "].";
+
+	return ss.str();
 }
 
 }

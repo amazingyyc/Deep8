@@ -19,21 +19,16 @@ TEST(LinearRegression, test) {
 
 	EagerExecutorF executor(new AdagradTrainerF(), DeviceType::CPU);
 
-	auto wP = executor.addParameter({ 1, 2 });
-	ExpressionF W(&executor, wP);
+	auto w = parameter(&executor, { 1, 2 });
 
-	auto inputP = executor.addInputParameter({ 1, 2, 2 }, x);
-	ExpressionF input(&executor, inputP);
-
-	auto outputP = executor.addInputParameter({ 1, 2 }, y);
-	ExpressionF output(&executor, outputP);
+	auto input  = inputParameter(&executor, { 1, 2, 2 }, x);
+	auto output = inputParameter(&executor, { 1, 2 }, y);
 
     for (int i = 0; i < 1000; ++i) {
-        (input * W - output).l1Norm().backward();
+        (input * w - output).l1Norm().backward();
 
-        /**print the W*/
-        auto ptr = wP->value.data();
-        std::cout << i + 1 << " => " << "[" << ptr[0] << "," << ptr[1] << "]" << std::endl;
+        /**print the w*/
+        std::cout << i + 1 << " => " << w.valueString() << std::endl;
     }
 
     std::cout << "the result should be around: [3, 2]" << std::endl;

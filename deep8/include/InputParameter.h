@@ -19,11 +19,13 @@ public:
      * feed the data into the InputParameter Node
      * the pointer's memory must bigger than the value size
      */
-	void feed(const T *ptr);
+	void feed(const void *ptr);
 
 	void zeroGradient() override;
 
 	bool isScalar() override;
+
+	std::string toString() override;
 };
 
 }

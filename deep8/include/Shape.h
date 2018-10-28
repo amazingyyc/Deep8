@@ -31,10 +31,9 @@ public:
 
 	Shape(std::initializer_list<size_t> list);
 
-	Shape(std::vector<size_t> list);
+	explicit Shape(std::vector<size_t> list);
 
-	Shape(size_t batch, std::initializer_list<size_t> list);
-
+	explicit Shape(size_t batch, std::initializer_list<size_t> list);
 	Shape(const Shape &otherShape);
 
 	Shape& operator=(const Shape &otherShape);
@@ -68,10 +67,14 @@ public:
 
 	void reShape(std::initializer_list<size_t> list);
 
+	void reShape(std::vector<size_t> list);
+
     /**
      * reShape this same to other Shape, but the batch is special
      */
 	void reShape(size_t batch, Shape &otherShape);
+
+	std::string toString();
 };
 
 }

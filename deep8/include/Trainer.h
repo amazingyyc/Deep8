@@ -31,8 +31,9 @@ protected:
 	Tensor<T> createTensorCPU(Device* device, Shape &shape);
 
 	/**the sub class implement the function*/
-	virtual void trainingCPU(Parameter<T> *parameter, T scale) {};
-
+	virtual void trainingCPU(Parameter<T> *parameter, T scale) {
+		DEEP8_RUNTIME_ERROR("Can not call this function in Trainer");
+	}
 
 #ifdef HAVE_CUDA
 	T clipGradientScaleGPU(Device *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);

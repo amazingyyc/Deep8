@@ -69,14 +69,25 @@ public:
      * and calculate the result than put the Result Tensor in the output Node, So the Function Node must have correct inputs and output Node type.
      * Variable Node: the Variable Node forward do nothing, it just contain the trained Parameter and update grad
      */
-    virtual void forward() = 0;
+    virtual void forward() {
+        DEEP8_RUNTIME_ERROR("Can not call this function from Node");
+    }
 
     /**
      * @brief for different Node the backward do different operation
      * Function Node: in backward the Function Node get the grad from the output node, than update the inputs nodes grad.
      * Variable Node: do nothing, it just contain the grad and update the trained Parameter
      */
-    virtual void backward() = 0;
+    virtual void backward() {
+        DEEP8_RUNTIME_ERROR("Can not call this function from Node");
+    }
+
+    /**
+     * to string
+     */
+    virtual std::string toString() {
+        return "Node: the Base class of Function and Variable";
+    }
 };
 
 }

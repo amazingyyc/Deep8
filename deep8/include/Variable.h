@@ -93,6 +93,8 @@ public:
 	void setGradientOne() override;
 
 	bool isScalar() override;
+
+	std::string toString() override;
 };
 
 }
