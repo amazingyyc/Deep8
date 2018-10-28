@@ -1,8 +1,6 @@
 project(deep8_test LANGUAGES CXX)
 
-set(DEEP8_TEST_SRC_FILES
-
-	Deep8Test.cpp)
+set(DEEP8_TEST_SRC_FILES Deep8Test.cpp)
 
 add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
 
