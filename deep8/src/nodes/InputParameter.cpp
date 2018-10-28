@@ -36,6 +36,14 @@ bool InputParameter<T>::isScalar() {
 	return this->value.isScalar();
 }
 
+template <typename T>
+std::string InputParameter<T>::toString() {
+	std::stringstream ss;
+	ss << "Value is " << this->value.toString();
+
+	return ss.str();
+}
+
 DEEP8_DECLARATION_INSTANCE(InputParameter)
 
 }

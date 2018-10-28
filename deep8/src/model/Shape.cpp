@@ -178,4 +178,18 @@ void Shape::reShape(size_t batch, Shape &otherShape) {
 	dimensions[0] = batch;
 }
 
+std::string Shape::toString() {
+	std::stringstream ss;
+	ss << "Rank: " << numDimension;
+	ss << ", Dimension: [";
+
+	for (size_t i = 0; i < numDimension; ++i) {
+		ss << dimensions[i] << ", ";
+	}
+
+	ss << "].";
+
+	return ss.str();
+}
+
 }

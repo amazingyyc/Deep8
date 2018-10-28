@@ -24,6 +24,8 @@ public:
 	void zeroGradient() override;
 
 	bool isScalar() override;
+
+	std::string toString() override;
 };
 
 }

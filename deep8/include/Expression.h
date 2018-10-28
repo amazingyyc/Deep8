@@ -64,6 +64,14 @@ public:
 		executor->backward(node);
 	}
 
+	std::string valueString() {
+		if (NodeType::Variable == node->type) {
+			return static_cast<Variable<T>*>(node)->value.dataString();
+		} else {
+			DEEP8_RUNTIME_ERROR("This is not a Variable Expression, can not call valueString function");
+		}
+	}
+
 	/**one operand function*/
 	Expression<T> abs() {
 		std::vector<Node*> inputs = { node };
@@ -141,26 +149,6 @@ public:
 	}
 };
 
-template <typename T>
-Expression<T> parameter(Executor<T> *executor, std::initializer_list<size_t> list) {
-    return Expression<T>(executor, executor->addParameter(list));
-}
-
-template <typename T>
-Expression<T> parameter(Executor<T> *executor, Shape &shape) {
-    return Expression<T>(executor, executor->addParameter(shape));
-}
-
-template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, std::initializer_list<size_t> list) {
-    return Expression<T>(executor, executor->addInputParameter(list));
-}
-
-template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, Shape &shape) {
-    return Expression<T>(executor, executor->addInputParameter(shape));
-}
-
 /**add operator*/
 template <typename T>
 Expression<T> operator + (const Expression<T> &x, const Expression<T> &y) {
@@ -237,6 +225,51 @@ template <typename T>
 Expression<T> operator / (T scalar, const Expression<T> &x) {
 	std::vector<Node*> inputs = { x.node };
 	return Expression<T>(x.executor, x.executor->addFunction(new ScalarDivide<T>(inputs, scalar)));
+}
+
+template <typename T>
+Expression<T> parameter(Executor<T> *executor, std::vector<size_t> list) {
+	return Expression<T>(executor, executor->addParameter(list));
+}
+
+template <typename T>
+Expression<T> parameter(Executor<T> *executor, std::initializer_list<size_t> list) {
+	return Expression<T>(executor, executor->addParameter(list));
+}
+
+template <typename T>
+Expression<T> parameter(Executor<T> *executor, Shape &shape) {
+	return Expression<T>(executor, executor->addParameter(shape));
+}
+
+template <typename T>
+Expression<T> inputParameter(Executor<T> *executor, std::vector<size_t> list) {
+	return Expression<T>(executor, executor->addInputParameter(list));
+}
+
+template <typename T>
+Expression<T> inputParameter(Executor<T> *executor, std::initializer_list<size_t> list) {
+	return Expression<T>(executor, executor->addInputParameter(list));
+}
+
+template <typename T>
+Expression<T> inputParameter(Executor<T> *executor, Shape &shape) {
+	return Expression<T>(executor, executor->addInputParameter(shape));
+}
+
+template <typename T>
+Expression<T> inputParameter(Executor<T> *executor, std::vector<size_t> list, void *ptr) {
+	return Expression<T>(executor, executor->addInputParameter(list, ptr));
+}
+
+template <typename T>
+Expression<T> inputParameter(Executor<T> *executor, std::initializer_list<size_t> list, void *ptr) {
+	return Expression<T>(executor, executor->addInputParameter(list, ptr));
+}
+
+template <typename T>
+Expression<T> inputParameter(Executor<T> *executor, Shape &shape, void *ptr) {
+	return Expression<T>(executor, executor->addInputParameter(shape, ptr));
 }
 
 /**function*/
@@ -403,7 +436,7 @@ Expression<T> reShape(const Expression<T> &x, Shape &shape) {
 }
 
 template <typename T>
-Expression<T> reShape(const Expression<T> &x, std::initializer_list<size_t> list) {
+Expression<T> reShape(const Expression<T> &x, std::vector<size_t> list) {
 	std::vector<Node*> inputs = { x.node };
     return Expression<T>(x.executor, x.executor->addFunction(new ReShape<T>(inputs, list)));
 }

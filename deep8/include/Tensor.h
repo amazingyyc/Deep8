@@ -51,43 +51,36 @@ public:
 	explicit Tensor(TensorStorage &ts, size_t off, std::initializer_list<size_t> list);
 
 public:
-	DeviceType DeviceType();
+	DeviceType deviceType();
 
 	Device* device();
-
 	Device* device() const;
 
 	size_t* refPtr() const;
-
 	size_t refCount();
 
 	void* raw();
-
 	void* raw() const;
 
 	T* data();
-
 	T* data() const;
 
 	bool isScalar() override;
-
 	void zero() override;
-
 	size_t nDims() const override;
-
 	size_t size() const override;
-
 	size_t batchSize() const override;
-
 	size_t batch() const override;
-
 	size_t row() const override;
-
 	size_t col() const override;
-
 	size_t dim(size_t d) const override;
 
 	T scalar();
+
+	std::string toString();
+
+	/**convert the value to string to print*/
+	std::string dataString();
 };
 
 }

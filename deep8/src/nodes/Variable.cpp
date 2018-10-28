@@ -143,10 +143,18 @@ void Variable<half>::setGradientOne() {
 }
 #endif // HAVE_HALF
 
-
 template <typename T>
 bool Variable<T>::isScalar() {
 	return value.isScalar() && gradient.isScalar();
+}
+
+template <typename T>
+std::string Variable<T>::toString() {
+	std::stringstream ss;
+	ss << "Value is " << this->value.toString();
+	ss << ", Gradient is " << this->gradient.toString();
+
+	return ss.str();
 }
 
 DEEP8_DECLARATION_INSTANCE(Variable)

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8)
 # if the device have GPU and if build the test
 set(HAVE_GPU FALSE)
 set(BUILD_PYTHON TRUE)
-set(BUILD_TEST FALSE)
+set(BUILD_TEST TRUE)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -79,7 +79,6 @@ else()
 	message(STATUS "do not have GPU only support CPU")
 	add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
 endif()
-
 
 # include
 include_directories(third_party)

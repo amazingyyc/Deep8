@@ -64,17 +64,30 @@ public:
 	virtual ~Executor();
 
 	Parameter<T> *addParameter(std::vector<size_t> list);
+	Parameter<T> *addParameter(std::initializer_list<size_t> list);
 	Parameter<T> *addParameter(Shape &shape);
 
 	InputParameter<T> *addInputParameter(std::vector<size_t> list, void *ptr = nullptr);
+	InputParameter<T> *addInputParameter(std::initializer_list<size_t> list, void *ptr = nullptr);
 	InputParameter<T> *addInputParameter(Shape &shape, void *ptr = nullptr);
 
 	virtual Node *addFunction(FunctionBase *function);
 
-	virtual void forward(Expression<T> &e) = 0;
-	virtual void backward(Expression<T> &e) = 0;
-	virtual void forward(Node *last) = 0;
-	virtual void backward(Node *last) = 0;
+	virtual void forward(Expression<T> &e) {
+		DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
+	}
+
+	virtual void backward(Expression<T> &e)  {
+		DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
+	}
+
+	virtual void forward(Node *last)  {
+		DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
+	}
+
+	virtual void backward(Node *last) {
+		DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
+	}
 };
 
 }
