@@ -34,7 +34,6 @@ python setup.py install
 ## Python Demo
 ```python
 # coding=utf-8
-
 import numpy as np
 from deep8 import *
 
@@ -49,10 +48,10 @@ executor = EagerExecutor(tr=trainer)
 x = np.array([4, -1, 2, 1], dtype=np.float32)
 y = np.array([10, 8], dtype=np.float32)
 
-w = parameter(executor, [1, 2])
+w = parameter(executor, [2])
 
-input  = inputParameter(executor, [1, 2, 2], x)
-output = inputParameter(executor, [1, 2], y)
+input  = inputParameter(executor, [2, 2], x)
+output = inputParameter(executor, [2], y)
 
 for i in range(2000):
     (input * w - output).l1Norm().backward()
@@ -74,14 +73,15 @@ float y[2] = { 10, 8 };
 
 EagerExecutorF executor(new AdagradTrainerF(), DeviceType::CPU);
 
-auto w = parameter(&executor, { 1, 2 });
+auto w = parameter(&executor, { 2 });
 
-auto input  = inputParameter(&executor, { 1, 2, 2 }, x);
-auto output = inputParameter(&executor, { 1, 2 }, y);
+auto input  = inputParameter(&executor, { 2, 2 }, x);
+auto output = inputParameter(&executor, { 2 }, y);
 
 for (int i = 0; i < 1000; ++i) {
     (input * w - output).l1Norm().backward();
 
+    /**print the w*/
     std::cout << i + 1 << " => " << w.valueString() << std::endl;
 }
 

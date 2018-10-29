@@ -6,9 +6,9 @@
 namespace Deep8 {
 
 template <typename T>
-class TanH: public Function<T> {
+class Tanh: public Function<T> {
 public:
-    explicit TanH(std::vector<Node *> &inputs);
+    explicit Tanh(std::vector<Node *> &inputs);
 
 	void check() override;
 

@@ -4,7 +4,7 @@
 #include "Deep8.h"
 
 //#include "TestUtils.h"
-
+//
 //#include "AbsTest.h"
 //#include "AddTest.h"
 //#include "AddScalarTest.h"
@@ -25,13 +25,11 @@
 //#include "MinusScalarTest.h"
 //#include "MultiplyTest.h"
 //#include "MultiplyScalarTest.h"
-//#include "PowTest.h"
 //#include "ReLuTest.h"
 //#include "SigmoidTest.h"
 //#include "SoftmaxTest.h"
 //#include "SquareTest.h"
-//#include "SumElementsTest.h"
-//#include "TanHTest.h"
+//#include "TanhTest.h"
 #include "LinearRegressionTest.h"
 
 #ifdef HAVE_CUDA

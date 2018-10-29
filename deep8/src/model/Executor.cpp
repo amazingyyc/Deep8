@@ -82,17 +82,18 @@ Variable<T>* Executor<T>::createVariableByFunction(FunctionBase *function) {
 
 template <typename T>
 Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list) {
-	Shape shape(list);
+	Shape shape(1, list);
 
 	return addParameter(shape);
 }
 
 template <typename T>
-Parameter<T>* Executor<T>::addParameter(std::initializer_list<size_t> list) {
-	Shape shape(list);
+Parameter<T>* Executor<T>::addParameter(size_t batch, std::vector<size_t> list) {
+	Shape shape(batch, list);
 
 	return addParameter(shape);
 }
+
 
 template <typename T>
 Parameter<T>* Executor<T>::addParameter(Shape &shape) {
@@ -112,14 +113,14 @@ Parameter<T>* Executor<T>::addParameter(Shape &shape) {
 
 template <typename T>
 InputParameter<T>* Executor<T>::addInputParameter(std::vector<size_t> list, void *ptr) {
-	Shape shape(list);
+	Shape shape(1, list);
 
 	return addInputParameter(shape, ptr);
 }
 
 template <typename T>
-InputParameter<T>* Executor<T>::addInputParameter(std::initializer_list<size_t> list, void *ptr) {
-	Shape shape(list);
+InputParameter<T>* Executor<T>::addInputParameter(size_t batch, std::vector<size_t> list, void *ptr) {
+	Shape shape(batch, list);
 
 	return addInputParameter(shape, ptr);
 }

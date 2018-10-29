@@ -29,50 +29,35 @@ private:
 public:
 	Shape();
 
-	Shape(std::initializer_list<size_t> list);
+	explicit Shape(std::vector<size_t> &list);
+	explicit Shape(size_t batch, std::vector<size_t> &list);
 
-	explicit Shape(std::vector<size_t> list);
+	Shape(const Shape &other);
 
-	explicit Shape(size_t batch, std::initializer_list<size_t> list);
-	Shape(const Shape &otherShape);
+	Shape& operator=(const Shape &other);
 
-	Shape& operator=(const Shape &otherShape);
+	bool operator==(const Shape &other);
 
-	bool operator==(const Shape &otherShape);
-
-    /**
-     * @brief if the Shape is equal, except batch
-     */
-	bool equalExceptBatch(const Shape &otherShape);
+    /**@brief if the Shape is equal, except batch*/
+	bool equalExceptBatch(const Shape &other);
 
 	size_t batchSize() const;
-
 	size_t size() const;
-
 	size_t dim(size_t d) const;
-
 	size_t nDims() const;
-
 	size_t batch() const;
-
 	size_t row() const;
-
 	size_t col() const;
 
     /**
      * @brief reshape this Shape same to another
      * @param otherShape reshape this shape same to otherShape
      */
-	void reShape(Shape &otherShape);
-
-	void reShape(std::initializer_list<size_t> list);
-
+	void reShape(Shape &other);
 	void reShape(std::vector<size_t> list);
 
-    /**
-     * reShape this same to other Shape, but the batch is special
-     */
-	void reShape(size_t batch, Shape &otherShape);
+    /**reShape this same to other Shape, but the batch is special*/
+	void reShape(size_t batch, Shape &other);
 
 	std::string toString();
 };

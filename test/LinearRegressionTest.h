@@ -19,10 +19,10 @@ TEST(LinearRegression, test) {
 
 	EagerExecutorF executor(new AdagradTrainerF(), DeviceType::CPU);
 
-	auto w = parameter(&executor, { 1, 2 });
+	auto w = parameter(&executor, { 2 });
 
-	auto input  = inputParameter(&executor, { 1, 2, 2 }, x);
-	auto output = inputParameter(&executor, { 1, 2 }, y);
+	auto input  = inputParameter(&executor, { 2, 2 }, x);
+	auto output = inputParameter(&executor, { 2 }, y);
 
     for (int i = 0; i < 1000; ++i) {
         (input * w - output).l1Norm().backward();

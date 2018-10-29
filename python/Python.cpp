@@ -41,7 +41,7 @@ void declareNode(py::module &m) {
 void declareShape(py::module &m) {
     py::class_<Shape>(m, "Shape")
             .def(py::init())
-            .def(py::init<std::vector<size_t>>())
+            .def(py::init<std::vector<size_t>&>())
             .def("equalExceptBatch", &Shape::equalExceptBatch)
             .def("batchSize", &Shape::batchSize)
             .def("size", &Shape::size)
@@ -51,7 +51,7 @@ void declareShape(py::module &m) {
             .def("row", &Shape::row)
             .def("col", &Shape::col)
             .def("reShape", (void (Shape::*)(Shape &)) &Shape::reShape)
-            .def("reShape", (void (Shape::*)(std::initializer_list<size_t>)) &Shape::reShape)
+            .def("reShape", (void (Shape::*)(std::vector<size_t>)) &Shape::reShape)
             .def("reShape", (void (Shape::*)(size_t, Shape &)) &Shape::reShape);
 }
 
@@ -117,7 +117,7 @@ void declareTensor(py::module &m, const std::string &suffix = "") {
     py::class_<Class>(m, className.c_str())
             .def_readwrite("shape", &Class::shape)
             .def("__str__", &Class::toString)
-            .def("dataStr", &Class::dataString);
+            .def("valueStr", &Class::valueString);
 }
 
 /**
@@ -155,8 +155,21 @@ void declareInputParameter(py::module &m, const std::string &suffix = "") {
      std::string className = std::string("InputParameter") + suffix;
 
      py::class_<Class, Parameter<T>>(m, className.c_str())
-             .def("feed", &InputParameter<T>::feed)
-             .def_readwrite("value", &Class::value);
+             .def_readwrite("value", &Class::value)
+             .def("feed", [](InputParameter<T> &input, py::buffer buffer) {
+                /**Request a buffer descriptor from Python*/
+                 py::buffer_info info = buffer.request();
+
+                 if (info.format != py::format_descriptor<T>::format()) {
+                     DEEP8_RUNTIME_ERROR("The input format is not correct");
+                 }
+
+                 if (info.size < input.value.size()) {
+                     DEEP8_RUNTIME_ERROR("The input size must be > " << input.value.size());
+                 }
+
+                 input.feed(info.ptr);
+             });
 }
 
 /**
@@ -183,8 +196,7 @@ void declareExpression(py::module &m, const std::string &suffix = "") {
             .def("sigmoid", &Class::sigmoid)
             .def("softmax", &Class::softmax)
             .def("square", &Class::square)
-            .def("sumElements", &Class::sumElements)
-            .def("tanH", &Class::tanH)
+            .def("tanh", &Class::tanh)
             .def("backward", &Class::backward)
             .def("valueStr", &Class::valueString)
             .def(py::self + py::self)
@@ -207,10 +219,8 @@ void declareExpression(py::module &m, const std::string &suffix = "") {
 template <typename T>
 void declareExpressionFunction(py::module &m, const std::string &suffix = "") {
     m.def(("parameter" + suffix).c_str(), (Expression<T> (*)(Executor<T>*, std::vector<size_t>)) &parameter<T>);
+    m.def(("parameter" + suffix).c_str(), (Expression<T> (*)(Executor<T>*, size_t, std::vector<size_t>)) &parameter<T>);
     m.def(("parameter" + suffix).c_str(), (Expression<T> (*)(Executor<T>*, Shape&)) &parameter<T>);
-
-    m.def(("inputParameter" + suffix).c_str(), (Expression<T> (*)(Executor<T>*, std::vector<size_t>)) &inputParameter<T>);
-    m.def(("inputParameter" + suffix).c_str(), (Expression<T> (*)(Executor<T>*, Shape&)) &inputParameter<T>);
 
     m.def(("inputParameter" + suffix).c_str(), [](Executor<T> *executor, std::vector<size_t> list, py::buffer buffer) -> Expression<T> {
         /**Request a buffer descriptor from Python*/
@@ -220,13 +230,30 @@ void declareExpressionFunction(py::module &m, const std::string &suffix = "") {
             DEEP8_RUNTIME_ERROR("The input format is not correct");
         }
 
-        auto size = Shape(list).size();
+        auto size = Shape(1, list).size();
 
         if (info.size < size) {
             DEEP8_RUNTIME_ERROR("The input size must be > " << size);
         }
 
         return inputParameter<T>(executor, list, info.ptr);
+    });
+
+    m.def(("inputParameter" + suffix).c_str(), [](Executor<T> *executor, size_t batch, std::vector<size_t> list, py::buffer buffer) -> Expression<T> {
+        /**Request a buffer descriptor from Python*/
+        py::buffer_info info = buffer.request();
+
+        if (info.format != py::format_descriptor<T>::format()) {
+            DEEP8_RUNTIME_ERROR("The input format is not correct");
+        }
+
+        auto size = Shape(batch, list).size();
+
+        if (info.size < size) {
+            DEEP8_RUNTIME_ERROR("The input size must be > " << size);
+        }
+
+        return inputParameter<T>(executor, batch, list, info.ptr);
     });
 
     m.def(("inputParameter" + suffix).c_str(), [](Executor<T> *executor, Shape &shape, py::buffer buffer) -> Expression<T> {
@@ -274,7 +301,6 @@ void declareExpressionFunction(py::module &m, const std::string &suffix = "") {
     m.def(("lReLu" + suffix).c_str(), &lReLu<T>);
     m.def(("matrixMultiply" + suffix).c_str(), &matrixMultiply<T>);
     m.def(("maxPooling2d" + suffix).c_str(), &maxPooling2d<T>);
-    m.def(("pow" + suffix).c_str(), &pow<T>);
     m.def(("reLu" + suffix).c_str(), &reLu<T>);
 
     m.def(("reShape" + suffix).c_str(), (Expression<T> (*)(const Expression<T> &, Shape &)) &reShape<T>);
@@ -283,8 +309,7 @@ void declareExpressionFunction(py::module &m, const std::string &suffix = "") {
     m.def(("sigmoid" + suffix).c_str(), &sigmoid<T>);
     m.def(("softmax" + suffix).c_str(), &softmax<T>);
     m.def(("square" + suffix).c_str(), &square<T>);
-    m.def(("sumElements" + suffix).c_str(), &sumElements<T>);
-    m.def(("tanH" + suffix).c_str(), &tanH<T>);
+    m.def(("tanh" + suffix).c_str(), &tanh<T>);
 }
 
 /**
@@ -312,6 +337,7 @@ void declareEagerExecutor(py::module &m, const std::string &suffix = "") {
                  py::arg("deviceType") = DeviceType::CPU,
                  py::arg("flag") = true)
             .def("addParameter", (Parameter<T>* (Class::*)(std::vector<size_t>)) &Class::addParameter)
+            .def("addParameter", (Parameter<T>* (Class::*)(size_t, std::vector<size_t>)) &Class::addParameter)
             .def("addParameter", (Parameter<T>* (Class::*)(Shape&)) &Class::addParameter)
             .def("addInputParameter", [](Class &executor, std::vector<size_t> list, py::buffer buffer) -> InputParameter<T>* {
                 /**Request a buffer descriptor from Python*/
@@ -321,13 +347,29 @@ void declareEagerExecutor(py::module &m, const std::string &suffix = "") {
                     DEEP8_RUNTIME_ERROR("The input format is not correct");
                 }
 
-                auto size = Shape(list).size();
+                auto size = Shape(1, list).size();
 
                 if (info.size < size) {
                     DEEP8_RUNTIME_ERROR("The input size must be > " << size);
                 }
 
                 return executor.addInputParameter(list, info.ptr);
+            })
+            .def("addInputParameter", [](Class &executor, size_t batch, std::vector<size_t> list, py::buffer buffer) -> InputParameter<T>* {
+                /**Request a buffer descriptor from Python*/
+                py::buffer_info info = buffer.request();
+
+                if (info.format != py::format_descriptor<T>::format()) {
+                    DEEP8_RUNTIME_ERROR("The input format is not correct");
+                }
+
+                auto size = Shape(batch, list).size();
+
+                if (info.size < size) {
+                    DEEP8_RUNTIME_ERROR("The input size must be > " << size);
+                }
+
+                return executor.addInputParameter(batch, list, info.ptr);
             })
             .def("addInputParameter", [](Class &executor, Shape &shape, py::buffer buffer) -> InputParameter<T>* {
                 /**Request a buffer descriptor from Python*/

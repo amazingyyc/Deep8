@@ -16,7 +16,7 @@ Tensor<T>::Tensor(TensorStorage &ts, size_t off, Shape &s) : storage(ts), offset
 }
 
 template<typename T>
-Tensor<T>::Tensor(TensorStorage &ts, size_t off, std::initializer_list<size_t> list) : storage(ts), offset(off), shape(list) {
+Tensor<T>::Tensor(TensorStorage &ts, size_t off, std::vector<size_t> &list) : storage(ts), offset(off), shape(list) {
 }
 
 template<typename T>
@@ -141,7 +141,7 @@ std::string Tensor<T>::toString() {
 
 /**convert the value to string to print*/
 template <typename T>
-std::string Tensor<T>::dataString() {
+std::string Tensor<T>::valueString() {
 	std::stringstream ss;
 	ss << "[";
 
