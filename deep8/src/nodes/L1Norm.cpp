@@ -26,7 +26,7 @@ void L1Norm<T>::check() {
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L1Norm Function needs only 1 input");
 
-    this->outputShape = Shape({this->inputs[0]->outputShape.batch(), 1});
+    this->outputShape.reShape({this->inputs[0]->outputShape.batch(), 1});
 }
 
 template <typename T>

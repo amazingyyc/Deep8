@@ -32,7 +32,8 @@ Shape shape({ dim0, dim1, dim2, dim3 });
 */
 template <typename T>
 Tensor<T> createTensorGPU(GPUDevice &device, size_t dim0, size_t dim1, size_t dim2, size_t dim3) {
-	Shape shape({ dim0, dim1, dim2, dim3 });
+	std::vector<size_t> list({ dim0, dim1, dim2, dim3 });
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -46,7 +47,8 @@ Tensor<T> createTensorGPU(GPUDevice &device, size_t dim0, size_t dim1, size_t di
 
 template <typename T>
 Tensor<T> createTensorGPU(GPUDevice &device, size_t dim0, size_t dim1, size_t dim2) {
-	Shape shape({ dim0, dim1, dim2 });
+	std::vector<size_t> list({ dim0, dim1, dim2});
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -60,7 +62,8 @@ Tensor<T> createTensorGPU(GPUDevice &device, size_t dim0, size_t dim1, size_t di
 
 template <typename T>
 Tensor<T> createTensorGPU(GPUDevice &device, size_t dim0, size_t dim1) {
-	Shape shape({ dim0, dim1 });
+	std::vector<size_t> list({ dim0, dim1});
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -75,7 +78,8 @@ Tensor<T> createTensorGPU(GPUDevice &device, size_t dim0, size_t dim1) {
 
 template <typename T>
 Tensor<T> createTensorGPU(GPUDevice &device, T *cpuPtr, size_t dim0, size_t dim1, size_t dim2, size_t dim3) {
-	Shape shape({ dim0, dim1, dim2, dim3 });
+	std::vector<size_t> list({ dim0, dim1, dim2, dim3});
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -99,7 +103,8 @@ Tensor<T> createTensorGPU(GPUDevice &device, T *cpuPtr, size_t dim0, size_t dim1
 
 template <typename T>
 Tensor<T> createTensorGPU(GPUDevice &device, T *cpuPtr, size_t dim0, size_t dim1, size_t dim2) {
-	Shape shape({ dim0, dim1, dim2 });
+	std::vector<size_t> list({ dim0, dim1, dim2});
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -123,7 +128,8 @@ Tensor<T> createTensorGPU(GPUDevice &device, T *cpuPtr, size_t dim0, size_t dim1
 
 template <typename T>
 Tensor<T> createTensorGPU(GPUDevice &device, T *cpuPtr, size_t dim0, size_t dim1) {
-	Shape shape({ dim0, dim1 });
+	std::vector<size_t> list({ dim0, dim1 });
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -151,7 +157,8 @@ Tensor<T> createTensorGPU(GPUDevice &device, T *cpuPtr, size_t dim0, size_t dim1
 
 template<typename DeviceType, typename T>
 Tensor<T> createTensor(DeviceType &device, size_t dim0, size_t dim1, size_t dim2, size_t dim3) {
-	Shape shape({ dim0, dim1, dim2, dim3 });
+	std::vector<size_t> list({ dim0, dim1, dim2, dim3 });
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -171,7 +178,8 @@ Tensor<T> createTensor(DeviceType &device, size_t dim0, size_t dim1, size_t dim2
 
 template<typename DeviceType, typename T>
 Tensor<T> createTensor(DeviceType &device, size_t dim0, size_t dim1, size_t dim2) {
-	Shape shape({dim0, dim1, dim2});
+	std::vector<size_t> list({ dim0, dim1, dim2});
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -191,7 +199,8 @@ Tensor<T> createTensor(DeviceType &device, size_t dim0, size_t dim1, size_t dim2
 
 template<typename DeviceType, typename T>
 Tensor<T> createTensor(DeviceType &device, size_t dim0, size_t dim1) {
-	Shape shape({ dim0, dim1 });
+	std::vector<size_t> list({ dim0, dim1});
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -230,7 +239,8 @@ Deep8::Variable<T> createFakeVariable(DeviceType &device) {
  */
 template <typename DeviceType = CPUDevice, typename T>
 Deep8::Variable<T> createFakeVariable(CPUDevice &device) {
-	Shape shape({ 1, 1 });
+	std::vector<size_t> list({1, 1});
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -248,7 +258,8 @@ Deep8::Variable<T> createFakeVariable(CPUDevice &device) {
 #ifdef HAVE_CUDA
 template <typename DeviceType = GPUDevice, typename T>
 Deep8::Variable<T> createFakeVariable(GPUDevice &device) {
-	Shape shape({ 1, 1 });
+	std::vector<size_t> list({1, 1});
+	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();
 
@@ -265,13 +276,13 @@ Deep8::Variable<T> createFakeVariable(GPUDevice &device) {
 #endif
 
 template <typename DeviceType, typename T>
-Deep8::Variable<T> createFakeVariable(DeviceType &device, std::initializer_list<size_t> list) {
+Deep8::Variable<T> createFakeVariable(DeviceType &device, std::vector<size_t> list) {
     
 }
 
 
 template <typename DeviceType = CPUDevice, typename T>
-Deep8::Variable<T> createFakeVariable(CPUDevice &device, std::initializer_list<size_t> list) {
+Deep8::Variable<T> createFakeVariable(CPUDevice &device, std::vector<size_t> list) {
 	Shape shape(list);
 
 	auto storageSize = sizeof(T) * shape.size();

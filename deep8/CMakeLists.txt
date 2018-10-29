@@ -49,7 +49,6 @@ set(DEEP8_SRC_FILES
 		src/nodes/Multiply.cpp
 		src/nodes/MultiplyScalar.cpp
 		src/nodes/Parameter.cpp
-		src/nodes/Pow.cpp
 		src/nodes/ReLu.cpp
 		src/nodes/ReShape.cpp
 		src/nodes/ScalarDivide.cpp
@@ -57,8 +56,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/Sigmoid.cpp
 		src/nodes/Softmax.cpp
 		src/nodes/Square.cpp
-		src/nodes/SumElements.cpp
-		src/nodes/TanH.cpp
+		src/nodes/Tanh.cpp
 		src/nodes/Variable.cpp
 
 		)
@@ -92,15 +90,13 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/MinusScalar.cu
 		src/nodes/Multiply.cu
 		src/nodes/MultiplyScalar.cu
-		src/nodes/Pow.cu
 		src/nodes/ReLu.cu
 		src/nodes/ScalarDivide.cu
 		src/nodes/ScalarMinus.cu
 		src/nodes/Sigmoid.cu
 		src/nodes/Softmax.cu
 		src/nodes/Square.cu
-		src/nodes/SumElements.cu
-		src/nodes/TanH.cu
+		src/nodes/Tanh.cu
 		)
 
 if (HAVE_GPU AND HAVE_CUDA)

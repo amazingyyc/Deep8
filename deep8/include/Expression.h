@@ -25,7 +25,6 @@
 #include "MinusScalar.h"
 #include "Multiply.h"
 #include "MultiplyScalar.h"
-#include "Pow.h"
 #include "ReLu.h"
 #include "ReShape.h"
 #include "ScalarDivide.h"
@@ -33,8 +32,7 @@
 #include "Sigmoid.h"
 #include "Softmax.h"
 #include "Square.h"
-#include "SumElements.h"
-#include "TanH.h"
+#include "Tanh.h"
 
 #include "Executor.h"
 #include "EagerExecutor.h"
@@ -66,7 +64,7 @@ public:
 
 	std::string valueString() {
 		if (NodeType::Variable == node->type) {
-			return static_cast<Variable<T>*>(node)->value.dataString();
+			return static_cast<Variable<T> *>(node)->value.valueString();
 		} else {
 			DEEP8_RUNTIME_ERROR("This is not a Variable Expression, can not call valueString function");
 		}
@@ -138,14 +136,9 @@ public:
 		return Expression<T>(executor, executor->addFunction(new Square<T>(inputs)));
 	}
 
-	Expression<T> sumElements() {
+	Expression<T> tanh() {
 		std::vector<Node*> inputs = { node };
-		return Expression<T>(executor, executor->addFunction(new SumElements<T>(inputs)));
-	}
-
-	Expression<T> tanH() {
-		std::vector<Node*> inputs = { node };
-		return Expression<T>(executor, executor->addFunction(new TanH<T>(inputs)));
+		return Expression<T>(executor, executor->addFunction(new Tanh<T>(inputs)));
 	}
 };
 
@@ -233,8 +226,8 @@ Expression<T> parameter(Executor<T> *executor, std::vector<size_t> list) {
 }
 
 template <typename T>
-Expression<T> parameter(Executor<T> *executor, std::initializer_list<size_t> list) {
-	return Expression<T>(executor, executor->addParameter(list));
+Expression<T> parameter(Executor<T> *executor, size_t batch, std::vector<size_t> list) {
+	return Expression<T>(executor, executor->addParameter(batch, list));
 }
 
 template <typename T>
@@ -243,32 +236,17 @@ Expression<T> parameter(Executor<T> *executor, Shape &shape) {
 }
 
 template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, std::vector<size_t> list) {
-	return Expression<T>(executor, executor->addInputParameter(list));
-}
-
-template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, std::initializer_list<size_t> list) {
-	return Expression<T>(executor, executor->addInputParameter(list));
-}
-
-template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, Shape &shape) {
-	return Expression<T>(executor, executor->addInputParameter(shape));
-}
-
-template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, std::vector<size_t> list, void *ptr) {
+Expression<T> inputParameter(Executor<T> *executor, std::vector<size_t> list, void *ptr = nullptr) {
 	return Expression<T>(executor, executor->addInputParameter(list, ptr));
 }
 
 template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, std::initializer_list<size_t> list, void *ptr) {
-	return Expression<T>(executor, executor->addInputParameter(list, ptr));
+Expression<T> inputParameter(Executor<T> *executor, size_t batch, std::vector<size_t> list, void *ptr = nullptr) {
+	return Expression<T>(executor, executor->addInputParameter(batch, list, ptr));
 }
 
 template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, Shape &shape, void *ptr) {
+Expression<T> inputParameter(Executor<T> *executor, Shape &shape, void *ptr = nullptr) {
 	return Expression<T>(executor, executor->addInputParameter(shape, ptr));
 }
 
@@ -418,12 +396,6 @@ Expression<T> maxPooling2d(const Expression<T> &x, bool covered = false, size_t 
 }
 
 template <typename T>
-Expression<T> pow(const Expression<T> &x, T scalar) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Pow<T>(inputs, scalar)));
-}
-
-template <typename T>
 Expression<T> reLu(const Expression<T> &x) {
 	std::vector<Node*> inputs = { x.node };
     return Expression<T>(x.executor, x.executor->addFunction(new ReLu<T>(inputs)));
@@ -460,15 +432,9 @@ Expression<T> square(const Expression<T> &x) {
 }
 
 template <typename T>
-Expression<T> sumElements(const Expression<T> &x) {
+Expression<T> tanh(const Expression<T> &x) {
 	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new SumElements<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> tanH(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new TanH<T>(inputs)));
+    return Expression<T>(x.executor, x.executor->addFunction(new Tanh<T>(inputs)));
 }
 
 

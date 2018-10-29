@@ -1,11 +1,11 @@
 #ifndef DEEP8_TANHTEST_H
 #define DEEP8_TANHTEST_H
 
-#include "TanH.h"
+#include "Tanh.h"
 
 namespace Deep8 {
 
-TEST(TanH, forwardCPU) {
+TEST(Tanh, forwardCPU) {
 	CPUDevice device;
 
 	auto input = createTensor<CPUDevice, float>(device, 10, 400, 200);
@@ -14,7 +14,7 @@ TEST(TanH, forwardCPU) {
     auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
 
     std::vector<Node*> inputs = {&inputVar1};
-    TanH<float> tanH(inputs);
+    Tanh<float> tanH(inputs);
 
     std::vector<const Tensor<float>*> inputTensor = {&input};
 
@@ -31,7 +31,7 @@ TEST(TanH, forwardCPU) {
 
 }
 
-TEST(TanH, backwardCPU) {
+TEST(Tanh, backwardCPU) {
 	CPUDevice device;
 
 	auto inputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
@@ -44,7 +44,7 @@ TEST(TanH, backwardCPU) {
     auto inputVar = createFakeVariable<CPUDevice, float>(device);
 
     std::vector<Node*> inputs = {&inputVar};
-    TanH<float> tt(inputs);
+    Tanh<float> tt(inputs);
 
     zeroTensor(device, inputGrad);
 
@@ -72,7 +72,7 @@ TEST(TanH, backwardCPU) {
 
 #ifdef HAVE_CUDA
 
-TEST(TanH, GPU_float) {
+TEST(Tanh, GPU_float) {
 	typedef float real;
 
 	GPUDevice device;
@@ -94,7 +94,7 @@ TEST(TanH, GPU_float) {
 	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	TanH<real> tanhFunc(inputs);
+	Tanh<real> tanhFunc(inputs);
 
 	std::vector<const Tensor<real>*> inputTensor = { &input };
 
@@ -127,7 +127,7 @@ TEST(TanH, GPU_float) {
 
 #ifdef HAVE_HALF
 
-TEST(TanH, half_GPU) {
+TEST(Tanh, half_GPU) {
 	typedef half real;
 
 	GPUDevice device;
@@ -141,7 +141,7 @@ TEST(TanH, half_GPU) {
 	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	TanH<real> tanhFunc(inputs);
+	Tanh<real> tanhFunc(inputs);
 
 	std::vector<const Tensor<real>*> inputTensor = { &input };
 

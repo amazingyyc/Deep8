@@ -48,7 +48,7 @@ public:
 	explicit Tensor();
 	explicit Tensor(Shape &s);
 	explicit Tensor(TensorStorage &ts, size_t off, Shape &s);
-	explicit Tensor(TensorStorage &ts, size_t off, std::initializer_list<size_t> list);
+	explicit Tensor(TensorStorage &ts, size_t off, std::vector<size_t> &list);
 
 public:
 	DeviceType deviceType();
@@ -80,7 +80,7 @@ public:
 	std::string toString();
 
 	/**convert the value to string to print*/
-	std::string dataString();
+	std::string valueString();
 };
 
 }

@@ -29,9 +29,9 @@ void MatrixMultiply<T>::check() {
                          "the col of input1 must same to the row of input2");
 
     if (1 == yShape.col()) {
-        this->outputShape = Shape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row()});
+        this->outputShape.reShape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row()});
     } else {
-        this->outputShape = Shape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row(), yShape.col()});
+        this->outputShape.reShape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row(), yShape.col()});
     }
 }
 

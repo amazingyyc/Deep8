@@ -6,15 +6,7 @@ namespace Deep8 {
 Shape::Shape() : numDimension(0), dimensions{ 0 } {
 }
 
-Shape::Shape(std::initializer_list<size_t> list) : numDimension(0) {
-	DEEP8_ARGUMENT_CHECK(list.size() <= MAX_TENSOR_DIMS, "the dim of a outputShape must not bigger than " << MAX_TENSOR_DIMS);
-
-	for (auto d : list) {
-		dimensions[numDimension++] = d;
-	}
-}
-
-Shape::Shape(std::vector<size_t> list) : numDimension(0) {
+Shape::Shape(std::vector<size_t> &list) : numDimension(0) {
 	DEEP8_ARGUMENT_CHECK(list.size() <= MAX_TENSOR_DIMS, "the dim of a outputShape must not bigger than " << MAX_TENSOR_DIMS);
 
 	for (auto d : list) {
@@ -24,7 +16,7 @@ Shape::Shape(std::vector<size_t> list) : numDimension(0) {
 	}
 }
 
-Shape::Shape(size_t batch, std::initializer_list<size_t> list) : numDimension(0) {
+Shape::Shape(size_t batch, std::vector<size_t> &list) : numDimension(0) {
 	DEEP8_ARGUMENT_CHECK(list.size() < MAX_TENSOR_DIMS, "the dim of a outputShape must not bigger than " << MAX_TENSOR_DIMS);
 
 	dimensions[numDimension++] = batch;
@@ -34,31 +26,31 @@ Shape::Shape(size_t batch, std::initializer_list<size_t> list) : numDimension(0)
 	}
 }
 
-Shape::Shape(const Shape &otherShape) {
-	numDimension = otherShape.nDims();
+Shape::Shape(const Shape &other) {
+	numDimension = other.nDims();
 
 	for (size_t i = 0; i < numDimension; ++i) {
-		dimensions[i] = otherShape.dim(i);
+		dimensions[i] = other.dim(i);
 	}
 }
 
-Shape& Shape::operator=(const Shape &otherShape) {
-	numDimension = otherShape.nDims();
+Shape& Shape::operator=(const Shape &other) {
+	numDimension = other.nDims();
 
 	for (size_t i = 0; i < numDimension; ++i) {
-		dimensions[i] = otherShape.dim(i);
+		dimensions[i] = other.dim(i);
 	}
 
 	return *this;
 }
 
-bool  Shape::operator==(const Shape &otherShape) {
-	if (this->numDimension != otherShape.numDimension) {
+bool  Shape::operator==(const Shape &other) {
+	if (this->numDimension != other.numDimension) {
 		return false;
 	}
 
 	for (size_t i = 0; i < this->numDimension; ++i) {
-		if (this->dim(i) != otherShape.dim(i)) {
+		if (this->dim(i) != other.dim(i)) {
 			return false;
 		}
 	}
@@ -69,13 +61,13 @@ bool  Shape::operator==(const Shape &otherShape) {
 /**
  * @brief if the Shape is equal, except batch
  */
-bool Shape::equalExceptBatch(const Shape &otherShape) {
-	if (this->numDimension != otherShape.numDimension) {
+bool Shape::equalExceptBatch(const Shape &other) {
+	if (this->numDimension != other.numDimension) {
 		return false;
 	}
 
 	for (size_t i = 1; i < this->numDimension; ++i) {
-		if (this->dim(i) != otherShape.dim(i)) {
+		if (this->dim(i) != other.dim(i)) {
 			return false;
 		}
 	}
@@ -139,24 +131,15 @@ size_t Shape::col() const {
 
 /**
  * @brief reshape this Shape same to another
- * @param otherShape reshape this shape same to otherShape
+ * @param other reshape this shape same to otherShape
  */
-void Shape::reShape(Shape &otherShape) {
-	DEEP8_ARGUMENT_CHECK(this->size() == otherShape.size(), "the reShape operator needs this 2 Shape have the same dim");
+void Shape::reShape(Shape &other) {
+	DEEP8_ARGUMENT_CHECK(this->size() == other.size(), "the reShape operator needs this 2 Shape have the same dim");
 
-	this->numDimension = otherShape.nDims();
+	this->numDimension = other.nDims();
 
 	for (size_t i = 0; i < numDimension; ++i) {
-		dimensions[i] = otherShape.dim(i);
-	}
-}
-
-void Shape::reShape(std::initializer_list<size_t> list) {
-	DEEP8_ARGUMENT_CHECK(list.size() <= MAX_TENSOR_DIMS, "the dim of a outputShape must not bigger than: " << MAX_TENSOR_DIMS);
-
-	this->numDimension = 0;
-	for (auto d : list) {
-		dimensions[numDimension++] = d;
+		dimensions[i] = other.dim(i);
 	}
 }
 
@@ -172,8 +155,8 @@ void Shape::reShape(std::vector<size_t> list) {
 /**
  * reShape this same to other Shape, but the batch is special
  */
-void Shape::reShape(size_t batch, Shape &otherShape) {
-	reShape(otherShape);
+void Shape::reShape(size_t batch, Shape &other) {
+	reShape(other);
 
 	dimensions[0] = batch;
 }

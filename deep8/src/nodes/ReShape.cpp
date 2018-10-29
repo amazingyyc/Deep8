@@ -9,13 +9,7 @@ ReShape<T>::ReShape(std::vector<Node *> &inputs, Shape &shape): Function<T>(inpu
 }
 
 template <typename T>
-ReShape<T>::ReShape(std::vector<Node *> &inputs, std::initializer_list<size_t> shape): Function<T>(inputs), reShape(shape) {
-	this->shared = true;
-	check();
-}
-
-template <typename T>
-ReShape<T>::ReShape(std::vector<Node *> &inputs, std::vector<size_t> shape): Function<T>(inputs), reShape(shape) {
+ReShape<T>::ReShape(std::vector<Node *> &inputs, std::vector<size_t> &shape): Function<T>(inputs), reShape(shape) {
 	this->shared = true;
 	check();
 }
