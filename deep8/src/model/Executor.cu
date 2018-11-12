@@ -11,7 +11,7 @@ void Executor<T>::initDeviceGPU() {
 }
 
 template <typename T>
-Tensor<T> Executor<T>::createTensorWithShapeGPU(Shape &shape) {
+Tensor<T> Executor<T>::createTensorGPU(Shape &shape) {
 	size_t size = sizeof(T) * shape.size();
 
 	auto ptr = device->malloc(size);

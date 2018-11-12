@@ -8,12 +8,6 @@ namespace Deep8 {
 
 class FunctionBase: public Node {
 public:
-    /**
-     * @brief the output pointer
-     * the Function Node must have a output
-     */
-    Node *output;
-
 	/**
 	 * if a Function shared is true means the output Variable shared the memory with the input Variable
 	 * default is false

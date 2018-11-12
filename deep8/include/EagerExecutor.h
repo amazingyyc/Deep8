@@ -32,6 +32,9 @@ protected:
 	 */
 	bool clearFlag;
 
+protected:
+	Variable<T>* createVariableWithFunction(FunctionBase *function);
+
 public:
 	explicit EagerExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true);
 

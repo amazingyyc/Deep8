@@ -8,7 +8,6 @@ namespace Deep8 {
 /***********************************************************************************/
 typedef Variable<float>          VariableF;
 typedef Parameter<float>         ParameterF;
-typedef InputParameter<float>    InputParameterF;
 typedef Abs<float>				 AbsF;
 typedef Add<float>				 AddF;
 typedef AddScalar<float>		 AddScalarF;
@@ -53,7 +52,6 @@ typedef Expression<float>        ExpressionF;
 /***********************************************************************************/
 typedef Variable<double>          VariableD;
 typedef Parameter<double>         ParameterD;
-typedef InputParameter<double>    InputParameterD;
 typedef Abs<double>				  AbsD;
 typedef Add<double>				  AddD;
 typedef AddScalar<double>		  AddScalarD;
@@ -98,7 +96,6 @@ typedef Expression<double>        ExpressionD;
 #ifdef HAVE_HALF
 typedef Variable<half>          VariableH;
 typedef Parameter<half>         ParameterH;
-typedef InputParameter<half>    InputParameterH;
 typedef Abs<half>				AbsH;
 typedef Add<half>				AddH;
 typedef AddScalar<half>		    AddScalarH;

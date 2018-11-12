@@ -9,8 +9,30 @@ EagerExecutor<T>::EagerExecutor(Trainer<T> *tr, DeviceType deviceType, bool flag
 }
 
 template <typename T>
+Variable<T>* EagerExecutor<T>::createVariableWithFunction(FunctionBase *func) {
+	if (func->shared) {
+		auto variable = new Variable<T>(func, func->outputShape);
+
+		return variable;
+	} else {
+		auto value    = this->createTensor(func->outputShape);
+		auto gradient = this->createTensor(func->outputShape);
+
+		auto variable = new Variable<T>(func, value, gradient);
+
+		return variable;
+	}
+}
+
+template <typename T>
 Node* EagerExecutor<T>::addFunction(FunctionBase *function) {
-	auto variable = Executor<T>::addFunction(function);
+	auto variable = createVariableWithFunction(function);
+
+	this->nodeCollection.insert(function);
+	this->nodeCollection.insert(variable);
+
+	this->nonParameterCollection.insert(function);
+	this->nonParameterCollection.insert(variable);
 
 	function->forward();
 
@@ -19,6 +41,11 @@ Node* EagerExecutor<T>::addFunction(FunctionBase *function) {
 
 template <typename T>
 void EagerExecutor<T>::clearIntermediaryNodes() {
+	/**clear all node output*/
+	for (auto item : this->nodeCollection) {
+		item->outputs.clear();
+	}
+
 	for (auto item : this->nonParameterCollection) {
 		this->nodeCollection.erase(item);
 

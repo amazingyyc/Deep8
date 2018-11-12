@@ -38,7 +38,7 @@ void Executor<T>::initDeviceCPU() {
 }
 
 template <typename T>
-Tensor<T> Executor<T>::createTensorWithShapeCPU(Shape &shape) {
+Tensor<T> Executor<T>::createTensorCPU(Shape &shape) {
 	size_t size = sizeof(T) * shape.size();
 
 	auto ptr    = device->malloc(size);
@@ -49,15 +49,13 @@ Tensor<T> Executor<T>::createTensorWithShapeCPU(Shape &shape) {
 	return Tensor<T>(storage, 0, shape);
 }
 
-
-
 template <typename T>
-Tensor<T> Executor<T>::createTensorWithShape(Shape &shape) {
+Tensor<T> Executor<T>::createTensor(Shape &shape) {
 	if (DeviceType::CPU == device->type) {
-		return createTensorWithShapeCPU(shape);
+		return createTensorCPU(shape);
 	} else {
 #ifdef HAVE_CUDA
-		return createTensorWithShapeGPU(shape);
+		return createTensorGPU(shape);
 #else
 		DEEP8_RUNTIME_ERROR("without a GPU");
 #endif
@@ -65,96 +63,70 @@ Tensor<T> Executor<T>::createTensorWithShape(Shape &shape) {
 }
 
 template <typename T>
-Variable<T>* Executor<T>::createVariableByFunction(FunctionBase *function) {
-	if (function->shared) {
-		auto variable = new Variable<T>(function, function->outputShape);
-
-		return variable;
-	} else {
-		auto value    = createTensorWithShape(function->outputShape);
-		auto gradient = createTensorWithShape(function->outputShape);
-
-		auto variable = new Variable<T>(function, value, gradient);
-
-		return variable;
-	}
-}
-
-template <typename T>
-Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list) {
+Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr) {
 	Shape shape(1, list);
 
-	return addParameter(shape);
+	return addParameter(shape, updateGradient, ptr);
 }
 
 template <typename T>
-Parameter<T>* Executor<T>::addParameter(size_t batch, std::vector<size_t> list) {
+Parameter<T>* Executor<T>::addParameter(size_t batch, std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr) {
 	Shape shape(batch, list);
 
-	return addParameter(shape);
+	return addParameter(shape, updateGradient, ptr);
 }
 
-
 template <typename T>
-Parameter<T>* Executor<T>::addParameter(Shape &shape) {
-	auto value    = createTensorWithShape(shape);
-	auto gradient = createTensorWithShape(shape);
+Parameter<T>* Executor<T>::addParameter(Shape &shape, bool updateGradient = true, void *ptr = nullptr) {
+	Parameter<T> *parameter = nullptr;
 
-	auto parameter = new Parameter<T>(value, gradient);
+	if (updateGradient) {
+		auto value    = createTensor(shape);
+		auto gradient = createTensor(shape);
+
+		parameter = new Parameter<T>(value, gradient);
+	} else {
+		auto value = createTensor(shape);
+
+		parameter = new Parameter<T>(value);
+	}
 
 	nodeCollection.insert(parameter);
 	parameterCollection.insert(parameter);
 
-	/**init the parameter*/
-	TensorInit<T>().gaussian(value);
+	if (nullptr != ptr) {
+		parameter->feed(ptr);
+	} else {
+		TensorInit<T>().gaussian(parameter->value);
+	}
 
 	return parameter;
 }
 
-template <typename T>
-InputParameter<T>* Executor<T>::addInputParameter(std::vector<size_t> list, void *ptr) {
-	Shape shape(1, list);
-
-	return addInputParameter(shape, ptr);
-}
-
-template <typename T>
-InputParameter<T>* Executor<T>::addInputParameter(size_t batch, std::vector<size_t> list, void *ptr) {
-	Shape shape(batch, list);
-
-	return addInputParameter(shape, ptr);
-}
-
-template <typename T>
-InputParameter<T>* Executor<T>::addInputParameter(Shape &shape, void *ptr) {
-	auto value = createTensorWithShape(shape);
-
-	auto inputParameter = new InputParameter<T>(value);
-
-	/**feed data*/
-	if (nullptr != ptr) {
-		inputParameter->feed(ptr);
-	}
-
-	nodeCollection.insert(inputParameter);
-	parameterCollection.insert(inputParameter);
-
-	return inputParameter;
-}
 
 template <typename T>
 Node* Executor<T>::addFunction(FunctionBase *function) {
-	auto variable = createVariableByFunction(function);
+	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
+}
 
-	function->output = variable;
+template <typename T>
+void Executor<T>::forward(Expression<T> &e) {
+	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
+}
 
-	nodeCollection.insert(function);
-	nodeCollection.insert(variable);
+template <typename T>
+void Executor<T>::backward(Expression<T> &e) {
+	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
+}
 
-	nonParameterCollection.insert(function);
-	nonParameterCollection.insert(variable);
+template <typename T>
+void Executor<T>::forward(Node *last) {
+	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
+}
 
-	return variable;
+template <typename T>
+void Executor<T>::backward(Node *last) {
+	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
 }
 
 DEEP8_DECLARATION_INSTANCE(Executor)
