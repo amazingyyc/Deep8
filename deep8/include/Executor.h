@@ -18,6 +18,11 @@ template <typename T>
 class Executor {
 protected:
 	/**
+	 * every node have a unique id
+	 */
+	int64_t nodeId;
+
+	/**
 	 * the device
 	 */
 	Device *device;
@@ -54,6 +59,9 @@ protected:
 #endif
 	Tensor<T> createTensor(Shape &shape);
 	Tensor<T> createTensorCPU(Shape &shape);
+
+	/**generate a new Node id*/
+	int64_t generateNodeId();
 
 public:
 	virtual ~Executor();

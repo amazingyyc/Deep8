@@ -28,6 +28,9 @@ template <typename T>
 Node* EagerExecutor<T>::addFunction(FunctionBase *function) {
 	auto variable = createVariableWithFunction(function);
 
+	function->id = this->generateNodeId();
+	variable->id = this->generateNodeId();
+
 	this->nodeCollection.insert(function);
 	this->nodeCollection.insert(variable);
 

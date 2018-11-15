@@ -6,7 +6,12 @@ namespace Deep8 {
 
 template <typename T>
 Executor<T>::Executor(Trainer<T> *tr, DeviceType deviceType)
-	:trainer(tr), nodeCollection(), parameterCollection(), nonParameterCollection() {
+	:nodeId(0),
+	trainer(tr), 
+	nodeCollection(), 
+	parameterCollection(), 
+	nonParameterCollection() {
+
 	if (deviceType == DeviceType::CPU) {
 		initDeviceCPU();
 	} else {
@@ -63,6 +68,11 @@ Tensor<T> Executor<T>::createTensor(Shape &shape) {
 }
 
 template <typename T>
+int64_t Executor<T>::generateNodeId() {
+	return nodeId++;
+}
+
+template <typename T>
 Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr) {
 	Shape shape(1, list);
 
@@ -90,6 +100,9 @@ Parameter<T>* Executor<T>::addParameter(Shape &shape, bool updateGradient = true
 
 		parameter = new Parameter<T>(value);
 	}
+
+	/**set a id*/
+	parameter->id = generateNodeId();
 
 	nodeCollection.insert(parameter);
 	parameterCollection.insert(parameter);

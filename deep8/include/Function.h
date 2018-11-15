@@ -6,6 +6,41 @@
 
 namespace Deep8 {
 
+/**
+ * the function Type
+ */
+enum class FunctionType {
+	Unkown = 0,
+	Abs,
+	Add,
+	AddScalar,
+	AvgPooling2d,
+	Conv2d,
+	DeConv2d,
+	Divide,
+	DivideScalar,
+	Exp,
+	L1Norm,
+	L2Norm,
+	Linear,
+	Log,
+	LReLu,
+	MatrixMultiply,
+	MaxPooling2d,
+	Minus,
+	MinusScalar,
+	Multiply,
+	MultiplyScalar,
+	ReLu,
+	ReShape,
+	ScalarDivide,
+	ScalarMinus,
+	Sigmoid,
+	Softmax,
+	Square,
+	Tanh,
+};
+
 class FunctionBase: public Node {
 public:
 	/**

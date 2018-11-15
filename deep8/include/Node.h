@@ -16,6 +16,9 @@
 
 namespace Deep8 {
 
+/**
+ * the Node type for now 2 type: Variable and Function
+ */
 enum class NodeType {
     Unknow,
     Variable,
@@ -35,6 +38,9 @@ public:
 
     /**what kind type of this Node, default is unknow*/
     NodeType type;
+
+	/**the Node id*/
+	int64_t id;
 
 protected:
 	explicit Node();
@@ -59,6 +65,18 @@ public:
      */
 	virtual void backward();
 
+	/**
+	 * if this node support the auto batch
+	 * the default is false
+	 */
+	virtual bool supportAutoBatch();
+
+	/**
+	 * return a hashcode to do auto batch
+	 * default is 0
+	 */
+	virtual size_t autoBatchCode();
+
     /**
      * to string
      */
@@ -67,4 +85,4 @@ public:
 
 }
 
-#endif //DEEP8_NODE_H
+#endif
