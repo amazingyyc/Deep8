@@ -17,6 +17,7 @@ set(DEEP8_SRC_FILES
 
 		src/model/Executor.cpp
 		src/model/EagerExecutor.cpp
+		src/model/LazyExecutor.cpp
 		src/model/Device.cpp
 		src/model/MemoryAllocator.cpp
 		src/model/MemoryPool.cpp
@@ -31,6 +32,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/Add.cpp
 		src/nodes/AddScalar.cpp
 		src/nodes/AvgPooling2d.cpp
+		src/nodes/Batch.cpp
 		src/nodes/Conv2d.cpp
 		src/nodes/DeConv2d.cpp
 		src/nodes/Divide.cpp
@@ -58,6 +60,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/Softmax.cpp
 		src/nodes/Square.cpp
 		src/nodes/Tanh.cpp
+		src/nodes/UnBatch.cpp
 		src/nodes/Variable.cpp
 
 		)
@@ -75,6 +78,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/Add.cu
 		src/nodes/AddScalar.cu
 		src/nodes/AvgPooling2d.cu
+		src/nodes/Batch.cu
 		src/nodes/Conv2d.cu
 		src/nodes/DeConv2d.cu
 		src/nodes/Divide.cu
@@ -98,6 +102,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/Softmax.cu
 		src/nodes/Square.cu
 		src/nodes/Tanh.cu
+		src/nodes/UnBatch.cu
 		)
 
 if (HAVE_GPU AND HAVE_CUDA)

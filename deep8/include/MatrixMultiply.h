@@ -17,6 +17,12 @@ public:
      */
      void check() override;
 
+	 /**if support the auto batch*/
+	 bool supportAutoBatch() override;
+
+	 /**auto batch code*/
+	 size_t autoBatchCode() override;
+
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;

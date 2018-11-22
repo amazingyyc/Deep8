@@ -35,6 +35,31 @@ void MatrixMultiply<T>::check() {
     }
 }
 
+/**
+ * for MaxtrixMultiply C1 = A1 * B1, C2 = A2 * B2
+ * only 1 condition support the auto batch
+ * the A1 is same with A2, and the B1 and B2's shape is same except the batch, and the col of B1 and B2 is 1.
+ */
+template <typename T>
+bool MatrixMultiply<T>::supportAutoBatch() {
+	return (1 == inputs[1]->outputShape.col());
+}
+
+/**
+ * C = A * B
+ * the batchcode is combined with the id of A and the shape of B (except batch dim)
+ */
+template <typename T>
+size_t MatrixMultiply<T>::autoBatchCode() {
+	std::ostringstream oss;
+	oss << static_cast<int>(FunctionType::MatrixMultiply);
+	oss << inputs[0]->id;
+	oss << inputs[1]->outputShape.row();
+	oss << inputs[1]->outputShape.col();
+
+	return std::hash<std::string>()(oss.str());
+}
+
 template <typename T>
 void MatrixMultiply<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output)  {
     auto xTensor = inputs[0];
