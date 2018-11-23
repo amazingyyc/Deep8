@@ -77,6 +77,17 @@ public:
 	 */
 	virtual size_t autoBatchCode();
 
+	/**
+	 * return the inputs[index]'s shape if it is be batched together.
+	 * the shapes is the inputs[index]'s shape that will be batched.
+	 */
+	virtual Shape autoBatchShape(size_t index, std::vector<Shape> &shapes);
+
+	/**
+	 * calculate the outputShape, inputShapes is the Shape of inputs
+	 */
+	virtual Shape calcOutputShape(std::vector<Shape> &inputShapes);
+
     /**
      * to string
      */

@@ -60,6 +60,52 @@ size_t MatrixMultiply<T>::autoBatchCode() {
 	return std::hash<std::string>()(oss.str());
 }
 
+/**
+ * return the inputs[index]'s shape if it can be batched together.
+ * the shapes is the inputs[index]'s shape that will be batched.
+ */
+template <typename T>
+Shape MatrixMultiply<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+	DEEP8_ARGUMENT_CHECK(1 == index, "MatrixMultiply only can batch index 1 input");
+	DEEP8_ARGUMENT_CHECK(shapes.size() > 1, "the batched inputs's size must > 1");
+
+	size_t batch = 0;
+	auto row = shapes[0].row();
+
+	for (auto item : shapes) {
+		DEEP8_ARGUMENT_CHECK(1 == item.col() && row == item.row(), "the batched shape is error");
+
+		batch += item.batch();
+	}
+
+	std::vector<size_t> vec({ row, 1 });
+	
+	return Shape(batch, vec);
+}
+
+/**
+ * calculate the outputShape, inputShapes is the Shape of inputs
+ */
+template <typename T>
+Shape MatrixMultiply<T>::calcOutputShape(std::vector<Shape> &inputShapes) {
+	DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "must 2 inputs");
+
+	DEEP8_ARGUMENT_CHECK(inputShapes[0].batch() == inputShapes[1].batch() || 1 == inputShapes[0].batch() || 1 == inputShapes[1].batch(), "the batch of input is error");
+	DEEP8_ARGUMENT_CHECK((2 == inputShapes[0].nDims() || 3 == inputShapes[0].nDims()) && (2 == inputShapes[1].nDims() || 3 == inputShapes[1].nDims()), "the inputs dimensions is error");
+	DEEP8_ARGUMENT_CHECK(inputShapes[0].col() == inputShapes[1].row(), "the col of input1 must same to the row of input2");
+
+	Shape shape;
+
+	if (1 == inputShapes[1].col()) {
+		shape.reShape({ std::max<size_t>(inputShapes[0].batch(), inputShapes[1].batch()), inputShapes[0].row() });
+	} else {
+		shape.reShape({ std::max<size_t>(inputShapes[0].batch(), inputShapes[1].batch()), inputShapes[0].row(), inputShapes[1].col() });
+	}
+
+	return shape;
+}
+
+
 template <typename T>
 void MatrixMultiply<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output)  {
     auto xTensor = inputs[0];

@@ -23,6 +23,17 @@ public:
 	 /**auto batch code*/
 	 size_t autoBatchCode() override;
 
+	 /**
+	  * return the inputs[index]'s shape if it is be batched together.
+	  * the shapes is the inputs[index]'s shape that will be batched.
+	  */
+	 Shape autoBatchShape(size_t index, std::vector<Shape> &shapes) override;
+
+	 /**
+	  * calculate the outputShape, inputShapes is the Shape of inputs
+	  */
+	 Shape calcOutputShape(std::vector<Shape> &inputShapes) override;
+
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;

@@ -41,6 +41,29 @@ size_t Node::autoBatchCode() {
 }
 
 /**
+ * return the inputs[index]'s shape if it is be batched together.
+ * the shapes is the inputs[index]'s shape that will be batched.
+ */
+Shape Node::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+	size_t size = 0;
+
+	for (auto item : shapes) {
+		size += item.size();
+	}
+
+	std::vector<size_t> vec({size});
+
+	return Shape(1, vec);
+}
+
+/**
+ * calculate the outputShape, inputShapes is the Shape of inputs
+ */
+Shape Node::calcOutputShape(std::vector<Shape> &inputShapes) {
+	return Shape();
+}
+
+/**
  * to string
  */
 std::string Node::toString() {
