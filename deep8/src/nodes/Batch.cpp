@@ -15,7 +15,7 @@ void Batch<T>::check() {
 	DEEP8_ARGUMENT_CHECK(!this->inputs.empty(), "the input can not be empty");
 
 	size_t totalSize = 0;
-	for (auto item : inputs) {
+	for (auto item : this->inputs) {
 		totalSize += item->outputShape.size();
 	}
 

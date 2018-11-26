@@ -73,21 +73,21 @@ int64_t Executor<T>::generateNodeId() {
 }
 
 template <typename T>
-Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr) {
+Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list, bool updateGradient, void *ptr) {
 	Shape shape(1, list);
 
 	return addParameter(shape, updateGradient, ptr);
 }
 
 template <typename T>
-Parameter<T>* Executor<T>::addParameter(size_t batch, std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr) {
+Parameter<T>* Executor<T>::addParameter(size_t batch, std::vector<size_t> list, bool updateGradient, void *ptr) {
 	Shape shape(batch, list);
 
 	return addParameter(shape, updateGradient, ptr);
 }
 
 template <typename T>
-Parameter<T>* Executor<T>::addParameter(Shape &shape, bool updateGradient = true, void *ptr = nullptr) {
+Parameter<T>* Executor<T>::addParameter(Shape &shape, bool updateGradient, void *ptr) {
 	Parameter<T> *parameter = nullptr;
 
 	if (updateGradient) {

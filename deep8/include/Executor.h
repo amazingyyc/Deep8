@@ -62,7 +62,7 @@ protected:
 
 	/**generate a new Node id*/
 	int64_t generateNodeId();
-
+	
 public:
 	virtual ~Executor();
 

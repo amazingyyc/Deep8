@@ -4,6 +4,7 @@ namespace Deep8 {
 
 template <typename T>
 UnBatch<T>::UnBatch(std::vector<Node*> &inputs, size_t o, Shape &shape) : Function<T>(inputs), offset(o) {
+	this->shared      = true;
 	this->outputShape = shape;
 	check();
 }

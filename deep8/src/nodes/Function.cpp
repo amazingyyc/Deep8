@@ -53,9 +53,9 @@ void Function<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const
 template <typename T>
 void Function<T>::forward() {
 	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
-	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.outputs[0]->type, "the output must be a Variable type");
+	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be a Variable type");
 
-	auto outputVar = static_cast<Variable<T>*>(this->outputs.outputs[0]);
+	auto outputVar = static_cast<Variable<T>*>(this->outputs.first());
 
 	DEEP8_ARGUMENT_CHECK(this->outputShape == outputVar->value.shape, "the output shape is error");
 
@@ -86,9 +86,9 @@ void Function<T>::forward() {
 template <typename T>
 void Function<T>::backward() {
 	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
-	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.outputs[0]->type, "the output must be Variable type");
+	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 
-	auto outputVar = static_cast<Variable<T>*>(this->outputs.outputs[0]);
+	auto outputVar = static_cast<Variable<T>*>(this->outputs.first());
 
 	auto outputValue    = &(outputVar->value);
 	auto outputGradient = &(outputVar->gradient);

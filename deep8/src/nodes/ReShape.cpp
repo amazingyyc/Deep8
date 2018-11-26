@@ -50,10 +50,10 @@ void ReShape<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 template <typename T>
 void ReShape<T>::forward() {
 	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the outputs size must be 1");
-	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.outputs[0]->type, "the output must be Variable type");
+	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 
 	auto x = static_cast<Variable<T>*>(this->inputs[0]);
-	auto y = static_cast<Variable<T>*>(this->outputs.outputs[0]);
+	auto y = static_cast<Variable<T>*>(this->outputs.first());
 
 	y->outputShape = this->outputShape;
 

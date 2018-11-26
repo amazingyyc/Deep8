@@ -1,6 +1,4 @@
-#include <queue>
-#include <unordered_map>
-
+#include "Basic.h"
 #include "Batch.h"
 #include "UnBatch.h"
 #include "LazyExecutor.h"
@@ -17,8 +15,8 @@ template <typename T>
 void LazyExecutor<T>::autoBatchGraph(Node *last) {
 	DEEP8_ARGUMENT_CHECK(nullptr != last, "the Parameter can not be nullptr");
 
-	/**inputs store the Nodes that Node's inputs is empty*/
-	std::queue<Node*> inputs;
+	/**store the node that have 0 inputs*/
+	std::queue<Node*> zeroInDegree;
 
 	/**store the Node's in-degree*/
 	std::unordered_map<Node*, int> inDegree;
@@ -28,45 +26,41 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 	que.push(last);
 
 	while (!que.empty()) {
-		auto size = que.size();
+		auto node = que.front();
+		que.pop();
 
-		for (unsigned long i = 0; i < size; ++i) {
-			auto node = que.front();
-			que.pop();
+		for (auto item : node->outputs.outputs) {
+			inDegree[item.first]++;
+		}
 
-			for (auto item : node->outputs.outputs) {
-				inDegree[item]++;
-			}
-
-			if (node->inputs.empty()) {
-				inputs.push(node);
-			} else {
-				for (auto item : node->inputs) {
-					que.push(input);
-				}
+		if (node->inputs.empty()) {
+			zeroInDegree.push(node);
+		} else {
+			for (auto item : node->inputs) {
+				que.push(item);
 			}
 		}
 	}
 
 	/**Topological sorting, in every "layer", batch the Node that can be bacthed*/
-	while (!inputs.empty()) {
+	while (!zeroInDegree.empty()) {
 		std::unordered_map<size_t, std::vector<Node*>> layer;
 
-		auto size = inputs.size();
+		auto size = zeroInDegree.size();
 
 		for (unsigned long i = 0; i < size; ++i) {
-			auto node = inputs.front();
-			inputs.pop();
+			auto node = zeroInDegree.front();
+			zeroInDegree.pop();
 
 			if (node->supportAutoBatch()) {
 				layer[node->autoBatchCode()].emplace_back(node);
 			}
 
 			for (auto item : node->outputs.outputs) {
-				inDegree[item]--;
+				inDegree[item.first]--;
 
-				if (0 == inDegree[item]) {
-					inputs.push(item);
+				if (0 == inDegree[item.first]) {
+					zeroInDegree.push(item.first);
 				}
 			}
 		}
@@ -80,7 +74,7 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 /**auto batch in every layer of graph*/
 template <typename T>
 void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
-	/**empty or only 1 node just return*/
+	/**empty or only 1 node, return*/
 	if (1 >= nodes.size()) {
 		return;
 	}
@@ -103,18 +97,18 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 		this->addFunction(batchNodes[i]);
 	}
 
-	std::vector<Node*> inputs;
+	std::vector<Node*> newNodeInputs;
 
 	for (size_t i = 0; i < nodes[0]->inputs.size(); ++i) {
 		if (batchNodes.find(i) != batchNodes.end()) {
-			inputs.emplace_back(batchNodes[i]);
+			newNodeInputs.emplace_back(batchNodes[i]);
 		} else {
-			inputs.emplace_back(nodes[0]->inputs[i]);
+			newNodeInputs.emplace_back(nodes[0]->inputs[i]);
 		}
 	}
 
 	/**use the newNode instead of nodes*/
-	auto newNode = nodes[0]->autoBatchClone(inputs);
+	auto newNode = nodes[0]->autoBatchClone(newNodeInputs);
 	this->addFunction(newNode);
 
 	std::vector<Node*> unBatchNodes;
@@ -123,16 +117,31 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 
 	for (size_t i = 0; i < nodes.size(); ++i) {
 		auto unBatchNode = new UnBatch<T>(unBatchInputs, offset, nodes[i]->outputShape);
+		this->addFunction(unBatchNode);
 
 		unBatchNodes.emplace_back(unBatchNode);
 
-		this->addFunction(unBatchNode);
-
-		offset += nodes[i]->outputShape.size();
+		offset += unBatchNode->outputShape.size();
 	}
 
-	/**should clear the nodes and it's inputs, outputs, not finish*/
+	/**should clean the nodes and it's inputs, outputs*/
+	for (size_t i = 0; i < nodes.size(); ++i) {
+		for (auto item : nodes[i]->inputs) {
+			item->outputs.remove(nodes[i]);
+		}
 
+		for (auto item : nodes[i]->outputs.outputs) {
+			item.first->inputs[item.second] = unBatchNodes[i];
+		}
+
+		nodes[i]->inputs.clear();
+		nodes[i]->outputs.clear();
+
+		this->nodeCollection.erase(nodes[i]);
+		this->nonParameterCollection.erase(nodes[i]);
+
+		delete nodes[i];
+	}
 }
 
 template <typename T>

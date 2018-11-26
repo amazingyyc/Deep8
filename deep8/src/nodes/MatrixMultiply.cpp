@@ -42,7 +42,7 @@ void MatrixMultiply<T>::check() {
  */
 template <typename T>
 bool MatrixMultiply<T>::supportAutoBatch() {
-	return (1 == inputs[1]->outputShape.col());
+	return (1 == this->inputs[1]->outputShape.col());
 }
 
 /**
@@ -53,9 +53,9 @@ template <typename T>
 size_t MatrixMultiply<T>::autoBatchCode() {
 	std::ostringstream oss;
 	oss << static_cast<int>(FunctionType::MatrixMultiply);
-	oss << inputs[0]->id;
-	oss << inputs[1]->outputShape.row();
-	oss << inputs[1]->outputShape.col();
+	oss << this->inputs[0]->id;
+	oss << this->inputs[1]->outputShape.row();
+	oss << this->inputs[1]->outputShape.col();
 
 	return std::hash<std::string>()(oss.str());
 }
