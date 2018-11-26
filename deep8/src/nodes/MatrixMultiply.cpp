@@ -84,6 +84,22 @@ Shape MatrixMultiply<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes
 }
 
 /**
+ * the MatrixMultiply's autobatch index only support 1
+ */
+template <typename T>
+std::vector<size_t> MatrixMultiply<T>::autoBatchIndexes() {
+	return std::vector<size_t>({ 1 });
+}
+
+/**
+ * clone current node for auto batch
+ */
+template <typename T>
+Node* MatrixMultiply<T>::autoBatchClone(std::vector<Node*> &inputs) {
+	return new MatrixMultiply<T>(inputs);
+}
+
+/**
  * calculate the outputShape, inputShapes is the Shape of inputs
  */
 template <typename T>

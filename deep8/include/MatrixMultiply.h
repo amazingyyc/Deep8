@@ -30,6 +30,16 @@ public:
 	 Shape autoBatchShape(size_t index, std::vector<Shape> &shapes) override;
 
 	 /**
+	  * return the inputs's index that can be auto batched
+	  */
+	 std::vector<size_t> autoBatchIndexes() override;
+
+	 /**
+	  * clone current node for auto batch
+	  */
+	 Node* autoBatchClone(std::vector<Node*> &) override;
+
+	 /**
 	  * calculate the outputShape, inputShapes is the Shape of inputs
 	  */
 	 Shape calcOutputShape(std::vector<Shape> &inputShapes) override;

@@ -15,7 +15,11 @@ protected:
 	bool clearFlag;
 
 	/**use the auto batch algorithm to optimize the compute graph*/
-	void optimizeGraph(Node *);
+	void autoBatchGraph(Node *);
+
+	/**auto batch in every layer of graph*/
+	void autoBatchGraphLayer(std::vector<Node*>&);
+
 public:
 	explicit LazyExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true);
 

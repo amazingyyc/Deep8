@@ -78,6 +78,16 @@ public:
 	virtual size_t autoBatchCode();
 
 	/**
+	 * return the inputs's index that can be auto batched
+	 */
+	virtual std::vector<size_t> autoBatchIndexes();
+
+	/**
+	 * clone current node for auto batch
+	 */
+	virtual Node* autoBatchClone(std::vector<Node*> &);
+
+	/**
 	 * return the inputs[index]'s shape if it is be batched together.
 	 * the shapes is the inputs[index]'s shape that will be batched.
 	 */

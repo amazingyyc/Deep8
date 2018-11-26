@@ -41,6 +41,20 @@ size_t Node::autoBatchCode() {
 }
 
 /**
+ * return the inputs's index that can be auto batched
+ */
+std::vector<size_t> Node::autoBatchIndexes() {
+	return std::vector<size_t>();
+}
+
+/**
+ * clone current node for auto batch
+ */
+Node* Node::autoBatchClone(std::vector<Node*> &inputs) {
+	return nullptr;
+}
+
+/**
  * return the inputs[index]'s shape if it is be batched together.
  * the shapes is the inputs[index]'s shape that will be batched.
  */
