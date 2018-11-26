@@ -99,29 +99,6 @@ Node* MatrixMultiply<T>::autoBatchClone(std::vector<Node*> &inputs) {
 	return new MatrixMultiply<T>(inputs);
 }
 
-/**
- * calculate the outputShape, inputShapes is the Shape of inputs
- */
-template <typename T>
-Shape MatrixMultiply<T>::calcOutputShape(std::vector<Shape> &inputShapes) {
-	DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "must 2 inputs");
-
-	DEEP8_ARGUMENT_CHECK(inputShapes[0].batch() == inputShapes[1].batch() || 1 == inputShapes[0].batch() || 1 == inputShapes[1].batch(), "the batch of input is error");
-	DEEP8_ARGUMENT_CHECK((2 == inputShapes[0].nDims() || 3 == inputShapes[0].nDims()) && (2 == inputShapes[1].nDims() || 3 == inputShapes[1].nDims()), "the inputs dimensions is error");
-	DEEP8_ARGUMENT_CHECK(inputShapes[0].col() == inputShapes[1].row(), "the col of input1 must same to the row of input2");
-
-	Shape shape;
-
-	if (1 == inputShapes[1].col()) {
-		shape.reShape({ std::max<size_t>(inputShapes[0].batch(), inputShapes[1].batch()), inputShapes[0].row() });
-	} else {
-		shape.reShape({ std::max<size_t>(inputShapes[0].batch(), inputShapes[1].batch()), inputShapes[0].row(), inputShapes[1].col() });
-	}
-
-	return shape;
-}
-
-
 template <typename T>
 void MatrixMultiply<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output)  {
     auto xTensor = inputs[0];

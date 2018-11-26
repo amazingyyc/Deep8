@@ -93,11 +93,6 @@ public:
 	 */
 	virtual Shape autoBatchShape(size_t index, std::vector<Shape> &shapes);
 
-	/**
-	 * calculate the outputShape, inputShapes is the Shape of inputs
-	 */
-	virtual Shape calcOutputShape(std::vector<Shape> &inputShapes);
-
     /**
      * to string
      */

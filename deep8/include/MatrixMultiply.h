@@ -39,11 +39,6 @@ public:
 	  */
 	 Node* autoBatchClone(std::vector<Node*> &) override;
 
-	 /**
-	  * calculate the outputShape, inputShapes is the Shape of inputs
-	  */
-	 Shape calcOutputShape(std::vector<Shape> &inputShapes) override;
-
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;

@@ -71,13 +71,6 @@ Shape Node::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
 }
 
 /**
- * calculate the outputShape, inputShapes is the Shape of inputs
- */
-Shape Node::calcOutputShape(std::vector<Shape> &inputShapes) {
-	return Shape();
-}
-
-/**
  * to string
  */
 std::string Node::toString() {
