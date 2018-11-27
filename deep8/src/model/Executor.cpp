@@ -73,6 +73,22 @@ int64_t Executor<T>::generateNodeId() {
 }
 
 template <typename T>
+Variable<T>* Executor<T>::createVariableWithFunction(FunctionBase *func) {
+	if (func->shared) {
+		auto variable = new Variable<T>(func, func->outputShape);
+
+		return variable;
+	} else {
+		auto value    = this->createTensor(func->outputShape);
+		auto gradient = this->createTensor(func->outputShape);
+
+		auto variable = new Variable<T>(func, value, gradient);
+
+		return variable;
+	}
+}
+
+template <typename T>
 Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list, bool updateGradient, void *ptr) {
 	Shape shape(1, list);
 

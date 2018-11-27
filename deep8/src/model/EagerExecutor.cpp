@@ -9,24 +9,8 @@ EagerExecutor<T>::EagerExecutor(Trainer<T> *tr, DeviceType deviceType, bool flag
 }
 
 template <typename T>
-Variable<T>* EagerExecutor<T>::createVariableWithFunction(FunctionBase *func) {
-	if (func->shared) {
-		auto variable = new Variable<T>(func, func->outputShape);
-
-		return variable;
-	} else {
-		auto value    = this->createTensor(func->outputShape);
-		auto gradient = this->createTensor(func->outputShape);
-
-		auto variable = new Variable<T>(func, value, gradient);
-
-		return variable;
-	}
-}
-
-template <typename T>
 Node* EagerExecutor<T>::addFunction(FunctionBase *function) {
-	auto variable = createVariableWithFunction(function);
+	auto variable = this->createVariableWithFunction(function);
 
 	function->id = this->generateNodeId();
 	variable->id = this->generateNodeId();
@@ -46,6 +30,7 @@ template <typename T>
 void EagerExecutor<T>::clearIntermediaryNodes() {
 	/**clear all node output*/
 	for (auto item : this->nodeCollection) {
+		item->inputs.clear();
 		item->outputs.clear();
 	}
 
@@ -84,23 +69,19 @@ void EagerExecutor<T>::backward(Node *last) {
 	/**
 	 * first loop zero all the Gradient of Variable
 	 */
-	std::queue<Node*> queues;
-	queues.push(last);
+	std::queue<Node*> que;
+	que.push(last);
 
-	while (!queues.empty()) {
-		auto size = queues.size();
+	while (!que.empty()) {
+		auto node = que.front();
+		que.pop();
 
-		for (unsigned long i = 0; i < size; ++i) {
-			auto node = queues.front();
-			queues.pop();
+		if (NodeType::Variable == node->type) {
+			static_cast<VariableBase*>(node)->zeroGradient();
+		}
 
-			if (NodeType::Variable == node->type) {
-				static_cast<VariableBase*>(node)->zeroGradient();
-			}
-
-			for (auto input : node->inputs) {
-				queues.push(input);
-			}
+		for (auto input : node->inputs) {
+			que.push(input);
 		}
 	}
 
@@ -108,20 +89,16 @@ void EagerExecutor<T>::backward(Node *last) {
 	lastVariable->setGradientOne();
 
 	/**calculate the gradient for the Variable*/
-	queues.push(last);
+	que.push(last);
 
-	while (!queues.empty()) {
-		auto size = queues.size();
+	while (!que.empty()) {
+		auto node = que.front();
+		que.pop();
 
-		for (std::queue<Node*>::size_type i = 0; i < size; ++i) {
-			auto node = queues.front();
-			queues.pop();
+		node->backward();
 
-			node->backward();
-
-			for (auto input : node->inputs) {
-				queues.push(input);
-			}
+		for (auto input : node->inputs) {
+			que.push(input);
 		}
 	}
 

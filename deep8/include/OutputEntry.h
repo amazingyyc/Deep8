@@ -11,7 +11,7 @@ class Node;
 class OutputEntry {
 public:
 	/**store the output and the index in output*/
-	std::unordered_map<Node*, size_t> outputs;
+	std::unordered_map<Node*, size_t> entries;
 
 public:
 	/**add a output*/

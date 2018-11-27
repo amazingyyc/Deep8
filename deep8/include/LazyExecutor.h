@@ -20,6 +20,9 @@ protected:
 	/**auto batch in every layer of graph*/
 	void autoBatchGraphLayer(std::vector<Node*>&);
 
+	/**malloc Intermediary Variable*/
+	void mallocIntermediaryVariable(Node*);
+
 public:
 	explicit LazyExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true);
 

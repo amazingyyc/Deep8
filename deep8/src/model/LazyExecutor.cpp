@@ -29,7 +29,7 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 		auto node = que.front();
 		que.pop();
 
-		for (auto item : node->outputs.outputs) {
+		for (auto item : node->outputs.entries) {
 			inDegree[item.first]++;
 		}
 
@@ -56,7 +56,7 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 				layer[node->autoBatchCode()].emplace_back(node);
 			}
 
-			for (auto item : node->outputs.outputs) {
+			for (auto item : node->outputs.entries) {
 				inDegree[item.first]--;
 
 				if (0 == inDegree[item.first]) {
@@ -130,8 +130,9 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 			item->outputs.remove(nodes[i]);
 		}
 
-		for (auto item : nodes[i]->outputs.outputs) {
+		for (auto item : nodes[i]->outputs.entries) {
 			item.first->inputs[item.second] = unBatchNodes[i];
+			unBatchNodes[i]->outputs.add(item.first, item.second);
 		}
 
 		nodes[i]->inputs.clear();
@@ -144,10 +145,52 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 	}
 }
 
+/**
+ * malloc Intermediary Variable
+ */
+template <typename T>
+void LazyExecutor<T>::mallocIntermediaryVariable(Node *last) {
+	std::queue<Node*> que;
+	que.push(last);
+
+	while (!que.empty()) {
+		auto node = que.front();
+		que.pop();
+
+		for (auto item : node->inputs) {
+			que.push(item);
+		}
+
+		if (NodeType::Function != node->type) {
+			continue;
+		}
+
+		auto variable = this->createVariableWithFunction((FunctionBase*) node);
+		variable->id  = this->generateNodeId();
+
+		this->nodeCollection.insert(variable);
+		this->nonParameterCollection.insert(variable);
+
+		variable->inputs.clear();
+		node->outputs.remove(variable);
+
+		for (auto item : node->outputs.entries) {
+			item.first->inputs[item.second] = variable;
+			variable->outputs.add(item.first, item.second);
+		}
+
+		node->outputs.clear();
+
+		variable->inputs.emplace_back(node);
+		node->outputs.add(variable, 0);
+	}
+}
+
 template <typename T>
 void LazyExecutor<T>::clearIntermediaryNodes() {
 	/**clear all node output*/
 	for (auto item : this->nodeCollection) {
+		item->inputs.clear();
 		item->outputs.clear();
 	}
 
@@ -182,12 +225,98 @@ void LazyExecutor<T>::backward(Expression<T> &e) {
 
 template <typename T>
 void LazyExecutor<T>::forward(Node *last) {
+	DEEP8_ARGUMENT_CHECK(nullptr != last, "the last can not be nullptr");
 
+	/**first step autobath this graph*/
+	autoBatchGraph(last);
+
+	/**sencond step, malloc the intermediary variable*/
+	mallocIntermediaryVariable(last);
+
+	/**do the real calculation*/
+	std::queue<Node*> que;
+	que.push(last);
+
+	std::vector<Node*> graph;
+
+	while (!que.empty()) {
+		auto node = que.front();
+		que.pop();
+
+		graph.emplace_back(node);
+
+		for (auto item : node->inputs) {
+			que.push(item);
+		}
+	}
+
+	for (auto it = graph.rbegin(); it != graph.rend(); it++) {
+		(*it)->forward();
+	}
 }
 
 template <typename T>
 void LazyExecutor<T>::backward(Node *last) {
+	Variable<T> *lastVar = nullptr;
 
+	if (NodeType::Function == last->type) {
+		/**if the node is a function must have a variable output*/
+		DEEP8_ARGUMENT_CHECK(1 == last->outputs.size() && NodeType::Variable == last->outputs.first()->type, "the last node must have a Variable output");
+
+		lastVar = static_cast<VariableBase*>(last->outputs.first());
+
+		
+	} else if (NodeType::Variable == last->type) {
+		lastVar = static_cast<VariableBase*>(last);
+	} else {
+		DEEP8_RUNTIME_ERROR("the node type is error");
+	}
+
+	DEEP8_ARGUMENT_CHECK(lastVar->isScalar(), "the last Variable gradient must be scalar");
+
+	/**
+	 * first loop zero all the Gradient of Variable
+	 */
+	std::queue<Node*> que;
+	que.push(lastVar);
+
+	while (!que.empty()) {
+		auto node = que.front();
+		que.pop();
+
+		if (NodeType::Variable == node->type) {
+			static_cast<VariableBase*>(node)->zeroGradient();
+		}
+
+		for (auto input : node->inputs) {
+			que.push(input);
+		}
+	}
+
+	/**set the last Variable Gradient is 1*/
+	lastVar->setGradientOne();
+
+	/**calculate the gradient for the Variable*/
+	que.push(lastVar);
+
+	while (!queues.empty()) {
+		auto node = que.front();
+		que.pop();
+
+		node->backward();
+
+		for (auto input : node->inputs) {
+			que.push(input);
+		}
+	}
+
+	/**update the parameter*/
+	this->trainer->training(this->parameterCollection);
+
+	/**clear the function and variable*/
+	if (clearFlag) {
+		this->clearIntermediaryNodes();
+	}
 }
 
 }

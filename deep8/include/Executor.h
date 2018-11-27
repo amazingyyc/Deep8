@@ -63,6 +63,8 @@ protected:
 	/**generate a new Node id*/
 	int64_t generateNodeId();
 	
+	Variable<T>* createVariableWithFunction(FunctionBase *function);
+
 public:
 	virtual ~Executor();
 
