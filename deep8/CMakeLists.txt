@@ -62,7 +62,6 @@ set(DEEP8_SRC_FILES
 		src/nodes/Tanh.cpp
 		src/nodes/UnBatch.cpp
 		src/nodes/Variable.cpp
-
 		)
 
 set(DEEP8_CUDA_SRC_FILES
@@ -102,7 +101,6 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/Softmax.cu
 		src/nodes/Square.cu
 		src/nodes/Tanh.cu
-		src/nodes/UnBatch.cu
 		)
 
 if (HAVE_GPU AND HAVE_CUDA)

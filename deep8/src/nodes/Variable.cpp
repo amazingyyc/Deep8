@@ -33,6 +33,7 @@ Variable<T>::Variable(): VariableBase(false) {
 
 template <typename T>
 Variable<T>::Variable(Tensor<T> &v): value(v), VariableBase(false) {
+	this->outputShape = this->value.shape;
 }
 
 template <typename T>
@@ -49,7 +50,7 @@ Variable<T>::Variable(Node *input, Shape &shape) : VariableBase(input, false) {
 
 	for (auto i : inputs) {
 		DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
-		DEEP8_ARGUMENT_CHECK(i->outputShape == this->outputShape, "the shape of the input, pointer and gradient must be same")
+		DEEP8_ARGUMENT_CHECK(i->outputShape == shape, "the shape of the input is error")
 	}
 
 	this->outputShape = shape;
@@ -60,7 +61,7 @@ Variable<T>::Variable(Node *input, Tensor<T> &v, Tensor<T> &g): VariableBase(inp
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
 	DEEP8_ARGUMENT_CHECK(value.device()->type == gradient.device()->type, "the values and gradient must be the same type");
-	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape if Value and Gradient must be same");
+	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape of Value and Gradient must be same");
 
 	for (auto i : inputs) {
 		DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
@@ -89,6 +90,8 @@ void Variable<T>::zeroGradient() {
  */
 template <typename T>
 DeviceType Variable<T>::deviceType() {
+	DEEP8_ARGUMENT_CHECK(nullptr != value.device(), "the value is null");
+
 	return value.device()->type;
 }
 

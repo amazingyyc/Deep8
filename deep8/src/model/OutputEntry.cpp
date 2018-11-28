@@ -5,7 +5,7 @@ namespace Deep8 {
 
 void OutputEntry::add(Node *node, size_t i) {
 	DEEP8_ARGUMENT_CHECK(nullptr != node, "can not add nullptr");
-	DEEP8_ARGUMENT_CHECK(entries.find(node) != entries.end(), "can not add duplicate node");
+	DEEP8_ARGUMENT_CHECK(entries.find(node) == entries.end(), "can not add duplicate node");
 
 	entries[node] = i;
 }

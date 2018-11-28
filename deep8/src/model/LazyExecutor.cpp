@@ -1,6 +1,6 @@
-#include "Basic.h"
 #include "Batch.h"
 #include "UnBatch.h"
+#include "Expression.h"
 #include "LazyExecutor.h"
 
 namespace Deep8 {
@@ -81,7 +81,7 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 
 	/**get the batched indexes*/
 	auto indexes = nodes[0]->autoBatchIndexes();
-	std::unordered_map<size_t, Node*> batchNodes;
+	std::unordered_map<size_t, FunctionBase*> batchNodes;
 
 	for (auto i : indexes) {
 		std::vector<Node*> inputs;
@@ -108,7 +108,7 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 	}
 
 	/**use the newNode instead of nodes*/
-	auto newNode = nodes[0]->autoBatchClone(newNodeInputs);
+	auto newNode = (FunctionBase*) nodes[0]->autoBatchClone(newNodeInputs);
 	this->addFunction(newNode);
 
 	std::vector<Node*> unBatchNodes;
@@ -257,15 +257,13 @@ void LazyExecutor<T>::forward(Node *last) {
 
 template <typename T>
 void LazyExecutor<T>::backward(Node *last) {
-	Variable<T> *lastVar = nullptr;
+	VariableBase *lastVar = nullptr;
 
 	if (NodeType::Function == last->type) {
 		/**if the node is a function must have a variable output*/
 		DEEP8_ARGUMENT_CHECK(1 == last->outputs.size() && NodeType::Variable == last->outputs.first()->type, "the last node must have a Variable output");
 
 		lastVar = static_cast<VariableBase*>(last->outputs.first());
-
-		
 	} else if (NodeType::Variable == last->type) {
 		lastVar = static_cast<VariableBase*>(last);
 	} else {
@@ -299,7 +297,7 @@ void LazyExecutor<T>::backward(Node *last) {
 	/**calculate the gradient for the Variable*/
 	que.push(lastVar);
 
-	while (!queues.empty()) {
+	while (!que.empty()) {
 		auto node = que.front();
 		que.pop();
 
@@ -318,5 +316,7 @@ void LazyExecutor<T>::backward(Node *last) {
 		this->clearIntermediaryNodes();
 	}
 }
+
+DEEP8_DECLARATION_INSTANCE(LazyExecutor)
 
 }

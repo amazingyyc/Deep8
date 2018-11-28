@@ -10,7 +10,7 @@ Node::Node(Node *input): type(NodeType::Unknow), id(-1) {
 	input->outputs.add(this, 0);
 }
 
-Node::Node(std::vector<Node*> &in): inputs(std::move(in)), type(NodeType::Unknow), id(-1) {
+Node::Node(std::vector<Node*> &in): inputs(in), type(NodeType::Unknow), id(-1) {
 	for (size_t i = 0; i < inputs.size(); ++i) {
 		inputs[i]->outputs.add(this, i);
 	}

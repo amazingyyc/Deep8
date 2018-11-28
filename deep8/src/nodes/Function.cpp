@@ -52,15 +52,19 @@ void Function<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const
 
 template <typename T>
 void Function<T>::forward() {
+	/**the inputs and outputs must be Variable*/
+	for (auto item : this->inputs) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be a Variable type");
+	}
+
 	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be a Variable type");
+	DEEP8_ARGUMENT_CHECK(this->outputShape  == this->outputs.first()->outputShape, "the output shape is error");
 
 	auto outputVar = static_cast<Variable<T>*>(this->outputs.first());
 
-	DEEP8_ARGUMENT_CHECK(this->outputShape == outputVar->value.shape, "the output shape is error");
-
 	auto outputValue = &(outputVar->value);
-	auto deviceType = outputVar->deviceType();
+	auto deviceType  = outputVar->deviceType();
 
 	std::vector<const Tensor<T>*> inputValues;
 
@@ -78,13 +82,18 @@ void Function<T>::forward() {
 #ifdef HAVE_CUDA
 		this->forwardGPU(inputValues, outputValue);
 #else
-		DEEP8_RUNTIME_ERROR("not have a GPU");
+		DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif
 	}
 }
 
 template <typename T>
 void Function<T>::backward() {
+	/**the inputs and outputs must be Variable*/
+	for (auto item : this->inputs) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be a Variable type");
+	}
+
 	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 

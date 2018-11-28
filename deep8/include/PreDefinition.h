@@ -44,6 +44,7 @@ typedef RMSPropTrainer<float>    RMSPropTrainerF;
 typedef MomentumTrainer<float>	 MomentumTrainerF;
 typedef Executor<float>			 ExecutorF;
 typedef EagerExecutor<float>     EagerExecutorF;
+typedef LazyExecutor<float>      LazyExecutorF;
 typedef Expression<float>        ExpressionF;
 
 
@@ -88,6 +89,7 @@ typedef RMSPropTrainer<double>    RMSPropTrainerD;
 typedef MomentumTrainer<double>	  MomentumTrainerD;
 typedef Executor<double>          ExecutorD;
 typedef EagerExecutor<double>	  EagerExecutorD;
+typedef LazyExecutor<double>      LazyExecutorD;
 typedef Expression<double>        ExpressionD;
 
 /***********************************************************************************/
@@ -132,6 +134,7 @@ typedef RMSPropTrainer<half>    RMSPropTrainerH;
 typedef MomentumTrainer<half>	MomentumTrainerH;
 typedef Executor<half>          ExecutorH;
 typedef EagerExecutor<half>     EagerExecutorH;
+typedef LazyExecutor<half>      LazyExecutorH;
 typedef Expression<half>        ExpressionH;
 #endif
 

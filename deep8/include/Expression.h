@@ -57,6 +57,10 @@ public:
 	explicit Expression(Executor<T> *exe, Node *n) : executor(exe), node(n) {
 	}
 
+	void forward() {
+		executor->forward(node);
+	}
+
 	void backward() {
 		executor->backward(node);
 	}

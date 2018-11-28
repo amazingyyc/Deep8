@@ -16,8 +16,8 @@ void Conv2d<T>::check() {
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride can not smaller than 1");
     DEEP8_ARGUMENT_CHECK(dilationY >= 1 && dilationX >= 1, "the dilation can not smaller than 1");
 
-    auto inputShape = static_cast<Variable<T> *>(this->inputs[0])->value.shape;
-    auto filterShape = static_cast<Variable<T> *>(this->inputs[1])->value.shape;
+    auto inputShape  = this->inputs[0]->outputShape;
+    auto filterShape = this->inputs[1]->outputShape;
 
     DEEP8_ARGUMENT_CHECK(4 == inputShape.nDims() && 4 == filterShape.nDims(),
                          "Conv2d needs inputs nDims is 4");

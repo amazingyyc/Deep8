@@ -13,11 +13,8 @@ void MatrixMultiply<T>::check() {
 
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the inputs dim must be 2");
 
-    auto xValue = static_cast<Variable<T> *>(this->inputs[0])->value;
-    auto yValue = static_cast<Variable<T> *>(this->inputs[1])->value;
-
-    auto xShape = xValue.shape;
-    auto yShape = yValue.shape;
+    auto xShape = this->inputs[0]->outputShape;
+    auto yShape = this->inputs[1]->outputShape;
 
     DEEP8_ARGUMENT_CHECK(
             xShape.batch() == yShape.batch() || 1 == xShape.batch() || 1 == yShape.batch(),
