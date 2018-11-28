@@ -16,10 +16,7 @@ void Minus<T>::check() {
 	/**
 	 * the Minus Function apply to Broadcasting rule: https://docs.scipy.org/doc/numpy-1.13.0/user/basics.broadcasting.html
 	 */
-	auto xShape = static_cast<Variable<T>*>(this->inputs[0])->value.shape;
-	auto yShape = static_cast<Variable<T>*>(this->inputs[1])->value.shape;
-
-	this->outputShape = broadcastShape(xShape, yShape);
+	this->outputShape = broadcastShape(this->inputs[0]->outputShape, this->inputs[1]->outputShape);
 }
 
 template <typename T>

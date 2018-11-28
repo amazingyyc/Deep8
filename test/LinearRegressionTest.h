@@ -21,8 +21,8 @@ TEST(LinearRegression, test) {
 
 	auto w = parameter(&executor, { 2 });
 
-	auto input  = inputParameter(&executor, { 2, 2 }, x);
-	auto output = inputParameter(&executor, { 2 }, y);
+	auto input  = parameter(&executor, { 2, 2 }, false, x);
+	auto output = parameter(&executor, { 2 }, false, y);
 
     for (int i = 0; i < 1000; ++i) {
         (input * w - output).l1Norm().backward();

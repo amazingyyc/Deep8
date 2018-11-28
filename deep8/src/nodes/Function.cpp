@@ -2,18 +2,15 @@
 
 namespace Deep8 {
 
-FunctionBase::FunctionBase(): Node(), output(nullptr), shared(false) {
+FunctionBase::FunctionBase(): Node(), shared(false) {
 	this->type = NodeType::Function;
 }
 
-FunctionBase::FunctionBase(std::vector<Node*> &inputs): Node(inputs), output(nullptr), shared(false) {
+FunctionBase::FunctionBase(std::vector<Node*> &inputs): Node(inputs), shared(false) {
 	this->type = NodeType::Function;
 }
 
 void FunctionBase::check() {
-	for (auto item : inputs) {
-		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be Variable type");
-	}
 }
 
 void FunctionBase::forward() {
@@ -55,23 +52,28 @@ void Function<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const
 
 template <typename T>
 void Function<T>::forward() {
-	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->output->type, "the output must be a Variable type");
+	/**the inputs and outputs must be Variable*/
+	for (auto item : this->inputs) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be a Variable type");
+	}
 
-	auto outputVariable = static_cast<Variable<T>*>(this->output);
+	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
+	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be a Variable type");
+	DEEP8_ARGUMENT_CHECK(this->outputShape  == this->outputs.first()->outputShape, "the output shape is error");
 
-	DEEP8_ARGUMENT_CHECK(this->outputShape == outputVariable->value.shape, "the output shape is error");
+	auto outputVar = static_cast<Variable<T>*>(this->outputs.first());
 
-	auto outputValue = &(outputVariable->value);
-	auto deviceType = outputVariable->deviceType();
+	auto outputValue = &(outputVar->value);
+	auto deviceType  = outputVar->deviceType();
 
 	std::vector<const Tensor<T>*> inputValues;
 
 	for (auto item : inputs) {
-		auto inputVariable = static_cast<Variable<T>*>(item);
+		auto inputVar = static_cast<Variable<T>*>(item);
 
-		DEEP8_ARGUMENT_CHECK(deviceType == inputVariable->deviceType(), "the device of input must be same with output");
+		DEEP8_ARGUMENT_CHECK(deviceType == inputVar->deviceType(), "the device of input must be same with output");
 
-		inputValues.emplace_back(&(inputVariable->value));
+		inputValues.emplace_back(&(inputVar->value));
 	}
 
 	if (DeviceType::CPU == deviceType) {
@@ -80,47 +82,53 @@ void Function<T>::forward() {
 #ifdef HAVE_CUDA
 		this->forwardGPU(inputValues, outputValue);
 #else
-		DEEP8_RUNTIME_ERROR("not have a GPU");
+		DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif
 	}
 }
 
 template <typename T>
 void Function<T>::backward() {
-	DEEP8_ARGUMENT_CHECK(NodeType::Variable == output->type, "the output must be Variable type");
+	/**the inputs and outputs must be Variable*/
+	for (auto item : this->inputs) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be a Variable type");
+	}
 
-	auto outputVariable = static_cast<Variable<T>*>(output);
+	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
+	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 
-	auto outputValue = &(outputVariable->value);
-	auto outputGradient = &(outputVariable->gradient);
+	auto outputVar = static_cast<Variable<T>*>(this->outputs.first());
 
-	auto deviceType = outputVariable->deviceType();
+	auto outputValue    = &(outputVar->value);
+	auto outputGradient = &(outputVar->gradient);
+
+	auto deviceType = outputVar->deviceType();
 
 	std::vector<const Tensor<T>*> inputValues;
 
 	for (auto item : inputs) {
-		auto inputVariable = static_cast<Variable<T>*>(item);
+		auto inputVar = static_cast<Variable<T>*>(item);
 
-		DEEP8_ARGUMENT_CHECK(deviceType == inputVariable->deviceType(), "the device of the input and output must have same device type");
+		DEEP8_ARGUMENT_CHECK(deviceType == inputVar->deviceType(), "the device of the input and output must have same device type");
 
-		inputValues.emplace_back(&(inputVariable->value));
+		inputValues.emplace_back(&(inputVar->value));
 	}
 
 	if (DeviceType::CPU == deviceType) {
 		for (size_t i = 0; i < inputs.size(); ++i) {
-			auto inputVariable = static_cast<Variable<T>*>(inputs[i]);
+			auto inputVar = static_cast<Variable<T>*>(inputs[i]);
 
-			if (inputVariable->updateGradient) {
-				this->backwardCPU(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
+			if (inputVar->updateGradient) {
+				this->backwardCPU(inputValues, outputValue, outputGradient, i, &(inputVar->gradient));
 			}
 		}
 	} else {
 		for (size_t i = 0; i < inputs.size(); ++i) {
-			auto inputVariable = static_cast<Variable<T>*>(inputs[i]);
+			auto inputVar = static_cast<Variable<T>*>(inputs[i]);
 
-			if (inputVariable->updateGradient) {
+			if (inputVar->updateGradient) {
 #ifdef HAVE_CUDA
-				this->backwardGPU(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
+				this->backwardGPU(inputValues, outputValue, outputGradient, i, &(inputVar->gradient));
 #else
 				DEEP8_RUNTIME_ERROR("not have a GPU");
 #endif

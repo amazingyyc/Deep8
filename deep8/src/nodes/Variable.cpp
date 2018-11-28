@@ -10,6 +10,10 @@ VariableBase::VariableBase(bool update) : updateGradient(update) {
 	this->type = NodeType::Variable;
 }
 
+VariableBase::VariableBase(Node* input, bool update) : Node(input), updateGradient(update) {
+	this->type = NodeType::Variable;
+}
+
 VariableBase::VariableBase(std::vector<Node*> &inputs, bool update) : Node(inputs), updateGradient(update) {
 	this->type = NodeType::Variable;
 }
@@ -29,44 +33,46 @@ Variable<T>::Variable(): VariableBase(false) {
 
 template <typename T>
 Variable<T>::Variable(Tensor<T> &v): value(v), VariableBase(false) {
+	this->outputShape = this->value.shape;
 }
 
 template <typename T>
 Variable<T>::Variable(Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(true) {
+	DEEP8_ARGUMENT_CHECK(this->value.device()->type == this->gradient.device()->type, "the values and gradient must be the same type");
+	DEEP8_ARGUMENT_CHECK(this->value.shape == this->gradient.shape, "the shape if Value and Gradient must be same");
+
+	this->outputShape = this->value.shape;
 }
 
 template <typename T>
-Variable<T>::Variable(Node *input, Shape &shape) : VariableBase(false) {
-	this->inputs.emplace_back(input);
-	this->outputShape = shape;
-
+Variable<T>::Variable(Node *input, Shape &shape) : VariableBase(input, false) {
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
 	for (auto i : inputs) {
 		DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
-		DEEP8_ARGUMENT_CHECK(i->outputShape == this->outputShape, "the shape of the input, pointer and gradient must be same")
+		DEEP8_ARGUMENT_CHECK(i->outputShape == shape, "the shape of the input is error")
 	}
+
+	this->outputShape = shape;
 }
 
 template <typename T>
-Variable<T>::Variable(Node *input, Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(true) {
-	this->inputs.emplace_back(input);
-	check();
-}
-
-template <typename T>
-void Variable<T>::check() {
+Variable<T>::Variable(Node *input, Tensor<T> &v, Tensor<T> &g): VariableBase(input, true), value(v), gradient(g) {
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
 	DEEP8_ARGUMENT_CHECK(value.device()->type == gradient.device()->type, "the values and gradient must be the same type");
-	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape if Value and Gradient must be same");
+	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape of Value and Gradient must be same");
 
 	for (auto i : inputs) {
 		DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
 		DEEP8_ARGUMENT_CHECK(i->outputShape == value.shape, "the shape of the input, pointer and gradient must be same")
 	}
 
-	outputShape = value.shape;
+	this->outputShape = value.shape;
+}
+
+template <typename T>
+void Variable<T>::check() {
 }
 
 /**
@@ -74,7 +80,9 @@ void Variable<T>::check() {
  */
 template <typename T>
 void Variable<T>::zeroGradient() {
-	gradient.zero();
+	if (this->updateGradient) {
+		gradient.zero();
+	}
 }
 
 /**
@@ -82,6 +90,8 @@ void Variable<T>::zeroGradient() {
  */
 template <typename T>
 DeviceType Variable<T>::deviceType() {
+	DEEP8_ARGUMENT_CHECK(nullptr != value.device(), "the value is null");
+
 	return value.device()->type;
 }
 
@@ -95,6 +105,7 @@ void Variable<T>::setGradientOne() {
 
 template <>
 void Variable<float>::setGradientOne() {
+	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
 	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
 
 	if (DeviceType::CPU == gradient.device()->type) {
@@ -111,6 +122,7 @@ void Variable<float>::setGradientOne() {
 
 template <>
 void Variable<double>::setGradientOne() {
+	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
 	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
 
 	if (DeviceType::CPU == gradient.device()->type) {
@@ -128,6 +140,7 @@ void Variable<double>::setGradientOne() {
 #ifdef HAVE_HALF
 template <>
 void Variable<half>::setGradientOne() {
+	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
 	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
 
 	if (DeviceType::CPU == gradient.device()->type) {
@@ -141,18 +154,25 @@ void Variable<half>::setGradientOne() {
 #endif
 	}
 }
-#endif // HAVE_HALF
+#endif
 
 template <typename T>
 bool Variable<T>::isScalar() {
-	return value.isScalar() && gradient.isScalar();
+	if (this->updateGradient) {
+		return value.isScalar() && gradient.isScalar();
+	} else {
+		return value.isScalar();
+	}
 }
 
 template <typename T>
 std::string Variable<T>::toString() {
 	std::stringstream ss;
 	ss << "Value is " << this->value.toString();
-	ss << ", Gradient is " << this->gradient.toString();
+
+	if (this->updateGradient) {
+		ss << ", Gradient is " << this->gradient.toString();
+	}
 
 	return ss.str();
 }

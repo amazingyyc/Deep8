@@ -8,7 +8,6 @@
 #include "Function.h"
 #include "Variable.h"
 #include "Parameter.h"
-#include "InputParameter.h"
 #include "Trainer.h"
 
 namespace Deep8 {
@@ -18,6 +17,11 @@ template <class T> class Expression;
 template <typename T>
 class Executor {
 protected:
+	/**
+	 * every node have a unique id
+	 */
+	int64_t nodeId;
+
 	/**
 	 * the device
 	 */
@@ -51,44 +55,30 @@ protected:
 #ifdef HAVE_CUDA
 	void initDeviceGPU();
 
-	Tensor<T> createTensorWithShapeGPU(Shape &shape);
+	Tensor<T> createTensorGPU(Shape &shape);
 #endif
+	Tensor<T> createTensor(Shape &shape);
+	Tensor<T> createTensorCPU(Shape &shape);
 
-	Tensor<T> createTensorWithShapeCPU(Shape &shape);
-
-	Tensor<T> createTensorWithShape(Shape &shape);
-
-	Variable<T>* createVariableByFunction(FunctionBase *function);
+	/**generate a new Node id*/
+	int64_t generateNodeId();
+	
+	Variable<T>* createVariableWithFunction(FunctionBase *function);
 
 public:
 	virtual ~Executor();
 
 	/**addParameter the batch is default 1*/
-	Parameter<T> *addParameter(std::vector<size_t> list);
-	Parameter<T> *addParameter(size_t batch, std::vector<size_t> list);
-	Parameter<T> *addParameter(Shape &shape);
-
-	InputParameter<T> *addInputParameter(std::vector<size_t> list, void *ptr = nullptr);
-	InputParameter<T> *addInputParameter(size_t batch, std::vector<size_t> list, void *ptr = nullptr);
-	InputParameter<T> *addInputParameter(Shape &shape, void *ptr = nullptr);
+	Parameter<T> *addParameter(std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr);
+	Parameter<T> *addParameter(size_t batch, std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr);
+	Parameter<T> *addParameter(Shape &shape, bool updateGradient = true, void *ptr = nullptr);
 
 	virtual Node *addFunction(FunctionBase *function);
 
-	virtual void forward(Expression<T> &e) {
-		DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
-	}
-
-	virtual void backward(Expression<T> &e)  {
-		DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
-	}
-
-	virtual void forward(Node *last)  {
-		DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
-	}
-
-	virtual void backward(Node *last) {
-		DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
-	}
+	virtual void forward(Expression<T> &e);
+	virtual void backward(Expression<T> &e);
+	virtual void forward(Node *last);
+	virtual void backward(Node *last);
 };
 
 }

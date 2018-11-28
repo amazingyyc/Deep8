@@ -8,7 +8,6 @@ namespace Deep8 {
 /***********************************************************************************/
 typedef Variable<float>          VariableF;
 typedef Parameter<float>         ParameterF;
-typedef InputParameter<float>    InputParameterF;
 typedef Abs<float>				 AbsF;
 typedef Add<float>				 AddF;
 typedef AddScalar<float>		 AddScalarF;
@@ -45,6 +44,7 @@ typedef RMSPropTrainer<float>    RMSPropTrainerF;
 typedef MomentumTrainer<float>	 MomentumTrainerF;
 typedef Executor<float>			 ExecutorF;
 typedef EagerExecutor<float>     EagerExecutorF;
+typedef LazyExecutor<float>      LazyExecutorF;
 typedef Expression<float>        ExpressionF;
 
 
@@ -53,7 +53,6 @@ typedef Expression<float>        ExpressionF;
 /***********************************************************************************/
 typedef Variable<double>          VariableD;
 typedef Parameter<double>         ParameterD;
-typedef InputParameter<double>    InputParameterD;
 typedef Abs<double>				  AbsD;
 typedef Add<double>				  AddD;
 typedef AddScalar<double>		  AddScalarD;
@@ -90,6 +89,7 @@ typedef RMSPropTrainer<double>    RMSPropTrainerD;
 typedef MomentumTrainer<double>	  MomentumTrainerD;
 typedef Executor<double>          ExecutorD;
 typedef EagerExecutor<double>	  EagerExecutorD;
+typedef LazyExecutor<double>      LazyExecutorD;
 typedef Expression<double>        ExpressionD;
 
 /***********************************************************************************/
@@ -98,7 +98,6 @@ typedef Expression<double>        ExpressionD;
 #ifdef HAVE_HALF
 typedef Variable<half>          VariableH;
 typedef Parameter<half>         ParameterH;
-typedef InputParameter<half>    InputParameterH;
 typedef Abs<half>				AbsH;
 typedef Add<half>				AddH;
 typedef AddScalar<half>		    AddScalarH;
@@ -135,6 +134,7 @@ typedef RMSPropTrainer<half>    RMSPropTrainerH;
 typedef MomentumTrainer<half>	MomentumTrainerH;
 typedef Executor<half>          ExecutorH;
 typedef EagerExecutor<half>     EagerExecutorH;
+typedef LazyExecutor<half>      LazyExecutorH;
 typedef Expression<half>        ExpressionH;
 #endif
 

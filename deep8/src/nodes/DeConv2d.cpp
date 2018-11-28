@@ -15,8 +15,8 @@ void DeConv2d<T>::check() {
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "need 2 inputs node");
     DEEP8_ARGUMENT_CHECK(forwardStrideY >= 1 && forwardStrideX >= 1, "the stride is error");
 
-    auto inputShape = static_cast<Variable<T> *>(this->inputs[0])->value.shape;
-    auto filterShape = static_cast<Variable<T> *>(this->inputs[1])->value.shape;
+    auto inputShape  = this->inputs[0]->outputShape;
+    auto filterShape = this->inputs[1]->outputShape;
 
     DEEP8_ARGUMENT_CHECK(4 == inputShape.nDims() && 4 == filterShape.nDims(),
                          "DeConv2d needs inputs nDims is 4");

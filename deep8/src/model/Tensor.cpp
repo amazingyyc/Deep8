@@ -71,6 +71,7 @@ bool Tensor<T>::isScalar() {
 
 template<typename T>
 void Tensor<T>::zero() {
+	DEEP8_ARGUMENT_CHECK(nullptr != this->raw(), "the tensor is null");
 	storage.device->zero(this->raw(), sizeof(T) * shape.size());
 }
 

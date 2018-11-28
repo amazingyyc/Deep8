@@ -5,6 +5,7 @@
 #include "Trainer.h"
 #include "Executor.h"
 #include "EagerExecutor.h"
+#include "LazyExecutor.h"
 #include "Expression.h"
 #include "PreDefinition.h"
 

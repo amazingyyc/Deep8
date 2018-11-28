@@ -17,9 +17,11 @@ set(DEEP8_SRC_FILES
 
 		src/model/Executor.cpp
 		src/model/EagerExecutor.cpp
+		src/model/LazyExecutor.cpp
 		src/model/Device.cpp
 		src/model/MemoryAllocator.cpp
 		src/model/MemoryPool.cpp
+		src/model/OutputEntry.cpp
 		src/model/Shape.cpp
 		src/model/TensorInit.cpp
 		src/model/TensorStorage.cpp
@@ -30,13 +32,13 @@ set(DEEP8_SRC_FILES
 		src/nodes/Add.cpp
 		src/nodes/AddScalar.cpp
 		src/nodes/AvgPooling2d.cpp
+		src/nodes/Batch.cpp
 		src/nodes/Conv2d.cpp
 		src/nodes/DeConv2d.cpp
 		src/nodes/Divide.cpp
 		src/nodes/DivideScalar.cpp
 		src/nodes/Exp.cpp
 		src/nodes/Function.cpp
-		src/nodes/InputParameter.cpp
 		src/nodes/L1Norm.cpp
 		src/nodes/L2Norm.cpp
 		src/nodes/Linear.cpp
@@ -48,6 +50,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/MinusScalar.cpp
 		src/nodes/Multiply.cpp
 		src/nodes/MultiplyScalar.cpp
+		src/nodes/Node.cpp
 		src/nodes/Parameter.cpp
 		src/nodes/ReLu.cpp
 		src/nodes/ReShape.cpp
@@ -57,8 +60,8 @@ set(DEEP8_SRC_FILES
 		src/nodes/Softmax.cpp
 		src/nodes/Square.cpp
 		src/nodes/Tanh.cpp
+		src/nodes/UnBatch.cpp
 		src/nodes/Variable.cpp
-
 		)
 
 set(DEEP8_CUDA_SRC_FILES
@@ -74,6 +77,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/Add.cu
 		src/nodes/AddScalar.cu
 		src/nodes/AvgPooling2d.cu
+		src/nodes/Batch.cu
 		src/nodes/Conv2d.cu
 		src/nodes/DeConv2d.cu
 		src/nodes/Divide.cu
@@ -114,7 +118,7 @@ if (HAVE_GPU AND HAVE_CUDA)
 		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_HALF")
 	endif()
 
-	add_library(deep8_native SHARED ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES})
+	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES})
 
 	# add cuBlas library
 	cuda_add_cublas_to_target(deep8_native)
@@ -122,7 +126,7 @@ if (HAVE_GPU AND HAVE_CUDA)
 	# link the gtest and CUDA library
 	target_link_libraries(deep8_native ${CUDA_LIBRARIES})
 else()
-	add_library(deep8_native SHARED ${DEEP8_SRC_FILES} ${DEEP8_HEAD_FILES})
+	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_HEAD_FILES})
 endif()
 
 install(TARGETS deep8_native DESTINATION lib)

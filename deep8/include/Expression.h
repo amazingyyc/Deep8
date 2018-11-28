@@ -4,7 +4,6 @@
 #include "Node.h"
 #include "Variable.h"
 #include "Parameter.h"
-#include "InputParameter.h"
 #include "Abs.h"
 #include "Add.h"
 #include "AddScalar.h"
@@ -56,6 +55,10 @@ public:
 	}
 
 	explicit Expression(Executor<T> *exe, Node *n) : executor(exe), node(n) {
+	}
+
+	void forward() {
+		executor->forward(node);
 	}
 
 	void backward() {
@@ -221,33 +224,18 @@ Expression<T> operator / (T scalar, const Expression<T> &x) {
 }
 
 template <typename T>
-Expression<T> parameter(Executor<T> *executor, std::vector<size_t> list) {
-	return Expression<T>(executor, executor->addParameter(list));
+Expression<T> parameter(Executor<T> *executor, std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr) {
+	return Expression<T>(executor, executor->addParameter(list, updateGradient, ptr));
 }
 
 template <typename T>
-Expression<T> parameter(Executor<T> *executor, size_t batch, std::vector<size_t> list) {
-	return Expression<T>(executor, executor->addParameter(batch, list));
+Expression<T> parameter(Executor<T> *executor, size_t batch, std::vector<size_t> list, bool updateGradient = true, void *ptr = nullptr) {
+	return Expression<T>(executor, executor->addParameter(batch, list, updateGradient, ptr));
 }
 
 template <typename T>
-Expression<T> parameter(Executor<T> *executor, Shape &shape) {
-	return Expression<T>(executor, executor->addParameter(shape));
-}
-
-template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, std::vector<size_t> list, void *ptr = nullptr) {
-	return Expression<T>(executor, executor->addInputParameter(list, ptr));
-}
-
-template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, size_t batch, std::vector<size_t> list, void *ptr = nullptr) {
-	return Expression<T>(executor, executor->addInputParameter(batch, list, ptr));
-}
-
-template <typename T>
-Expression<T> inputParameter(Executor<T> *executor, Shape &shape, void *ptr = nullptr) {
-	return Expression<T>(executor, executor->addInputParameter(shape, ptr));
+Expression<T> parameter(Executor<T> *executor, Shape &shape, bool updateGradient = true, void *ptr = nullptr) {
+	return Expression<T>(executor, executor->addParameter(shape, updateGradient, ptr));
 }
 
 /**function*/

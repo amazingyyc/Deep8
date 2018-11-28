@@ -13,11 +13,8 @@ void MatrixMultiply<T>::check() {
 
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the inputs dim must be 2");
 
-    auto xValue = static_cast<Variable<T> *>(this->inputs[0])->value;
-    auto yValue = static_cast<Variable<T> *>(this->inputs[1])->value;
-
-    auto xShape = xValue.shape;
-    auto yShape = yValue.shape;
+    auto xShape = this->inputs[0]->outputShape;
+    auto yShape = this->inputs[1]->outputShape;
 
     DEEP8_ARGUMENT_CHECK(
             xShape.batch() == yShape.batch() || 1 == xShape.batch() || 1 == yShape.batch(),
@@ -33,6 +30,70 @@ void MatrixMultiply<T>::check() {
     } else {
         this->outputShape.reShape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row(), yShape.col()});
     }
+}
+
+/**
+ * for MaxtrixMultiply C1 = A1 * B1, C2 = A2 * B2
+ * only 1 condition support the auto batch
+ * the A1 is same with A2, and the B1 and B2's shape is same except the batch, and the col of B1 and B2 is 1.
+ */
+template <typename T>
+bool MatrixMultiply<T>::supportAutoBatch() {
+	return (1 == this->inputs[1]->outputShape.col());
+}
+
+/**
+ * C = A * B
+ * the batchcode is combined with the id of A and the shape of B (except batch dim)
+ */
+template <typename T>
+size_t MatrixMultiply<T>::autoBatchCode() {
+	std::ostringstream oss;
+	oss << static_cast<int>(FunctionType::MatrixMultiply);
+	oss << this->inputs[0]->id;
+	oss << this->inputs[1]->outputShape.row();
+	oss << this->inputs[1]->outputShape.col();
+
+	return std::hash<std::string>()(oss.str());
+}
+
+/**
+ * return the inputs[index]'s shape if it can be batched together.
+ * the shapes is the inputs[index]'s shape that will be batched.
+ */
+template <typename T>
+Shape MatrixMultiply<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+	DEEP8_ARGUMENT_CHECK(1 == index, "MatrixMultiply only can batch index 1 input");
+	DEEP8_ARGUMENT_CHECK(shapes.size() > 1, "the batched inputs's size must > 1");
+
+	size_t batch = 0;
+	auto row = shapes[0].row();
+
+	for (auto item : shapes) {
+		DEEP8_ARGUMENT_CHECK(1 == item.col() && row == item.row(), "the batched shape is error");
+
+		batch += item.batch();
+	}
+
+	std::vector<size_t> vec({ row, 1 });
+	
+	return Shape(batch, vec);
+}
+
+/**
+ * the MatrixMultiply's autobatch index only support 1
+ */
+template <typename T>
+std::vector<size_t> MatrixMultiply<T>::autoBatchIndexes() {
+	return std::vector<size_t>({ 1 });
+}
+
+/**
+ * clone current node for auto batch
+ */
+template <typename T>
+Node* MatrixMultiply<T>::autoBatchClone(std::vector<Node*> &inputs) {
+	return new MatrixMultiply<T>(inputs);
 }
 
 template <typename T>

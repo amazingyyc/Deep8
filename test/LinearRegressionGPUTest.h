@@ -14,23 +14,15 @@ TEST(LinearRegression, GPU_Test) {
 
 	EagerExecutorF executor(new AdagradTrainerF(), DeviceType::GPU);
 
-	auto wP = executor.addParameter({1, 2});
-    ExpressionF W(&executor, wP);
+	auto w = parameter(&executor, { 2 });
 
-    auto inputP = executor.addInputParameter({1, 2, 2}, x);
-    ExpressionF input(&executor, inputP);
-
-    auto outputP = executor.addInputParameter({1, 2}, y);
-    ExpressionF output(&executor, outputP);
-
-	float wPtr[2];
+	auto input = parameter(&executor, { 2, 2 }, false, x);
+	auto output = parameter(&executor, { 2 }, false, y);
 
 	for (int i = 0; i < 1000; ++i) {
-		auto t3 = (input * W - output).l1Norm();
-		t3.backward();
+		(input * w - output).l1Norm().backward();
 
-		wP->value.device()->copyFromGPUToCPU(wP->value.data(), wPtr, sizeof(float) * 2);
-        std::cout << i + 1 << " => " << "[" << wPtr[0] << "," << wPtr[1] << "]" << std::endl;
+		std::cout << i + 1 << " => " << w.valueString() << std::endl;
 	}
 
 	std::cout << "the result should be around: [3, 2]" << std::endl;

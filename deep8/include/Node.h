@@ -4,6 +4,7 @@
 #include "Basic.h"
 #include "Exception.h"
 #include "MemoryAllocator.h"
+#include "OutputEntry.h"
 #include "Shape.h"
 #include "MemoryPool.h"
 #include "Device.h"
@@ -15,6 +16,9 @@
 
 namespace Deep8 {
 
+/**
+ * the Node type for now 2 type: Variable and Function
+ */
 enum class NodeType {
     Unknow,
     Variable,
@@ -23,45 +27,28 @@ enum class NodeType {
 
 class Node {
 public:
-    /**
-     * @brief the input nodes, include the pointers of the input of this Node
-     * the Function Node may be have many inputs, but the Variable Only have 0 / 1 input
-     * like a graph z = x + y
-     * the graph is below:
-     * (x)------
-               |
-               -----> [+]---->(z)
-               |
-       (y)------
-
-        it include 3 Variables Node x, y, z and 1 Function Node add.
-        the (x), (y) Node don't have inputs but have 1 output is [Add] Function Node (But the Variable don't output any data)
-        the (z) Node have 1 input is [Add] Node But it does not have any output
-        the [Add] Node have 2 input is (x), (y) and 1 output (z)
-        when forward calculate graph, the (x), (y), (z) does not do anything.
-        the [Add] function add the inputs (x), (y) and output the result to (z)
-     */
+	/**store the input Node*/
     std::vector<Node*> inputs;
 
-    /**
-     * @brief the output shape of forward
-     */
+	/**store the output Node*/
+	OutputEntry outputs;
+    
+	/**the output shape of forward*/
     Shape outputShape;
 
-    /**
-     * @brief what kind type of this Node, default is unknow
-     */
+    /**what kind type of this Node, default is unknow*/
     NodeType type;
 
-protected:
-    explicit Node(): outputShape(), type(NodeType::Unknow) {
-    }
+	/**the Node id*/
+	int64_t id;
 
-    explicit Node(std::vector<Node*> &inputs): inputs(std::move(inputs)), outputShape(), type(NodeType::Unknow) {
-    }
+protected:
+	explicit Node();
+	explicit Node(Node *input);
+	explicit Node(std::vector<Node*> &inputs);
 
 public:
-	virtual ~Node() {} ;
+	virtual ~Node();
 
     /**
      * @brief for different Node the forward do different operation
@@ -69,27 +56,49 @@ public:
      * and calculate the result than put the Result Tensor in the output Node, So the Function Node must have correct inputs and output Node type.
      * Variable Node: the Variable Node forward do nothing, it just contain the trained Parameter and update grad
      */
-    virtual void forward() {
-        DEEP8_RUNTIME_ERROR("Can not call this function from Node");
-    }
+	virtual void forward();
 
     /**
      * @brief for different Node the backward do different operation
      * Function Node: in backward the Function Node get the grad from the output node, than update the inputs nodes grad.
      * Variable Node: do nothing, it just contain the grad and update the trained Parameter
      */
-    virtual void backward() {
-        DEEP8_RUNTIME_ERROR("Can not call this function from Node");
-    }
+	virtual void backward();
+
+	/**
+	 * if this node support the auto batch
+	 * the default is false
+	 */
+	virtual bool supportAutoBatch();
+
+	/**
+	 * return a hashcode to do auto batch
+	 * default is 0
+	 */
+	virtual size_t autoBatchCode();
+
+	/**
+	 * return the inputs's index that can be auto batched
+	 */
+	virtual std::vector<size_t> autoBatchIndexes();
+
+	/**
+	 * clone current node for auto batch
+	 */
+	virtual Node* autoBatchClone(std::vector<Node*> &);
+
+	/**
+	 * return the inputs[index]'s shape if it is be batched together.
+	 * the shapes is the inputs[index]'s shape that will be batched.
+	 */
+	virtual Shape autoBatchShape(size_t index, std::vector<Shape> &shapes);
 
     /**
      * to string
      */
-    virtual std::string toString() {
-        return "Node: the Base class of Function and Variable";
-    }
+	virtual std::string toString();
 };
 
 }
 
-#endif //DEEP8_NODE_H
+#endif

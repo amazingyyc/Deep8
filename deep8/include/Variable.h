@@ -15,6 +15,7 @@ public:
 protected:
 	explicit VariableBase();
 	explicit VariableBase(bool update);
+	explicit VariableBase(Node* input, bool update);
 	explicit VariableBase(std::vector<Node*> &inputs, bool update);
 
 public:
