@@ -3,70 +3,97 @@
 namespace Deep8 {
 
 
-Shape::Shape() : numDimension(0), dimensions{ 0 } {
+Shape::Shape() : numDims(0), dims{ 0 }, strides{ 0 } {
 }
 
-Shape::Shape(std::vector<size_t> &list) : numDimension(0) {
+Shape::Shape(std::vector<size_t> &list) : numDims(0) {
 	DEEP8_ARGUMENT_CHECK(list.size() <= MAX_TENSOR_DIMS, "the dim of a outputShape must not bigger than " << MAX_TENSOR_DIMS);
 
 	for (auto d : list) {
 		DEEP8_ARGUMENT_CHECK(0 != d, "the dim can not be 0");
 
-		dimensions[numDimension++] = d;
+		dims[numDims++] = d;
 	}
+
+	updateStrides();
 }
 
-Shape::Shape(size_t batch, std::vector<size_t> &list) : numDimension(0) {
+Shape::Shape(size_t batch, std::vector<size_t> &list) : numDims(0) {
 	DEEP8_ARGUMENT_CHECK(list.size() < MAX_TENSOR_DIMS, "the dim of a outputShape must not bigger than " << MAX_TENSOR_DIMS);
 
-	dimensions[numDimension++] = batch;
+	dims[numDims++] = batch;
 
 	for (auto d : list) {
-		dimensions[numDimension++] = d;
+		dims[numDims++] = d;
 	}
+
+	updateStrides();
 }
 
 Shape::Shape(const Shape &other) {
-	numDimension = other.nDims();
+	numDims = other.nDims();
 
-	for (size_t i = 0; i < numDimension; ++i) {
-		dimensions[i] = other.dim(i);
+	for (size_t i = 0; i < numDims; ++i) {
+		dims[i]    = other.dim(i);
+		strides[i] = other.stride(i);
 	}
 }
 
 Shape& Shape::operator=(const Shape &other) {
-	numDimension = other.nDims();
+	numDims = other.nDims();
 
-	for (size_t i = 0; i < numDimension; ++i) {
-		dimensions[i] = other.dim(i);
+	for (size_t i = 0; i < numDims; ++i) {
+		dims[i]    = other.dim(i);
+		strides[i] = other.stride(i);
 	}
 
 	return *this;
 }
 
-bool  Shape::operator==(const Shape &other) {
-	if (this->numDimension != other.numDimension) {
+bool Shape::operator==(const Shape &other) {
+	if (this->numDims != other.numDims) {
 		return false;
 	}
 
-	for (size_t i = 0; i < this->numDimension; ++i) {
+	for (size_t i = 0; i < this->numDims; ++i) {
 		if (this->dim(i) != other.dim(i)) {
 			return false;
 		}
 	}
 
 	return true;
+}
+
+bool Shape::operator!=(const Shape &other) {
+	return !((*this) == other);
+}
+
+size_t Shape::operator[](size_t d) {
+	return dim(d);
+}
+
+/**update the stride by the dims*/
+void Shape::updateStrides() {
+	DEEP8_ARGUMENT_CHECK(numDims <= MAX_TENSOR_DIMS, "the numDims is error");
+	
+	if (numDims > 0) {
+		strides[numDims - 1] = 1;
+
+		for (int i = (int)numDims - 2; i >= 0; --i) {
+			strides[i] = strides[i + 1] * dims[i + 1];
+		}
+	}
 }
 
 /**
  * @brief if the Shape is equal, except batch
  */
 bool Shape::equalExceptBatch(const Shape &other) {
-	if (this->numDimension != other.numDimension) {
+	if (this->numDims != other.numDims) {
 		return false;
 	}
 
-	for (size_t i = 1; i < this->numDimension; ++i) {
+	for (size_t i = 1; i < this->numDims; ++i) {
 		if (this->dim(i) != other.dim(i)) {
 			return false;
 		}
@@ -75,58 +102,53 @@ bool Shape::equalExceptBatch(const Shape &other) {
 	return true;
 }
 
-size_t Shape::batchSize() const {
-	DEEP8_ARGUMENT_CHECK(numDimension >= 1, "the dimensions is error");
-
-	size_t ret = 1;
-
-	for (size_t i = 1; i < numDimension; ++i) {
-		ret *= dimensions[i];
-	}
-
-	return ret;
-}
-
 size_t Shape::size() const {
-	if (0 == numDimension) {
+	if (0 == numDims) {
 		return 0;
 	}
 
-	size_t ret = 1;
-
-	for (size_t i = 0; i < numDimension; ++i) {
-		ret *= dimensions[i];
-	}
-
-	return ret;
+	return dims[0] * strides[0];
 }
 
-size_t Shape::dim(size_t d) const {
-	DEEP8_ARGUMENT_CHECK(d < numDimension, "the outputShape does't have dimensions " << d);
+size_t Shape::batchSize() const {
+	DEEP8_ARGUMENT_CHECK(numDims >= 1, "the dimensions is error");
 
-	return dimensions[d];
+	return strides[0];
+}
+
+
+size_t Shape::dim(size_t d) const {
+	DEEP8_ARGUMENT_CHECK(d < numDims, "the outputShape does't have dimensions " << d);
+
+	return dims[d];
+}
+
+size_t Shape::stride(size_t d) const {
+	DEEP8_ARGUMENT_CHECK(d < numDims, "the outputShape does't have dimensions " << d);
+
+	return strides[d];
 }
 
 size_t Shape::nDims() const {
-	return numDimension;
+	return numDims;
 }
 
 size_t Shape::batch() const {
-	DEEP8_ARGUMENT_CHECK(numDimension >= 1, "the dimensions is error");
+	DEEP8_ARGUMENT_CHECK(numDims >= 1, "the dimensions is error");
 
-	return dim(0);
+	return dims[0];
 }
 
 size_t Shape::row() const {
-	DEEP8_ARGUMENT_CHECK(numDimension >= 2, "the dimensions is error");
+	DEEP8_ARGUMENT_CHECK(numDims >= 2, "the dimensions is error");
 
-	return dim(1);
+	return dims[1];
 }
 
 size_t Shape::col() const {
-	DEEP8_ARGUMENT_CHECK(numDimension >= 2, "the dimensions is error");
+	DEEP8_ARGUMENT_CHECK(numDims >= 2, "the dimensions is error");
 
-	return 2 == numDimension ? 1 : dim(2);
+	return 2 == numDims ? 1 : dims[2];
 }
 
 /**
@@ -134,40 +156,69 @@ size_t Shape::col() const {
  * @param other reshape this shape same to otherShape
  */
 void Shape::reShape(Shape &other) {
-	DEEP8_ARGUMENT_CHECK(this->size() == other.size(), "the reShape operator needs this 2 Shape have the same dim");
+	DEEP8_ARGUMENT_CHECK(this->size() == other.size(), "the reShape operator needs this 2 Shape have the same size");
 
-	this->numDimension = other.nDims();
+	this->numDims = other.nDims();
 
-	for (size_t i = 0; i < numDimension; ++i) {
-		dimensions[i] = other.dim(i);
+	for (size_t i = 0; i < numDims; ++i) {
+		dims[i]    = other.dim(i);
+		strides[i] = other.stride(i);
 	}
 }
 
-void Shape::reShape(std::vector<size_t> list) {
+void Shape::reShape(std::vector<size_t> &list) {
 	DEEP8_ARGUMENT_CHECK(list.size() <= MAX_TENSOR_DIMS, "the dim of a outputShape must not bigger than: " << MAX_TENSOR_DIMS);
 
-	this->numDimension = 0;
+	numDims = 0;
+
 	for (auto d : list) {
-		dimensions[numDimension++] = d;
+		dims[numDims++] = d;
 	}
+
+	updateStrides();
 }
 
 /**
- * reShape this same to other Shape, but the batch is special
+ * generate a NVShape
  */
-void Shape::reShape(size_t batch, Shape &other) {
-	reShape(other);
+NVShape Shape::convertToNVShape() {
+	NVShape nvShape;
 
-	dimensions[0] = batch;
+	if (0 == this->numDims) {
+		for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+			nvShape.dims[i]    = 0;
+			nvShape.strides[i] = 0;
+		}
+
+		return nvShape;
+	}
+
+	nvShape.dims[0] = (int) this->dims[0];
+
+	for (int i = MAX_TENSOR_DIMS - 1, j = (int) this->numDims - 1; i >= 1; --i, --j) {
+		if (j >= 1) {
+			nvShape.dims[i] = (int)dims[j];
+		} else {
+			nvShape.dims[i] = 1;
+		}
+	}
+
+	nvShape.strides[MAX_TENSOR_DIMS - 1] = 1;
+
+	for (int i = MAX_TENSOR_DIMS - 2; i >= 0; --i) {
+		nvShape.strides[i] = nvShape.strides[i + 1] * nvShape.dims[i + 1];
+	}
+
+	return nvShape;
 }
 
 std::string Shape::toString() {
 	std::stringstream ss;
-	ss << "Rank: " << numDimension;
+	ss << "Rank: " << numDims;
 	ss << ", Dimension: [";
 
-	for (size_t i = 0; i < numDimension; ++i) {
-		ss << dimensions[i] << ", ";
+	for (size_t i = 0; i < numDims; ++i) {
+		ss << dims[i] << ", ";
 	}
 
 	ss << "].";

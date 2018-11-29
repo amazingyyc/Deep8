@@ -6,8 +6,6 @@
 
 namespace  Deep8 {
 
-#ifdef HAVE_CUDA
-
 template <typename real>
 __global__ void AddForwardKernel(const real *x, const int *xdims, const int *xstrides,
 								 const real *y, const int *ydims, const int *ystrides,
@@ -38,6 +36,11 @@ __global__ void AddForwardKernel(const real *x, const int *xdims, const int *xst
 
 		z[i] = x[xIndex] + y[yIndex];
 	}
+}
+
+template <typename real>
+__global__ void AddForwardKernel_v2(const real *x, NVShape xShape, const real *y, NVShape yShape, real *z, NVShape zShape, const int N) {
+
 }
 
 template <typename real>
@@ -257,6 +260,5 @@ template void Add<double>::backwardGPUImpl(double *inGrad, const int *inShape, c
 template void Add<half>::backwardGPUImpl(half *inGrad, const int *inShape, const int *inDims, const half *outGrad, const int *outShape, const int *outDims, const int N);
 #endif
 
-#endif
 
 }

@@ -10,9 +10,9 @@ void Batch<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T>
 	/**if the inputs tensor's memory is continue*/
 	continuous = true;
 	for (size_t i = 1; i < inputs.size(); ++i) {
-		void *prePtr = (byte*)(inputs[i - 1].raw()) + inputs[i - 1].size() * sizeof(T);
+		void *prePtr = (byte*)(inputs[i - 1]->raw()) + inputs[i - 1]->size() * sizeof(T);
 
-		if (prePtr != inputs[i].raw()) {
+		if (prePtr != inputs[i]->raw()) {
 			continuous = false;
 			break;
 		}
@@ -22,7 +22,7 @@ void Batch<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T>
 		/**if the memory is continuous, than do not copy*/
 		output->storage = inputs[0]->storage;
 		output->offset  = inputs[0]->offset;
-		output->shape   = this->outputShape();
+		output->shape   = this->outputShape;
 	} else {
 		/**copy memory*/
 		size_t offset = 0;

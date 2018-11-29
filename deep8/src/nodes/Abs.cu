@@ -6,8 +6,6 @@
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
 template <typename real>
 __global__ void AbsForwardKernel(const real *x, real *y, const int N) {
 	int start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -111,7 +109,5 @@ void Abs<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
 #endif
 
 DEEP8_DECLARATION_GPU_FUNC(Abs);
-
-#endif
 
 }
