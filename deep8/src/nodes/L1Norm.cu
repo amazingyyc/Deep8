@@ -6,8 +6,6 @@
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
 template <int blockSize, typename real>
 __global__ void L1NormForwardKernel(const real *x, real *y, const int batch, const int size) {
 	SharedMemory<real> shareMemory;
@@ -179,7 +177,5 @@ void L1Norm<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs, c
 #endif
 
 DEEP8_DECLARATION_GPU_FUNC(L1Norm)
-
-#endif
 
 }

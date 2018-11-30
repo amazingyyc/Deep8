@@ -2,62 +2,37 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "AddScalar.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
 template <typename real>
-__global__ void AddScalarForwardKernel(const real *x, const real scalar, real *y, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+struct AddScalarOP {
+    real scalar;
 
-    for (int i = start; i < N; i += stride) {
-        y[i] = x[i] + scalar;
+    AddScalarOP(real s): scalar(s) {
     }
-}
 
-template <typename real>
-__global__ void AddScalarBackwardKernel(real *xGrad, const real *yGrad, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const real &x) {
+		return x + scalar;
+	}
 
-    for (int i = start; i < N; i += stride) {
-        xGrad[i] += yGrad[i];
-    }
-}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const real &x, const real &y, const real &dy) {
+		return dy;
+	}
+}; 
 
 template <typename T>
 void AddScalar<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto X = inputs[0]->data();
-    auto Y = output->data();
-    auto N = static_cast<int>(output->size());
-
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AddScalarForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    AddScalarForwardKernel<T> << <grideSize, blockSize >> > (X, scalar, Y, N);
-}
-
-#ifdef HAVE_HALF
-template <>
-void AddScalar<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
     auto x = inputs[0]->data();
     auto y = output->data();
     auto N = static_cast<int>(output->size());
 
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
+    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    AddScalarForwardKernel<half> << <grideSize, blockSize >> > (x, scalar, y, N);
+	UnaryElementWiseForward<T, AddScalarOP<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, y, AddScalarOP<T>(scalar), N);
 }
-#endif
 
 template <>
 void AddScalar<float>::backwardGPU(const std::vector<const Tensor<float>*> &inputs, const Tensor<float> *output, const Tensor<float> *outputGradient, size_t index, Tensor<float> *iGradient) {
@@ -86,18 +61,19 @@ template <>
 void AddScalar<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs, const Tensor<half> *output, const Tensor<half> *outputGradient, size_t index, Tensor<half> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-    auto device = (GPUDevice*)(iGradient->device());
-    auto N      = (int)iGradient->size();
+    auto x  = inputs[0]->data();
+	auto dx = iGradient->data();
+	auto y  = output->data();
+	auto dy = outputGradient->data();
 
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
+	int N = (int)iGradient->shape.size();
 
-    AddScalarBackwardKernel<half> << <grideSize, blockSize >> > (iGradient->data(), outputGradient->data(), N);
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+	UnaryElementWiseBackward<T, AddScalarOP<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, AddScalarOP<T>(scalar), N);
 }
 #endif
 
 DEEP8_DECLARATION_GPU_FUNC(AddScalar);
-
-#endif
 
 }

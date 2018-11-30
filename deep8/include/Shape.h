@@ -11,6 +11,11 @@ namespace Deep8 {
  */
 #define MAX_TENSOR_DIMS 5
 
+template<int NumDims>
+struct NVArray {
+	int dims[NumDims];
+}
+
 /**for pass shape to CUDA*/
 template<int NumDims>
 struct NVShape {

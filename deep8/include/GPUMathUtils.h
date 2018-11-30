@@ -221,6 +221,8 @@ struct SharedMemory<half> {
 
 #endif
 
+
+
 template <unsigned int blockSize, typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE void warpSumReduce(volatile real *shared, int threadId) {
 	if (blockSize >= 64) shared[threadId] += shared[threadId + 32];
