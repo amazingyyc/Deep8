@@ -7,7 +7,7 @@
 #include "TestUtils.h"
 
 //#include "AbsTest.h"
-//#include "AddTest.h"
+#include "AddTest.h"
 //#include "AddScalarTest.h"
 //#include "AvgPooling2dTest.h"
 //#include "Conv2dTest.h"

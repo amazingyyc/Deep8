@@ -25,16 +25,8 @@ protected:
     void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
 	
 #ifdef HAVE_CUDA
-    void forwardGPUImpl(const T *x, const int *xdims, const int *xstrides,
-						const T *y, const int *ydims, const int *ystrides,
-							  T *z, const int *zdims, const int *zstrides, const int N);
-
     void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-
-	void backwardGPUImpl(T *inGrad, const int *inShape, const int *inDims, const T *outGrad, const int *outShape, const int *outDims, const int N);
-
     void backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
-
 #endif
 };
 

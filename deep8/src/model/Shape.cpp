@@ -178,40 +178,6 @@ void Shape::reShape(std::vector<size_t> &list) {
 	updateStrides();
 }
 
-/**
- * generate a NVShape
- */
-NVShape Shape::convertToNVShape() {
-	NVShape nvShape;
-
-	if (0 == this->numDims) {
-		for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
-			nvShape.dims[i]    = 0;
-			nvShape.strides[i] = 0;
-		}
-
-		return nvShape;
-	}
-
-	nvShape.dims[0] = (int) this->dims[0];
-
-	for (int i = MAX_TENSOR_DIMS - 1, j = (int) this->numDims - 1; i >= 1; --i, --j) {
-		if (j >= 1) {
-			nvShape.dims[i] = (int)dims[j];
-		} else {
-			nvShape.dims[i] = 1;
-		}
-	}
-
-	nvShape.strides[MAX_TENSOR_DIMS - 1] = 1;
-
-	for (int i = MAX_TENSOR_DIMS - 2; i >= 0; --i) {
-		nvShape.strides[i] = nvShape.strides[i + 1] * nvShape.dims[i + 1];
-	}
-
-	return nvShape;
-}
-
 std::string Shape::toString() {
 	std::stringstream ss;
 	ss << "Rank: " << numDims;

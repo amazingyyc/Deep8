@@ -2,62 +2,37 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "LReLu.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
+template <typename T>
+struct LReLuOP {
+	T a;
 
-template <typename real>
-__global__ void LReLuForwardKernel(const real *X, const real a, real *Y, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+	LReLuOP(T aa) : a(aa) {
+	}
 
-    for (int i = start; i < N; i += stride) {
-        Y[i] = X[i] > real(0) ? X[i] : a * X[i];
-    }
-}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return x >= T(0) ? x : a * x;
+	}
 
-template <typename real>
-__global__ void LReLuBackwardKernel(real *xGrad, const real *X, const real a, const real *yGrad, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        xGrad[i] += yGrad[i] * (X[i] > real(0) ? real(1) : a);
-    }
-}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const T &x, const T &y, const T &dy) {
+		return x >= T(0) ? dy : a * dy;
+	}
+};
 
 template <typename T>
 void LReLu<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int) output->size();
+	auto x = inputs[0]->data();
+	auto y = output->data();
+	auto N = (int)output->shape.size();
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LReLuForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    LReLuForwardKernel<T> << <grideSize, blockSize >> > (x, a, y, N);
+	UnaryElementWiseForward<T, LReLuOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, y, LReLuOP<T>(a), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void LReLu<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int) output->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    LReLuForwardKernel<half> << <grideSize, blockSize >> > (x, a, y, N);
-}
-#endif
 
 template <typename T>
 void LReLu<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
@@ -67,45 +42,18 @@ void LReLu<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                          Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of LReLu backwardCPU is error");
 
-    auto dx = iGradient->data();
-    auto x  = inputs[0]->data();
-    auto dy = outputGradient->data();
-    auto N  = (int)iGradient->size();
+	auto x  = inputs[0]->data();
+	auto dx = iGradient->data();
+	auto y  = output->data();
+	auto dy = outputGradient->data();
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int N = (int)iGradient->shape.size();
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LReLuBackwardKernel<T>, 0, N));
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    LReLuBackwardKernel<T> << <grideSize, blockSize >> > (dx, x, a, dy, N);
+	UnaryElementWiseBackward<T, LReLuOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, dx, y, dy, LReLuOP<T>(a), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void LReLu<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
-                         const Tensor<half> *output,
-                         const Tensor<half> *outputGradient,
-                         size_t index,
-                         Tensor<half> *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index of LReLu backwardCPU is error");
-
-    auto dx = iGradient->data();
-    auto x  = inputs[0]->data();
-    auto dy = outputGradient->data();
-    auto N  = (int)iGradient->size();
-
-    int minGrideSize;
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    LReLuBackwardKernel<half> << <grideSize, blockSize >> > (dx, x, a, dy, N);
-}
-#endif
 
 DEEP8_DECLARATION_GPU_FUNC(LReLu);
 
-#endif
 }

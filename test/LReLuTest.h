@@ -122,7 +122,7 @@ TEST(LReLu, GPU_float) {
 	}
 
 	for (int i = 0; i < 400 * 200; ++i) {
-		if (inputPtr[i] > 0) {
+		if (inputPtr[i] >= 0) {
 			ASSERT_EQ(inputGradPtr[i], outputGradPtr[i]);
 		} else {
 			ASSERT_EQ(inputGradPtr[i], outputGradPtr[i] * a);

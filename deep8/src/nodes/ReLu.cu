@@ -2,54 +2,29 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "ReLu.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
+template <typename T>
+struct ReLuOP {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return x >= T(0) ? x : T(0);
+	}
 
-template <typename real>
-__global__ void ReLuForwardKernel(const real *X, real *Y, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        Y[i] = X[i] > real(0.0) ? X[i] : real(0.0);
-    }
-}
-
-template <typename real>
-__global__ void ReLuBackwardKernel(real *xGrad, const real *X, const real *yGrad, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        xGrad[i] += (X[i] > real(0.0) ? yGrad[i] : real(0.0));
-    }
-}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const T &x, const T &y, const T &dy) {
+		return x >= T(0) ? dy : T(0);
+	}
+};
 
 template <typename T>
 void ReLu<T>::forwardGPUImpl(const T *x, T *y, const int N) {
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, ReLuForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    ReLuForwardKernel<T> << <grideSize, blockSize >> > (x, y, N);
+	UnaryElementWiseForward<T, ReLuOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, y, ReLuOP<T>(), N);
 }
 
-#ifdef HAVE_HALF
-template <>
-void ReLu<half>::forwardGPUImpl(const half *x, half *y, const int N) {
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    ReLuForwardKernel<half> << <grideSize, blockSize >> > (x, y, N);
-}
-#endif
 
 #ifdef HAVE_CUDNN
 template <>
@@ -149,27 +124,11 @@ void ReLu<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> 
 }
 
 template <typename T>
-void ReLu<T>::backwardGPUImpl(T *dx, const T *x, const T *dy, const int N) {
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+void ReLu<T>::backwardGPUImpl(T *dx, const T *x, const T *y, const T *dy, const int N) {
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, ReLuBackwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    ReLuBackwardKernel<T> << <grideSize, blockSize >> > (dx, x, dy, N);
+	UnaryElementWiseBackward<T, ReLuOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, dx, y, dy, ReLuOP<T>(), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void ReLu<half>::backwardGPUImpl(half *dx, const half *x, const half *dy, const int N) {
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    ReLuBackwardKernel<half> << <grideSize, blockSize >> > (dx, x, dy, N);
-}
-#endif
 
 #ifdef HAVE_CUDNN
 template <>
@@ -305,7 +264,7 @@ void ReLu<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                         outputGradient->data(),
                         iGradient->shape);
 #else
-		backwardGPUImpl(iGradient->data(), inputs[0]->data(), outputGradient->data(), (int)(iGradient->size()));
+		backwardGPUImpl(iGradient->data(), inputs[0]->data(), output->data(), outputGradient->data(), (int)(iGradient->size()));
 #endif
 }
 
@@ -325,10 +284,10 @@ template void ReLu<half>::forwardGPUCUDNNImpl(Device *device, const half *X, hal
 #endif
 #endif
 
-template void ReLu<float>::backwardGPUImpl(float *dx, const float *x, const float *dy, const int N);
-template void ReLu<double>::backwardGPUImpl(double *dx, const double *x, const double *dy, const int N);
+template void ReLu<float>::backwardGPUImpl(float *dx, const float *x, const float *y, const float *dy, const int N);
+template void ReLu<double>::backwardGPUImpl(double *dx, const double *x, const double *y, const double *dy, const int N);
 #ifdef HAVE_HALF
-template void ReLu<half>::backwardGPUImpl(half *dx, const half *x, const half *dy, const int N);
+template void ReLu<half>::backwardGPUImpl(half *dx, const half *x, const half *y, const half *dy, const int N);
 #endif
 
 #ifdef HAVE_CUDNN
@@ -337,8 +296,6 @@ template void ReLu<double>::backwardGPUCUDNNImpl(Device *device, const double *x
 #ifdef HAVE_HALF
 template void ReLu<half>::backwardGPUCUDNNImpl(Device *device, const half *x, half *dx, const half *y, const half *dy, Shape &shape);
 #endif
-#endif
-
 #endif
 
 }

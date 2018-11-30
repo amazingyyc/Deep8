@@ -2,62 +2,39 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "Linear.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
+template <typename T>
+struct LinearOP {
+	T a;
+	T b;
 
-template <typename real>
-__global__ void LinearForwardKernel(const real *X, const real a, const real b, real *Y, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+	LinearOP(T aa, T bb) : a(aa), b(bb) {
+	}
 
-    for (int i = start; i < N; i += stride) {
-        Y[i] = a * X[i] + b;
-    }
-}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return a * x + b;
+	}
 
-template <typename real>
-__global__ void LinearBackwardKernel(real *xGrad, const real a, const real *yGrad, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        xGrad[i] += a * yGrad[i];
-    }
-}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const T &x, const T &y, const T &dy) {
+		return a * dy;
+	}
+};
 
 template <typename T>
 void Linear<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int)output->size();
+	auto x = inputs[0]->data();
+	auto y = output->data();
+	auto N = (int)output->shape.size();
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LinearForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    LinearForwardKernel<T> << <grideSize, blockSize >> > (x, a, b, y, N);
+	UnaryElementWiseForward<T, LinearOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, y, LinearOP<T>(a, b), N);
 }
 
-#ifdef HAVE_HALF
-template <>
-void Linear<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int)output->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    LinearForwardKernel<half> << <grideSize, blockSize >> > (x, a, b, y, N);
-}
-#endif
 
 template <typename T>
 void Linear<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
@@ -67,43 +44,19 @@ void Linear<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                         Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-    auto dx = iGradient->data();
-    auto dy = outputGradient->data();
-    auto N = (int)outputGradient->size();
+	auto x = inputs[0]->data();
+	auto dx = iGradient->data();
+	auto y = output->data();
+	auto dy = outputGradient->data();
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int N = (int)iGradient->shape.size();
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, LinearBackwardKernel<T>, 0, N));
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    LinearBackwardKernel<T> << <grideSize, blockSize >> > (dx, a, dy, N);
+	UnaryElementWiseBackward<T, LinearOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, dx, y, dy, LinearOP<T>(a, b), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void Linear<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
-                        const Tensor<half> *output,
-                        const Tensor<half> *outputGradient,
-                        size_t index,
-                        Tensor<half> *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
-
-    auto dx = iGradient->data();
-    auto dy = outputGradient->data();
-    auto N = (int)outputGradient->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    LinearBackwardKernel<half> << <grideSize, blockSize >> > (dx, a, dy, N);
-}
-#endif
 
 DEEP8_DECLARATION_GPU_FUNC(Linear);
 
-#endif
 
 }

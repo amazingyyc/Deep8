@@ -12,9 +12,10 @@ namespace Deep8 {
 #define MAX_TENSOR_DIMS 5
 
 /**for pass shape to CUDA*/
+template<int NumDims>
 struct NVShape {
-	int dims[MAX_TENSOR_DIMS];
-	int strides[MAX_TENSOR_DIMS];
+	int dims[NumDims];
+	int strides[NumDims];
 };
 
 /**
@@ -68,7 +69,28 @@ public:
 	void reShape(std::vector<size_t> &list);
 
 	/**generate a NVShape*/
-	NVShape convertToNVShape();
+	template <int NumDims>
+	NVShape<NumDims> convertToNVShape() const {
+		DEEP8_ARGUMENT_CHECK(NumDims >= this->numDims && NumDims > 0, "the NumDims must >= " << this->numDims);
+
+		NVShape<NumDims> nvshape;
+		nvshape.dims[0] = this->dims[0];
+
+		for (int i = NumDims - 1, j = this->numDims - 1; i >= 1; --i, --j) {
+			if (j >= 1) {
+				nvshape.dims[i] = this->dims[j];
+			} else {
+				nvshape.dims[i] = 1;
+			}
+		}
+
+		nvshape.strides[NumDims - 1] = 1;
+		for (int i = NumDims - 2; i >= 0; --i) {
+			nvshape.strides[i] = nvshape.strides[i + 1] * nvshape.dims[i + 1];
+		}
+
+		return nvshape;
+	}
 
 	std::string toString();
 };
