@@ -301,7 +301,8 @@ Deep8::Variable<T> createFakeVariable(CPUDevice &device, std::vector<size_t> lis
 #ifdef HAVE_CUDA
 template <typename DeviceType = GPUDevice, typename T>
 Deep8::Variable<T> createFakeVariable(GPUDevice &device, std::initializer_list<size_t> list) {
-	Shape shape(list);
+	std::vector<size_t> ll(list);
+	Shape shape(ll);
 
 	auto storageSize = sizeof(T) * shape.size();
 

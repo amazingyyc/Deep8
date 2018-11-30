@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "Deep8.h"
+#include "GPUDevice.h"
 
 #include "TestUtils.h"
 

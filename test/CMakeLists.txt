@@ -1,6 +1,15 @@
-project(deep8_test LANGUAGES CXX)
+if (HAVE_GPU)
+	project(deep8_test LANGUAGES CXX CUDA)
+else()
+    project(deep8_test LANGUAGES CXX)
+endif()
 
-set(DEEP8_TEST_SRC_FILES Deep8Test.cpp)
+if (HAVE_GPU)
+	set(DEEP8_TEST_SRC_FILES Deep8Test.cu)
+else()
+	set(DEEP8_TEST_SRC_FILES Deep8Test.cpp)
+endif()
+
 
 add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
 

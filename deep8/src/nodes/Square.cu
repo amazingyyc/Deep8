@@ -2,62 +2,32 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "Square.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
+template <typename T>
+struct SquareOP {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return x * x;
+	}
 
-template <typename real>
-__global__ void SquareForwardKernel(const real *X, real *Y, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        Y[i] = X[i] * X[i];
-    }
-}
-
-template <typename real>
-__global__ void SquareBackwardKernel(real *xGrad, const real *X, const real *yGrad, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        xGrad[i] += real(2.0) * yGrad[i] * X[i];
-    }
-}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const T &x, const T &y, const T &dy) {
+		return T(2) * x * dy;
+	}
+};
 
 template <typename T>
 void Square<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int)output->size();
+	auto x = inputs[0]->data();
+	auto y = output->data();
+	auto N = (int)output->shape.size();
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, SquareForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    SquareForwardKernel<T> << <grideSize, blockSize >> > (x, y, N);
+	UnaryElementWiseForward<T, SquareOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, y, SquareOP<T>(), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void Square<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int)output->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    SquareForwardKernel<half> << <grideSize, blockSize >> > (x, y, N);
-}
-#endif
 
 template <typename T>
 void Square<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
@@ -67,45 +37,18 @@ void Square<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                              Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-    auto dx = iGradient->data();
-    auto x  = inputs[0]->data();
-    auto dy = outputGradient->data();
-    auto N  = (int) iGradient->size();
+	auto x  = inputs[0]->data();
+	auto dx = iGradient->data();
+	auto y  = output->data();
+	auto dy = outputGradient->data();
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int N = (int)iGradient->shape.size();
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, SquareBackwardKernel<T>, 0, N));
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    SquareBackwardKernel<T> << <grideSize, blockSize >> > (dx, x, dy, N);
+	UnaryElementWiseBackward<T, SquareOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, dx, y, dy, SquareOP<T>(), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void Square<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
-                             const Tensor<half> *output,
-                             const Tensor<half> *outputGradient,
-                             size_t index,
-                             Tensor<half> *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
-
-    auto dx = iGradient->data();
-    auto x  = inputs[0]->data();
-    auto dy = outputGradient->data();
-    auto N  = (int) iGradient->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    SquareBackwardKernel<half> << <grideSize, blockSize >> > (dx, x, dy, N);
-}
-#endif
 
 DEEP8_DECLARATION_GPU_FUNC(Square);
-
-#endif
 
 }

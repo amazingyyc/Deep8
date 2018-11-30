@@ -19,6 +19,8 @@
 #include <cuda_fp16.h>
 #endif
 
+#define DEEP8_GPU_BLOCK_SIZE 1024
+
 #endif
 
 #endif
