@@ -18,7 +18,7 @@ __global__ void UnaryElementWiseForward(const real *x, real *y, UnaryOp op, cons
 
 template <typename real, typename UnaryOp>
 __global__ void UnaryElementWiseBackward(const real *x, real *dx, const real *y, const real *dy, UnaryOp op, const int N) {
-	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int start  = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
@@ -30,7 +30,7 @@ template <typename real, typename BinaryOp, int NumDims>
 __global__ void BinaryElementWiseForward(const real *x, const NVShape<NumDims> xshape,
 										 const real *y, const NVShape<NumDims> yshape,
 											   real *z, const NVShape<NumDims> zshape, BinaryOp op, const int N) {
-	int start = blockIdx.x * blockDim.x + threadIdx.x;
+	int start  = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {

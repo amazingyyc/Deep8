@@ -30,11 +30,7 @@ void Square<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 }
 
 template <typename T>
-void Square<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
-                             const Tensor<T> *output,
-                             const Tensor<T> *outputGradient,
-                             size_t index,
-                             Tensor<T> *iGradient) {
+void Square<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
 	auto x  = inputs[0]->data();

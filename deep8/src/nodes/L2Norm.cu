@@ -6,82 +6,66 @@
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
+template <typename T>
+struct L2NormForwardOp {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init() {}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(const T &ret, const T &cur) {}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(const T &ret) {}
+};
 
-template <int blockSize, typename real>
-__global__ void L2NormForwardKernel(const real *x, real *y, const int batch, const int size) {
-    SharedMemory<real> shareMemory;
-    real *shared = shareMemory.pointer();
+template <>
+struct L2NormForwardOp<float> {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float init() {
+		return 0;
+	}
 
-    int threaId = threadIdx.x;
-    int blockId = blockIdx.x;
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float step(const float &ret, const float &cur) {
+		return ret + cur * cur;
+	}
 
-    int i = blockId * size + threaId;
-    int j = threaId;
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float complete(const float &ret) {
+		return sqrtf(ret);
+	}
+};
 
-    shared[threaId] = 0;
+template <>
+struct L2NormForwardOp<double> {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double init() {
+		return 0;
+	}
 
-    while (j < size) {
-        shared[threaId] += x[i] * x[i];
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double step(const double &ret, const double &cur) {
+		return ret + cur * cur;
+	}
 
-        j += blockSize;
-        i += blockSize;
-    }
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double complete(const double &ret) {
+		return sqrt(ret);
+	}
+};
 
-    __syncthreads();
+#ifdef HAVE_HALF
+template <>
+struct L2NormForwardOp<half> {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half init() {
+		return 0;
+	}
 
-    if (blockSize >= 1024) {
-        if (threaId < 512) {
-            shared[threaId] += shared[threaId + 512];
-        }
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half step(const half &ret, const half &cur) {
+		return ret + cur * cur;
+	}
 
-        __syncthreads();
-    }
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half complete(const half &ret) {
+		return hsqrt(ret);
+	}
+};
+#endif
 
-    if (blockSize >= 512) {
-        if (threaId < 256) {
-            shared[threaId] += shared[threaId + 256];
-        }
-
-        __syncthreads();
-    }
-
-    if (blockSize >= 256) {
-        if (threaId < 128) {
-            shared[threaId] += shared[threaId + 128];
-        }
-
-        __syncthreads();
-    }
-
-    if (blockSize >= 128) {
-        if (threaId < 64) {
-            shared[threaId] += shared[threaId + 64];
-        }
-
-        __syncthreads();
-    }
-
-    if (threaId < 32) {
-        warpSumReduce<blockSize, real>(shared, threaId);
-    }
-
-    if (0 == threaId) {
-        y[blockId] = cuSqrt(shared[threaId]);
-    }
-}
-
-template <typename real>
-__global__ void L2NormBackwardKernel(const real *x, real *xGrad, const real *y, const real *yGrad, const int size, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        int yI = i / size;
-
-        xGrad[i] += x[i] * yGrad[yI] / y[yI];
-    }
-}
+template <typename T>
+struct L2NormBackwardOp {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const T &x, const T &y, const T &dy) {
+		return x * dy / y;
+	}
+};
 
 template <typename T>
 void L2Norm<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
@@ -100,84 +84,64 @@ void L2Norm<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 
     int sharedSize = sizeof(T) * blockSize;
 
-    if (1024 == blockSize) {
-        L2NormForwardKernel<1024, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (512 == blockSize) {
-        L2NormForwardKernel<512, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (256 == blockSize) {
-        L2NormForwardKernel<256, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (128 == blockSize) {
-        L2NormForwardKernel<128, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (64 == blockSize) {
-        L2NormForwardKernel<64, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (32 == blockSize) {
-        L2NormForwardKernel<32, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (16 == blockSize) {
-        L2NormForwardKernel<16, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (8 == blockSize) {
-        L2NormForwardKernel<8, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (4 == blockSize) {
-        L2NormForwardKernel<4, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (2 == blockSize) {
-        L2NormForwardKernel<2, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else if (1 == blockSize) {
-        L2NormForwardKernel<1, T> << <batch, blockSize, sharedSize >> > (x, y, batch, size);
-    } else {
-        DEEP8_RUNTIME_ERROR("the block size is error");
-    }
+    switch (blockSize) {
+	case 1024:
+		TailReduceForward<T, L2NormForwardOp<T>, 1024> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 512:
+		TailReduceForward<T, L2NormForwardOp<T>,  512> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 256:
+		TailReduceForward<T, L2NormForwardOp<T>,  256> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 128:
+		TailReduceForward<T, L2NormForwardOp<T>,  128> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 64:
+		TailReduceForward<T, L2NormForwardOp<T>,   64> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 32:
+		TailReduceForward<T, L2NormForwardOp<T>,   32> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 16:
+		TailReduceForward<T, L2NormForwardOp<T>,   16> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 8:
+		TailReduceForward<T, L2NormForwardOp<T>,    8> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 4:
+		TailReduceForward<T, L2NormForwardOp<T>,    4> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 2:
+		TailReduceForward<T, L2NormForwardOp<T>,    2> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	case 1:
+		TailReduceForward<T, L2NormForwardOp<T>,    1> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
+		break;
+	default:
+		DEEP8_RUNTIME_ERROR("the block size is error");
+		break
+	}
 }
 
 template <typename T>
 void L2Norm<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
 
-    auto shape = iGradient->shape;
-    int batch  = (int)shape.batch();
-    int size   = (int)shape.size() / batch;
+    int batch  = (int)iGradient->shape.batch();
+    int size   = (int)iGradient->shape.batchSize();
+    int N      = batch * size;
 
     auto x  = inputs[0]->data();
     auto dx = iGradient->data();
     auto y  = output->data();
     auto dy = outputGradient->data();
 
-    int N = batch * size;
+    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, L2NormBackwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    L2NormBackwardKernel<T> << <grideSize, blockSize >> > (x, dx, y, dy, size, N);
+	TailReduceBackward<T, L2NormBackwardOp<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, batch, size, L2NormBackwardOp<T>(), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void L2Norm<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs, const Tensor<half> *output, const Tensor<half> *outputGradient, size_t index, Tensor<half> *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
-
-    auto shape = iGradient->shape;
-    int batch  = (int)shape.batch();
-    int size   = (int)shape.size() / batch;
-
-    auto x  = inputs[0]->data();
-    auto dx = iGradient->data();
-    auto y  = output->data();
-    auto dy = outputGradient->data();
-
-    int N = batch * size;
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    L2NormBackwardKernel<half> << <grideSize, blockSize >> > (x, dx, y, dy, size, N);
-}
-#endif
 
 DEEP8_DECLARATION_GPU_FUNC(L2Norm);
-
-#endif
 
 }

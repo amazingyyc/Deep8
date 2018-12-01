@@ -54,11 +54,7 @@ void Tanh<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> 
 }
 
 template <typename T>
-void Tanh<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
-                         const Tensor<T> *output,
-                         const Tensor<T> *outputGradient,
-                         size_t index,
-                         Tensor<T> *iGradient) {
+void Tanh<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of Tanh backwardCPU is error");
 
 	auto x = inputs[0]->data();
