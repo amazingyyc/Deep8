@@ -15,6 +15,7 @@ file(GLOB DEEP8_HEAD_FILES "include/*.h")
 
 set(DEEP8_SRC_FILES
 
+		src/model/AutoBatchCodeHelper.cpp
 		src/model/Executor.cpp
 		src/model/EagerExecutor.cpp
 		src/model/LazyExecutor.cpp

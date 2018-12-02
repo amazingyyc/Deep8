@@ -52,7 +52,7 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 			auto node = zeroInDegree.front();
 			zeroInDegree.pop();
 
-			if (node->supportAutoBatch()) {
+			if (0 <= node->supportAutoBatch()) {
 				layer[node->autoBatchCode()].emplace_back(node);
 			}
 
@@ -93,7 +93,9 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 			inputsShape.emplace_back(item->inputs[i]->outputShape);
 		}
 
-		batchNodes[i] = new Batch<T>(inputs, nodes[0]->autoBatchShape(i, inputsShape));
+		auto bactedShape = nodes[0]->autoBatchShape(i, inputsShape);
+		batchNodes[i] = new Batch<T>(inputs, bactedShape);
+		
 		this->addFunction(batchNodes[i]);
 	}
 

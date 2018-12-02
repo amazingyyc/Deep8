@@ -66,10 +66,10 @@ public:
 	virtual void backward();
 
 	/**
-	 * if this node support the auto batch
-	 * the default is false
+	 * return < 0, does not support autobatch
+	 * return >= 0, means the Node can be batched
 	 */
-	virtual bool supportAutoBatch();
+	virtual int supportAutoBatch();
 
 	/**
 	 * return a hashcode to do auto batch

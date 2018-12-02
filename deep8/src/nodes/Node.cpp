@@ -32,8 +32,8 @@ void Node::backward() {
 	DEEP8_RUNTIME_ERROR("Can not call this function from Node");
 }
 
-bool Node::supportAutoBatch() {
-	return false;
+int Node::supportAutoBatch() {
+	return -1;
 }
 
 size_t Node::autoBatchCode() {

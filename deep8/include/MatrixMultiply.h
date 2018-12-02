@@ -18,7 +18,7 @@ public:
      void check() override;
 
 	 /**if support the auto batch*/
-	 bool supportAutoBatch() override;
+	 int supportAutoBatch() override;
 
 	 /**auto batch code*/
 	 size_t autoBatchCode() override;
