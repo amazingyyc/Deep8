@@ -31,7 +31,7 @@ public:
     size_t autoBatchCode();
 
     void functionType(FunctionType);
-    void nodeId(int id);
+    void nodeId(int64_t id);
 
     void batch(size_t);
     void row(size_t);

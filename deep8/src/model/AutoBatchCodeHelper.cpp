@@ -25,7 +25,7 @@ void AutoBatchCodeHelper::functionType(FunctionType type) {
     oss << static_cast<int>(type);
 }
 
-void AutoBatchCodeHelper::nodeId(int id) {
+void AutoBatchCodeHelper::nodeId(int64_t id) {
     oss << underline << "nodeId" << colon << id;
 }
 

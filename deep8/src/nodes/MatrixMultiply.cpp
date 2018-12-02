@@ -36,22 +36,23 @@ void MatrixMultiply<T>::check() {
 }
 
 /**
- * for MaxtrixMultiply C1 = A1 * B1, C2 = A2 * B2
- * only 1 condition support the auto batch
- * the A1 is same with A2, and the B1 and B2's shape is same except the batch, and the col of B1 and B2 is 1.
- */
-/**
  * 2 type MatrixMultiply can support autobatch
  * for z1 = x1 * y1, z2 = x2 * y2
  * 1: the x1 is the same with x2 and batch is 1, and the the y1 and y2's shape is same except the batch, and the col of y1 and y2 is 1.
  * 2: the y1 is same with y2 and batch is 1, the x1 and x2's col is same
+ *
+ * in some case the MatrixMultiply function may hit this 2 type at same time.
+ * then the type 1 will be selected
  */
 template <typename T>
 int MatrixMultiply<T>::supportAutoBatch() {
-    if (1 == this->inputs[1]->outputShape.batch()) {
-        return 0;
-    } else if (1 == this->inputs[0]->outputShape.batch() && 1 == this->inputs[1]->outputShape.col()) {
+    auto &xshape = this->inputs[0]->outputShape;
+    auto &yshape = this->inputs[1]->outputShape;
+
+    if (1 == xshape.batch() && 1 == yshape.col()) {
         return 1;
+    } else if (1 == yshape.batch()) {
+        return 0;
     }
 
     return -1;
