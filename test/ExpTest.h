@@ -118,7 +118,7 @@ TEST(Exp, GPU_double) {
     device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
 
     for (int i = 0; i < dim0 * dim1 * dim2; ++i) {
-        ASSERT_TRUE(std::abs(std::exp(inputPtr[i]) - outputPtr[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(std::exp(inputPtr[i]) - outputPtr[i]) < 1e-4);
     }
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {

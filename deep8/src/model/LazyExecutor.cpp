@@ -23,7 +23,10 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 
 	/**use the queue to loop the graph*/
 	std::queue<Node*> que;
+	std::unordered_set<Node*> visited;
+
 	que.push(last);
+	visited.insert(last);
 
 	while (!que.empty()) {
 		auto node = que.front();
@@ -37,7 +40,10 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 			zeroInDegree.push(node);
 		} else {
 			for (auto item : node->inputs) {
-				que.push(item);
+				if (visited.find(item) == visited.end()) {
+					que.push(item);
+					visited.insert(item);
+				}
 			}
 		}
 	}
@@ -52,7 +58,7 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 			auto node = zeroInDegree.front();
 			zeroInDegree.pop();
 
-			if (node->supportAutoBatch()) {
+			if (0 <= node->supportAutoBatch()) {
 				layer[node->autoBatchCode()].emplace_back(node);
 			}
 
@@ -93,7 +99,9 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 			inputsShape.emplace_back(item->inputs[i]->outputShape);
 		}
 
-		batchNodes[i] = new Batch<T>(inputs, nodes[0]->autoBatchShape(i, inputsShape));
+		auto bactedShape = nodes[0]->autoBatchShape(i, inputsShape);
+		batchNodes[i] = new Batch<T>(inputs, bactedShape);
+		
 		this->addFunction(batchNodes[i]);
 	}
 
@@ -150,15 +158,21 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
  */
 template <typename T>
 void LazyExecutor<T>::mallocIntermediaryVariable(Node *last) {
+	std::unordered_set<Node*> visited;
 	std::queue<Node*> que;
+
 	que.push(last);
+	visited.insert(last);
 
 	while (!que.empty()) {
 		auto node = que.front();
 		que.pop();
 
 		for (auto item : node->inputs) {
-			que.push(item);
+			if (visited.find(item) == visited.end()) {
+				que.push(item);
+				visited.insert(item);
+			}
 		}
 
 		if (NodeType::Function != node->type) {
@@ -234,8 +248,11 @@ void LazyExecutor<T>::forward(Node *last) {
 	mallocIntermediaryVariable(last);
 
 	/**do the real calculation*/
+	std::unordered_set<Node*> visited;
 	std::queue<Node*> que;
+
 	que.push(last);
+	visited.insert(last);
 
 	std::vector<Node*> graph;
 
@@ -246,7 +263,10 @@ void LazyExecutor<T>::forward(Node *last) {
 		graph.emplace_back(node);
 
 		for (auto item : node->inputs) {
-			que.push(item);
+			if (visited.find(item) == visited.end()) {
+				que.push(item);
+				visited.insert(item);
+			}
 		}
 	}
 
@@ -275,8 +295,11 @@ void LazyExecutor<T>::backward(Node *last) {
 	/**
 	 * first loop zero all the Gradient of Variable
 	 */
+	std::unordered_set<Node*> visited;
 	std::queue<Node*> que;
+
 	que.push(lastVar);
+	visited.insert(lastVar);
 
 	while (!que.empty()) {
 		auto node = que.front();
@@ -287,7 +310,10 @@ void LazyExecutor<T>::backward(Node *last) {
 		}
 
 		for (auto input : node->inputs) {
-			que.push(input);
+			if (visited.find(input) == visited.end()) {
+				que.push(input);
+				visited.insert(input);
+			}
 		}
 	}
 
@@ -295,7 +321,10 @@ void LazyExecutor<T>::backward(Node *last) {
 	lastVar->setGradientOne();
 
 	/**calculate the gradient for the Variable*/
+	visited.clear();
+
 	que.push(lastVar);
+	visited.insert(lastVar);
 
 	while (!que.empty()) {
 		auto node = que.front();
@@ -304,7 +333,10 @@ void LazyExecutor<T>::backward(Node *last) {
 		node->backward();
 
 		for (auto input : node->inputs) {
-			que.push(input);
+			if (visited.find(input) == visited.end()) {
+				que.push(input);
+				visited.insert(input);
+			}
 		}
 	}
 

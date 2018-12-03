@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "Deep8.h"
+#include "GPUDevice.h"
 
 #include "TestUtils.h"
 
@@ -31,10 +32,10 @@
 //#include "SquareTest.h"
 //#include "TanhTest.h"
 //#include "LinearRegressionTest.h"
-#include "AutoBatchTest.h"
+//#include "AutoBatchTest.h"
 
 #ifdef HAVE_CUDA
-//#include "LinearRegressionGPUTest.h"
+#include "LinearRegressionGPUTest.h"
 #endif
 
 using namespace Deep8;

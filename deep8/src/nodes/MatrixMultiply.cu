@@ -6,8 +6,6 @@
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
 template <>
 void MatrixMultiply<float>::forwardGPUImpl(Device *d, const float *A, const Shape &aShape, const float *B, const Shape &bShape, float *C, const Shape &cShape) {
 	auto device = (GPUDevice*)d;
@@ -369,9 +367,6 @@ template void MatrixMultiply<double>::backwardGPUImpl1(Device* device, const dou
 template void MatrixMultiply<half>::forwardGPUImpl(Device *device, const half *A, const Shape &aShape, const half *B, const Shape &bShape, half *C, const Shape &cShape);
 template void MatrixMultiply<half>::backwardGPUImpl0(Device* device, half *aGrad, const Shape &aShape, const half *B, const Shape &bShape, const half *cGrad, const Shape &cShape);
 template void MatrixMultiply<half>::backwardGPUImpl1(Device* device, const half *A, const Shape &aShape, half *bGrad, const Shape &bShape, const half *cGrad, const Shape &cShape);
-
-#endif
-
 #endif
 
 }

@@ -21,7 +21,7 @@ TEST(Tanh, forwardCPU) {
     tanH.forwardCPU(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        ASSERT_EQ(tanh(input.data()[i]), output.data()[i]);
+        ASSERT_EQ(std::tanh(input.data()[i]), output.data()[i]);
     }
 
     freeTensor(device, input);
@@ -54,7 +54,7 @@ TEST(Tanh, backwardCPU) {
     tt.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        auto temp = outputGrad.data()[i] * (1.0 - tanh(inputValue.data()[i]) * tanh(inputValue.data()[i]));
+        auto temp = outputGrad.data()[i] * (1.0 - std::tanh(inputValue.data()[i]) * std::tanh(inputValue.data()[i]));
 
         ASSERT_TRUE(std::abs(temp - inputGrad.data()[i]) <=  1e-6);
     }
@@ -105,11 +105,11 @@ TEST(Tanh, GPU_float) {
 	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 400 * 200);
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
-		ASSERT_EQ(tanh(inputPtr[i]), outputPtr[i]);
+		ASSERT_EQ(std::tanh(inputPtr[i]), outputPtr[i]);
 	}
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
-		auto temp = outputGradPtr[i] * (1.0 - tanh(inputPtr[i]) * tanh(inputPtr[i]));
+		auto temp = outputGradPtr[i] * (1.0 - std::tanh(inputPtr[i]) * std::tanh(inputPtr[i]));
 
 		ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) <= 1e-6);
 	}

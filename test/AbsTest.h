@@ -149,12 +149,10 @@ TEST(Abs, backwardGPU_double) {
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 	    real temp;
 
-		if (cpuInputValuePtr[i] > 0) {
+		if (cpuInputValuePtr[i] >= 0) {
 			temp = cpuOutputGradPtr[i];
 		} else if (cpuInputValuePtr[i] < 0) {
 			temp = -cpuOutputGradPtr[i];
-		} else {
-			temp = 0;
 		}
 
 	    ASSERT_EQ(temp, cpuInputGradPtr[i]);

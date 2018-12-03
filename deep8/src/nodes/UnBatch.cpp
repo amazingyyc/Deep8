@@ -39,6 +39,7 @@ void UnBatch<T>::forward() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the outputs size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
+	DEEP8_ARGUMENT_CHECK(this->outputShape  == this->outputs.first()->outputShape, "the output shape is error");
 
 	auto x = static_cast<Variable<T>*>(this->inputs[0]);
 	auto y = static_cast<Variable<T>*>(this->outputs.first());
@@ -54,11 +55,16 @@ void UnBatch<T>::forward() {
 		y->gradient.storage = x->gradient.storage;
 		y->gradient.offset  = x->gradient.offset + sizeof(T) * offset;
 		y->gradient.shape   = this->outputShape;
+	} else {
+		/**set the output gradient is empty*/
+		TensorStorage emptyStorage;
+		y->gradient.storage = emptyStorage;
 	}
 }
 
 template <typename T>
 void UnBatch<T>::backward() {
+	/**do nothing*/
 }
 
 DEEP8_RE_DECLARATION_HALF_FUNC(UnBatch);

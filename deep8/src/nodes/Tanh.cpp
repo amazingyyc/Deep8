@@ -53,7 +53,7 @@ void Tanh<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(output), TanHBackwardExpr<T>());
 }
 
-DEEP8_RE_DECLARATION_HALF_FUNC(TanH);
+DEEP8_RE_DECLARATION_HALF_FUNC(Tanh);
 DEEP8_DECLARATION_INSTANCE(Tanh);
 
 }

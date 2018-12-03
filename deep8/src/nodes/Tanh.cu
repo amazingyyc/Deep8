@@ -2,110 +2,62 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "Tanh.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
+template <typename T>
+struct TanhForwardOP {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return CuMath::cuTanh(x);
+	}
+};
 
-template <typename real>
-__global__ void TanhForwardKernel(const real *X, real *Y, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+#ifdef HAVE_HALF
+template <>
+struct TanhForwardOP<half> {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half forward(const half &x) {
+		return __float2half(tanh(__half2float(x)));
+	}
+};
+#endif
 
-    for (int i = start; i < N; i += stride) {
-        Y[i] = cuTanh(X[i]);
-    }
-}
-
-template <typename real>
-__global__ void TanhBackwardKernel(real *xGrad, const real *yGrad, const real *Y, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        xGrad[i] += yGrad[i] * (real(1.0) - Y[i] * Y[i]);
-    }
-}
+template <typename T>
+struct TanhBackwardOP {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const T &x, const T &y, const T &dy) {
+		return dy * (T(1) - y * y);
+	}
+};
 
 template <typename T>
 void Tanh<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int)output->size();
+	auto x = inputs[0]->data();
+	auto y = output->data();
+	auto N = (int)output->shape.size();
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, TanhForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    TanhForwardKernel<T> << <grideSize, blockSize >> > (x, y, N);
+	UnaryElementWiseForward<T, TanhForwardOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, y, TanhForwardOP<T>(), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void Tanh<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int)output->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    TanhForwardKernel<half> << <grideSize, blockSize >> > (x, y, N);
-}
-#endif
 
 template <typename T>
-void Tanh<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
-                         const Tensor<T> *output,
-                         const Tensor<T> *outputGradient,
-                         size_t index,
-                         Tensor<T> *iGradient) {
+void Tanh<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of Tanh backwardCPU is error");
 
-    auto dx = iGradient->data();
-    auto dy = outputGradient->data();
-    auto y  = output->data();
-    auto N  = (int)iGradient->size();
+	auto x = inputs[0]->data();
+	auto dx = iGradient->data();
+	auto y = output->data();
+	auto dy = outputGradient->data();
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	int N = (int)iGradient->shape.size();
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, TanhBackwardKernel<T>, 0, N));
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    TanhBackwardKernel<T> << <grideSize, blockSize >> > (dx, dy, y, N);
+	UnaryElementWiseBackward<T, TanhBackwardOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, dx, y, dy, TanhBackwardOP<T>(), N);
 }
 
-#ifdef HAVE_HALF
-template <>
-void Tanh<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
-                         const Tensor<half> *output,
-                         const Tensor<half> *outputGradient,
-                         size_t index,
-                         Tensor<half> *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index of Tanh backwardCPU is error");
-
-    auto dx = iGradient->data();
-    auto dy = outputGradient->data();
-    auto y  = output->data();
-    auto N  = (int)iGradient->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    TanhBackwardKernel<half> << <grideSize, blockSize >> > (dx, dy, y, N);
-}
-#endif
 
 DEEP8_DECLARATION_GPU_FUNC(Tanh);
-
-#endif
 
 }

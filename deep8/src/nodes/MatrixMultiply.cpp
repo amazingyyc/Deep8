@@ -1,4 +1,5 @@
 #include "MatrixMultiply.h"
+#include "AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
@@ -26,35 +27,76 @@ void MatrixMultiply<T>::check() {
                          "the col of input1 must same to the row of input2");
 
     if (1 == yShape.col()) {
-        this->outputShape.reShape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row()});
+		std::vector<size_t> vec({ std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row() });
+        this->outputShape.reShape(vec);
     } else {
-        this->outputShape.reShape({std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row(), yShape.col()});
+		std::vector<size_t> vec({ std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row(), yShape.col() });
+        this->outputShape.reShape(vec);
     }
 }
 
 /**
- * for MaxtrixMultiply C1 = A1 * B1, C2 = A2 * B2
- * only 1 condition support the auto batch
- * the A1 is same with A2, and the B1 and B2's shape is same except the batch, and the col of B1 and B2 is 1.
+ * 2 type MatrixMultiply can support autobatch
+ * for z1 = x1 * y1, z2 = x2 * y2
+ * 1: the x1 is the same with x2 and batch is 1, and the the y1 and y2's shape is same except the batch, and the col of y1 and y2 is 1.
+ * 2: the y1 is same with y2 and batch is 1, the x1 and x2's col is same
+ *
+ * in some case the MatrixMultiply function may hit this 2 type at same time.
+ * then the type 1 will be selected
  */
 template <typename T>
-bool MatrixMultiply<T>::supportAutoBatch() {
-	return (1 == this->inputs[1]->outputShape.col());
+int MatrixMultiply<T>::supportAutoBatch() {
+    auto &xshape = this->inputs[0]->outputShape;
+    auto &yshape = this->inputs[1]->outputShape;
+
+    if (1 == xshape.batch() && 1 == yshape.col()) {
+        return 1;
+    } else if (1 == yshape.batch()) {
+        return 0;
+    }
+
+    return -1;
 }
 
 /**
- * C = A * B
- * the batchcode is combined with the id of A and the shape of B (except batch dim)
+ * for 1 support type: the hashcode combined by the FunctionType 
  */
 template <typename T>
 size_t MatrixMultiply<T>::autoBatchCode() {
-	std::ostringstream oss;
-	oss << static_cast<int>(FunctionType::MatrixMultiply);
-	oss << this->inputs[0]->id;
-	oss << this->inputs[1]->outputShape.row();
-	oss << this->inputs[1]->outputShape.col();
+    auto index = supportAutoBatch();
 
-	return std::hash<std::string>()(oss.str());
+    if (0 == index) {
+        AutoBatchCodeHelper helper;
+
+        helper.functionType(FunctionType::MatrixMultiply);
+
+        helper.input0Begin();
+        helper.col(this->inputs[0]->outputShape.col());
+        helper.input0End();
+
+        helper.input1Begin();
+        helper.nodeId(this->inputs[1]->id);
+        helper.input1End();
+
+        return helper.autoBatchCode();
+    } else if (1 == index) {
+        AutoBatchCodeHelper helper;
+
+        helper.functionType(FunctionType::MatrixMultiply);
+
+        helper.input0Begin();
+        helper.nodeId(this->inputs[0]->id);
+        helper.input0End();
+
+        helper.input1Begin();
+        helper.row(this->inputs[1]->outputShape.row());
+        helper.row(this->inputs[1]->outputShape.col());
+        helper.input1End();
+
+        return helper.autoBatchCode();
+    }
+
+    DEEP8_RUNTIME_ERROR("this node does not suppot autobatch");
 }
 
 /**
@@ -63,21 +105,37 @@ size_t MatrixMultiply<T>::autoBatchCode() {
  */
 template <typename T>
 Shape MatrixMultiply<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
-	DEEP8_ARGUMENT_CHECK(1 == index, "MatrixMultiply only can batch index 1 input");
 	DEEP8_ARGUMENT_CHECK(shapes.size() > 1, "the batched inputs's size must > 1");
 
-	size_t batch = 0;
-	auto row = shapes[0].row();
+    if (0 == index) {
+        size_t row = 0;
+        auto col = shapes[0].col();
 
-	for (auto item : shapes) {
-		DEEP8_ARGUMENT_CHECK(1 == item.col() && row == item.row(), "the batched shape is error");
+        for (auto item : shapes) {
+            DEEP8_ARGUMENT_CHECK(col == item.col(), "the batched shape is error");
 
-		batch += item.batch();
-	}
+            row += item.batch() * item.row();
+        }
 
-	std::vector<size_t> vec({ row, 1 });
-	
-	return Shape(batch, vec);
+        std::vector<size_t> vec({ row, col });
+
+        return Shape(1, vec);
+    } else if (1 == index) {
+        size_t batch = 0;
+        auto row = shapes[0].row();
+
+        for (auto item : shapes) {
+            DEEP8_ARGUMENT_CHECK(1 == item.col() && row == item.row(), "the batched shape is error");
+
+            batch += item.batch();
+        }
+
+        std::vector<size_t> vec({ row, 1 });
+
+        return Shape(batch, vec);
+    }
+
+    DEEP8_RUNTIME_ERROR("the index is error");
 }
 
 /**
@@ -85,7 +143,15 @@ Shape MatrixMultiply<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes
  */
 template <typename T>
 std::vector<size_t> MatrixMultiply<T>::autoBatchIndexes() {
-	return std::vector<size_t>({ 1 });
+    auto index = supportAutoBatch();
+
+    if (0 == index) {
+        return std::vector<size_t>({ 0 });
+    } else if (1 == index) {
+        return std::vector<size_t>({ 1 });
+    }
+
+	DEEP8_RUNTIME_ERROR("this node does not support auto batch");
 }
 
 /**
@@ -98,58 +164,61 @@ Node* MatrixMultiply<T>::autoBatchClone(std::vector<Node*> &inputs) {
 
 template <typename T>
 void MatrixMultiply<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output)  {
-    auto xTensor = inputs[0];
-    auto yTensor = inputs[1];
+    auto x = inputs[0];
+    auto y = inputs[1];
+    auto z = output;
 
-    if (1 == yTensor->batch()) {
-        eRowBatchMat(output).noalias() = eRowBatchMat(xTensor) * eMat(yTensor);
-    } else if (1 == xTensor->batch() && 1 == yTensor->col()) {
-        eBatchSizeMat(output).noalias() = eBatchSizeMat(yTensor) * eMat(xTensor).transpose();
+    if (1 == y->batch()) {
+        eRowBatchMat(z).noalias() = eRowBatchMat(x) * eMat(y);
+    } else if (1 == x->batch() && 1 == y->col()) {
+        eBatchSizeMat(z).noalias() = eBatchSizeMat(y) * eMat(x).transpose();
     } else {
-        DEEP8_ARGUMENT_CHECK(1 == xTensor->batch() || xTensor->batch() == yTensor->batch(),
-                             "the inputs batch error");
-        DEEP8_ARGUMENT_CHECK(
-                std::max<size_t>(xTensor->batch(), yTensor->batch()) == output->batch(),
-                "the output batch is error");
+        DEEP8_ARGUMENT_CHECK(1 == x->batch() || x->batch() == y->batch(), "the inputs batch error");
+        DEEP8_ARGUMENT_CHECK(std::max<size_t>(x->batch(), y->batch()) == z->batch(), "the output batch is error");
 
-        for (size_t b = 0; b < output->batch(); ++b) {
-            eBatchMat(output, b).noalias() = eBatchMat(xTensor, b) * eBatchMat(yTensor, b);
+        for (size_t b = 0; b < z->batch(); ++b) {
+            eBatchMat(z, b).noalias() = eBatchMat(x, b) * eBatchMat(y, b);
         }
     }
 }
 
 template <typename T>
-void MatrixMultiply<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-                      const Tensor<T> *output,
-                      const Tensor<T> *outputGradient,
-                      size_t index,
-                      Tensor<T> *iGradient) {
+void MatrixMultiply<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
+    auto x  = inputs[0];
+    auto y  = inputs[1];
+    auto z  = output;
+    auto dz = outputGradient;
+    
     if (0 == index) {
+        auto dx = iGradient;
+
         /**
-         * for a MatrixMultiply C = A * B, index is 0 means calculate the grad for A
-         * grad(A) = grad(C) * transpose(B)
+         * for a MatrixMultiply Z = X * Y, index is 0 means calculate the grad for X
+         * dx = dz * transpose(y)
          */
-        if (1 == inputs[1]->batch()) {
-            eRowBatchMat(iGradient).noalias() += eRowBatchMat(outputGradient) * eMat(inputs[1]).transpose();
-        } else if (1 == inputs[0]->batch() && 1 == inputs[1]->col()) {
-            eMat(iGradient).noalias() += eBatchSizeMat(outputGradient).transpose() * eBatchSizeMat(inputs[1]);
+        if (1 == y->batch()) {
+            eRowBatchMat(dx).noalias() += eRowBatchMat(dz) * eMat(y).transpose();
+        } else if (1 == x->batch() && 1 == y->col()) {
+            eMat(dx).noalias() += eBatchSizeMat(dz).transpose() * eBatchSizeMat(y);
         } else {
             for (size_t b = 0; b < outputGradient->batch(); ++b) {
-                eBatchMat(iGradient, b).noalias() += eBatchMat(outputGradient, b) * eBatchMat(inputs[1], b).transpose();
+                eBatchMat(dx, b).noalias() += eBatchMat(dz, b) * eBatchMat(y, b).transpose();
             }
         }
     } else if (1 == index) {
+        auto dy = iGradient;
+
         /**
-         * for a MatrixMultiply C = A * B, index is 1 means calculate the grad for B
-         * grad(B) = transpose(A) * grad(C)
+         * for a MatrixMultiply Z = X * Y, index is 1 means calculate the grad for Y
+         * dy = transpose(x) * dz
          */
-        if (1 == iGradient->batch()) {
-            eMat(iGradient).noalias() += eRowBatchMat(inputs[0]).transpose() * eRowBatchMat(outputGradient);
-        } else if (1 == inputs[0]->batch() && 1 == inputs[1]->col()) {
-            eBatchSizeMat(iGradient).noalias() += eBatchSizeMat(outputGradient) * eMat(inputs[0]);
+        if (1 == dy->batch()) {
+            eMat(dy).noalias() += eRowBatchMat(x).transpose() * eRowBatchMat(dz);
+        } else if (1 == x->batch() && 1 == y->col()) {
+            eBatchSizeMat(dy).noalias() += eBatchSizeMat(dz) * eMat(x);
         } else {
-            for (size_t b = 0; b < outputGradient->batch(); ++b) {
-                eBatchMat(iGradient, b).noalias() += eBatchMat(inputs[0], b).transpose() * eBatchMat(outputGradient, b);
+            for (size_t b = 0; b < dz->batch(); ++b) {
+                eBatchMat(dy, b).noalias() += eBatchMat(x, b).transpose() * eBatchMat(dz, b);
             }
         }
     }

@@ -138,10 +138,8 @@ TEST(L1Norm, GPU_float) {
         auto tempInputGradPtr = inputGradPtr + i * 200;
 
         for (int j = 0; j < 200; ++j) {
-            if (tempInputPtr[j] > 0) {
+            if (tempInputPtr[j] >= 0) {
                 ASSERT_EQ(tempInputGradPtr[j], outputGradPtr[i]);
-            } else if (tempInputPtr[j] == 0) {
-                ASSERT_EQ(tempInputGradPtr[j], 0);
             } else {
                 ASSERT_EQ(tempInputGradPtr[j], -outputGradPtr[i]);
             }

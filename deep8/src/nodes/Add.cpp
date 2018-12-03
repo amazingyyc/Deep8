@@ -108,8 +108,10 @@ void Add<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
         backwardCPUImpl<2>(device, outputGradient, iGradient);
     } else if (3 == diffCount) {
         backwardCPUImpl<3>(device, outputGradient, iGradient);
-    } else if (4 == diffCount) {
-        backwardCPUImpl<4>(device, outputGradient, iGradient);
+	} else if (4 == diffCount) {
+		backwardCPUImpl<4>(device, outputGradient, iGradient);
+	}else if (5 == diffCount) {
+		backwardCPUImpl<5>(device, outputGradient, iGradient);
     } else {
         DEEP8_RUNTIME_ERROR("the shape is error");
     }

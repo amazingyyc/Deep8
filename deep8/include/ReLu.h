@@ -29,7 +29,7 @@ protected:
 
 	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 
-	void backwardGPUImpl(T *dx, const T *x, const T *dy, const int N);
+	void backwardGPUImpl(T *dx, const T *x, const T *y, const T *dy, const int N);
 
 #ifdef HAVE_CUDNN
 	void backwardGPUCUDNNImpl(Device *device, const T *x, T *dx, const T *y, const T *dy, Shape &shape);

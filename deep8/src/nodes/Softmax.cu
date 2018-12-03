@@ -2,169 +2,128 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUReduce.cuh"
 #include "Softmax.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
 /**
  * find the max value and put it in y
  */
-template <int blockSize, typename real>
-__global__ void SoftmaxForwardFindMaxKernel(const real *x, real *y, const int batch, const int size) {
-    SharedMemory<real> shareMemory;
-    real *shared = shareMemory.pointer();
+template <typename T>
+struct SoftmaxFindMaxOp {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init() {}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(T ret, const T &cur) {}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(T ret) {}
+};
 
-    int threaId = threadIdx.x;
-    int blockId = blockIdx.x;
+template <>
+struct SoftmaxFindMaxOp<float> {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float commense() {
+		return -FLT_MAX;
+	}
 
-    int i = blockId * size + threaId;
-    int j = threaId;
-
-    shared[threaId] =  x[i];
-
-    while (j < size) {
-        shared[threaId] = cuMax(shared[threaId], x[i]);
-
-        i += blockSize;
-        j += blockSize;
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float init(float ret, float cur) {
+        return ret >= cur ? ret : cur;
     }
 
-    __syncthreads();
-
-    if (blockSize >= 1024) {
-        if (threaId < 512) {
-            shared[threaId] = cuMax(shared[threaId], shared[threaId + 512]);
-        }
-
-        __syncthreads();
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float step(float ret1, float ret2) {
+        return ret1 >= ret2 ? ret1 : ret2;
     }
 
-    if (blockSize >= 512) {
-        if (threaId < 256) {
-            shared[threaId] = cuMax(shared[threaId], shared[threaId + 256]);
-        }
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float complete(float ret) {
+        return ret;
+    }
+};
 
-        __syncthreads();
+template <>
+struct SoftmaxFindMaxOp<double> {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double commense() {
+		return -DBL_MAX;
+	}
+
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double init(double ret, double cur) {
+        return ret >= cur ? ret : cur;
     }
 
-    if (blockSize >= 256) {
-        if (threaId < 128) {
-            shared[threaId] = cuMax(shared[threaId], shared[threaId + 128]);
-        }
-
-        __syncthreads();
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double step(double ret1, double ret2) {
+        return ret1 >= ret2 ? ret1 : ret2;
     }
 
-    if (blockSize >= 128) {
-        if (threaId < 64) {
-            shared[threaId] = cuMax(shared[threaId], shared[threaId + 64]);
-        }
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double complete(double ret) {
+        return ret;
+    }
+};
 
-        __syncthreads();
+#ifdef HAVE_HALF
+template <>
+struct SoftmaxFindMaxOp<half> {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half commense() {
+		return -65504.0;
+	}
+
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half init(half ret, half cur) {
+        return ret >= cur ? ret : cur;
     }
 
-    if (threaId < 32) {
-        warpMaxReduce<blockSize, real>(shared, threaId);
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half step(half ret1, half ret2) {
+        return ret1 >= ret2 ? ret1 : ret2;
     }
 
-    if (0 == threaId) {
-        y[blockId] = shared[threaId];
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half complete(half ret) {
+        return ret;
     }
-}
+};
+#endif
 
 /**
  * Y[i] = exp(X[i] - scalar);
  */
 template <typename real>
-__global__ void SoftmaxForwardExpMinusScalar(const real *x, const real *scalar, real *y, const int size, const int N) {
+__global__ void SoftmaxExpMinusScalar(const real *x, const real *scalar, real *y, const int size, const int N) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
 
     for (int i = start; i < N; i += stride) {
-        y[i] = cuExp(x[i] - scalar[i / size]);
+        y[i] = CuMath::cuExp(x[i] - scalar[i / size]);
     }
 }
 
-template <int blockSize, typename real>
-__global__ void SoftmaxForwardSumKernel(const real *x, real *y, const int batch, const int size) {
-    SharedMemory<real> shareMemory;
-    real *shared = shareMemory.pointer();
+template <typename T>
+struct SoftmaxSumOp {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
+		return T(0);
+	}
 
-    int threaId = threadIdx.x;
-    int blockId = blockIdx.x;
-
-    int i = blockId * size + threaId;
-    int j = threaId;
-
-    shared[threaId] = 0;
-
-    while (j < size) {
-        shared[threaId] += x[i];
-
-        i += blockSize;
-        j += blockSize;
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init(T ret, T cur) {
+		return ret + cur;
     }
 
-    __syncthreads();
-
-    if (blockSize >= 1024) {
-        if (threaId < 512) {
-            shared[threaId] += shared[threaId + 512];
-        }
-
-        __syncthreads();
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(T ret1, T ret2) {
+        return ret1 + ret2;
     }
 
-    if (blockSize >= 512) {
-        if (threaId < 256) {
-            shared[threaId] += shared[threaId + 256];
-        }
-
-        __syncthreads();
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(T ret) {
+        return ret;
     }
-
-    if (blockSize >= 256) {
-        if (threaId < 128) {
-            shared[threaId] += shared[threaId + 128];
-        }
-
-        __syncthreads();
-    }
-
-    if (blockSize >= 128) {
-        if (threaId < 64) {
-            shared[threaId] += shared[threaId + 64];
-        }
-
-        __syncthreads();
-    }
-
-    if (threaId < 32) {
-        warpSumReduce<blockSize, real>(shared, threaId);
-    }
-
-    if (0 == threaId) {
-        y[blockId] = shared[threaId];
-    }
-}
+};
 
 /**
  * Y[i] = X[i] / scalar[0];
  */
 template <typename real>
-__global__ void SoftmaxForwardDivideScalar(real *Y, const real *scalar, const int size, const int N) {
+__global__ void SoftmaxDivideScalar(real *y, const real *scalar, const int size, const int N) {
     int start = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
 
     for (int i = start; i < N; i += stride) {
-        Y[i] = Y[i] / scalar[i / size];
+        y[i] = y[i] / scalar[i / size];
     }
 }
 
 template <int blockSize, typename real>
-__global__ void SoftmaxBackwardDotKernel(const real *y, const real *yGrad, real *dotPtr, const int batch, const int size) {
+__global__ void SoftmaxBackwardDotKernel(const real *y, const real *dy, real *dotPtr, const int batch, const int size) {
     SharedMemory<real> shareMemory;
     real *shared = shareMemory.pointer();
 
@@ -177,7 +136,7 @@ __global__ void SoftmaxBackwardDotKernel(const real *y, const real *yGrad, real 
     shared[threaId] = 0;
 
     while (j < size) {
-        shared[threaId] += y[i] * yGrad[i];
+        shared[threaId] += y[i] * dy[i];
 
         i += blockSize;
         j += blockSize;
@@ -218,7 +177,7 @@ __global__ void SoftmaxBackwardDotKernel(const real *y, const real *yGrad, real 
     }
 
     if (threaId < 32) {
-        warpSumReduce<blockSize, real>(shared, threaId);
+		warpSumReduce<blockSize, real>(shared, threaId);
     }
 
     if (0 == threaId) {
@@ -227,115 +186,66 @@ __global__ void SoftmaxBackwardDotKernel(const real *y, const real *yGrad, real 
 }
 
 template <typename real>
-__global__ void SoftmaxBackwardKernel(real *xGrad, const real *Y, const real *yGrad, const real *scalar, const int size, const int N) {
+__global__ void SoftmaxBackwardKernel(real *dx, const real *y, const real *dy, const real *scalar, const int size, const int N) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
 
     for (int i = start; i < N; i += stride) {
-        xGrad[i] += (yGrad[i] - scalar[i / size]) * Y[i];
+        dx[i] += (dy[i] - scalar[i / size]) * y[i];
     }
 }
 
 template <typename T>
-void Softmax<T>::forwardGPUImpl(Device *device, const T *x, T *y, Shape &shape) {
-    int N      = (int)shape.size();
-    int batch  = (int)shape.batch();
+void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
+    auto device = (GPUDevice*)output->device();
+
+    auto x = inputs[0]->data();
+    auto y = output->data();
+
+    int N      = (int)output->shape.size();
+    int batch  = (int)output->shape.batch();
     int size   = N / batch;
 
-    int blockSize       = 1024;
-    int maxBlockSize    = 1024;
-    int divideBlockSize = 1024;
-
-    int grideSize;
+    int blockSize = 1024;
 
     if (size < blockSize) {
         blockSize = prevPowerOf2(size);
     }
 
-    int sharedSize = sizeof(T) * blockSize;
-
     auto maxPtr = (T*)device->malloc(sizeof(T) * batch);
     auto sumPtr = (T*)device->malloc(sizeof(T) * batch);
 
-    if (1024 == blockSize) {
-        SoftmaxForwardFindMaxKernel<1024, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (512 == blockSize) {
-        SoftmaxForwardFindMaxKernel<512, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (256 == blockSize) {
-        SoftmaxForwardFindMaxKernel<256, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (128 == blockSize) {
-        SoftmaxForwardFindMaxKernel<128, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (64 == blockSize) {
-        SoftmaxForwardFindMaxKernel<64, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (32 == blockSize) {
-        SoftmaxForwardFindMaxKernel<32, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (16 == blockSize) {
-        SoftmaxForwardFindMaxKernel<16, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (8 == blockSize) {
-        SoftmaxForwardFindMaxKernel<8, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (4 == blockSize) {
-        SoftmaxForwardFindMaxKernel<4, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (2 == blockSize) {
-        SoftmaxForwardFindMaxKernel<2, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else if (1 == blockSize) {
-        SoftmaxForwardFindMaxKernel<1, T> << <batch, blockSize, sharedSize >> > (x, maxPtr, batch, size);
-    } else {
-        DEEP8_RUNTIME_ERROR("the block size is error");
-    }
+    /**find max*/
+    callTailReduceForward<T, SoftmaxFindMaxOp<T>>(x, maxPtr, batch, size, blockSize);
 
-    grideSize = (N + maxBlockSize - 1) / maxBlockSize;
+    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    SoftmaxForwardExpMinusScalar<T><<<grideSize, maxBlockSize >>>(x, maxPtr, y, size, N);
+    SoftmaxExpMinusScalar<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(x, maxPtr, y, size, N);
 
-    if (1024 == blockSize) {
-        SoftmaxForwardSumKernel<1024, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (512 == blockSize) {
-        SoftmaxForwardSumKernel<512, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (256 == blockSize) {
-        SoftmaxForwardSumKernel<256, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (128 == blockSize) {
-        SoftmaxForwardSumKernel<128, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (64 == blockSize) {
-        SoftmaxForwardSumKernel<64, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (32 == blockSize) {
-        SoftmaxForwardSumKernel<32, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (16 == blockSize) {
-        SoftmaxForwardSumKernel<16, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (8 == blockSize) {
-        SoftmaxForwardSumKernel<8, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (4 == blockSize) {
-        SoftmaxForwardSumKernel<4, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (2 == blockSize) {
-        SoftmaxForwardSumKernel<2, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else if (1 == blockSize) {
-        SoftmaxForwardSumKernel<1, T> << <batch, blockSize, sharedSize >> > (y, sumPtr, batch, size);
-    } else {
-        DEEP8_RUNTIME_ERROR("the block size is error");
-    }
+    /***calculate sum*/
+    callTailReduceForward<T, SoftmaxSumOp<T>>(y, sumPtr, batch, size, blockSize);
 
-    grideSize = (N + divideBlockSize - 1) / divideBlockSize;
-
-    SoftmaxForwardDivideScalar<T><<<grideSize, divideBlockSize >>>(y, sumPtr, size, N);
+    SoftmaxDivideScalar<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(y, sumPtr, size, N);
 
     device->free(sumPtr);
     device->free(maxPtr);
 }
 
 template <typename T>
-void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    forwardGPUImpl(output->device(), inputs[0]->data(), output->data(), output->shape);
-}
+void Softmax<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
+    DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
 
-template <typename T>
-void Softmax<T>::backwardGPUImpl(Device *device, T *xGrad, const T *y, const T *yGrad, Shape &shape) {
-    int N      = (int)shape.size();
-    int batch  = (int)shape.batch();
+	auto device = (GPUDevice*)iGradient->device();
+
+	auto dx = iGradient->data();
+	auto y  = output->data();
+	auto dy = outputGradient->data();
+
+    int N      = (int)iGradient->shape.size();
+    int batch  = (int)iGradient->shape.batch();
     int size   = N / batch;
 
-    int blockSize     = 1024;
-    int backBlockSize = 1024;
-
-    int grideSize;
+    int blockSize = 1024;
 
     if (size < blockSize) {
         blockSize = prevPowerOf2(size);
@@ -346,51 +256,38 @@ void Softmax<T>::backwardGPUImpl(Device *device, T *xGrad, const T *y, const T *
     auto dotPtr = (T*)device->malloc(sizeof(T) * batch);
 
     if (1024 == blockSize) {
-        SoftmaxBackwardDotKernel<1024, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<1024, T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (512 == blockSize) {
-        SoftmaxBackwardDotKernel<512, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<512,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (256 == blockSize) {
-        SoftmaxBackwardDotKernel<256, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<256,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (128 == blockSize) {
-        SoftmaxBackwardDotKernel<128, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<128,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (64 == blockSize) {
-        SoftmaxBackwardDotKernel<64, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<64,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (32 == blockSize) {
-        SoftmaxBackwardDotKernel<32, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<32,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (16 == blockSize) {
-        SoftmaxBackwardDotKernel<16, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<16,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (8 == blockSize) {
-        SoftmaxBackwardDotKernel<8, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<8,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (4 == blockSize) {
-        SoftmaxBackwardDotKernel<4, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<4,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (2 == blockSize) {
-        SoftmaxBackwardDotKernel<2, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<2,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else if (1 == blockSize) {
-        SoftmaxBackwardDotKernel<1, T> << <batch, blockSize, sharedSize >> > (y, yGrad, dotPtr, batch, size);
+        SoftmaxBackwardDotKernel<1,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else {
         DEEP8_RUNTIME_ERROR("the block size is error");
-    }
+	}
 
-    grideSize = (N + backBlockSize - 1) / backBlockSize;
+    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    SoftmaxBackwardKernel<T><<<grideSize, backBlockSize >>>(xGrad, y, yGrad, dotPtr, size, N);
+    SoftmaxBackwardKernel<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(dx, y, dy, dotPtr, size, N);
 
     device->free(dotPtr);
 }
 
-template <typename T>
-void Softmax<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
-                             const Tensor<T> *output,
-                             const Tensor<T> *outputGradient,
-                             size_t index,
-                             Tensor<T> *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
-
-    backwardGPUImpl(iGradient->device(), iGradient->data(), output->data(), outputGradient->data(), iGradient->shape);
-}
-
 DEEP8_DECLARATION_GPU_FUNC(Softmax);
-
-#endif
 
 }

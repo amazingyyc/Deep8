@@ -2,62 +2,37 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "DivideScalar.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
 template <typename real>
-__global__ void DivideScalarForwardKernel(const real *X, const real scalar, real *Y, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+struct DivideScalarOp {
+    real scalar;
 
-    for (int i = start; i < N; i += stride) {
-        Y[i] = X[i] / scalar;
+    DivideScalarOp(real s): scalar(s) {
     }
-}
 
-template <typename real>
-__global__ void DivideScalarBackwardKernel(real *xGrad, const real scalar, const real *yGrad, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real forward(const real &x) {
+		return x / scalar;
+	}
 
-    for (int i = start; i < N; i += stride) {
-        xGrad[i] += yGrad[i] / scalar;
-    }
-}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real backward(const real &x, const real &y, const real &dy) {
+		return dy / scalar;
+	}
+}; 
 
 template <typename T>
 void DivideScalar<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto X = inputs[0]->data();
-    auto Y = output->data();
-    auto N = (int)output->size();
+    auto x = inputs[0]->data();
+    auto y = output->data();
+    auto N = static_cast<int>(output->size());
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, DivideScalarForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    DivideScalarForwardKernel<T> << <grideSize, blockSize >> > (X, scalar, Y, N);
+	UnaryElementWiseForward<T, DivideScalarOp<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, y, DivideScalarOp<T>(scalar), N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void DivideScalar<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-    auto X = inputs[0]->data();
-    auto Y = output->data();
-    auto N = (int)output->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    DivideScalarForwardKernel<half> << <grideSize, blockSize >> > (X, scalar, Y, N);
-}
-#endif
 
 template <>
 void DivideScalar<float>::backwardGPU(const std::vector<const Tensor<float>*> &inputs,
@@ -98,16 +73,20 @@ void DivideScalar<half>::backwardGPU(const std::vector<const Tensor<half>*> &inp
                                       Tensor<half> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-    int N = (int)iGradient->size();
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
+    auto x  = inputs[0]->data();
+	auto dx = iGradient->data();
+	auto y  = output->data();
+	auto dy = outputGradient->data();
 
-    DivideScalarBackwardKernel<half> << <grideSize, blockSize >> > (iGradient->data(), scalar, outputGradient->data(), N);
+	int N = (int)iGradient->shape.size();
+
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+	UnaryElementWiseBackward<half, DivideScalarOp<half>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, DivideScalarOp<half>(scalar), N);
+
 }
 #endif
 
 DEEP8_DECLARATION_GPU_FUNC(DivideScalar);
-
-#endif
 
 }

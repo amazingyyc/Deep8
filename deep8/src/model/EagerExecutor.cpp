@@ -70,7 +70,10 @@ void EagerExecutor<T>::backward(Node *last) {
 	 * first loop zero all the Gradient of Variable
 	 */
 	std::queue<Node*> que;
+	std::unordered_set<Node*> visited;
+
 	que.push(last);
+	visited.insert(last);
 
 	while (!que.empty()) {
 		auto node = que.front();
@@ -81,7 +84,10 @@ void EagerExecutor<T>::backward(Node *last) {
 		}
 
 		for (auto input : node->inputs) {
-			que.push(input);
+			if (visited.find(input) == visited.end()) {
+				que.push(input);
+				visited.insert(input);
+			}
 		}
 	}
 
@@ -89,7 +95,9 @@ void EagerExecutor<T>::backward(Node *last) {
 	lastVariable->setGradientOne();
 
 	/**calculate the gradient for the Variable*/
+	visited.clear();
 	que.push(last);
+	visited.insert(last);
 
 	while (!que.empty()) {
 		auto node = que.front();
@@ -98,7 +106,10 @@ void EagerExecutor<T>::backward(Node *last) {
 		node->backward();
 
 		for (auto input : node->inputs) {
-			que.push(input);
+			if (visited.find(input) == visited.end()) {
+				que.push(input);
+				visited.insert(input);
+			}
 		}
 	}
 

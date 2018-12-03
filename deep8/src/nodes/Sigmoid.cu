@@ -2,62 +2,44 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "Sigmoid.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
-template <typename real>
-__global__ void SigmoidForwardKernel(const real *X, real *Y, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        Y[i] = real(0.5) + real(0.5) * cuTanh(real(0.5) * X[i]);
-    }
-}
-
-template <typename real>
-__global__ void SigmoidBackwardKernel(real *xGrad, const real *yGrad, const real *Y, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        xGrad[i] += yGrad[i] * Y[i] * (real(1) - Y[i]);
-    }
-}
-
 template <typename T>
-void Sigmoid<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int)output->size();
-
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, SigmoidForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    SigmoidForwardKernel<T> << <grideSize, blockSize >> > (x, y, N);
-}
+struct SigmoidForwardOP {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return 0.5 + 0.5 * CuMath::cuTanh(0.5 * x);
+	}
+};
 
 #ifdef HAVE_HALF
 template <>
-void Sigmoid<half>::forwardGPU(const std::vector<const Tensor<half>*> &inputs, Tensor<half> *output) {
-    auto x = inputs[0]->data();
-    auto y = output->data();
-    auto N = (int)output->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    SigmoidForwardKernel<half> << <grideSize, blockSize >> > (x, y, N);
-}
+struct SigmoidForwardOP<half> {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half forward(const half &x) {
+		return __float2half(0.5 + 0.5 * tanhf(0.5 * __half2float(x)));
+	}
+};
 #endif
+
+template <typename T>
+struct SigmoidBackwardOP {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const T &x, const T &y, const T &dy) {
+		return dy * y * (T(1) - y);
+	}
+};
+
+template <typename T>
+void Sigmoid<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
+	auto x = inputs[0]->data();
+	auto y = output->data();
+	auto N = (int)output->shape.size();
+
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+	UnaryElementWiseForward<T, SigmoidForwardOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, y, SigmoidForwardOP<T>(), N);
+}
 
 template <typename T>
 void Sigmoid<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
@@ -65,43 +47,21 @@ void Sigmoid<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                              const Tensor<T> *outputGradient,
                              size_t index,
                              Tensor<T> *iGradient) {
-    auto dx = iGradient->data();
-    auto dy = outputGradient->data();
-    auto y  = output->data();
-    auto N  = (int)iGradient->size();
+	DEEP8_ARGUMENT_CHECK(0 == index, "the index of is error");
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+	auto x  = inputs[0]->data();
+	auto dx = iGradient->data();
+	auto y  = output->data();
+	auto dy = outputGradient->data();
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, SigmoidBackwardKernel<T>, 0, N));
+	int N = (int)iGradient->shape.size();
 
-    grideSize = (N + blockSize - 1) / blockSize;
+	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    SigmoidBackwardKernel<T> << <grideSize, blockSize >> > (dx, dy, y, N);
+	UnaryElementWiseBackward<T, SigmoidBackwardOP<T>> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, dx, y, dy, SigmoidBackwardOP<T>(), N);
 }
 
-#ifdef HAVE_HALF
-template <>
-void Sigmoid<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs,
-                             const Tensor<half> *output,
-                             const Tensor<half> *outputGradient,
-                             size_t index,
-                             Tensor<half> *iGradient) {
-    auto dx = iGradient->data();
-    auto dy = outputGradient->data();
-    auto y  = output->data();
-    auto N  = (int)iGradient->size();
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    SigmoidBackwardKernel<half> << <grideSize, blockSize >> > (dx, dy, y, N);
-}
-#endif
 
 DEEP8_DECLARATION_GPU_FUNC(Sigmoid);
-
-#endif
 
 }
