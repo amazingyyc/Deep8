@@ -9,20 +9,8 @@ namespace Deep8 {
 
 template <typename T>
 struct TanhForwardOP {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {}
-};
-
-template <>
-struct TanhForwardOP<float> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float forward(const float &x) {
-		return tanhf(x);
-	}
-};
-
-template <>
-struct TanhForwardOP<double> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double forward(const double &x) {
-		return tanh(x);
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return CuMath::cuTanh(x);
 	}
 };
 

@@ -31,15 +31,25 @@ template <typename T>
 void Minus<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
 	if (0 == index) {
 		callBinaryElementWiseBackwardX<T, MinusOp<T>>(
-			inputs[0]->data(), iGradient->data(), inputs[0]->shape, 
-			inputs[1]->data(), inputs[1]->shape, 
-			output->data(), outputGradient->data(), output->shape, 
+			inputs[0]->data(), 
+			iGradient->data(), 
+			inputs[0]->shape, 
+			inputs[1]->data(), 
+			inputs[1]->shape, 
+			output->data(), 
+			outputGradient->data(), 
+			output->shape, 
 			MinusOp<T>());
 	} else if (1 == index) {
 		callBinaryElementWiseBackwardY<T, MinusOp<T>>(
-			inputs[0]->data(), inputs[0]->shape, 
-			inputs[1]->data(), iGradient->data(), inputs[1]->shape, 
-			output->data(), outputGradient->data(), output->shape, 
+			inputs[0]->data(), 
+			inputs[0]->shape, 
+			inputs[1]->data(), 
+			iGradient->data(), 
+			inputs[1]->shape, 
+			output->data(), 
+			outputGradient->data(), 
+			output->shape, 
 			MinusOp<T>());
 	} else {
 		DEEP8_RUNTIME_ERROR("the index is error");

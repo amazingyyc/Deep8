@@ -12,6 +12,7 @@ message(STATUS "================================================================
 include_directories(include)
 
 file(GLOB DEEP8_HEAD_FILES "include/*.h")
+file(GLOB DEEP8_CUDA_HEAD_FILES "include/*.cuh")
 
 set(DEEP8_SRC_FILES
 
@@ -119,7 +120,7 @@ if (HAVE_GPU AND HAVE_CUDA)
 		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_HALF")
 	endif()
 
-	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES})
+	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_CUDA_HEAD_FILES})
 
 	# add cuBlas library
 	cuda_add_cublas_to_target(deep8_native)

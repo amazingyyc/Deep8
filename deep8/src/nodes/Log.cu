@@ -10,32 +10,9 @@ namespace Deep8 {
 template <typename T>
 struct LogForwardOP {
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
-		return log(x);
+		return CuMath::cuLog(x);
 	}
 };
-
-template <>
-struct LogForwardOP<float> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float forward(const float &x) {
-		return logf(x);
-	}
-};
-
-template <>
-struct LogForwardOP<double> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double forward(const double &x) {
-		return log(x);
-	}
-};
-
-#ifdef HAVE_HALF
-template <>
-struct LogForwardOP<half> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half forward(const half &x) {
-		return hlog(x);
-	}
-};
-#endif
 
 template <typename T>
 struct LogBackwardOP {

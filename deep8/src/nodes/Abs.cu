@@ -10,7 +10,7 @@ namespace Deep8 {
 template <typename T>
 struct AbsOP {
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
-		return x >= T(0) ? x : -x;
+		return CuMath::cuAbs(x);
 	}
 
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const T &x, const T &y, const T &dy) {

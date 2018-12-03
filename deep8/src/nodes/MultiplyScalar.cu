@@ -14,11 +14,11 @@ struct MultiplyScalarOp {
     MultiplyScalarOp(real s): scalar(s) {
     }
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const real &x) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real forward(const real &x) {
 		return x * scalar;
 	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const real &x, const real &y, const real &dy) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real backward(const real &x, const real &y, const real &dy) {
 		return dy * scalar;
 	}
 }; 
@@ -78,7 +78,7 @@ void MultiplyScalar<half>::backwardGPU(const std::vector<const Tensor<half>*> &i
 
 	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-	UnaryElementWiseBackward<T, MultiplyScalarOp<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, MultiplyScalarOp<T>(scalar), N);
+	UnaryElementWiseBackward<half, MultiplyScalarOp<half>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, MultiplyScalarOp<half>(scalar), N);
 
 }
 #endif

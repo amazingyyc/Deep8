@@ -9,20 +9,8 @@ namespace Deep8 {
 
 template <typename T>
 struct SigmoidForwardOP {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {}
-};
-
-template <>
-struct SigmoidForwardOP<float> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float forward(const float &x) {
-		return 0.5 + 0.5 * tanhf(0.5 * x);
-	}
-};
-
-template <>
-struct SigmoidForwardOP<double> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double forward(const double &x) {
-		return 0.5 + 0.5 * tanh(0.5 * x);
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return 0.5 + 0.5 * CuMath::cuTanh(0.5 * x);
 	}
 };
 
@@ -41,26 +29,6 @@ struct SigmoidBackwardOP {
 		return dy * y * (T(1) - y);
 	}
 };
-
-//template <typename real>
-//__global__ void SigmoidForwardKernel(const real *X, real *Y, const int N) {
-//    int start = blockIdx.x * blockDim.x + threadIdx.x;
-//    int stride = blockDim.x * gridDim.x;
-//
-//    for (int i = start; i < N; i += stride) {
-//        Y[i] = real(0.5) + real(0.5) * cuTanh(real(0.5) * X[i]);
-//    }
-//}
-//
-//template <typename real>
-//__global__ void SigmoidBackwardKernel(real *xGrad, const real *yGrad, const real *Y, const int N) {
-//    int start = blockIdx.x * blockDim.x + threadIdx.x;
-//    int stride = blockDim.x * gridDim.x;
-//
-//    for (int i = start; i < N; i += stride) {
-//        xGrad[i] += yGrad[i] * Y[i] * (real(1) - Y[i]);
-//    }
-//}
 
 template <typename T>
 void Sigmoid<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {

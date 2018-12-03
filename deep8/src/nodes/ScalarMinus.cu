@@ -14,11 +14,11 @@ struct ScalarMinusOp {
     ScalarMinusOp(real s): scalar(s) {
     }
 
-    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const real &x) {
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real forward(const real &x) {
 		return scalar - x;
 	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const real &x, const real &y, const real &dy) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real backward(const real &x, const real &y, const real &dy) {
 		return -dy;
 	}
 };
@@ -82,7 +82,7 @@ void ScalarMinus<half>::backwardGPU(const std::vector<const Tensor<half>*> &inpu
 
 	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-	UnaryElementWiseBackward<T, ScalarMinusOp<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, ScalarMinusOp<T>(scalar), N);
+	UnaryElementWiseBackward<half, ScalarMinusOp<half>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, ScalarMinusOp<half>(scalar), N);
 }
 #endif
 

@@ -2,63 +2,29 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUReduce.cuh"
 #include "L2Norm.h"
 
 namespace Deep8 {
 
 template <typename T>
 struct L2NormForwardOp {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init() {}
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(const T &ret, const T &cur) {}
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(const T &ret) {}
-};
-
-template <>
-struct L2NormForwardOp<float> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float init() {
-		return 0;
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
+		return T(0); 
 	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float step(const float &ret, const float &cur) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init(T ret, T cur) {
 		return ret + cur * cur;
 	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float complete(const float &ret) {
-		return sqrtf(ret);
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(T ret1, T ret2) {
+		return ret1 + ret2;
+	}
+
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(T ret) {
+		return CuMath::cuSqrt(ret);
 	}
 };
-
-template <>
-struct L2NormForwardOp<double> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double init() {
-		return 0;
-	}
-
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double step(const double &ret, const double &cur) {
-		return ret + cur * cur;
-	}
-
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double complete(const double &ret) {
-		return sqrt(ret);
-	}
-};
-
-#ifdef HAVE_HALF
-template <>
-struct L2NormForwardOp<half> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half init() {
-		return 0;
-	}
-
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half step(const half &ret, const half &cur) {
-		return ret + cur * cur;
-	}
-
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half complete(const half &ret) {
-		return hsqrt(ret);
-	}
-};
-#endif
 
 template <typename T>
 struct L2NormBackwardOp {
@@ -82,46 +48,7 @@ void L2Norm<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
         blockSize = prevPowerOf2(size);
     }
 
-    int sharedSize = sizeof(T) * blockSize;
-
-    switch (blockSize) {
-	case 1024:
-		TailReduceForward<T, L2NormForwardOp<T>, 1024> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 512:
-		TailReduceForward<T, L2NormForwardOp<T>,  512> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 256:
-		TailReduceForward<T, L2NormForwardOp<T>,  256> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 128:
-		TailReduceForward<T, L2NormForwardOp<T>,  128> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 64:
-		TailReduceForward<T, L2NormForwardOp<T>,   64> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 32:
-		TailReduceForward<T, L2NormForwardOp<T>,   32> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 16:
-		TailReduceForward<T, L2NormForwardOp<T>,   16> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 8:
-		TailReduceForward<T, L2NormForwardOp<T>,    8> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 4:
-		TailReduceForward<T, L2NormForwardOp<T>,    4> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 2:
-		TailReduceForward<T, L2NormForwardOp<T>,    2> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	case 1:
-		TailReduceForward<T, L2NormForwardOp<T>,    1> <<<batch, blockSize, sharedSize>>>(x, y, batch, size, L2NormForwardOp<T>());
-		break;
-	default:
-		DEEP8_RUNTIME_ERROR("the block size is error");
-		break
-	}
+	callTailReduceForward<T, L2NormForwardOp<T>>(x, y, batch, size, blockSize);
 }
 
 template <typename T>

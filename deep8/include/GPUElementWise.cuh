@@ -6,6 +6,9 @@
 
 namespace Deep8 {
 
+/**********************************************************************************************************
+ * Unary elementwise kernel
+**********************************************************************************************************/
 template <typename real, typename UnaryOp>
 __global__ void UnaryElementWiseForward(const real *x, real *y, UnaryOp op, const int N) {
 	int start  = blockIdx.x * blockDim.x + threadIdx.x;
@@ -54,6 +57,11 @@ __global__ void BinaryElementWiseForward(const real *x, const NVShape<NumDims> x
 		z[i] = op.forward(x[xI], y[yI]);
 	}
 }
+
+
+/**********************************************************************************************************
+ * Binary elementwise kernel, support broadcast
+**********************************************************************************************************/
 
 template <typename real, typename BinaryOp, int NumDims>
 __global__ void BinaryElementWiseBackwardX(const real *x,       real *dx, const NVShape<NumDims> xshape, 

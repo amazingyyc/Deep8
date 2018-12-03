@@ -2,6 +2,7 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
+#include "GPUElementWise.cuh"
 #include "DivideScalar.h"
 
 namespace Deep8 {
@@ -13,11 +14,11 @@ struct DivideScalarOp {
     DivideScalarOp(real s): scalar(s) {
     }
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const real &x) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real forward(const real &x) {
 		return x / scalar;
 	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const real &x, const real &y, const real &dy) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real backward(const real &x, const real &y, const real &dy) {
 		return dy / scalar;
 	}
 }; 
@@ -81,7 +82,7 @@ void DivideScalar<half>::backwardGPU(const std::vector<const Tensor<half>*> &inp
 
 	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-	UnaryElementWiseBackward<T, DivideScalarOp<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, DivideScalarOp<T>(scalar), N);
+	UnaryElementWiseBackward<half, DivideScalarOp<half>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, DivideScalarOp<half>(scalar), N);
 
 }
 #endif

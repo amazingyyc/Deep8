@@ -115,7 +115,7 @@ TEST(L2Norm, GPU_float) {
     device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 400);
     device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 400; ++i) {
         real temp = 0;
 
         auto tempInputPtr = inputPtr + i * 200;

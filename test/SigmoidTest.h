@@ -107,7 +107,7 @@ TEST(Sigmoid, GPU_float) {
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		float temp = 1.f / (1.f + std::exp(-1.f * inputPtr[i]));
 
-		ASSERT_TRUE(std::abs(temp - outputPtr[i]) <= 1e-6);
+		ASSERT_TRUE(std::abs(temp - outputPtr[i]) <= 1e-4);
 	}
 
 	for (int i = 0; i < 10 * 400 * 200; ++i) {

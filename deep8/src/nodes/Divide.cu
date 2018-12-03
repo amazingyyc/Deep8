@@ -35,15 +35,25 @@ void Divide<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                          Tensor<T> *iGradient) {
     if (0 == index) {
 		callBinaryElementWiseBackwardX<T, DivideOp<T>>(
-			inputs[0]->data(), iGradient->data(), inputs[0]->shape, 
-			inputs[1]->data(), inputs[1]->shape, 
-			output->data(), outputGradient->data(), output->shape, 
+			inputs[0]->data(), 
+			iGradient->data(), 
+			inputs[0]->shape, 
+			inputs[1]->data(), 
+			inputs[1]->shape, 
+			output->data(), 
+			outputGradient->data(), 
+			output->shape, 
 			DivideOp<T>());
 	} else if (1 == index) {
 		callBinaryElementWiseBackwardY<T, DivideOp<T>>(
-			inputs[0]->data(), inputs[0]->shape, 
-			inputs[1]->data(), iGradient->data(), inputs[1]->shape, 
-			output->data(), outputGradient->data(), output->shape, 
+			inputs[0]->data(), 
+			inputs[0]->shape, 
+			inputs[1]->data(), 
+			iGradient->data(), 
+			inputs[1]->shape, 
+			output->data(), 
+			outputGradient->data(), 
+			output->shape, 
 			DivideOp<T>());
 	} else {
 		DEEP8_RUNTIME_ERROR("the index is error");

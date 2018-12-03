@@ -14,11 +14,11 @@ struct ScalarDivideOp {
     ScalarDivideOp(real s): scalar(s) {
     }
 
-    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const real &x) {
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real forward(const real &x) {
 		return scalar / x;
 	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const real &x, const real &y, const real &dy) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real backward(const real &x, const real &y, const real &dy) {
 		return -scalar * dy / (x * x);
 	}
 };

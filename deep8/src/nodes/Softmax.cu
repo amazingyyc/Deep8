@@ -12,37 +12,46 @@ namespace Deep8 {
  */
 template <typename T>
 struct SoftmaxFindMaxOp {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {}
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init() {}
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(const T &ret, const T &cur) {}
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(const T &ret) {}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(T ret, const T &cur) {}
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(T ret) {}
 };
 
 template <>
 struct SoftmaxFindMaxOp<float> {
-    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float init() {
-        return -FLT_MAX;
-    }
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float commense() {
+		return -FLT_MAX;
+	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(const float &ret, const float &cur) {
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float init(float ret, float cur) {
         return ret >= cur ? ret : cur;
     }
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(const float &ret) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float step(float ret1, float ret2) {
+        return ret1 >= ret2 ? ret1 : ret2;
+    }
+
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float complete(float ret) {
         return ret;
     }
 };
 
 template <>
 struct SoftmaxFindMaxOp<double> {
-    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double init() {
-        return -DBL_MAX;
-    }
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double commense() {
+		return -DBL_MAX;
+	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(const double &ret, const double &cur) {
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double init(double ret, double cur) {
         return ret >= cur ? ret : cur;
     }
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(const double &ret) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double step(double ret1, double ret2) {
+        return ret1 >= ret2 ? ret1 : ret2;
+    }
+
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double complete(double ret) {
         return ret;
     }
 };
@@ -50,15 +59,19 @@ struct SoftmaxFindMaxOp<double> {
 #ifdef HAVE_HALF
 template <>
 struct SoftmaxFindMaxOp<half> {
-    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half init() {
-        return -65504;
-    }
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half commense() {
+		return -65504.0;
+	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(const half &ret, const half &cur) {
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half init(half ret, half cur) {
         return ret >= cur ? ret : cur;
     }
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(const half &ret) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half step(half ret1, half ret2) {
+        return ret1 >= ret2 ? ret1 : ret2;
+    }
+
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half complete(half ret) {
         return ret;
     }
 };
@@ -73,21 +86,25 @@ __global__ void SoftmaxExpMinusScalar(const real *x, const real *scalar, real *y
     int stride = blockDim.x * gridDim.x;
 
     for (int i = start; i < N; i += stride) {
-        y[i] = cuExp(x[i] - scalar[i / size]);
+        y[i] = CuMath::cuExp(x[i] - scalar[i / size]);
     }
 }
 
 template <typename T>
 struct SoftmaxSumOp {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init() {
-        return T(0);
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
+		return T(0);
+	}
+
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init(T ret, T cur) {
+		return ret + cur;
     }
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(const T &ret, const T &cur) {
-        return ret + cur;
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(T ret1, T ret2) {
+        return ret1 + ret2;
     }
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(const T &ret) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(T ret) {
         return ret;
     }
 };
@@ -160,7 +177,7 @@ __global__ void SoftmaxBackwardDotKernel(const real *y, const real *dy, real *do
     }
 
     if (threaId < 32) {
-        warpSumReduce<blockSize, real>(shared, threaId);
+		warpSumReduce<blockSize, real>(shared, threaId);
     }
 
     if (0 == threaId) {
@@ -180,7 +197,7 @@ __global__ void SoftmaxBackwardKernel(real *dx, const real *y, const real *dy, c
 
 template <typename T>
 void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto device = (GPUDevice*) outout->device();
+    auto device = (GPUDevice*)output->device();
 
     auto x = inputs[0]->data();
     auto y = output->data();
@@ -217,6 +234,12 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 template <typename T>
 void Softmax<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
+
+	auto device = (GPUDevice*)iGradient->device();
+
+	auto dx = iGradient->data();
+	auto y  = output->data();
+	auto dy = outputGradient->data();
 
     int N      = (int)iGradient->shape.size();
     int batch  = (int)iGradient->shape.batch();
@@ -256,7 +279,7 @@ void Softmax<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const 
         SoftmaxBackwardDotKernel<1,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
     } else {
         DEEP8_RUNTIME_ERROR("the block size is error");
-    }
+	}
 
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 

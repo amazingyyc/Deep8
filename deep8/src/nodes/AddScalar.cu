@@ -14,11 +14,11 @@ struct AddScalarOP {
     AddScalarOP(real s): scalar(s) {
     }
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const real &x) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real forward(const real &x) {
 		return x + scalar;
 	}
 
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T backward(const real &x, const real &y, const real &dy) {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real backward(const real &x, const real &y, const real &dy) {
 		return dy;
 	}
 }; 
@@ -70,7 +70,7 @@ void AddScalar<half>::backwardGPU(const std::vector<const Tensor<half>*> &inputs
 
 	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-	UnaryElementWiseBackward<T, AddScalarOP<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, AddScalarOP<T>(scalar), N);
+	UnaryElementWiseBackward<half, AddScalarOP<half>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, AddScalarOP<half>(scalar), N);
 }
 #endif
 

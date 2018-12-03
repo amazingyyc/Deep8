@@ -9,31 +9,10 @@ namespace Deep8 {
 
 template <typename T>
 struct ExpForwardOP {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {}
-};
-
-template <>
-struct ExpForwardOP<float> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float forward(const float &x) {
-		return expf(x);
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T forward(const T &x) {
+		return CuMath::cuExp<T>(x);
 	}
 };
-
-template <>
-struct ExpForwardOP<double> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double forward(const double &x) {
-		return exp(x);
-	}
-};
-
-#ifdef HAVE_HALF
-template <>
-struct ExpForwardOP<half> {
-	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half forward(const half &x) {
-		return hexp(x);
-	}
-};
-#endif
 
 template <typename T>
 struct ExpBackwardOP {
