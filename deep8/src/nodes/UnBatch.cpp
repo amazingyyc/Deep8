@@ -4,7 +4,6 @@ namespace Deep8 {
 
 template <typename T>
 UnBatch<T>::UnBatch(std::vector<Node*> &inputs, size_t o, Shape &shape) : Function<T>(inputs), offset(o) {
-	this->shared      = true;
 	this->outputShape = shape;
 	check();
 }
@@ -15,6 +14,11 @@ void UnBatch<T>::check() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the input size must be 1");
 	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.size() >= offset + this->outputShape.size(), "the shape is error");
+}
+
+template <typename T>
+bool UnBatch<T>::isShared() {
+	return true;
 }
 
 template <typename T>

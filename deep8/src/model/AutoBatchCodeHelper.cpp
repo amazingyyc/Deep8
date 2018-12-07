@@ -84,6 +84,14 @@ void AutoBatchCodeHelper::input2End() {
     inputEnd(2);
 }
 
+void AutoBatchCodeHelper::attachBegin() {
+    oss << underline << "attach" << colon << leftCurly;
+}
+
+void AutoBatchCodeHelper::attachEnd() {
+    oss << rightCurly;
+}
+
 AutoBatchCodeHelper& AutoBatchCodeHelper::operator << (int i) {
     oss << i;
 

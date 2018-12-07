@@ -6,17 +6,10 @@
 namespace Deep8 {
 
 class VariableBase : public Node {
-public:
-	/**
-	 * @brief if will calculate the Gradient of this Variable in Backward process
-	 */
-	bool updateGradient;
-
 protected:
 	explicit VariableBase();
-	explicit VariableBase(bool update);
-	explicit VariableBase(Node* input, bool update);
-	explicit VariableBase(std::vector<Node*> &inputs, bool update);
+	explicit VariableBase(Node* input);
+	explicit VariableBase(std::vector<Node*> &inputs);
 
 public:
 	/**
@@ -64,6 +57,11 @@ public:
 template <typename T>
 class Variable: public VariableBase {
 public:
+	/**
+	 * @brief if will calculate the Gradient of this Variable in Backward process
+	 */
+	bool updateGradient;
+
 	Tensor<T> value;
 	Tensor<T> gradient;
 

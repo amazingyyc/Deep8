@@ -1,4 +1,5 @@
 #include "Linear.h"
+#include "AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
@@ -15,6 +16,61 @@ void Linear<T>::check() {
 
 	this->outputShape = this->inputs[0]->outputShape;
 }
+
+template <typename T>
+int Linear<T>::supportAutoBatch() {
+    return -1;
+}
+
+/**auto batch code*/
+template <typename T>
+size_t Linear<T>::autoBatchCode() {
+    AutoBatchCodeHelper helper;
+
+	// todo: aupport half
+    helper.functionType(FunctionType::Linear);
+	helper.attachBegin();
+	helper.put("a", a);
+	helper.put("b", a);
+	helper.attachEnd();
+
+    return helper.autoBatchCode();
+}
+
+/**
+ * return the inputs[index]'s shape if it is be batched together.
+ * the shapes is the inputs[index]'s shape that will be batched.
+ */
+template <typename T>
+Shape Linear<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+    DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
+
+    /**simple set it to a 1 batch shape*/
+    size_t size = 0;
+
+    for (auto item : shapes) {
+        size += item.size();
+    }
+
+    std::vector<size_t> vec({1});
+    return Shape(1, vec);
+}
+
+/**
+ * return the inputs's index that can be auto batched
+ */
+template <typename T>
+std::vector<size_t> Linear<T>::autoBatchIndexes() {
+    return std::vector<size_t>({ 0 });
+}
+
+/**
+ * clone current node for auto batch
+ */
+template <typename T>
+Node* Linear<T>::autoBatchClone(std::vector<Node*> &inputs) {
+	return new Linear<T>(inputs, a, b);
+} 
 
 template <typename T>
 void Linear<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {

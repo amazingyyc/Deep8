@@ -1,4 +1,5 @@
 #include "Abs.h"
+#include "AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
@@ -28,6 +29,59 @@ void Abs<T>::check() {
 
     this->outputShape = this->inputs[0]->outputShape;
 }
+
+/**
+ * for Unary Function it can be auto bateched but default set it to not support auto-batch
+ */
+template <typename T>
+int Abs<T>::supportAutoBatch() {
+    return -1;
+}
+
+/**auto batch code*/
+template <typename T>
+size_t Abs<T>::autoBatchCode() {
+    AutoBatchCodeHelper helper;
+
+    helper.functionType(FunctionType::Abs);
+
+    return helper.autoBatchCode();
+}
+
+/**
+ * return the inputs[index]'s shape if it is be batched together.
+ * the shapes is the inputs[index]'s shape that will be batched.
+ */
+template <typename T>
+Shape Abs<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+    DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
+
+    /**simple set it to a 1 batch shape*/
+    size_t size = 0;
+
+    for (auto item : shapes) {
+        size += item.size();
+    }
+
+    std::vector<size_t> vec({1});
+    return Shape(1, vec);
+}
+
+/**
+ * return the inputs's index that can be auto batched
+ */
+template <typename T>
+std::vector<size_t> Abs<T>::autoBatchIndexes() {
+    return std::vector<size_t>({ 0 });
+}
+
+/**
+ * clone current node for auto batch
+ */
+template <typename T>
+Node* Abs<T>::autoBatchClone(std::vector<Node*> &inputs) {
+    return new Abs<T>(inputs);
+} 
 
 template <typename T>
 void Abs<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output)  {

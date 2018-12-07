@@ -12,6 +12,28 @@ public:
 
 	void check() override;
 
+	/**if support the auto batch*/
+	int supportAutoBatch() override;
+
+	 /**auto batch code*/
+	 size_t autoBatchCode() override;
+
+	 /**
+	  * return the inputs[index]'s shape if it is be batched together.
+	  * the shapes is the inputs[index]'s shape that will be batched.
+	  */
+	 Shape autoBatchShape(size_t index, std::vector<Shape> &shapes) override;
+
+	 /**
+	  * return the inputs's index that can be auto batched
+	  */
+	 std::vector<size_t> autoBatchIndexes() override;
+
+	 /**
+	  * clone current node for auto batch
+	  */
+	 Node* autoBatchClone(std::vector<Node*> &) override; 
+	 
 protected:
 	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,

@@ -2,15 +2,19 @@
 
 namespace Deep8 {
 
-FunctionBase::FunctionBase(): Node(), shared(false) {
+FunctionBase::FunctionBase(): Node() {
 	this->type = NodeType::Function;
 }
 
-FunctionBase::FunctionBase(std::vector<Node*> &inputs): Node(inputs), shared(false) {
+FunctionBase::FunctionBase(std::vector<Node*> &inputs): Node(inputs) {
 	this->type = NodeType::Function;
 }
 
 void FunctionBase::check() {
+}
+
+bool FunctionBase::isShared() {
+	return false;
 }
 
 void FunctionBase::forward() {

@@ -74,7 +74,7 @@ int64_t Executor<T>::generateNodeId() {
 
 template <typename T>
 Variable<T>* Executor<T>::createVariableWithFunction(FunctionBase *func) {
-	if (func->shared) {
+	if (func->isShared()) {
 		auto variable = new Variable<T>(func, func->outputShape);
 
 		return variable;

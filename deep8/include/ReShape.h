@@ -13,6 +13,8 @@ public:
 
 	void check() override;
 
+    bool isShared() override;
+    
 protected:
     void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
 

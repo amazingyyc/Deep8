@@ -1,4 +1,5 @@
 #include "Tanh.h"
+#include "AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
@@ -28,6 +29,56 @@ void Tanh<T>::check() {
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Tanh Function needs only 1 input");
 
 	this->outputShape = this->inputs[0]->outputShape;
+}
+
+template <typename T>
+int Tanh<T>::supportAutoBatch() {
+    return -1;
+}
+
+/**auto batch code*/
+template <typename T>
+size_t Tanh<T>::autoBatchCode() {
+    AutoBatchCodeHelper helper;
+
+    helper.functionType(FunctionType::Tanh);
+
+    return helper.autoBatchCode();
+}
+
+/**
+ * return the inputs[index]'s shape if it is be batched together.
+ * the shapes is the inputs[index]'s shape that will be batched.
+ */
+template <typename T>
+Shape Tanh<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+    DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
+
+    /**simple set it to a 1 batch shape*/
+    size_t size = 0;
+
+    for (auto item : shapes) {
+        size += item.size();
+    }
+
+    std::vector<size_t> vec({1});
+    return Shape(1, vec);
+}
+
+/**
+ * return the inputs's index that can be auto batched
+ */
+template <typename T>
+std::vector<size_t> Tanh<T>::autoBatchIndexes() {
+    return std::vector<size_t>({ 0 });
+}
+
+/**
+ * clone current node for auto batch
+ */
+template <typename T>
+Node* Tanh<T>::autoBatchClone(std::vector<Node*> &inputs) {
+	return new Tanh<T>(inputs);
 }
 
 template <typename T>
