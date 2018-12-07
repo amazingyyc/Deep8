@@ -34,7 +34,7 @@ void Batch<T>::forward() {
 
 	/**
 	 * 2 condition the continuous is true
-	 * 1: all inputs's updateGradient is false, the the inputs value,s memory is continuous
+	 * 1: all inputs's updateGradient is false, the the inputs value's memory is continuous
 	 * 2: all inputs's updateGradient is true, the inpus value and gradient's memory is continuous
 	 */
 	bool allUpdateGradient = true;
@@ -107,9 +107,8 @@ void Batch<T>::forward() {
 			y->gradient.offset  = x->gradient.offset;
 			y->gradient.shape   = this->outputShape;
 		} else {
-			/**set the output gradient is empty*/
-			TensorStorage emptyStorage;
-			y->gradient.storage = emptyStorage;
+			/**release the gradient memory*/
+			y->releaseGradient();
 		}
 	} else {
 		/**copy the inputs memory to output*/
@@ -210,6 +209,8 @@ void Batch<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T>
 
 template <typename T>
 void Batch<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
+	DEEP8_ARGUMENT_CHECK(0 <= index && index < inputs.size(), "the index is error");
+
 	auto device = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
 
 	size_t offset = 0;

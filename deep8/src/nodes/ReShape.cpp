@@ -66,8 +66,7 @@ void ReShape<T>::forward() {
 		y->gradient.shape   = this->outputShape;
 	} else {
 		/**set the output gradient is empty*/
-		TensorStorage emptyStorage;
-		y->gradient.storage = emptyStorage;
+		y->releaseGradient();
 	}
 }
 

@@ -85,6 +85,22 @@ void Function<T>::forward() {
 		DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif
 	}
+
+	/**if all inputs's updateGradient is false than set the output's updateGradient is false and releae the memory*/
+	bool updateGradient = false;
+	for (auto item : this->inputs) {
+		auto var = static_cast<Variable<T>*>(item);
+
+		if (var->updateGradient) {
+			updateGradient = true;
+			break;
+		}
+	}
+
+	if (!updateGradient) {
+		outputVar->releaseGradient();
+		outputVar->updateGradient = false;
+	}
 }
 
 template <typename T>

@@ -35,7 +35,7 @@ void Batch<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Te
 		offset += sizeof(T) * inputs[i]->size();
 	}
 
-	auto x  = inputs[0]->data();
+	auto x  = inputs[index]->data();
 	auto dx = iGradient->data();
 	auto y  = (T*)((byte*)(output->raw()) + offset);
 	auto dy = (T*)((byte*)(outputGradient->raw()) + offset);

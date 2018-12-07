@@ -30,6 +30,9 @@ public:
 	 */
 	virtual void zeroGradient() = 0;
 
+	/**release the gradient*/
+	virtual void releaseGradient() = 0;
+
 	/**
 	 * get the device type
 	 */
@@ -82,6 +85,9 @@ public:
 	 * set the Gradient to be 0
 	 */
 	void zeroGradient() override;
+
+	/**release the gradient*/
+	void releaseGradient() override;
 
 	/**
 	 * get the device type

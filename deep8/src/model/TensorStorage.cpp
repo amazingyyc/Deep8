@@ -53,6 +53,18 @@ TensorStorage& TensorStorage::operator=(const TensorStorage &other) {
 	return *this;
 }
 
+/**release the reference to current memory*/
+void TensorStorage::release() {
+	if (nullptr != refPtr) {
+		(*refPtr)--;
+
+		if (0 == (*refPtr)) {
+			free();
+		}
+	}
+}
+
+
 void TensorStorage::free() {
 	if (DeviceType::CPU == device->type) {
 		device->free(ptr);

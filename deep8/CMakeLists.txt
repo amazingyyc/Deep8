@@ -122,9 +122,6 @@ if (HAVE_GPU AND HAVE_CUDA)
 
 	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_CUDA_HEAD_FILES})
 
-	# add cuBlas library
-	cuda_add_cublas_to_target(deep8_native)
-
 	# link the gtest and CUDA library
 	target_link_libraries(deep8_native ${CUDA_LIBRARIES})
 else()

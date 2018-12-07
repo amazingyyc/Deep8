@@ -23,6 +23,9 @@ public:
 	virtual size_t col()   const  = 0;
 
 	virtual size_t dim(size_t d) const  = 0;
+
+	/**release the storage*/
+	virtual void release() = 0;
 };
 
 /**
@@ -74,6 +77,9 @@ public:
 	size_t row() const override;
 	size_t col() const override;
 	size_t dim(size_t d) const override;
+
+	/**release the storage*/
+	void release() override;
 
 	T scalar();
 

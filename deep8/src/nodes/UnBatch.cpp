@@ -56,9 +56,8 @@ void UnBatch<T>::forward() {
 		y->gradient.offset  = x->gradient.offset + sizeof(T) * offset;
 		y->gradient.shape   = this->outputShape;
 	} else {
-		/**set the output gradient is empty*/
-		TensorStorage emptyStorage;
-		y->gradient.storage = emptyStorage;
+		/**set the output gradient is empty to save the memory*/
+		y->releaseGradient();
 	}
 }
 

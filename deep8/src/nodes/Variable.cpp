@@ -85,6 +85,12 @@ void Variable<T>::zeroGradient() {
 	}
 }
 
+/**release the gradient*/
+template <typename T>
+void Variable<T>::releaseGradient() {
+	this->gradient.release();
+}
+
 /**
  * get the device type
  */

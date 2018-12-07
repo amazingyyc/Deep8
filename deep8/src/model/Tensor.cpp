@@ -110,6 +110,12 @@ size_t Tensor<T>::dim(size_t d) const {
 	return shape.dim(d);
 }
 
+/**release the storage*/
+template<typename T>
+void Tensor<T>::release() {
+	storage.release();
+}
+
 template<typename T>
 T Tensor<T>::scalar() {
 	DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor must be a scalar");
