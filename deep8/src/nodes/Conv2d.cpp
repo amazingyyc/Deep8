@@ -19,44 +19,44 @@ void Conv2d<T>::check() {
     auto inputShape  = this->inputs[0]->outputShape;
     auto filterShape = this->inputs[1]->outputShape;
 
-    DEEP8_ARGUMENT_CHECK(4 == inputShape.nDims() && 4 == filterShape.nDims(),
-                         "Conv2d needs inputs nDims is 4");
-    DEEP8_ARGUMENT_CHECK(inputShape.dim(3) == filterShape.dim(3), "the inputs dimension is error");
+    DEEP8_ARGUMENT_CHECK(3 == inputShape.nDims, "Conv2d needs inputs nDims is 3");
+    DEEP8_ARGUMENT_CHECK(4 == filterShape.nDims && 1 == filterShape.batch, "Conv2d needs filter nDims is 4, the batch must be 1");
+
+    DEEP8_ARGUMENT_CHECK(inputShape.dim(2) == filterShape.dim(3), "the inputs dimension is error");
     DEEP8_ARGUMENT_CHECK(filterShape.dim(1) > 0 && filterShape.dim(2) > 0,
-                         "the filter must bigger than 0");
+                         "the filter width and height must bigger than 0");
 
     if (!covered) {
         DEEP8_ARGUMENT_CHECK(
-                filterShape.dim(1) <= inputShape.dim(1) && filterShape.dim(2) <= inputShape.dim(2),
+                filterShape.dim(1) <= inputShape.dim(0) && filterShape.dim(2) <= inputShape.dim(1),
                 "the not forwardCovered mode Padding type needs filter smaller than input");
     }
 
     auto filterH = static_cast<int64_t>(filterShape.dim(1));
     auto filterW = static_cast<int64_t>(filterShape.dim(2));
 
-    auto inputH = static_cast<int64_t>(inputShape.dim(1));
-    auto inputW = static_cast<int64_t>(inputShape.dim(2));
+    auto inputH = static_cast<int64_t>(inputShape.dim(0));
+    auto inputW = static_cast<int64_t>(inputShape.dim(1));
 
     auto realFilterH = filterH + (filterH - 1) * (static_cast<int64_t>(dilationY) - 1);
     auto realFilterW = filterW + (filterW - 1) * (static_cast<int64_t>(dilationX) - 1);
 
-    std::vector<size_t> outputDim(4);
-    outputDim[0] = inputShape.dim(0);
-    outputDim[3] = filterShape.dim(0);
+    std::vector<size_t> outputDim(3);
+    outputDim[2] = filterShape.dim(0);
 
-/**
- * the input dimension is (batch, inputHeight, inputWidth, inputChannel)
- * filter dimension is (outputChannel, filterHeight, filterWidth, inputChannel)
- * output dimension is (batch, outputHeight, outputWidth, outputChannel)
- */
+    /**
+     * the input dimension is (batch, inputHeight, inputWidth, inputChannel)
+     * filter dimension is (outputChannel, filterHeight, filterWidth, inputChannel)
+     * output dimension is (batch, outputHeight, outputWidth, outputChannel)
+     */
     if (!covered) {
         int64_t outputH = (inputH - realFilterH) / static_cast<int64_t>(strideY) + 1;
         int64_t outputW = (inputW - realFilterW) / static_cast<int64_t>(strideX) + 1;
 
         DEEP8_ARGUMENT_CHECK(outputH > 0 && outputW > 0, "the output height or width must > 0")
 
-        outputDim[1] = static_cast<size_t>(outputH);
-        outputDim[2] = static_cast<size_t>(outputW);
+        outputDim[0] = static_cast<size_t>(outputH);
+        outputDim[1] = static_cast<size_t>(outputW);
     } else {
         int64_t outputH = (inputH - realFilterH + static_cast<int64_t>(strideY) - 1) /
                           static_cast<int64_t>(strideY) + 1;
@@ -65,11 +65,11 @@ void Conv2d<T>::check() {
 
         DEEP8_ARGUMENT_CHECK(outputH > 0 && outputW > 0, "the output height or width must > 0")
 
-        outputDim[1] = static_cast<size_t>(outputH);
-        outputDim[2] = static_cast<size_t>(outputW);
+        outputDim[0] = static_cast<size_t>(outputH);
+        outputDim[1] = static_cast<size_t>(outputW);
     }
 
-    this->outputShape = Shape(outputDim);
+    this->outputShape = Shape(inputShape.batch, outputDim);
 }
 
 template <typename T>
@@ -83,21 +83,21 @@ void Conv2d<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 
     auto device = static_cast<CPUDevice *>(output->device())->eigenDevice;
 
-    auto input = inputs[0];
+    auto input  = inputs[0];
     auto filter = inputs[1];
 
-    auto batch = (TensorIndex) input->shape.batch();
+    auto batch = (TensorIndex) input->shape.batch;
 
-    auto inputHeight = (TensorIndex) input->shape.dim(1);
-    auto inputWidth = (TensorIndex) input->shape.dim(2);
-    auto inputChannel = (TensorIndex) input->shape.dim(3);
+    auto inputHeight  = (TensorIndex) input->shape.dim(0);
+    auto inputWidth   = (TensorIndex) input->shape.dim(1);
+    auto inputChannel = (TensorIndex) input->shape.dim(2);
 
-    auto outputHeight = (TensorIndex) output->shape.dim(1);
-    auto outputWidth = (TensorIndex) output->shape.dim(2);
-    auto outputChannel = (TensorIndex) output->shape.dim(3);
+    auto outputHeight  = (TensorIndex) output->shape.dim(0);
+    auto outputWidth   = (TensorIndex) output->shape.dim(1);
+    auto outputChannel = (TensorIndex) output->shape.dim(2);
 
     auto filterHeight = (TensorIndex) filter->shape.dim(1);
-    auto filterWidth = (TensorIndex) filter->shape.dim(2);
+    auto filterWidth  = (TensorIndex) filter->shape.dim(2);
 
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
             inputTensor(input->data(), batch, inputHeight, inputWidth, inputChannel);
@@ -115,7 +115,7 @@ void Conv2d<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
     Eigen::DSizes<TensorIndex, 2> shuffleDims;
     shuffleDims[0] = 1;
     shuffleDims[1] = 0;
-
+ 
     Eigen::array<Eigen::IndexPair<TensorIndex>, 1> contractDims;
     contractDims[0] = Eigen::IndexPair<TensorIndex>(1, 0);
 
@@ -131,10 +131,10 @@ void Conv2d<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
     auto padX = std::max<TensorIndex>(0, (outputWidth - 1) * (TensorIndex) (strideX) +
                                          realFilterWidth - inputWidth);
 
-    auto padTop = padY / 2;
+    auto padTop    = padY / 2;
     auto padBottom = padY - padTop;
-    auto padLeft = padX / 2;
-    auto padRight = padX - padLeft;
+    auto padLeft   = padX / 2;
+    auto padRight  = padX - padLeft;
 
     outputTensor.device(*device) = inputTensor.extract_image_patches(filterWidth, filterHeight,
                                                                      strideX, strideY, dilationX,
@@ -158,22 +158,22 @@ void Conv2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 
     auto device = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
 
-    auto inputShape = inputs[0]->shape;
+    auto inputShape  = inputs[0]->shape;
     auto filterShape = inputs[1]->shape;
     auto outputShape = output->shape;
 
-    auto batch = (TensorIndex) inputShape.batch();
+    auto batch = (TensorIndex) inputShape.batch;
 
-    auto inputHeight = (TensorIndex) inputShape.dim(1);
-    auto inputWidth = (TensorIndex) inputShape.dim(2);
-    auto inputChannel = (TensorIndex) inputShape.dim(3);
+    auto inputHeight  = (TensorIndex) inputShape.dim(0);
+    auto inputWidth   = (TensorIndex) inputShape.dim(1);
+    auto inputChannel = (TensorIndex) inputShape.dim(2);
 
-    auto outputHeight = (TensorIndex) outputShape.dim(1);
-    auto outputWidth = (TensorIndex) outputShape.dim(2);
-    auto outputChannel = (TensorIndex) outputShape.dim(3);
+    auto outputHeight  = (TensorIndex) outputShape.dim(0);
+    auto outputWidth   = (TensorIndex) outputShape.dim(1);
+    auto outputChannel = (TensorIndex) outputShape.dim(2);
 
     auto filterHeight = (TensorIndex) filterShape.dim(1);
-    auto filterWidth = (TensorIndex) filterShape.dim(2);
+    auto filterWidth  = (TensorIndex) filterShape.dim(2);
 
     if (0 == index) {
         /**

@@ -13,28 +13,28 @@ void MatrixMultiply<float>::forwardGPUImpl(Device *d, const float *A, const Shap
 	float alpha = 1;
 	float beta  = 0;
 
-	if (1 == bShape.batch()) {
-		int m = aShape.batch() *aShape.row();
+	if (1 == bShape.batch) {
+		int m = aShape.batch *aShape.row();
 		int n = bShape.col();
 		int k = aShape.col();
 
 		CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, B, n, A, k, &beta, C, n));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int row = aShape.row();
 		int col = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, row, b, col, &alpha, A, col, B, col, &beta, C, row));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto ABatch = A + (b % aShape.batch()) * aShape.batchSize();
-			auto BBatch = B + (b % bShape.batch()) * bShape.batchSize();
-			auto CBatch = C + (b % cShape.batch()) * cShape.batchSize();
+			auto ABatch = A + (b % aShape.batch) * aShape.batchSize();
+			auto BBatch = B + (b % bShape.batch) * bShape.batchSize();
+			auto CBatch = C + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, BBatch, n, ABatch, k, &beta, CBatch, n));
 		}
@@ -48,28 +48,28 @@ void MatrixMultiply<double>::forwardGPUImpl(Device* d, const double *A, const Sh
 	double alpha = 1;
 	double beta = 0;
 
-	if (1 == bShape.batch()) {
-		int m = aShape.batch() *aShape.row();
+	if (1 == bShape.batch) {
+		int m = aShape.batch *aShape.row();
 		int n = bShape.col();
 		int k = aShape.col();
 
 		CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, B, n, A, k, &beta, C, n));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int row = aShape.row();
 		int col = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, row, b, col, &alpha, A, col, B, col, &beta, C, row));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto aPtr = A + (b % aShape.batch()) * aShape.batchSize();
-			auto bPtr = B + (b % bShape.batch()) * bShape.batchSize();
-			auto cPtr = C + (b % cShape.batch()) * cShape.batchSize();
+			auto aPtr = A + (b % aShape.batch) * aShape.batchSize();
+			auto bPtr = B + (b % bShape.batch) * bShape.batchSize();
+			auto cPtr = C + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, bPtr, n, aPtr, k, &beta, cPtr, n));
 		}
@@ -85,28 +85,28 @@ void MatrixMultiply<half>::forwardGPUImpl(Device* d, const half *A, const Shape 
 	half alpha = 1.0;
 	half beta = 0.0;
 
-	if (1 == bShape.batch()) {
-		int m = aShape.batch() *aShape.row();
+	if (1 == bShape.batch) {
+		int m = aShape.batch *aShape.row();
 		int n = bShape.col();
 		int k = aShape.col();
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, B, n, A, k, &beta, C, n));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int row = aShape.row();
 		int col = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, row, b, col, &alpha, A, col, B, col, &beta, C, row));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto ABatch = A + (b % aShape.batch()) * aShape.batchSize();
-			auto BBatch = B + (b % bShape.batch()) * bShape.batchSize();
-			auto CBatch = C + (b % cShape.batch()) * cShape.batchSize();
+			auto ABatch = A + (b % aShape.batch) * aShape.batchSize();
+			auto BBatch = B + (b % bShape.batch) * bShape.batchSize();
+			auto CBatch = C + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, BBatch, n, ABatch, k, &beta, CBatch, n));
 		}
@@ -126,29 +126,29 @@ void MatrixMultiply<float>::backwardGPUImpl0(Device* d, float *aGrad, const Shap
 	float alpha = 1;
 	float beta = 1;
 
-	if (1 == bShape.batch()) {
-		int b = aShape.batch();
+	if (1 == bShape.batch) {
+		int b = aShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, b * m, n, &alpha, B, n, cGrad, n, &beta, aGrad, k));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int m = aShape.row();
 		int k = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, k, m, b, &alpha, B, k, cGrad, m, &beta, aGrad, k));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto aGradPtr = aGrad + (b % aShape.batch()) * aShape.batchSize();
-			auto bPtr = B + (b % bShape.batch()) * bShape.batchSize();
-			auto cGradPtr = cGrad + (b % cShape.batch()) * cShape.batchSize();
+			auto aGradPtr = aGrad + (b % aShape.batch) * aShape.batchSize();
+			auto bPtr     = B + (b % bShape.batch) * bShape.batchSize();
+			auto cGradPtr = cGrad + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, m, n, &alpha, bPtr, n, cGradPtr, n, &beta, aGradPtr, k));
 		}
@@ -162,29 +162,29 @@ void MatrixMultiply<double>::backwardGPUImpl0(Device* d, double *aGrad, const Sh
 	double alpha = 1;
 	double beta = 1;
 
-	if (1 == bShape.batch()) {
-		int b = aShape.batch();
+	if (1 == bShape.batch) {
+		int b = aShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, b * m, n, &alpha, B, n, cGrad, n, &beta, aGrad, k));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int m = aShape.row();
 		int k = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, k, m, b, &alpha, B, k, cGrad, m, &beta, aGrad, k));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto aGradPtr = aGrad + (b % aShape.batch()) * aShape.batchSize();
-			auto bPtr = B + (b % bShape.batch()) * bShape.batchSize();
-			auto cGradPtr = cGrad + (b % cShape.batch()) * cShape.batchSize();
+			auto aGradPtr = aGrad + (b % aShape.batch) * aShape.batchSize();
+			auto bPtr     = B + (b % bShape.batch) * bShape.batchSize();
+			auto cGradPtr = cGrad + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, m, n, &alpha, bPtr, n, cGradPtr, n, &beta, aGradPtr, k));
 		}
@@ -199,29 +199,29 @@ void MatrixMultiply<half>::backwardGPUImpl0(Device* d, half *aGrad, const Shape 
 	half alpha = 1.0;
 	half beta = 1.0;
 
-	if (1 == bShape.batch()) {
-		int b = aShape.batch();
+	if (1 == bShape.batch) {
+		int b = aShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, b * m, n, &alpha, B, n, cGrad, n, &beta, aGrad, k));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int m = aShape.row();
 		int k = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, k, m, b, &alpha, B, k, cGrad, m, &beta, aGrad, k));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto aGradPtr = aGrad + (b % aShape.batch()) * aShape.batchSize();
-			auto bPtr = B + (b % bShape.batch()) * bShape.batchSize();
-			auto cGradPtr = cGrad + (b % cShape.batch()) * cShape.batchSize();
+			auto aGradPtr = aGrad + (b % aShape.batch) * aShape.batchSize();
+			auto bPtr     = B + (b % bShape.batch * bShape.batchSize();
+			auto cGradPtr = cGrad + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, m, n, &alpha, bPtr, n, cGradPtr, n, &beta, aGradPtr, k));
 		}
@@ -236,29 +236,29 @@ void MatrixMultiply<float>::backwardGPUImpl1(Device* d, const float *A, const Sh
 	float alpha = 1;
 	float beta = 1;
 
-	if (1 == bShape.batch()) {
-		int b = aShape.batch();
+	if (1 == bShape.batch) {
+		int b = aShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m * b, &alpha, cGrad, n, A, k, &beta, bGrad, n));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int m = aShape.row();
 		int k = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, k, b, m, &alpha, A, k, cGrad, m, &beta, bGrad, k));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto aPtr = A + (b % aShape.batch()) * aShape.batchSize();
-			auto bGradPtr = bGrad + (b % bShape.batch()) * bShape.batchSize();
-			auto cGradPtr = cGrad + (b % cShape.batch()) * cShape.batchSize();
+			auto aPtr = A + (b % aShape.batch) * aShape.batchSize();
+			auto bGradPtr = bGrad + (b % bShape.batch) * bShape.batchSize();
+			auto cGradPtr = cGrad + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m, &alpha, cGradPtr, n, aPtr, k, &beta, bGradPtr, n));
 		}
@@ -272,29 +272,29 @@ void MatrixMultiply<double>::backwardGPUImpl1(Device* d, const double *A, const 
 	double alpha = 1;
 	double beta = 1;
 
-	if (1 == bShape.batch()) {
-		int b = aShape.batch();
+	if (1 == bShape.batch) {
+		int b = aShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m * b, &alpha, cGrad, n, A, k, &beta, bGrad, n));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int m = aShape.row();
 		int k = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, k, b, m, &alpha, A, k, cGrad, m, &beta, bGrad, k));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto aPtr = A + (b % aShape.batch()) * aShape.batchSize();
-			auto bGradPtr = bGrad + (b % bShape.batch()) * bShape.batchSize();
-			auto cGradPtr = cGrad + (b % cShape.batch()) * cShape.batchSize();
+			auto aPtr = A + (b % aShape.batch) * aShape.batchSize();
+			auto bGradPtr = bGrad + (b % bShape.batch) * bShape.batchSize();
+			auto cGradPtr = cGrad + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m, &alpha, cGradPtr, n, aPtr, k, &beta, bGradPtr, n));
 		}
@@ -309,29 +309,29 @@ void MatrixMultiply<half>::backwardGPUImpl1(Device* d, const half *A, const Shap
 	half alpha = 1.0;
 	half beta = 1.0;
 
-	if (1 == bShape.batch()) {
-		int b = aShape.batch();
+	if (1 == bShape.batch) {
+		int b = aShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m * b, &alpha, cGrad, n, A, k, &beta, bGrad, n));
-	} else if (1 == aShape.batch() && 1 == bShape.col()) {
+	} else if (1 == aShape.batch && 1 == bShape.col()) {
 		int m = aShape.row();
 		int k = aShape.col();
-		int b = bShape.batch();
+		int b = bShape.batch;
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, k, b, m, &alpha, A, k, cGrad, m, &beta, bGrad, k));
 	} else {
-		int batch = cShape.batch();
+		int batch = cShape.batch;
 		int m = aShape.row();
 		int k = aShape.col();
 		int n = bShape.col();
 
 		for (int b = 0; b < batch; ++b) {
-			auto aPtr = A + (b % aShape.batch()) * aShape.batchSize();
-			auto bGradPtr = bGrad + (b % bShape.batch()) * bShape.batchSize();
-			auto cGradPtr = cGrad + (b % cShape.batch()) * cShape.batchSize();
+			auto aPtr = A + (b % aShape.batch) * aShape.batchSize();
+			auto bGradPtr = bGrad + (b % bShape.batch) * bShape.batchSize();
+			auto cGradPtr = cGrad + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m, &alpha, cGradPtr, n, aPtr, k, &beta, bGradPtr, n));
 		}

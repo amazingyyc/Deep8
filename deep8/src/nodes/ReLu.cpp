@@ -56,8 +56,7 @@ Shape ReLu<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
         size += item.size();
     }
 
-    std::vector<size_t> vec({1});
-    return Shape(1, vec);
+    return Shape({ size });
 }
 
 /**

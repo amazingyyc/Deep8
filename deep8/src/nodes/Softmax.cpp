@@ -12,7 +12,7 @@ void Softmax<T>::check() {
 	Function<T>::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Softmax Function needs only 1 input");
-	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.nDims() >= 2, "the input dimension must be >= 2");
+	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.nDims >= 2, "the input dimension must be >= 2");
 
 	this->outputShape = this->inputs[0]->outputShape;
 }
@@ -24,8 +24,8 @@ void Softmax<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 
 	auto shape = output->shape;
 
-	auto batch = (int)shape.batch();
-	auto size = (int)shape.batchSize();
+	auto batch = (int)shape.batch;
+	auto size  = (int)shape.batchSize();
 
 	auto tempPtr = (T*)cpuDevice->malloc(sizeof(T) * batch);
 
@@ -58,7 +58,7 @@ void Softmax<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 
 	auto shape = outputGradient->shape;
 
-	auto batch = (int)shape.batch();
+	auto batch = (int)shape.batch;
 	auto size = (int)shape.batchSize();
 
 	Eigen::array<int, 1> sumDims = { 1 };

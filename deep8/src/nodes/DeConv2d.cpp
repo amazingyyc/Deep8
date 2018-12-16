@@ -18,33 +18,32 @@ void DeConv2d<T>::check() {
     auto inputShape  = this->inputs[0]->outputShape;
     auto filterShape = this->inputs[1]->outputShape;
 
-    DEEP8_ARGUMENT_CHECK(4 == inputShape.nDims() && 4 == filterShape.nDims(),
-                         "DeConv2d needs inputs nDims is 4");
-    DEEP8_ARGUMENT_CHECK(inputShape.dim(3) == filterShape.dim(3), "the inputs dimension is error");
-    DEEP8_ARGUMENT_CHECK(filterShape.dim(1) > 0 && filterShape.dim(2) > 0,
-                         "the filter must bigger than 0");
+    DEEP8_ARGUMENT_CHECK(3 == inputShape.nDims, "Conv2d needs inputs nDims is 3");
+    DEEP8_ARGUMENT_CHECK(4 == filterShape.nDims && 1 == filterShape.batch, "Conv2d needs filter nDims is 4, the batch must be 1");
+
+    DEEP8_ARGUMENT_CHECK(inputShape.dim(2) == filterShape.dim(3), "the inputs dimension is error");
+    DEEP8_ARGUMENT_CHECK(filterShape.dim(1) > 0 && filterShape.dim(2) > 0, "the filter must bigger than 0");
 
     auto filterH = static_cast<int64_t>(filterShape.dim(1));
     auto filterW = static_cast<int64_t>(filterShape.dim(2));
 
-    auto inputH = static_cast<int64_t>(inputShape.dim(1));
-    auto inputW = static_cast<int64_t>(inputShape.dim(2));
+    auto inputH = static_cast<int64_t>(inputShape.dim(0));
+    auto inputW = static_cast<int64_t>(inputShape.dim(1));
 
-    std::vector<size_t> outputDim(4);
-    outputDim[0] = inputShape.dim(0);
-    outputDim[3] = filterShape.dim(0);
+    std::vector<size_t> outputDim(3);
+    outputDim[2] = filterShape.dim(0);
 
-/**
- * calculate the output dimension is the reverse of the forward Conv2d
- */
+    /**
+     * calculate the output dimension is the reverse of the forward Conv2d
+     */
     if (!forwardCovered) {
         int64_t outputH = (inputH - 1) * static_cast<int64_t>(forwardStrideY) + filterH;
         int64_t outputW = (inputW - 1) * static_cast<int64_t>(forwardStrideX) + filterW;
 
         DEEP8_ARGUMENT_CHECK(outputH > 0 && outputW > 0, "the output height/width must > 0")
 
-        outputDim[1] = static_cast<size_t>(outputH);
-        outputDim[2] = static_cast<size_t>(outputW);
+        outputDim[0] = static_cast<size_t>(outputH);
+        outputDim[1] = static_cast<size_t>(outputW);
     } else {
         int64_t outputH = (inputH - 1) * static_cast<int64_t>(forwardStrideY) + 1 -
                           static_cast<int64_t>(forwardStrideY) + filterH;
@@ -53,11 +52,11 @@ void DeConv2d<T>::check() {
 
         DEEP8_ARGUMENT_CHECK(outputH > 0 && outputW > 0, "the output height/width must > 0")
 
-        outputDim[1] = static_cast<size_t>(outputH);
-        outputDim[2] = static_cast<size_t>(outputW);
+        outputDim[0] = static_cast<size_t>(outputH);
+        outputDim[1] = static_cast<size_t>(outputW);
     }
 
-    this->outputShape = Shape(outputDim);
+    this->outputShape = Shape(inputShape.batch, outputDim);
 }
 
 template <typename T>
@@ -69,18 +68,18 @@ void DeConv2d<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor
     auto input = inputs[0];
     auto filter = inputs[1];
 
-    auto batch = (TensorIndex) input->shape.batch();
+    auto batch = (TensorIndex) input->shape.batch;
 
-    auto inputHeight = (TensorIndex) input->shape.dim(1);
-    auto inputWidth = (TensorIndex) input->shape.dim(2);
-    auto inputChannel = (TensorIndex) input->shape.dim(3);
+    auto inputHeight  = (TensorIndex) input->shape.dim(0);
+    auto inputWidth   = (TensorIndex) input->shape.dim(1);
+    auto inputChannel = (TensorIndex) input->shape.dim(2);
 
-    auto outputHeight = (TensorIndex) output->shape.dim(1);
-    auto outputWidth = (TensorIndex) output->shape.dim(2);
-    auto outputChannel = (TensorIndex) output->shape.dim(3);
+    auto outputHeight  = (TensorIndex) output->shape.dim(0);
+    auto outputWidth   = (TensorIndex) output->shape.dim(1);
+    auto outputChannel = (TensorIndex) output->shape.dim(2);
 
     auto filterHeight = (TensorIndex) filter->shape.dim(1);
-    auto filterWidth = (TensorIndex) filter->shape.dim(2);
+    auto filterWidth  = (TensorIndex) filter->shape.dim(2);
 
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
             inputTensor(input->data(), batch, inputHeight, inputWidth, inputChannel);
@@ -138,18 +137,18 @@ void DeConv2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 
     auto device = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
 
-    auto batch = (TensorIndex) inputs[0]->shape.batch();
+    auto batch = (TensorIndex) inputs[0]->shape.batch;
 
-    auto inputHeight = (TensorIndex) inputs[0]->shape.dim(1);
-    auto inputWidth = (TensorIndex) inputs[0]->shape.dim(2);
-    auto inputChannel = (TensorIndex) inputs[0]->shape.dim(3);
+    auto inputHeight = (TensorIndex) inputs[0]->shape.dim(0);
+    auto inputWidth  = (TensorIndex) inputs[0]->shape.dim(1);
+    auto inputChannel = (TensorIndex) inputs[0]->shape.dim(2);
 
-    auto outputHeight = (TensorIndex) output->shape.dim(1);
-    auto outputWidth = (TensorIndex) output->shape.dim(2);
-    auto outputChannel = (TensorIndex) output->shape.dim(3);
+    auto outputHeight = (TensorIndex) output->shape.dim(0);
+    auto outputWidth  = (TensorIndex) output->shape.dim(1);
+    auto outputChannel = (TensorIndex) output->shape.dim(2);
 
     auto filterHeight = (TensorIndex) inputs[1]->shape.dim(1);
-    auto filterWidth = (TensorIndex) inputs[1]->shape.dim(2);
+    auto filterWidth  = (TensorIndex) inputs[1]->shape.dim(2);
 
     if (0 == index) {
 /**

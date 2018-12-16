@@ -11,8 +11,6 @@ public:
     explicit ReShape(std::vector<Node *> &inputs, Shape &shape);
     explicit ReShape(std::vector<Node *> &inputs, std::vector<size_t> &shape);
 
-	void check() override;
-
     bool isShared() override;
     
 protected:

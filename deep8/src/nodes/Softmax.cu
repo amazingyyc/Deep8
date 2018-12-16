@@ -203,7 +203,7 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
     auto y = output->data();
 
     int N      = (int)output->shape.size();
-    int batch  = (int)output->shape.batch();
+    int batch  = (int)output->shape.batch;
     int size   = N / batch;
 
     int blockSize = 1024;
@@ -242,7 +242,7 @@ void Softmax<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const 
 	auto dy = outputGradient->data();
 
     int N      = (int)iGradient->shape.size();
-    int batch  = (int)iGradient->shape.batch();
+    int batch  = (int)iGradient->shape.batch;
     int size   = N / batch;
 
     int blockSize = 1024;

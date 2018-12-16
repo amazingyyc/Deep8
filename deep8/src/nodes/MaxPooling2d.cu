@@ -26,11 +26,11 @@ void MaxPooling2d<float>::forwardGPUCUDNNImpl(Device *d, const float *x, const S
 
     cudnnTensorDescriptor_t xDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t yDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     CUDNN_CHECK(cudnnPoolingForward(device->cudnnHandle, poolingDesc, &alpha, xDesc, x, &beta, yDesc, y));
 
@@ -56,11 +56,11 @@ void MaxPooling2d<double>::forwardGPUCUDNNImpl(Device *d, const double *x, const
 
     cudnnTensorDescriptor_t xDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t yDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     CUDNN_CHECK(cudnnPoolingForward(device->cudnnHandle, poolingDesc, &alpha, xDesc, x, &beta, yDesc, y));
 
@@ -87,11 +87,11 @@ void MaxPooling2d<half>::forwardGPUCUDNNImpl(Device *d, const half *x, const Sha
 
     cudnnTensorDescriptor_t xDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t yDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     CUDNN_CHECK(cudnnPoolingForward(device->cudnnHandle, poolingDesc, &alpha, xDesc, x, &beta, yDesc, y));
 
@@ -106,11 +106,11 @@ template <typename T>
 void MaxPooling2d<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output)  {
 #ifdef HAVE_CUDNN
 
-    auto inputH = static_cast<int>(inputs[0]->shape.dim(1));
-    auto inputW = static_cast<int>(inputs[0]->shape.dim(2));
+    auto inputH = static_cast<int>(inputs[0]->shape.dim(0));
+    auto inputW = static_cast<int>(inputs[0]->shape.dim(1));
 
-    auto outputH = static_cast<int>(output->shape.dim(1));
-    auto outputW = static_cast<int>(output->shape.dim(2));
+    auto outputH = static_cast<int>(output->shape.dim(0));
+    auto outputW = static_cast<int>(output->shape.dim(1));
 
     int padY = std::max<int>(0, (outputH - 1) * static_cast<int>(strideY) + static_cast<int>(filterHeight) - inputH);
     int padX = std::max<int>(0, (outputW - 1) * static_cast<int>(strideX) + static_cast<int>(filterWidth) - inputW);
@@ -145,19 +145,19 @@ void MaxPooling2d<float>::backwardGPUCUDNNImpl(Device *d, const float *x, float 
 
     cudnnTensorDescriptor_t xDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t dxDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&dxDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dxDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dxDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t yDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     cudnnTensorDescriptor_t dyDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&dyDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dyDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dyDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_FLOAT, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     CUDNN_CHECK(cudnnPoolingBackward(device->cudnnHandle, poolingDesc, &alpha, yDesc, y, dyDesc, dy, xDesc, x, &beta, dxDesc, dx));
 
@@ -185,19 +185,19 @@ void MaxPooling2d<double>::backwardGPUCUDNNImpl(Device *d, const double *x, doub
 
     cudnnTensorDescriptor_t xDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t dxDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&dxDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dxDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dxDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t yDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     cudnnTensorDescriptor_t dyDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&dyDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dyDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dyDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_DOUBLE, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     CUDNN_CHECK(cudnnPoolingBackward(device->cudnnHandle, poolingDesc, &alpha, yDesc, y, dyDesc, dy, xDesc, x, &beta, dxDesc, dx));
 
@@ -226,19 +226,19 @@ void MaxPooling2d<half>::backwardGPUCUDNNImpl(Device *d, const half *x, half *dx
 
     cudnnTensorDescriptor_t xDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&xDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(xDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t dxDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&dxDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dxDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.dim(0), (int)xShape.dim(3), (int)xShape.dim(1), (int)xShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dxDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)xShape.batch, (int)xShape.dim(2), (int)xShape.dim(0), (int)xShape.dim(1)));
 
     cudnnTensorDescriptor_t yDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&yDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(yDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     cudnnTensorDescriptor_t dyDesc;
     CUDNN_CHECK(cudnnCreateTensorDescriptor(&dyDesc));
-    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dyDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.dim(0), (int)yShape.dim(3), (int)yShape.dim(1), (int)yShape.dim(2)));
+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(dyDesc, CUDNN_TENSOR_NHWC, CUDNN_DATA_HALF, (int)yShape.batch, (int)yShape.dim(2), (int)yShape.dim(0), (int)yShape.dim(1)));
 
     CUDNN_CHECK(cudnnPoolingBackward(device->cudnnHandle, poolingDesc, &alpha, yDesc, y, dyDesc, dy, xDesc, x, &beta, dxDesc, dx));
 
@@ -259,11 +259,11 @@ void MaxPooling2d<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
                              Tensor<T> *iGradient) {
 #ifdef HAVE_CUDNN
 
-    auto inputH = static_cast<int>(iGradient->shape.dim(1));
-    auto inputW = static_cast<int>(iGradient->shape.dim(2));
+    auto inputH = static_cast<int>(iGradient->shape.dim(0));
+    auto inputW = static_cast<int>(iGradient->shape.dim(1));
 
-    auto outputH = static_cast<int>(outputGradient->shape.dim(1));
-    auto outputW = static_cast<int>(outputGradient->shape.dim(2));
+    auto outputH = static_cast<int>(outputGradient->shape.dim(0));
+    auto outputW = static_cast<int>(outputGradient->shape.dim(1));
 
     int padY = std::max<int>(0, (outputH - 1) * static_cast<int>(strideY) + static_cast<int>(filterHeight) - inputH);
     int padX = std::max<int>(0, (outputW - 1) * static_cast<int>(strideX) + static_cast<int>(filterWidth) - inputW);

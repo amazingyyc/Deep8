@@ -5,7 +5,7 @@ namespace Deep8 {
 
 template <typename T>
 MatrixMultiply<T>::MatrixMultiply(std::vector<Node *> &inputs) : Function<T>(inputs) {
-        check();
+    check();
 }
 
 template <typename T>
@@ -18,20 +18,18 @@ void MatrixMultiply<T>::check() {
     auto yShape = this->inputs[1]->outputShape;
 
     DEEP8_ARGUMENT_CHECK(
-            xShape.batch() == yShape.batch() || 1 == xShape.batch() || 1 == yShape.batch(),
+            xShape.batch == yShape.batch || 1 == xShape.batch || 1 == yShape.batch,
             "the batch of input is error");
-    DEEP8_ARGUMENT_CHECK((2 == xShape.nDims() || 3 == xShape.nDims()) &&
-                         (2 == yShape.nDims() || 3 == yShape.nDims()),
+    DEEP8_ARGUMENT_CHECK((1 == xShape.nDims || 2 == xShape.nDims) &&
+                         (1 == yShape.nDims || 2 == yShape.nDims),
                          "the inputs dimensions is error");
     DEEP8_ARGUMENT_CHECK(xShape.col() == yShape.row(),
                          "the col of input1 must same to the row of input2");
 
     if (1 == yShape.col()) {
-		std::vector<size_t> vec({ std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row() });
-        this->outputShape.reShape(vec);
+        this->outputShape = Shape(std::max<size_t>(xShape.batch, yShape.batch), {xShape.row()});
     } else {
-		std::vector<size_t> vec({ std::max<size_t>(xShape.batch(), yShape.batch()), xShape.row(), yShape.col() });
-        this->outputShape.reShape(vec);
+        this->outputShape = Shape(std::max<size_t>(xShape.batch, yShape.batch), {xShape.row(), yShape.col()});
     }
 }
 
@@ -49,9 +47,9 @@ int MatrixMultiply<T>::supportAutoBatch() {
     auto &xshape = this->inputs[0]->outputShape;
     auto &yshape = this->inputs[1]->outputShape;
 
-    if (1 == xshape.batch() && 1 == yshape.col()) {
+    if (1 == xshape.batch && 1 == yshape.col()) {
         return 1;
-    } else if (1 == yshape.batch()) {
+    } else if (1 == yshape.batch) {
         return 0;
     }
 
@@ -114,12 +112,10 @@ Shape MatrixMultiply<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes
         for (auto item : shapes) {
             DEEP8_ARGUMENT_CHECK(col == item.col(), "the batched shape is error");
 
-            row += item.batch() * item.row();
+            row += item.batch * item.row();
         }
 
-        std::vector<size_t> vec({ row, col });
-
-        return Shape(1, vec);
+        return Shape(1, { row, col });
     } else if (1 == index) {
         size_t batch = 0;
         auto row = shapes[0].row();
@@ -127,12 +123,10 @@ Shape MatrixMultiply<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes
         for (auto item : shapes) {
             DEEP8_ARGUMENT_CHECK(1 == item.col() && row == item.row(), "the batched shape is error");
 
-            batch += item.batch();
+            batch += item.batch;
         }
 
-        std::vector<size_t> vec({ row, 1 });
-
-        return Shape(batch, vec);
+        return Shape(batch, { row, 1 });
     }
 
     DEEP8_RUNTIME_ERROR("the index is error");

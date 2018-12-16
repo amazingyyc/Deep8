@@ -2,6 +2,7 @@
 #define DEEP8_GPUELEMENTWISE_H
 
 #include "Shape.h"
+#include "ShapeUtils.h"
 #include "GPUBasic.h"
 
 namespace Deep8 {
@@ -28,6 +29,10 @@ __global__ void UnaryElementWiseBackward(const real *x, real *dx, const real *y,
 		dx[i] += op.backward(x[i], y[i], dy[i]);
 	}
 }
+
+/**********************************************************************************************************
+ * Binary elementwise kernel, support broadcast
+**********************************************************************************************************/
 
 template <typename real, typename BinaryOp, int NumDims>
 __global__ void BinaryElementWiseForward(const real *x, const NVShape<NumDims> xshape,
@@ -57,11 +62,6 @@ __global__ void BinaryElementWiseForward(const real *x, const NVShape<NumDims> x
 		z[i] = op.forward(x[xI], y[yI]);
 	}
 }
-
-
-/**********************************************************************************************************
- * Binary elementwise kernel, support broadcast
-**********************************************************************************************************/
 
 template <typename real, typename BinaryOp, int NumDims>
 __global__ void BinaryElementWiseBackwardX(const real *x,       real *dx, const NVShape<NumDims> xshape, 
@@ -177,8 +177,8 @@ __global__ void BinaryElementWiseBackwardY(const real *x,                 const 
 
 template <typename real, typename BinaryOp>
 void callBinaryElementWiseForward(const real *x, const Shape &xshape, const real *y, const Shape &yshape, real *z, const Shape &zshape, BinaryOp op) {
-	int N = (int) zshape.size();
-	int numDims = (int)zshape.nDims();
+	int N       = (int) zshape.size();
+	int numDims = (int)zshape.nDims + 1;
 
 	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
@@ -237,7 +237,7 @@ void callBinaryElementWiseForward(const real *x, const Shape &xshape, const real
 template <typename real, typename BinaryOp>
 void callBinaryElementWiseBackwardX(const real *x, real *dx, const Shape &xshape, const real *y, const Shape &yshape, const real *z, const real *dz, const Shape &zshape, BinaryOp op) {
 	int N       = (int)xshape.size();
-	int numDims = (int)zshape.nDims();
+	int numDims = (int)zshape.nDims + 1;
 
 	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
@@ -295,8 +295,8 @@ void callBinaryElementWiseBackwardX(const real *x, real *dx, const Shape &xshape
 
 template <typename real, typename BinaryOp>
 void callBinaryElementWiseBackwardY(const real *x, const Shape &xshape, const real *y, real *dy, const Shape &yshape, const real *z, const real *dz, const Shape &zshape, BinaryOp op) {
-	int N = (int)yshape.size();
-	int numDims = (int)zshape.nDims();
+	int N       = (int)yshape.size();
+	int numDims = (int)zshape.nDims + 1;
 
 	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 

@@ -9,7 +9,7 @@ namespace Deep8 {
 /**
  * @brief the max dimension size
  */
-#define MAX_TENSOR_DIMS 5
+#define MAX_TENSOR_DIMS 4
 
 template<int NumDims>
 struct NVArray {
@@ -25,11 +25,17 @@ struct NVShape {
 
 /**
  * @brief the shape class store the dimension of a Tensor
+ * Shape include a Batch and dims
+ * The batch means how many batch this Tensor include
+ * The dims means the dimension of this Tensor
  */
 class Shape {
 private:
+	/**the batch of this Tensor*/
+	size_t batch;
+
     /**the number of the dimension*/
-    size_t numDims;
+    size_t nDims;
 
 	/**the dimension*/
 	size_t dims[MAX_TENSOR_DIMS];
@@ -44,58 +50,34 @@ private:
 public:
 	Shape();
 
-	explicit Shape(std::vector<size_t> &list);
-	explicit Shape(size_t batch, std::vector<size_t> &list);
+	Shape(const Shape&);
+	Shape(size_t, const Shape&);
 
-	Shape(const Shape &other);
+	explicit Shape(std::vector<size_t>);
+	explicit Shape(size_t batch, std::vector<size_t>);
 
-	Shape& operator = (const Shape &other);
+	Shape& operator = (const Shape&);
 
-	bool operator == (const Shape &other);
-	bool operator != (const Shape &other);
+	bool operator == (const Shape&);
+	bool operator != (const Shape&);
 
-	size_t operator[](size_t d);
+	size_t operator [] (size_t);
 
-    /**@brief if the Shape is equal, except batch*/
-	bool equalExceptBatch(const Shape &other);
+	void reShape(Shape&);
 
+	bool equalExceptBatch(const Shape &);
+
+	/**batch * dims[0] * dims[1] ... */
 	size_t size() const;
+
+	/**size() / batch*/
 	size_t batchSize() const;
 
-	size_t nDims() const;
-	size_t dim(size_t d) const;
-	size_t stride(size_t d) const;
-	
-	size_t batch() const;
+	size_t dim(size_t) const;
+	size_t stride(size_t) const;
+
 	size_t row() const;
 	size_t col() const;
-
-	void reShape(Shape &other);
-	void reShape(std::vector<size_t> &list);
-
-	/**generate a NVShape*/
-	template <int NumDims>
-	NVShape<NumDims> convertToNVShape() const {
-		DEEP8_ARGUMENT_CHECK(NumDims >= this->numDims && NumDims > 0, "the NumDims must >= " << this->numDims);
-
-		NVShape<NumDims> nvshape;
-		nvshape.dims[0] = this->dims[0];
-
-		for (int i = NumDims - 1, j = this->numDims - 1; i >= 1; --i, --j) {
-			if (j >= 1) {
-				nvshape.dims[i] = this->dims[j];
-			} else {
-				nvshape.dims[i] = 1;
-			}
-		}
-
-		nvshape.strides[NumDims - 1] = 1;
-		for (int i = NumDims - 2; i >= 0; --i) {
-			nvshape.strides[i] = nvshape.strides[i + 1] * nvshape.dims[i + 1];
-		}
-
-		return nvshape;
-	}
 
 	std::string toString();
 };

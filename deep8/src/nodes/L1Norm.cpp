@@ -4,13 +4,11 @@ namespace Deep8 {
 
 template <typename T>
 struct L1NormBackwardExpr {
-    inline T operator()(T outputGrad, T input) const {
-        if (input > T(0)) {
-            return outputGrad;
-        } else if (input < T(0)) {
-            return -outputGrad;
+    inline T operator()(T dy, T x) const {
+        if (x >= T(0)) {
+            return dy;
         } else {
-            return 0;
+            return -dy;
         }
     }
 };
@@ -37,7 +35,7 @@ void L1Norm<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 
     auto input = inputs[0];
     auto batch = input->batch();
-    auto size = input->size() / batch;
+    auto size  = input->size() / batch;
 
     Eigen::array<size_t, 2> reshapeDims = {batch, size};
     Eigen::array<size_t, 1> sumDims = {1};

@@ -45,7 +45,9 @@ void AutoBatchCodeHelper::shape(Shape& shape) {
     oss << underline << "shape" << colon;
     oss << arrayBegin;
 
-    for (size_t i = 0; i < shape.nDims(); ++i) {
+    oss << shape.batch << comma;
+
+    for (size_t i = 0; i < shape.nDims; ++i) {
         oss << shape.dim(i) << comma;
     }
 
@@ -112,8 +114,9 @@ AutoBatchCodeHelper& AutoBatchCodeHelper::operator << (std::string str) {
 
 AutoBatchCodeHelper& AutoBatchCodeHelper::operator << (Shape& shape) {
     oss << arrayBegin;
+    oss << shape.batch << comma;
 
-    for (size_t i = 0; i < shape.nDims(); ++i) {
+    for (size_t i = 0; i < shape.nDims; ++i) {
         oss << shape.dim(i) << comma;
     }
 

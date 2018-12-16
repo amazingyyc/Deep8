@@ -15,22 +15,21 @@ void AvgPooling2d<T>::check() {
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the AvgPooling2d only need 1 input");
     DEEP8_ARGUMENT_CHECK(filterHeight >= 1 && filterWidth >= 1 && strideY >= 1 && strideX >= 1,
                          "the filter size or stride is error");
-    DEEP8_ARGUMENT_CHECK(4 == this->inputs[0]->outputShape.nDims(),
-                         "AvgPooling2d needs inputs nDims is 4");
+    DEEP8_ARGUMENT_CHECK(3 == this->inputs[0]->outputShape.nDims,
+                         "AvgPooling2d needs inputs nDims is 3");
 
     auto inputShape = this->inputs[0]->outputShape;
 
     if (!covered) {
-        DEEP8_ARGUMENT_CHECK(filterHeight <= inputShape.dim(1) && filterWidth <= inputShape.dim(2),
+        DEEP8_ARGUMENT_CHECK(filterHeight <= inputShape.dim(0) && filterWidth <= inputShape.dim(1),
                              "the not forwardCovered mode type needs filter smaller than input");
     }
 
-    auto inputH = static_cast<int64_t>(inputShape.dim(1));
-    auto inputW = static_cast<int64_t>(inputShape.dim(2));
+    auto inputH = static_cast<int64_t>(inputShape.dim(0));
+    auto inputW = static_cast<int64_t>(inputShape.dim(1));
 
-    std::vector<size_t> outputDim(4);
-    outputDim[0] = inputShape.dim(0);
-    outputDim[3] = inputShape.dim(3);
+    std::vector<size_t> outputDim(3);
+    outputDim[2] = inputShape.dim(2);
 
     if (!covered) {
         int64_t outputH =
@@ -40,8 +39,8 @@ void AvgPooling2d<T>::check() {
 
         DEEP8_ARGUMENT_CHECK(outputH > 0 && outputW > 0, "the output height or width must > 0")
 
-        outputDim[1] = static_cast<size_t>(outputH);
-        outputDim[2] = static_cast<size_t>(outputW);
+        outputDim[0] = static_cast<size_t>(outputH);
+        outputDim[1] = static_cast<size_t>(outputW);
     } else {
         int64_t outputH =
                 (inputH - static_cast<int64_t>(filterHeight) + static_cast<int64_t>(strideY) - 1) /
@@ -52,11 +51,11 @@ void AvgPooling2d<T>::check() {
 
         DEEP8_ARGUMENT_CHECK(outputH > 0 && outputW > 0, "the output height or width must > 0")
 
-        outputDim[1] = static_cast<size_t>(outputH);
-        outputDim[2] = static_cast<size_t>(outputW);
+        outputDim[0] = static_cast<size_t>(outputH);
+        outputDim[1] = static_cast<size_t>(outputW);
     }
 
-    this->outputShape = Shape(outputDim);
+    this->outputShape = Shape(inputShape.batch, outputDim);
 }
 
 template <typename T>
@@ -67,14 +66,14 @@ void AvgPooling2d<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Te
 
     auto input = inputs[0];
 
-    auto batch = static_cast<TensorIndex>(input->shape.dim(0));
-    auto inputH = static_cast<TensorIndex>(input->shape.dim(1));
-    auto inputW = static_cast<TensorIndex>(input->shape.dim(2));
-    auto inputC = static_cast<TensorIndex>(input->shape.dim(3));
+    auto batch  = static_cast<TensorIndex>(input->batch());
+    auto inputH = static_cast<TensorIndex>(input->shape.dim(0));
+    auto inputW = static_cast<TensorIndex>(input->shape.dim(1));
+    auto inputC = static_cast<TensorIndex>(input->shape.dim(2));
 
-    auto outputH = static_cast<TensorIndex>(output->shape.dim(1));
-    auto outputW = static_cast<TensorIndex>(output->shape.dim(2));
-    auto outputC = static_cast<TensorIndex>(output->shape.dim(3));
+    auto outputH = static_cast<TensorIndex>(output->shape.dim(0));
+    auto outputW = static_cast<TensorIndex>(output->shape.dim(1));
+    auto outputC = static_cast<TensorIndex>(output->shape.dim(2));
 
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
             inputTensor(input->data(), batch, inputH, inputW, inputC);
@@ -95,10 +94,10 @@ void AvgPooling2d<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Te
     auto padY = std::max<TensorIndex>(0, (outputH - 1) * static_cast<TensorIndex>(strideY) + static_cast<TensorIndex>(filterHeight) - inputH);
     auto padX = std::max<TensorIndex>(0, (outputW - 1) * static_cast<TensorIndex>(strideX) + static_cast<TensorIndex>(filterWidth) - inputW);
 
-    auto padTop = padY / 2;
+    auto padTop    = padY / 2;
     auto padBottom = padY - padTop;
-    auto padLeft = padX / 2;
-    auto padRight = padX - padLeft;
+    auto padLeft   = padX / 2;
+    auto padRight  = padX - padLeft;
 
     outputTensor.device(*device) = inputTensor.extract_image_patches(filterWidth, filterHeight,
                                                                      strideX, strideY, 1, 1, 1, 1,
@@ -188,19 +187,17 @@ void AvgPooling2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
                  size_t index,
                  Tensor<T> *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
-    DEEP8_ARGUMENT_CHECK(outputGradient->shape.dim(3) == iGradient->shape.dim(3),
-                         "the input channel and output channel must be same");
 
     auto device = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
 
-    auto batch = static_cast<int64_t>(iGradient->shape.dim(0));
-    auto inputH = static_cast<int64_t>(iGradient->shape.dim(1));
-    auto inputW = static_cast<int64_t>(iGradient->shape.dim(2));
-    auto inputC = static_cast<int64_t>(iGradient->shape.dim(3));
+    auto batch  = static_cast<int64_t>(iGradient->shape.batch);
+    auto inputH = static_cast<int64_t>(iGradient->shape.dim(0));
+    auto inputW = static_cast<int64_t>(iGradient->shape.dim(1));
+    auto inputC = static_cast<int64_t>(iGradient->shape.dim(2));
 
-    auto outputH = static_cast<int64_t>(outputGradient->shape.dim(1));
-    auto outputW = static_cast<int64_t>(outputGradient->shape.dim(2));
-    auto outputC = static_cast<int64_t>(outputGradient->shape.dim(3));
+    auto outputH = static_cast<int64_t>(outputGradient->shape.dim(0));
+    auto outputW = static_cast<int64_t>(outputGradient->shape.dim(1));
+    auto outputC = static_cast<int64_t>(outputGradient->shape.dim(2));
 
     int64_t padY = std::max<int64_t>(0, (outputH - 1) * static_cast<int64_t>(strideY) +
                                         static_cast<int64_t>(filterHeight) - inputH);
@@ -210,9 +207,9 @@ void AvgPooling2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
     int64_t padTop = -(padY / 2);
     int64_t padLeft = -(padX / 2);
 
-/**
-  * use the Eigen ThreadPool
-  */
+    /**
+     * use the Eigen ThreadPool
+     */
     int64_t threadNum = device->numThreads();
     int64_t blockSize = (outputC + threadNum - 1) / threadNum;
 

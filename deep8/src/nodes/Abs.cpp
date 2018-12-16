@@ -5,13 +5,11 @@ namespace Deep8 {
 
 template <typename T>
 struct AbsBackwardExpr {
-    inline T operator()(T outputGrad, T input) const {
-        if (input > T(0)) {
-            return outputGrad;
-        } else if (input < T(0)) {
-            return -outputGrad;
+    inline T operator()(T dy, T x) const {
+        if (x >= T(0)) {
+            return dy;
         } else {
-            return 0;
+            return -dy;
         }
     }
 };
@@ -63,8 +61,7 @@ Shape Abs<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
         size += item.size();
     }
 
-    std::vector<size_t> vec({1});
-    return Shape(1, vec);
+    return Shape({size});
 }
 
 /**

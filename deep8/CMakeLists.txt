@@ -41,8 +41,8 @@ set(DEEP8_SRC_FILES
 		src/nodes/DivideScalar.cpp
 		src/nodes/Exp.cpp
 		src/nodes/Function.cpp
-		src/nodes/L1Norm.cpp
-		src/nodes/L2Norm.cpp
+		# src/nodes/L1Norm.cpp
+		# src/nodes/L2Norm.cpp
 		src/nodes/Linear.cpp
 		src/nodes/Log.cpp
 		src/nodes/LReLu.cpp

@@ -3,8 +3,8 @@
 namespace Deep8 {
 
 template <typename T>
-Batch<T>::Batch(std::vector<Node *> &inputs, Shape &outputShape) : Function<T>(inputs), continuous(false) {
-	this->outputShape = outputShape;
+Batch<T>::Batch(std::vector<Node *> &inputs, Shape &shape) : Function<T>(inputs), continuous(false) {
+	this->outputShape = shape;
 	check();
 }
 
