@@ -41,7 +41,7 @@ inline Eigen::array<int64_t, MAX_TENSOR_DIMS + 1> enlongateShapeToMaxDim(const S
     Eigen::array<int64_t, MAX_TENSOR_DIMS + 1> dims;
     dims[0] = static_cast<int64_t>(shape.batch);
 
-    for (int i = MAX_TENSOR_DIMS - 1, j = (int)shape.nDims - 1; i >= 0; --i, --j) {
+    for (int i = MAX_TENSOR_DIMS, j = (int)shape.nDims - 1; i > 0; --i, --j) {
         if (j >= 0) {
             dims[i] = static_cast<int64_t>(shape.dim(j));
         } else {
@@ -59,7 +59,7 @@ NVShape<NumDims> convertToNVShape(const Shape &shape) {
     DEEP8_ARGUMENT_CHECK(NumDims > shape.nDims && NumDims > 0, "the NumDims is error ");
 
     NVShape<NumDims> nvshape;
-    nvshape[0] = shape.batch;
+    nvshape.dims[0] = shape.batch;
 
     for (int i = NumDims - 1, j = (shape.nDims - 1); i >= 1; --i, --j) {
         if (j >= 0) {

@@ -15,8 +15,8 @@
 //#include "DivideTest.h"
 //#include "DivideScalarTest.h"
 //#include "ExpTest.h"
-//#include "L1NormTest.h"
-//#include "L2NormTest.h"
+//#include "L1NormTest.h"?
+//#include "L2NormTest.h"?
 //#include "LinearTest.h"
 //#include "LogTest.h"
 //#include "LReLuTest.h"
@@ -28,14 +28,16 @@
 //#include "MultiplyScalarTest.h"
 //#include "ReLuTest.h"
 //#include "SigmoidTest.h"
-//#include "SoftmaxTest.h"
+//#include "SoftmaxTest.h"?
+
 //#include "SquareTest.h"
 //#include "TanhTest.h"
-//#include "LinearRegressionTest.h"
-//#include "AutoBatchTest.h"
+
+//#include "LinearRegressionTest.h"?
+//#include "AutoBatchTest.h"?
 
 #ifdef HAVE_CUDA
-#include "LinearRegressionGPUTest.h"
+//#include "LinearRegressionGPUTest.h"
 #endif
 
 using namespace Deep8;

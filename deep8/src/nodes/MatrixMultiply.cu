@@ -220,7 +220,7 @@ void MatrixMultiply<half>::backwardGPUImpl0(Device* d, half *aGrad, const Shape 
 
 		for (int b = 0; b < batch; ++b) {
 			auto aGradPtr = aGrad + (b % aShape.batch) * aShape.batchSize();
-			auto bPtr     = B + (b % bShape.batch * bShape.batchSize();
+			auto bPtr     = B + (b % bShape.batch * bShape.batchSize());
 			auto cGradPtr = cGrad + (b % cShape.batch) * cShape.batchSize();
 
 			CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, k, m, n, &alpha, bPtr, n, cGradPtr, n, &beta, aGradPtr, k));

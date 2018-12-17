@@ -26,11 +26,11 @@ TEST(DeConv2d, forwardCPU) {
 	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-    auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
+    auto filter = createTensor<CPUDevice, float>(device, 1, outputChannel, filterH,  filterW, inputChannel);
     auto output = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
 
     auto inputVar1 = createFakeVariable<CPUDevice, float>(device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
+    auto inputVar2 = createFakeVariable<CPUDevice, float>(device, { 1,  size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
     DeConv2d<float> transposeConv2d(inputs, isCovered, size_t(strideY), size_t(strideX));
@@ -112,15 +112,15 @@ TEST(DeConv2d, backwardCPU) {
 	CPUDevice device;
 
 	auto input = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-	auto filter = createTensor<CPUDevice, float>(device, outputChannel, filterH, filterW, inputChannel);
+	auto filter = createTensor<CPUDevice, float>(device, 1, outputChannel, filterH, filterW, inputChannel);
 	auto output = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
 
     auto inputGrad  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-    auto filterGrad = createTensor<CPUDevice, float>(device, outputChannel, filterH,  filterW, inputChannel);
+    auto filterGrad = createTensor<CPUDevice, float>(device, 1, outputChannel, filterH,  filterW, inputChannel);
     auto outputGrad = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
 
     auto inputVar1 = createFakeVariable<CPUDevice, float>(device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device, { size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
+    auto inputVar2 = createFakeVariable<CPUDevice, float>(device, { 1, size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
 
     zeroTensor(device, inputGrad);
     zeroTensor(device, filterGrad);
@@ -295,11 +295,11 @@ TEST(DeConv2d, forwarGPU_float) {
 	auto outputPtr = (float*)malloc(sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
 
 	auto input = createTensorGPU<float>(device, inputPtr, batch, inputHeight, inputWidth, inputChannel);
-	auto filter = createTensorGPU<float>(device, filterPtr, outputChannel, filterH, filterW, inputChannel);
+	auto filter = createTensorGPU<float>(device, filterPtr, 1, outputChannel, filterH, filterW, inputChannel);
 	auto output = createTensorGPU<float>(device, outputPtr, batch, outputHeight, outputWidth, outputChannel);
 
 	auto inputVar1 = createFakeVariable<GPUDevice, float>(device, { batch, inputHeight, inputWidth, inputChannel });
-	auto inputVar2 = createFakeVariable<GPUDevice, float>(device, { outputChannel, filterH, filterW, inputChannel });
+	auto inputVar2 = createFakeVariable<GPUDevice, float>(device, { 1, outputChannel, filterH, filterW, inputChannel });
 
 	std::vector<Node*> inputs = { &inputVar1, &inputVar2 };
 	DeConv2d<float> transposeConv2d(inputs, isCovered, size_t(strideY), size_t(strideX));
@@ -400,14 +400,14 @@ TEST(DeConv2d, backwarGPU_float) {
 	auto input = createTensorGPU<float>(device, inputValuePtr, batch, inputHeight, inputWidth, inputChannel);
 	auto inputGrad = createTensorGPU<float>(device, inputGradPtr, batch, inputHeight, inputWidth, inputChannel);
 
-	auto filter = createTensorGPU<float>(device, filterValuePtr, outputChannel, filterH, filterW, inputChannel);
-	auto filterGrad = createTensorGPU<float>(device, filterGradPtr, outputChannel, filterH, filterW, inputChannel);
+	auto filter = createTensorGPU<float>(device, filterValuePtr, 1, outputChannel, filterH, filterW, inputChannel);
+	auto filterGrad = createTensorGPU<float>(device, filterGradPtr, 1, outputChannel, filterH, filterW, inputChannel);
 
 	auto output = createTensorGPU<float>(device, outputValuePtr, batch, outputHeight, outputWidth, outputChannel);
 	auto outputGrad = createTensorGPU<float>(device, outputGradPtr, batch, outputHeight, outputWidth, outputChannel);
 
 	auto inputVar1 = createFakeVariable<GPUDevice, float>(device, { batch, inputHeight, inputWidth, inputChannel });
-	auto inputVar2 = createFakeVariable<GPUDevice, float>(device, { outputChannel, filterH, filterW, inputChannel });
+	auto inputVar2 = createFakeVariable<GPUDevice, float>(device, { 1, outputChannel, filterH, filterW, inputChannel });
 
 	zeroTensor(device, inputGrad);
 	zeroTensor(device, filterGrad);
@@ -591,14 +591,14 @@ TEST(DeConv2d, half_GPU) {
 	auto input = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
 	auto inputGrad = createTensorGPU<half>(device, batch, inputHeight, inputWidth, inputChannel);
 
-	auto filter = createTensorGPU<half>(device, outputChannel, filterH, filterW, inputChannel);
-	auto filterGrad = createTensorGPU<half>(device, outputChannel, filterH, filterW, inputChannel);
+	auto filter = createTensorGPU<half>(device, 1, outputChannel, filterH, filterW, inputChannel);
+	auto filterGrad = createTensorGPU<half>(device, 1, outputChannel, filterH, filterW, inputChannel);
 
 	auto output = createTensorGPU<half>(device, batch, outputHeight, outputWidth, outputChannel);
 	auto outputGrad = createTensorGPU<half>(device, batch, outputHeight, outputWidth, outputChannel);
 
 	auto inputVar1 = createFakeVariable<GPUDevice, half>(device, { batch, inputHeight, inputWidth, inputChannel });
-	auto inputVar2 = createFakeVariable<GPUDevice, half>(device, { outputChannel, filterH, filterW, inputChannel });
+	auto inputVar2 = createFakeVariable<GPUDevice, half>(device, { 1, outputChannel, filterH, filterW, inputChannel });
 
 	zeroTensor(device, inputGrad);
 	zeroTensor(device, filterGrad);

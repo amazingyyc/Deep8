@@ -23,8 +23,8 @@ namespace Deep8 {
 #define DEEP8_ARGUMENT_CHECK(condition, message)        \
     if (!(condition)) {                                 \
         std::ostringstream oss;                         \
-        oss << __FILE__ << ":";                 \
-        oss << __LINE__ << ": ";                 \
+        oss << __FILE__ << ":";							\
+        oss << __LINE__ << ": ";						\
         oss << message  << ".";                         \
         throw std::invalid_argument(oss.str());         \
     }

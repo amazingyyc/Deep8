@@ -1,5 +1,5 @@
 #include "Batch.h"
-#include "GPUElementWise.cuh"
+#include "GPUElementWise.h"
 #include "GPUDevice.h"
 
 namespace Deep8 {

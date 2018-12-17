@@ -186,45 +186,45 @@ void callBinaryElementWiseForward(const real *x, const Shape &xshape, const real
 	case 1:
 		BinaryElementWiseForward<real, BinaryOp, 1> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > 
 			(
-				x, xshape.convertToNVShape<1>(),
-				y, yshape.convertToNVShape<1>(),
-				z, zshape.convertToNVShape<1>(),
+				x, convertToNVShape<1>(xshape),
+				y, convertToNVShape<1>(yshape),
+				z, convertToNVShape<1>(zshape),
 				op, N
 			);
 		break;
 	case 2:
 		BinaryElementWiseForward<real, BinaryOp, 2> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, xshape.convertToNVShape<2>(),
-				y, yshape.convertToNVShape<2>(),
-				z, zshape.convertToNVShape<2>(),
+				x, convertToNVShape<2>(xshape),
+				y, convertToNVShape<2>(yshape),
+				z, convertToNVShape<2>(zshape),
 				op, N
 				);
 		break;
 	case 3:
 		BinaryElementWiseForward<real, BinaryOp, 3> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, xshape.convertToNVShape<3>(),
-				y, yshape.convertToNVShape<3>(),
-				z, zshape.convertToNVShape<3>(),
+				x, convertToNVShape<3>(xshape),
+				y, convertToNVShape<3>(yshape),
+				z, convertToNVShape<3>(zshape),
 				op, N
 				);
 		break;
 	case 4:
 		BinaryElementWiseForward<real, BinaryOp, 4> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, xshape.convertToNVShape<4>(),
-				y, yshape.convertToNVShape<4>(),
-				z, zshape.convertToNVShape<4>(),
+				x, convertToNVShape<4>(xshape),
+				y, convertToNVShape<4>(yshape),
+				z, convertToNVShape<4>(zshape),
 				op, N
 				);
 		break;
 	case 5:
 		BinaryElementWiseForward<real, BinaryOp, 5> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, xshape.convertToNVShape<5>(),
-				y, yshape.convertToNVShape<5>(),
-				z, zshape.convertToNVShape<5>(),
+				x, convertToNVShape<5>(xshape),
+				y, convertToNVShape<5>(yshape),
+				z, convertToNVShape<5>(zshape),
 				op, N
 				);
 		break;
@@ -245,45 +245,45 @@ void callBinaryElementWiseBackwardX(const real *x, real *dx, const Shape &xshape
 	case 1:
 		BinaryElementWiseBackwardX<real, BinaryOp, 1> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, dx, xshape.convertToNVShape<1>(),
-				y,     yshape.convertToNVShape<1>(),
-				z, dz, zshape.convertToNVShape<1>(),
+				x, dx, convertToNVShape<1>(xshape),
+				y,     convertToNVShape<1>(yshape),
+				z, dz, convertToNVShape<1>(zshape),
 				op, N
 				);
 		break;
 	case 2:
 		BinaryElementWiseBackwardX<real, BinaryOp, 2> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, dx, xshape.convertToNVShape<2>(),
-				y,     yshape.convertToNVShape<2>(),
-				z, dz, zshape.convertToNVShape<2>(),
+				x, dx, convertToNVShape<2>(xshape),
+				y,     convertToNVShape<2>(yshape),
+				z, dz, convertToNVShape<2>(zshape),
 				op, N
 				);
 		break;
 	case 3:
 		BinaryElementWiseBackwardX<real, BinaryOp, 3> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, dx, xshape.convertToNVShape<3>(),
-				y,     yshape.convertToNVShape<3>(),
-				z, dz, zshape.convertToNVShape<3>(),
+				x, dx, convertToNVShape<3>(xshape),
+				y,     convertToNVShape<3>(yshape),
+				z, dz, convertToNVShape<3>(zshape),
 				op, N
 				);
 		break;
 	case 4:
 		BinaryElementWiseBackwardX<real, BinaryOp, 4> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, dx, xshape.convertToNVShape<4>(),
-				y,     yshape.convertToNVShape<4>(),
-				z, dz, zshape.convertToNVShape<4>(),
+				x, dx, convertToNVShape<4>(xshape),
+				y,     convertToNVShape<4>(yshape),
+				z, dz, convertToNVShape<4>(zshape),
 				op, N
 				);
 		break;
 	case 5:
 		BinaryElementWiseBackwardX<real, BinaryOp, 5> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x, dx, xshape.convertToNVShape<5>(),
-				y,     yshape.convertToNVShape<5>(),
-				z, dz, zshape.convertToNVShape<5>(),
+				x, dx, convertToNVShape<5>(xshape),
+				y,     convertToNVShape<5>(yshape),
+				z, dz, convertToNVShape<5>(zshape),
 				op, N
 				);
 		break;
@@ -304,41 +304,41 @@ void callBinaryElementWiseBackwardY(const real *x, const Shape &xshape, const re
 	case 1:
 		BinaryElementWiseBackwardY<real, BinaryOp, 1> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x,     xshape.convertToNVShape<1>(),
-				y, dy, yshape.convertToNVShape<1>(),
-				z, dz, zshape.convertToNVShape<1>(),
+				x,     convertToNVShape<1>(xshape),
+				y, dy, convertToNVShape<1>(yshape),
+				z, dz, convertToNVShape<1>(zshape),
 				op, N);
 		break;
 	case 2:
 		BinaryElementWiseBackwardY<real, BinaryOp, 2> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x,     xshape.convertToNVShape<2>(),
-				y, dy, yshape.convertToNVShape<2>(),
-				z, dz, zshape.convertToNVShape<2>(),
+				x,     convertToNVShape<2>(xshape),
+				y, dy, convertToNVShape<2>(yshape),
+				z, dz, convertToNVShape<2>(zshape),
 				op, N);
 		break;
 	case 3:
 		BinaryElementWiseBackwardY<real, BinaryOp, 3> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x,	   xshape.convertToNVShape<3>(),
-				y, dy, yshape.convertToNVShape<3>(),
-				z, dz, zshape.convertToNVShape<3>(),
+				x,	   convertToNVShape<3>(xshape),
+				y, dy, convertToNVShape<3>(yshape),
+				z, dz, convertToNVShape<3>(zshape),
 				op, N);
 		break;
 	case 4:
 		BinaryElementWiseBackwardY<real, BinaryOp, 4> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x,     xshape.convertToNVShape<4>(),
-				y, dy, yshape.convertToNVShape<4>(),
-				z, dz, zshape.convertToNVShape<4>(),
+				x,     convertToNVShape<4>(xshape),
+				y, dy, convertToNVShape<4>(yshape),
+				z, dz, convertToNVShape<4>(zshape),
 				op, N);
 		break;
 	case 5:
 		BinaryElementWiseBackwardY<real, BinaryOp, 5> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> >
 			(
-				x,     xshape.convertToNVShape<5>(),
-				y, dy, yshape.convertToNVShape<5>(),
-				z, dz, zshape.convertToNVShape<5>(),
+				x,     convertToNVShape<5>(xshape),
+				y, dy, convertToNVShape<5>(yshape),
+				z, dz, convertToNVShape<5>(zshape),
 				op, N);
 		break;
 	default:

@@ -38,7 +38,7 @@ void Divide<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
         auto xBroad = xReshape;
         auto yBroad = yReshape;
 
-        for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+        for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
             if (xBroad[i] < zReshape[i]) {
                 xBroad[i] = zReshape[i];
             } else {

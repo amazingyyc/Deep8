@@ -2,7 +2,7 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
-#include "GPUReduce.cuh"
+#include "GPUReduce.h"
 #include "Softmax.h"
 
 namespace Deep8 {
