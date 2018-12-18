@@ -29,19 +29,12 @@ struct SoftmaxFindMaxOp {
 	}
 };
 
-
-/**
- * Y[i] = exp(X[i] - scalar);
- */
 template <typename real>
-__global__ void SoftmaxExpMinusScalar(const real *x, const real *scalar, real *y, const int size, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
-
-    for (int i = start; i < N; i += stride) {
-        y[i] = CuMath::cuExp(x[i] - scalar[i / size]);
-    }
-}
+struct SoftmaxExpMinusOp {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real forward(const real &x, const real &y) {
+		return CuMath::cuExp(x - y);
+	}
+};
 
 template <typename T>
 struct SoftmaxSumOp {
@@ -62,91 +55,98 @@ struct SoftmaxSumOp {
     }
 };
 
+template <typename real>
+struct SoftmaxDivideOp {
+	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real forward(const real &x, const real &y) {
+		return x / y;
+	}
+};
+
 /**
  * Y[i] = X[i] / scalar[0];
  */
-template <typename real>
-__global__ void SoftmaxDivideScalar(real *y, const real *scalar, const int size, const int N) {
-    int start = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+// template <typename real>
+// __global__ void SoftmaxDivideScalar(real *y, const real *scalar, const int size, const int N) {
+//     int start = blockIdx.x * blockDim.x + threadIdx.x;
+//     int stride = blockDim.x * gridDim.x;
 
-    for (int i = start; i < N; i += stride) {
-        y[i] = y[i] / scalar[i / size];
-    }
-}
+//     for (int i = start; i < N; i += stride) {
+//         y[i] = y[i] / scalar[i / size];
+//     }
+// }
 
-template <int blockSize, typename real>
-__global__ void SoftmaxBackwardDotKernel(const real *y, const real *dy, real *dotPtr, const int batch, const int size) {
-    SharedMemory<real> shareMemory;
-    real *shared = shareMemory.pointer();
+// template <int blockSize, typename real>
+// __global__ void SoftmaxBackwardDotKernel(const real *y, const real *dy, real *dotPtr, const int batch, const int size) {
+//     SharedMemory<real> shareMemory;
+//     real *shared = shareMemory.pointer();
 
-    int threaId = threadIdx.x;
-    int blockId = blockIdx.x;
+//     int threaId = threadIdx.x;
+//     int blockId = blockIdx.x;
 
-    int i = blockId * size + threaId;
-    int j = threaId;
+//     int i = blockId * size + threaId;
+//     int j = threaId;
 
-    shared[threaId] = 0;
+//     shared[threaId] = 0;
 
-    while (j < size) {
-        shared[threaId] += y[i] * dy[i];
+//     while (j < size) {
+//         shared[threaId] += y[i] * dy[i];
 
-        i += blockSize;
-        j += blockSize;
-    }
+//         i += blockSize;
+//         j += blockSize;
+//     }
 
-    __syncthreads();
+//     __syncthreads();
 
-    if (blockSize >= 1024) {
-        if (threaId < 512) {
-            shared[threaId] += shared[threaId + 512];
-        }
+//     if (blockSize >= 1024) {
+//         if (threaId < 512) {
+//             shared[threaId] += shared[threaId + 512];
+//         }
 
-        __syncthreads();
-    }
+//         __syncthreads();
+//     }
 
-    if (blockSize >= 512) {
-        if (threaId < 256) {
-            shared[threaId] += shared[threaId + 256];
-        }
+//     if (blockSize >= 512) {
+//         if (threaId < 256) {
+//             shared[threaId] += shared[threaId + 256];
+//         }
 
-        __syncthreads();
-    }
+//         __syncthreads();
+//     }
 
-    if (blockSize >= 256) {
-        if (threaId < 128) {
-            shared[threaId] += shared[threaId + 128];
-        }
+//     if (blockSize >= 256) {
+//         if (threaId < 128) {
+//             shared[threaId] += shared[threaId + 128];
+//         }
 
-        __syncthreads();
-    }
+//         __syncthreads();
+//     }
 
-    if (blockSize >= 128) {
-        if (threaId < 64) {
-            shared[threaId] += shared[threaId + 64];
-        }
+//     if (blockSize >= 128) {
+//         if (threaId < 64) {
+//             shared[threaId] += shared[threaId + 64];
+//         }
 
-        __syncthreads();
-    }
+//         __syncthreads();
+//     }
 
-    if (threaId < 32) {
-		warpSumReduce<blockSize, real>(shared, threaId);
-    }
+//     if (threaId < 32) {
+// 		warpSumReduce<blockSize, real>(shared, threaId);
+//     }
 
-    if (0 == threaId) {
-        dotPtr[blockId] = shared[threaId];
-    }
-}
+//     if (0 == threaId) {
+//         dotPtr[blockId] = shared[threaId];
+//     }
+// }
 
-template <typename real>
-__global__ void SoftmaxBackwardKernel(real *dx, const real *y, const real *dy, const real *scalar, const int size, const int N) {
-    int start  = blockIdx.x * blockDim.x + threadIdx.x;
-    int stride = blockDim.x * gridDim.x;
+// template <typename real>
+// __global__ void SoftmaxBackwardKernel(real *dx, const real *y, const real *dy, const real *scalar, const int size, const int N) {
+//     int start  = blockIdx.x * blockDim.x + threadIdx.x;
+//     int stride = blockDim.x * gridDim.x;
 
-    for (int i = start; i < N; i += stride) {
-        dx[i] += (dy[i] - scalar[i / size]) * y[i];
-    }
-}
+//     for (int i = start; i < N; i += stride) {
+//         dx[i] += (dy[i] - scalar[i / size]) * y[i];
+//     }
+// }
 
 template <typename T>
 void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
@@ -169,63 +169,229 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 		dim2 *= xshape.dim(i);
 	}
 
-	auto maxPtr = (T*)device->malloc(sizeof(T) * dim0 * dim2);
-	auto sumPtr = (T*)device->malloc(sizeof(T) * dim0 * dim2);
+	auto maxptr = (T*)device->malloc(sizeof(T) * dim0 * dim2);
+	auto sumptr = (T*)device->malloc(sizeof(T) * dim0 * dim2);
 
 	/**find max value*/
 	if (1 == dim2) {
 		/**tail reduce*/
-
+        callTailReduceForward<T, SoftmaxFindMaxOp<T>>(x, maxptr, dim0, dim1);
 	} else if (1 == dim0) {
 		/**head reduce*/
-
+        callHeadReduceForward<T, SoftmaxFindMaxOp<T>>(x, maxptr, dim1, dim2);
 	} else {
 		/**middle reduce*/
-
+        int N = dim0 * dim2;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;        
+        MiddleReduceForward<T, SoftmaxFindMaxOp<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(x, maxptr, dim0, dim1, dim2, SoftmaxFindMaxOp<T>(), N);
 	}
 
-	/***/
+	/**y = exp(x - max)*/
+    if (1 == dim2) {
+        /**tail reduce*/
+        NVShape<2> xNVShape;
+        NVShape<2> maxNVShape;
+        NVShape<2> yNVShape;
 
-	/*
-    auto device = (GPUDevice*)output->device();
+        xNVShape.dims[0] = dim0;
+        xNVShape.dims[1] = dim1;
+        xNVShape.strides[0] = dim1;
+        xNVShape.strides[1] = 1;
 
-    auto x = inputs[0]->data();
-    auto y = output->data();
+        maxNVShape.dims[0] = dim0;
+        maxNVShape.dims[1] = 1;
+        maxNVShape.stride[0] = 1;
+        maxNVShape.stride[1] = 1;
 
-    int N      = (int)output->shape.size();
-    int batch  = (int)output->shape.batch;
-    int size   = N / batch;
+        yNVShape.dims[0] = dim0;
+        yNVShape.dims[1] = dim1;
+        yNVShape.strides[0] = dim1;
+        yNVShape.strides[1] = 1;
 
-    int blockSize = 1024;
+       int N = dim0 * dim1;
+       int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    if (size < blockSize) {
-        blockSize = prevPowerOf2(size);
+       BinaryElementWiseForward<T, SoftmaxExpMinusOp<T>, 2> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(x, xNVShape, maxptr, maxNVShape, y, yNVShape, SoftmaxExpMinusOp<T>(), N);
+    } else if (1 == dim0) {
+        /**head reduce*/
+        NVShape<2> xNVShape;
+        NVShape<2> maxNVShape;
+        NVShape<2> yNVShape;
+
+        xNVShape.dims[0] = dim1;
+        xNVShape.dims[1] = dim2;
+        xNVShape.strides[0] = dim2;
+        xNVShape.strides[1] = 1;
+
+        maxNVShape.dims[0] = 1;
+        maxNVShape.dims[1] = dim2;
+        maxNVShape.stride[0] = dim2;
+        maxNVShape.stride[1] = 1;
+
+        yNVShape.dims[0] = dim1;
+        yNVShape.dims[1] = dim2;
+        yNVShape.strides[0] = dim2;
+        yNVShape.strides[1] = 1;
+
+        int N = dim1 * dim2;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+        BinaryElementWiseForward<T, SoftmaxExpMinusOp<T>, 2> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(x, xNVShape, maxptr, maxNVShape, y, yNVShape, SoftmaxExpMinusOp<T>(), N);
+    } else {
+        /**middle reduce*/
+        NVShape<3> xNVShape;
+        NVShape<3> maxNVShape;
+        NVShape<3> yNVShape;
+
+        xNVShape.dims[0] = dim0;
+        xNVShape.dims[1] = dim1;
+        xNVShape.dims[2] = dim2;
+        xNVShape.strides[0] = dim1 * dim2;
+        xNVShape.strides[1] = dim2;
+        xNVShape.strides[2] = 1;
+
+        maxNVShape.dims[0] = dim0;
+        maxNVShape.dims[1] = 1;
+        maxNVShape.dims[2] = dim2;
+        maxNVShape.stride[0] = dim2;
+        maxNVShape.stride[1] = dim2;
+        maxNVShape.stride[2] = 1;
+
+        yNVShape.dims[0] = dim0;
+        yNVShape.dims[1] = dim1;
+        yNVShape.dims[2] = dim2;
+        yNVShape.strides[0] = dim1 * dim2;
+        yNVShape.strides[1] = dim2;
+        yNVShape.strides[2] = 1;
+
+        int N = dim0 * dim1 * dim2;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+        BinaryElementWiseForward<T, SoftmaxExpMinusOp<T>, 3> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(x, xNVShape, maxptr, maxNVShape, y, yNVShape, SoftmaxExpMinusOp<T>(), N);
     }
 
-    auto maxPtr = (T*)device->malloc(sizeof(T) * batch);
-    auto sumPtr = (T*)device->malloc(sizeof(T) * batch);
-	*/
+    /**calculate sum*/
+	if (1 == dim2) {
+		/**tail reduce*/
+        callTailReduceForward<T, SoftmaxSumOp<T>>(y, sumptr, dim0, dim1);
+	} else if (1 == dim0) {
+		/**head reduce*/
+        callHeadReduceForward<T, SoftmaxSumOp<T>>(y, sumptr, dim1, dim2);
+	} else {
+		/**middle reduce*/
+        int N = dim0 * dim2;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;        
+        MiddleReduceForward<T, SoftmaxSumOp<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(y, sumptr, dim0, dim1, dim2, SoftmaxSumOp<T>(), N);
+	}
+
+    /**calculate result*/
+    /**y = exp(x - max)*/
+    if (1 == dim2) {
+        /**tail reduce*/
+        NVShape<2> sumNVShape;
+        NVShape<2> yNVShape;
+
+        sumNVShape.dims[0] = dim0;
+        sumNVShape.dims[1] = 1;
+        sumNVShape.stride[0] = 1;
+        sumNVShape.stride[1] = 1;
+
+        yNVShape.dims[0] = dim0;
+        yNVShape.dims[1] = dim1;
+        yNVShape.strides[0] = dim1;
+        yNVShape.strides[1] = 1;
+
+       int N = dim0 * dim1;
+       int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+       BinaryElementWiseForward<T, SoftmaxDivideOp<T>, 2> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(y, yNVShape, sumptr, sumNVShape, y, yNVShape, SoftmaxDivideOp<T>(), N);
+    } else if (1 == dim0) {
+        /**head reduce*/
+        NVShape<2> sumNVShape;
+        NVShape<2> yNVShape;
+
+        sumNVShape.dims[0] = 1;
+        sumNVShape.dims[1] = dim2;
+        sumNVShape.stride[0] = dim2;
+        sumNVShape.stride[1] = 1;
+
+        yNVShape.dims[0] = dim1;
+        yNVShape.dims[1] = dim2;
+        yNVShape.strides[0] = dim2;
+        yNVShape.strides[1] = 1;
+
+        int N = dim1 * dim2;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+        BinaryElementWiseForward<T, SoftmaxDivideOp<T>, 2> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(y, yNVShape, sumptr, sumNVShape, y, yNVShape, SoftmaxDivideOp<T>(), N);
+    } else {
+        /**middle reduce*/
+        NVShape<3> sumNVShape;
+        NVShape<3> yNVShape;
+
+        sumNVShape.dims[0] = dim0;
+        sumNVShape.dims[1] = 1;
+        sumNVShape.dims[2] = dim2;
+        sumNVShape.stride[0] = dim2;
+        sumNVShape.stride[1] = dim2;
+        sumNVShape.stride[2] = 1;
+
+        yNVShape.dims[0] = dim0;
+        yNVShape.dims[1] = dim1;
+        yNVShape.dims[2] = dim2;
+        yNVShape.strides[0] = dim1 * dim2;
+        yNVShape.strides[1] = dim2;
+        yNVShape.strides[2] = 1;
+
+        int N = dim0 * dim1 * dim2;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+        BinaryElementWiseForward<T, SoftmaxDivideOp<T>, 3> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(y, yNVShape, sumptr, sumNVShape, y, yNVShape, SoftmaxDivideOp<T>(), N);
+    }
+
+    device->free(sumptr);
+    device->free(maxptr);
+
+	// /*
+    // auto device = (GPUDevice*)output->device();
+
+    // auto x = inputs[0]->data();
+    // auto y = output->data();
+
+    // int N      = (int)output->shape.size();
+    // int batch  = (int)output->shape.batch;
+    // int size   = N / batch;
+
+    // int blockSize = 1024;
+
+    // if (size < blockSize) {
+    //     blockSize = prevPowerOf2(size);
+    // }
+
+    // auto maxPtr = (T*)device->malloc(sizeof(T) * batch);
+    // auto sumPtr = (T*)device->malloc(sizeof(T) * batch);
+	// */
 
 
-    /**find max*/
+    // /**find max*/
 
-	/*
-    callTailReduceForward<T, SoftmaxFindMaxOp<T>>(x, maxPtr, batch, size, blockSize);
+	// /*
+    // callTailReduceForward<T, SoftmaxFindMaxOp<T>>(x, maxPtr, batch, size, blockSize);
 
-    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+    // int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    SoftmaxExpMinusScalar<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(x, maxPtr, y, size, N);
-	*/
+    // SoftmaxExpMinusScalar<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(x, maxPtr, y, size, N);
+	// */
 
-    /***calculate sum*/
-    /*
-	callTailReduceForward<T, SoftmaxSumOp<T>>(y, sumPtr, batch, size, blockSize);
+    // /***calculate sum*/
+    // /*
+	// callTailReduceForward<T, SoftmaxSumOp<T>>(y, sumPtr, batch, size, blockSize);
 
-    SoftmaxDivideScalar<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(y, sumPtr, size, N);
+    // SoftmaxDivideScalar<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(y, sumPtr, size, N);
 
-    device->free(sumPtr);
-    device->free(maxPtr);
-	*/
+    // device->free(sumPtr);
+    // device->free(maxPtr);
+	// */
 }
 
 template <typename T>

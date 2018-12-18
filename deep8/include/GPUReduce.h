@@ -98,7 +98,7 @@ namespace Deep8 {
  * support the x dimesnison is [dim0, dim1, dim2]
  * then y diemsnions is [dim0, 1, dim2]
  */
-template <typename T, typename ReduceOp, int blockSize>
+template <typename T, typename ReduceOp>
 __global__ void MiddleReduceForward(const T *x, T *y, const int dim0, const int dim1, const int dim2, ReduceOp op, const int N) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
