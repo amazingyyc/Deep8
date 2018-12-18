@@ -9,7 +9,7 @@ TEST(L2Norm, forwardCPU) {
 	CPUDevice device;
 
     auto input  = createTensor<CPUDevice, double>(device, 10, 200);
-    auto output = createTensor<CPUDevice, double>(device, 10, 1);
+    auto output = createTensor<CPUDevice, double>(device, 1, 1);
 
     auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
 
@@ -20,17 +20,13 @@ TEST(L2Norm, forwardCPU) {
 
     l2Norm.forwardCPU(inputTensor, &output);
 
-    for (int i = 0; i < 10; ++i) {
-        double temp = 0;
+	double temp = 0;
 
-        auto inputPtr = input.data() + i * 200;
+	for (int i = 0; i < 10 * 200; ++i) {
+		temp += input.data()[i] * input.data()[i];
+	}
 
-        for (int j = 0; j < 200; ++j) {
-            temp += inputPtr[j] * inputPtr[j];
-        }
-
-        ASSERT_EQ(sqrt(temp), output.data()[i]);
-    }
+	ASSERT_EQ(sqrt(temp), output.data()[0]);
 
     freeTensor(device, input);
     freeTensor(device, output);
@@ -45,8 +41,8 @@ TEST(L2Norm, backwardCPU) {
 	auto inputValue = createTensor<CPUDevice, float>(device, 400, 200);
 	auto inputGrad = createTensor<CPUDevice, float>(device, 400, 200);
 
-    auto outputValue = createTensor<CPUDevice, float>(device, 400, 1);
-    auto outputGrad  = createTensor<CPUDevice, float>(device, 400, 1);
+    auto outputValue = createTensor<CPUDevice, float>(device, 1, 1);
+    auto outputGrad  = createTensor<CPUDevice, float>(device, 1, 1);
 
     auto inputVar = createFakeVariable<CPUDevice, float>(device);
 
@@ -60,16 +56,12 @@ TEST(L2Norm, backwardCPU) {
     l2Norm.forwardCPU(inputValues, &outputValue);
     l2Norm.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
-    for (int i = 0; i < 400; ++i) {
-        auto inputPtr = inputValue.data() + i * 200;
-        auto inputGradPtr = inputGrad.data() + i * 200;
 
-        auto temp = outputGrad.data()[i] / outputValue.data()[i];
+	for (int i = 0; i < 400 * 200; ++i) {
+		auto temp = outputGrad.data()[0] / outputValue.data()[0];
 
-        for (int j = 0; j < 200; ++j) {
-            ASSERT_EQ(temp * inputPtr[j], inputGradPtr[j]);
-        }
-    }
+		ASSERT_EQ(temp * inputValue.data()[i], inputGrad.data()[i]);
+	}
 
     freeTensor(device, inputValue);
     freeTensor(device, inputGrad);
@@ -90,14 +82,14 @@ TEST(L2Norm, GPU_float) {
     auto inputPtr = (float*)malloc(sizeof(float) * 400 * 200);
     auto inputGradPtr = (float*)malloc(sizeof(float) * 400 * 200);
 
-    auto outputPtr = (float*)malloc(sizeof(float) * 400 * 1);
-    auto outputGradPtr = (float*)malloc(sizeof(float) * 400 * 1);
+    auto outputPtr = (float*)malloc(sizeof(float) * 1 * 1);
+    auto outputGradPtr = (float*)malloc(sizeof(float) * 1 * 1);
 
     auto input = createTensorGPU<real>(device, inputPtr, 400, 200);
 	auto inputGrad  = createTensorGPU<real>(device, inputGradPtr, 400, 200);
 
-	auto output = createTensorGPU<real>(device, outputPtr, 400, 1);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 400, 1);
+	auto output = createTensorGPU<real>(device, outputPtr, 1, 1);
+	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 1, 1);
 
     /**create fake Add Function*/
 	auto inputVar = createFakeVariable<GPUDevice, real>(device);
@@ -112,31 +104,22 @@ TEST(L2Norm, GPU_float) {
 	l2norm.forwardGPU(inputValues, &output);
 	l2norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
 
-    device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 400);
+    device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 1);
     device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
 
-    for (int i = 0; i < 400; ++i) {
-        real temp = 0;
+	real temp = 0;
+	for (int i = 0; i < 400 * 200; ++i) {
+		temp += inputPtr[i] * inputPtr[i];
+	}
 
-        auto tempInputPtr = inputPtr + i * 200;
+	ASSERT_EQ(sqrt(temp), outputPtr[0]);
 
-        for (int j = 0; j < 200; ++j) {
-            temp += tempInputPtr[j] * tempInputPtr[j];
-        }
+	for (int i = 0; i < 400 * 200; ++i) {
+		auto temp = outputGradPtr[0] / outputPtr[0];
 
-        ASSERT_EQ(sqrt(temp), outputPtr[i]);
-    }
+		ASSERT_TRUE(std::abs(temp * inputPtr[i] - inputGradPtr[i]) < 1e-6);
+	}
 
-    for (int i = 0; i < 400; ++i) {
-        auto tempInputPtr = inputPtr + i * 200;
-        auto tempInputGradPtr = inputGradPtr + i * 200;
-
-        auto temp = outputGradPtr[i] / outputPtr[i];
-
-        for (int j = 0; j < 200; ++j) {
-            ASSERT_TRUE(std::abs(temp * tempInputPtr[j] - tempInputGradPtr[j]) < 1e-6);
-        }
-    }
 
     free(inputPtr);
 	free(inputGradPtr);
@@ -162,8 +145,8 @@ TEST(L2Norm, half_GPU) {
 	auto input = createTensorGPU<real>(device, 400, 200);
 	auto inputGrad = createTensorGPU<real>(device, 400, 200);
 
-	auto output = createTensorGPU<real>(device, 400, 1);
-	auto outputGrad = createTensorGPU<real>(device, 400, 1);
+	auto output = createTensorGPU<real>(device, 1, 1);
+	auto outputGrad = createTensorGPU<real>(device, 1, 1);
 
 	/**create fake Add Function*/
 	auto inputVar = createFakeVariable<GPUDevice, real>(device);

@@ -8,7 +8,9 @@ namespace Deep8 {
 template <typename T>
 class Softmax: public Function<T> {
 public:
-    explicit Softmax(std::vector<Node *> &inputs);
+	sizze_t axis;
+
+    explicit Softmax(std::vector<Node *> &inputs, size_t axis = 0);
 
 	void check() override;
 

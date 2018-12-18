@@ -41,8 +41,8 @@ set(DEEP8_SRC_FILES
 		src/nodes/DivideScalar.cpp
 		src/nodes/Exp.cpp
 		src/nodes/Function.cpp
-		# src/nodes/L1Norm.cpp
-		# src/nodes/L2Norm.cpp
+		src/nodes/L1Norm.cpp
+		src/nodes/L2Norm.cpp
 		src/nodes/Linear.cpp
 		src/nodes/Log.cpp
 		src/nodes/LReLu.cpp
@@ -85,8 +85,8 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/Divide.cu
 		src/nodes/DivideScalar.cu
 		src/nodes/Exp.cu
-		# src/nodes/L1Norm.cu
-		# src/nodes/L2Norm.cu
+		src/nodes/L1Norm.cu
+		src/nodes/L2Norm.cu
 		src/nodes/Linear.cu
 		src/nodes/Log.cu
 		src/nodes/LReLu.cu

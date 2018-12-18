@@ -157,6 +157,27 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuMax<half>(const half &i1, const half &i
 }
 #endif
 
+template <typename real>
+DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE real cuMinValue() {
+}
+
+template <>
+DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE float cuMinValue() {
+	return -FLT_MAX;
+}
+
+template <>
+DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double cuMinValue() {
+	return -DBL_MAX;
+}
+
+#ifdef HAVE_HALF
+template <>
+DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuMinValue() {
+	return -65504.0;
+}
+#endif
+
 }
 
 

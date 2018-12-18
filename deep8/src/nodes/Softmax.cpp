@@ -3,8 +3,8 @@
 namespace Deep8 {
 
 template <typename T>
-Softmax<T>::Softmax(std::vector<Node *> &inputs): Function<T>(inputs) {
-		check();
+Softmax<T>::Softmax(std::vector<Node *> &inputs, size_t a): Function<T>(inputs), axis(a) {
+	check();
 }
 
 template <typename T>
@@ -12,14 +12,26 @@ void Softmax<T>::check() {
 	Function<T>::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Softmax Function needs only 1 input");
-	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.nDims >= 2, "the input dimension must be >= 2");
 
-	this->outputShape = this->inputs[0]->outputShape;
+	auto inputShape = this->inputs[0]->outputShape;
+
+	DEEP8_ARGUMENT_CHECK(0 <= axis && axis < inputShape.nDims, "the axis is error");
+
+	std::vector<size_t> list;
+	for (int i = 0; i < inputShape.nDims; ++i) {
+		if (i != axis) {
+			list.emplace_back(inputShape.dim(i));
+		} else {
+			list.emplace_back(1);
+		}
+	}
+
+	this->outputShape = Shape(inputShape.batch, list);
 }
 
 template <typename T>
 void Softmax<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-	auto cpuDevice = static_cast<CPUDevice*>(output->device());
+	/*auto cpuDevice = static_cast<CPUDevice*>(output->device());
 	auto eigenDevice = cpuDevice->eigenDevice;
 
 	auto shape = output->shape;
@@ -42,7 +54,7 @@ void Softmax<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 	t.device(*eigenDevice) = y.sum(reduceDims).reshape(reshape);
 	y.device(*eigenDevice) = y / t.broadcast(broad);
 
-	cpuDevice->free(tempPtr);
+	cpuDevice->free(tempPtr);*/
 }
 
 template <typename T>
@@ -51,7 +63,7 @@ void Softmax<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 				const Tensor<T> *outputGradient,
 				size_t index,
 				Tensor<T> *iGradient)  {
-	DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
+	/*DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
 
 	auto cpuDevice = static_cast<CPUDevice*>(iGradient->device());
 	auto eigenDevice = cpuDevice->eigenDevice;
@@ -75,7 +87,7 @@ void Softmax<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 	s.device(*eigenDevice) = (y * dy).sum(sumDims).reshape(reshape);
 	dx.device(*eigenDevice) += (dy - s.broadcast(broad)) * y;
 
-	cpuDevice->free(sptr);
+	cpuDevice->free(sptr);*/
 }
 
 DEEP8_RE_DECLARATION_HALF_FUNC(Softmax);

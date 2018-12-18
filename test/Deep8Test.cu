@@ -15,8 +15,8 @@
 //#include "DivideTest.h"
 //#include "DivideScalarTest.h"
 //#include "ExpTest.h"
-//#include "L1NormTest.h"?
-//#include "L2NormTest.h"?
+#include "L1NormTest.h"
+#include "L2NormTest.h"
 //#include "LinearTest.h"
 //#include "LogTest.h"
 //#include "LReLuTest.h"

@@ -2,7 +2,7 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
-#include "GPUReduce.cuh"
+#include "GPUReduce.h"
 #include "L1Norm.h"
 
 namespace Deep8 {
@@ -35,38 +35,26 @@ struct L1NormBackwardOp {
 
 template <typename T>
 void L1Norm<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-	auto shape = inputs[0]->shape;
-	int batch  = (int)shape.batch();
-	int size   = (int)shape.size() / batch;
+	int N  = (int)inputs[0]->shape.size();
 
 	auto x = inputs[0]->data();
 	auto y = output->data();
 
-	int blockSize = 1024;
-
-	if (size < blockSize) {
-		blockSize = prevPowerOf2(size);
-	}
-
-	callTailReduceForward<T, L1NormForwardOp<T>>(x, y, batch, size, blockSize);
+	callAllReduceForward<T, L1NormForwardOp<T>>(x, y, N);
 }
 
 template <typename T>
 void L1Norm<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
 	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
 
-	auto x = inputs[0]->data();
+	auto x  = inputs[0]->data();
 	auto dx = iGradient->data(); 
 	auto y  = output->data();
 	auto dy = outputGradient->data();
 
-	int N     = (int)iGradient->shape.size();
-	int batch = (int)iGradient->shape.batch();
-	int size  = N / batch;
+	int N = (int)iGradient->shape.size();
 
-	int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
-
-	TailReduceBackward<T, L1NormBackwardOp<T>> <<<grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, batch, size, L1NormBackwardOp<T>(), N);
+	callAllReduceBackward<T, L1NormBackwardOp<T>>(x, dx, y, dy, N);
 }
 
 DEEP8_DECLARATION_GPU_FUNC(L1Norm)
