@@ -54,6 +54,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/MultiplyScalar.cpp
 		src/nodes/Node.cpp
 		src/nodes/Parameter.cpp
+		src/nodes/ReduceSum.cpp
 		src/nodes/ReLu.cpp
 		src/nodes/ReShape.cpp
 		src/nodes/ScalarDivide.cpp
@@ -96,6 +97,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/MinusScalar.cu
 		src/nodes/Multiply.cu
 		src/nodes/MultiplyScalar.cu
+		src/nodes/ReduceSum.cu
 		src/nodes/ReLu.cu
 		src/nodes/ScalarDivide.cu
 		src/nodes/ScalarMinus.cu

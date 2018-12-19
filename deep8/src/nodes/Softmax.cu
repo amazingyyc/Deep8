@@ -160,22 +160,29 @@ template <typename T>
 void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
 	auto device = (GPUDevice*)output->device();
 
-	auto xshape = inputs[0]->shape;
-
 	auto x = inputs[0]->data();
 	auto y = output->data();
 
-	int dim0 = xshape.batch;
-	int dim1 = xshape.dim(axis);
-	int dim2 = 1;
+    auto shape = inputs[0]->shape;
+    int dim0, dim1, dim2;
 
-	for (int i = 0; i < axis; ++i) {
-		dim0 *= xshape.dim(i);
-	}
+    if (axis < 0) {
+        dim0 = (int) shape.batch;
+        dim1 = (int) shape.batchSize();
+        dim2 = 1;
+    } else {
+        dim0 = (int) shape.batch;
+        dim1 = (int) shape.dim(axis);
+        dim2 = 1;
 
-	for (int i = axis + 1; i < xshape.nDims; ++i) {
-		dim2 *= xshape.dim(i);
-	}
+        for (int i = 0; i < axis; ++i) {
+            dim0 *= (int) shape.dim(i);
+        }
+
+        for (int i = axis + 1; i < shape.nDims; ++i) {
+            dim2 *= (int) shape.dim(i);
+        }
+    }
 
 	auto tempptr = (T*)device->malloc(sizeof(T) * dim0 * dim2);
 
@@ -356,47 +363,6 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
     }
 
     device->free(tempptr);
-
-	// /*
-    // auto device = (GPUDevice*)output->device();
-
-    // auto x = inputs[0]->data();
-    // auto y = output->data();
-
-    // int N      = (int)output->shape.size();
-    // int batch  = (int)output->shape.batch;
-    // int size   = N / batch;
-
-    // int blockSize = 1024;
-
-    // if (size < blockSize) {
-    //     blockSize = prevPowerOf2(size);
-    // }
-
-    // auto maxPtr = (T*)device->malloc(sizeof(T) * batch);
-    // auto sumPtr = (T*)device->malloc(sizeof(T) * batch);
-	// */
-
-
-    // /**find max*/
-
-	// /*
-    // callTailReduceForward<T, SoftmaxFindMaxOp<T>>(x, maxPtr, batch, size, blockSize);
-
-    // int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
-
-    // SoftmaxExpMinusScalar<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(x, maxPtr, y, size, N);
-	// */
-
-    // /***calculate sum*/
-    // /*
-	// callTailReduceForward<T, SoftmaxSumOp<T>>(y, sumPtr, batch, size, blockSize);
-
-    // SoftmaxDivideScalar<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(y, sumPtr, size, N);
-
-    // device->free(sumPtr);
-    // device->free(maxPtr);
-	// */
 }
 
 template <typename T>
@@ -405,24 +371,31 @@ void Softmax<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const 
 
     auto device = (GPUDevice*)iGradient->device();
 
-    auto xshape = inputs[0]->shape;
-
     auto x  = inputs[0]->data();
     auto dx = iGradient->data();
 	auto y  = output->data();
 	auto dy = outputGradient->data();
 	
-    int dim0 = xshape.batch;
-	int dim1 = xshape.dim(axis);
-	int dim2 = 1;
+    auto shape = iGradient->shape;
+    int dim0, dim1, dim2;
 
-	for (int i = 0; i < axis; ++i) {
-		dim0 *= xshape.dim(i);
-	}
+    if (axis < 0) {
+        dim0 = (int) shape.batch;
+        dim1 = (int) shape.batchSize();
+        dim2 = 1;
+    } else {
+        dim0 = (int) shape.batch;
+        dim1 = (int) shape.dim(axis);
+        dim2 = 1;
 
-	for (int i = axis + 1; i < xshape.nDims; ++i) {
-		dim2 *= xshape.dim(i);
-	}
+        for (int i = 0; i < axis; ++i) {
+            dim0 *= (int) shape.dim(i);
+        }
+
+        for (int i = axis + 1; i < shape.nDims; ++i) {
+            dim2 *= (int) shape.dim(i);
+        }
+    }
 
     /**store the temp data*/
     auto dotptr = (T*)device->malloc(sizeof(T) * dim0 * dim2);
@@ -469,63 +442,6 @@ void Softmax<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const 
     SoftmaxBackwardKernel<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(dx, y, dy, dotptr, dim0, dim1, dim2, N);
 
     device->free(dotptr);
-
-
-	/*
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
-
-	auto device = (GPUDevice*)iGradient->device();
-
-	auto dx = iGradient->data();
-	auto y  = output->data();
-	auto dy = outputGradient->data();
-
-    int N      = (int)iGradient->shape.size();
-    int batch  = (int)iGradient->shape.batch;
-    int size   = N / batch;
-
-    int blockSize = 1024;
-
-    if (size < blockSize) {
-        blockSize = prevPowerOf2(size);
-    }
-
-    int sharedSize = sizeof(T) * blockSize;
-
-    auto dotPtr = (T*)device->malloc(sizeof(T) * batch);
-
-    if (1024 == blockSize) {
-        SoftmaxBackwardDotKernel<1024, T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (512 == blockSize) {
-        SoftmaxBackwardDotKernel<512,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (256 == blockSize) {
-        SoftmaxBackwardDotKernel<256,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (128 == blockSize) {
-        SoftmaxBackwardDotKernel<128,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (64 == blockSize) {
-        SoftmaxBackwardDotKernel<64,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (32 == blockSize) {
-        SoftmaxBackwardDotKernel<32,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (16 == blockSize) {
-        SoftmaxBackwardDotKernel<16,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (8 == blockSize) {
-        SoftmaxBackwardDotKernel<8,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (4 == blockSize) {
-        SoftmaxBackwardDotKernel<4,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (2 == blockSize) {
-        SoftmaxBackwardDotKernel<2,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else if (1 == blockSize) {
-        SoftmaxBackwardDotKernel<1,  T> << <batch, blockSize, sharedSize >> > (y, dy, dotPtr, batch, size);
-    } else {
-        DEEP8_RUNTIME_ERROR("the block size is error");
-	}
-
-    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
-
-    SoftmaxBackwardKernel<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE >>>(dx, y, dy, dotPtr, size, N);
-
-    device->free(dotPtr);
-	*/
 }
 
 DEEP8_DECLARATION_GPU_FUNC(Softmax);

@@ -27,11 +27,11 @@
 //#include "MultiplyScalarTest.h"
 //#include "ReLuTest.h"
 //#include "SigmoidTest.h"
-//#include "SoftmaxTest.h"
+#include "SoftmaxTest.h"
 //#include "SquareTest.h"
 //#include "TanhTest.h"
 //#include "LinearRegressionTest.h"
-#include "AutoBatchTest.h"
+//#include "AutoBatchTest.h"
 
 #ifdef HAVE_CUDA
 //#include "LinearRegressionGPUTest.h"
