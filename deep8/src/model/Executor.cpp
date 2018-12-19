@@ -90,7 +90,7 @@ Variable<T>* Executor<T>::createVariableWithFunction(FunctionBase *func) {
 
 template <typename T>
 Parameter<T>* Executor<T>::addParameter(std::vector<size_t> list, bool updateGradient, void *ptr) {
-	Shape shape(1, list);
+	Shape shape(list);
 
 	return addParameter(shape, updateGradient, ptr);
 }
