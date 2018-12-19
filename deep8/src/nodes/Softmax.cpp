@@ -31,6 +31,42 @@ void Softmax<T>::check() {
 
 template <typename T>
 void Softmax<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
+    auto cpuDevice = static_cast<CPUDevice *>(output->device());
+    auto eigenDevice = cpuDevice->eigenDevice;
+
+    auto xshape = inputs[0]->shape;
+
+    int dim0 = xshape.batch;
+    int dim1 = xshape.dim(axis);
+    int dim2 = 1;
+
+    for (int i = 0; i < axis; ++i) {
+      dim0 *= xshape.dim(i);
+    }
+
+    for (int i = axis + 1; i < xshape.nDims; ++i) {
+      dim2 *= xshape.dim(i);
+    }
+
+    auto tempptr = (T*)cpuDevice->malloc(sizeof(T) * dim0 * dim2);
+
+    Eigen::array<int, 1> reduceDims = { 1 };
+    Eigen::array<int, 3> reshape    = { dim0, 1, dim2 };
+    Eigen::array<int, 3> broad      = { 1, dim1, 1 };
+
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> x(inputs[0]->data(), dim0, dim1, dim2);
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> y(output->data(), dim0, dim1, dim2);
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> t(tempptr, dim0, 1, dim2);
+
+    t.device(*eigenDevice) = x.maximum(reduceDims).reshape(reshape);
+    y.device(*eigenDevice) = (x - t.broadcast(broad)).exp();
+    t.device(*eigenDevice) = y.sum(reduceDims).reshape(reshape);
+    y.device(*eigenDevice) = y / t.broadcast(broad);
+
+    cpuDevice->free(tempptr);
+
+
+
 	/*auto cpuDevice = static_cast<CPUDevice*>(output->device());
 	auto eigenDevice = cpuDevice->eigenDevice;
 
@@ -58,11 +94,42 @@ void Softmax<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 }
 
 template <typename T>
-void Softmax<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-				const Tensor<T> *output,
-				const Tensor<T> *outputGradient,
-				size_t index,
-				Tensor<T> *iGradient)  {
+void Softmax<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
+    DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
+
+    auto cpuDevice = static_cast<CPUDevice*>(iGradient->device());
+    auto eigenDevice = cpuDevice->eigenDevice;
+
+    auto shape = iGradient->shape;
+
+    int dim0 = shape.batch;
+    int dim1 = shape.dim(axis);
+    int dim2 = 1;
+
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= shape.dim(i);
+    }
+
+    for (int i = axis + 1; i < shape.nDims; ++i) {
+        dim2 *= shape.dim(i);
+    }
+
+    auto tempptr = (T*)cpuDevice->malloc(sizeof(T) * dim0 * dim2);
+
+    Eigen::array<int, 1> sumDims = { 1 };
+    Eigen::array<int, 3> reshape = { dim0, 1, dim2 };
+    Eigen::array<int, 3> broad   = { 1, dim1, 1 };
+
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> t(tempptr, dim0, 1, dim2);
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> dx(iGradient->data(),      dim0, dim1, dim2);
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> y(output->data(),          dim0, dim1, dim2);
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> dy(outputGradient->data(), dim0, dim1, dim2);
+
+    t.device(*eigenDevice) = (y * dy).sum(sumDims).reshape(reshape);
+    dx.device(*eigenDevice) += (dy - t.broadcast(broad)) * y;
+
+    cpuDevice->free(tempptr);
+
 	/*DEEP8_ARGUMENT_CHECK(0 == index, "the index of Softmax backwardCPU is error");
 
 	auto cpuDevice = static_cast<CPUDevice*>(iGradient->device());

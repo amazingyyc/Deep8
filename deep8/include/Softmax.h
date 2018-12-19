@@ -8,7 +8,7 @@ namespace Deep8 {
 template <typename T>
 class Softmax: public Function<T> {
 public:
-	sizze_t axis;
+	size_t axis;
 
     explicit Softmax(std::vector<Node *> &inputs, size_t axis = 0);
 
