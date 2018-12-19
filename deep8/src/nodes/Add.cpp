@@ -38,7 +38,7 @@ void Add<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *
         auto xBroad = xReshape;
         auto yBroad = yReshape;
 
-        for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+        for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
             if (xBroad[i] < zReshape[i]) {
                 xBroad[i] = zReshape[i];
             } else {
@@ -57,7 +57,6 @@ void Add<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *
     }
 }
 
-
 template <typename T>
 template <int diffCount>
 void Add<T>::backwardCPUImpl(Eigen::ThreadPoolDevice *device, const Tensor<T> *outputGradient, Tensor<T> *iGradient) {
@@ -66,7 +65,7 @@ void Add<T>::backwardCPUImpl(Eigen::ThreadPoolDevice *device, const Tensor<T> *o
 
     Eigen::array<int, diffCount> sumDims;
 
-    for (int i = 0, j = 0; i < MAX_TENSOR_DIMS; ++i) {
+    for (int i = 0, j = 0; i <= MAX_TENSOR_DIMS; ++i) {
         if (outputGradShape[i] != iGradShape[i]) {
             sumDims[j++] = i;
         }
@@ -83,7 +82,7 @@ void Add<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
                  Tensor<T> *iGradient) {
     auto device = static_cast<CPUDevice *>(outputGradient->device())->eigenDevice;
 
-    auto gradShape = iGradient->shape;
+    auto gradShape   = iGradient->shape;
     auto outputShape = outputGradient->shape;
 
     if (gradShape == outputShape) {
@@ -92,11 +91,11 @@ void Add<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
     }
 
     auto outputGradEnlongateShape = enlongateShapeToMaxDim(outputGradient->shape);
-    auto iGradEnlongateShape = enlongateShapeToMaxDim(iGradient->shape);
+    auto iGradEnlongateShape      = enlongateShapeToMaxDim(iGradient->shape);
 
     int diffCount = 0;
 
-    for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+    for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
         if (outputGradEnlongateShape[i] != iGradEnlongateShape[i]) {
             diffCount++;
         }

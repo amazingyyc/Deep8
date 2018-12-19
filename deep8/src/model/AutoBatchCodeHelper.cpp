@@ -45,7 +45,9 @@ void AutoBatchCodeHelper::shape(Shape& shape) {
     oss << underline << "shape" << colon;
     oss << arrayBegin;
 
-    for (size_t i = 0; i < shape.nDims(); ++i) {
+    oss << shape.batch << comma;
+
+    for (size_t i = 0; i < shape.nDims; ++i) {
         oss << shape.dim(i) << comma;
     }
 
@@ -84,6 +86,14 @@ void AutoBatchCodeHelper::input2End() {
     inputEnd(2);
 }
 
+void AutoBatchCodeHelper::attachBegin() {
+    oss << underline << "attach" << colon << leftCurly;
+}
+
+void AutoBatchCodeHelper::attachEnd() {
+    oss << rightCurly;
+}
+
 AutoBatchCodeHelper& AutoBatchCodeHelper::operator << (int i) {
     oss << i;
 
@@ -104,8 +114,9 @@ AutoBatchCodeHelper& AutoBatchCodeHelper::operator << (std::string str) {
 
 AutoBatchCodeHelper& AutoBatchCodeHelper::operator << (Shape& shape) {
     oss << arrayBegin;
+    oss << shape.batch << comma;
 
-    for (size_t i = 0; i < shape.nDims(); ++i) {
+    for (size_t i = 0; i < shape.nDims; ++i) {
         oss << shape.dim(i) << comma;
     }
 

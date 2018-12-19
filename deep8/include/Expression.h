@@ -129,9 +129,9 @@ public:
 		return Expression<T>(executor, executor->addFunction(new Sigmoid<T>(inputs)));
 	}
 
-	Expression<T> softmax() {
+	Expression<T> softmax(size_t axis = 0) {
 		std::vector<Node*> inputs = { node };
-		return Expression<T>(executor, executor->addFunction(new Softmax<T>(inputs)));
+		return Expression<T>(executor, executor->addFunction(new Softmax<T>(inputs, axis)));
 	}
 
 	Expression<T> square() {
@@ -414,9 +414,9 @@ Expression<T> softmax(const Expression<T> &x) {
 }
 
 template <typename T>
-Expression<T> square(const Expression<T> &x) {
+Expression<T> square(const Expression<T> &x, size_t axis = 0) {
 	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Square<T>(inputs)));
+    return Expression<T>(x.executor, x.executor->addFunction(new Square<T>(inputs, axis)));
 }
 
 template <typename T>

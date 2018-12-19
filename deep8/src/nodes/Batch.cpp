@@ -3,8 +3,8 @@
 namespace Deep8 {
 
 template <typename T>
-Batch<T>::Batch(std::vector<Node *> &inputs, Shape &outputShape) : Function<T>(inputs), continuous(false) {
-	this->outputShape = outputShape;
+Batch<T>::Batch(std::vector<Node *> &inputs, Shape &shape) : Function<T>(inputs), continuous(false) {
+	this->outputShape = shape;
 	check();
 }
 
@@ -34,7 +34,7 @@ void Batch<T>::forward() {
 
 	/**
 	 * 2 condition the continuous is true
-	 * 1: all inputs's updateGradient is false, the the inputs value,s memory is continuous
+	 * 1: all inputs's updateGradient is false, the the inputs value's memory is continuous
 	 * 2: all inputs's updateGradient is true, the inpus value and gradient's memory is continuous
 	 */
 	bool allUpdateGradient = true;
@@ -107,9 +107,8 @@ void Batch<T>::forward() {
 			y->gradient.offset  = x->gradient.offset;
 			y->gradient.shape   = this->outputShape;
 		} else {
-			/**set the output gradient is empty*/
-			TensorStorage emptyStorage;
-			y->gradient.storage = emptyStorage;
+			/**release the gradient memory*/
+			y->releaseGradient();
 		}
 	} else {
 		/**copy the inputs memory to output*/
@@ -120,7 +119,7 @@ void Batch<T>::forward() {
 
 		std::vector<const Tensor<T>*> inputValues;
 
-		for (auto item : inputs) {
+		for (auto item : this->inputs) {
 			auto inputVar = static_cast<Variable<T>*>(item);
 
 			DEEP8_ARGUMENT_CHECK(deviceType == inputVar->deviceType(), "the device of input must be same with output");
@@ -152,7 +151,7 @@ void Batch<T>::backward() {
 		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be a Variable type");
 	}
 
-	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
+	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the output size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 
 	auto outputVar = static_cast<Variable<T>*>(this->outputs.first());
@@ -164,7 +163,7 @@ void Batch<T>::backward() {
 
 	std::vector<const Tensor<T>*> inputValues;
 
-	for (auto item : inputs) {
+	for (auto item : this->inputs) {
 		auto inputVar = static_cast<Variable<T>*>(item);
 
 		DEEP8_ARGUMENT_CHECK(deviceType == inputVar->deviceType(), "the device of the input and output must have same device type");
@@ -173,16 +172,16 @@ void Batch<T>::backward() {
 	}
 
 	if (DeviceType::CPU == deviceType) {
-		for (size_t i = 0; i < inputs.size(); ++i) {
-			auto inputVar = static_cast<Variable<T>*>(inputs[i]);
+		for (size_t i = 0; i < this->inputs.size(); ++i) {
+			auto inputVar = static_cast<Variable<T>*>(this->inputs[i]);
 
 			if (inputVar->updateGradient) {
 				this->backwardCPU(inputValues, outputValue, outputGradient, i, &(inputVar->gradient));
 			}
 		}
 	} else {
-		for (size_t i = 0; i < inputs.size(); ++i) {
-			auto inputVar = static_cast<Variable<T>*>(inputs[i]);
+		for (size_t i = 0; i < this->inputs.size(); ++i) {
+			auto inputVar = static_cast<Variable<T>*>(this->inputs[i]);
 
 			if (inputVar->updateGradient) {
 #ifdef HAVE_CUDA
@@ -210,6 +209,8 @@ void Batch<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T>
 
 template <typename T>
 void Batch<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
+	DEEP8_ARGUMENT_CHECK(0 <= index && index < inputs.size(), "the index is error");
+
 	auto device = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
 
 	size_t offset = 0;

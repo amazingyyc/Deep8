@@ -91,15 +91,9 @@ void AvgPooling2d<T>::forwardGPUImpl(const T *x, T *y,
 
     int N = batch * outputHeight * outputWidth * channel;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AvgPooling2dForwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    AvgPooling2dForwardKernel<T><<<grideSize, blockSize>>>(x, y,
+    AvgPooling2dForwardKernel<T><<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(x, y,
                                                         batch, inputHeight, inputWidth,
                                                         outputHeight, outputWidth, channel,
                                                         filterHeight, filterWidth,
@@ -107,40 +101,15 @@ void AvgPooling2d<T>::forwardGPUImpl(const T *x, T *y,
                                                         strideY, strideX, N);
 }
 
-#ifdef HAVE_HALF
-
-template <>
-void AvgPooling2d<half>::forwardGPUImpl(const half *x, half *y,
-                                    const int batch,
-                                    const int inputHeight, const int inputWidth,
-                                    const int outputHeight, const int outputWidth,
-                                    const int channel,
-                                    const int filterHeight, const int filterWidth,
-                                    const int padTop, const int padLeft,
-                                    const int strideY, const int strideX) {
-    int N = batch * outputHeight * outputWidth * channel;
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    AvgPooling2dForwardKernel<half> << <grideSize, blockSize >> > (x, y,
-        batch, inputHeight, inputWidth,
-        outputHeight, outputWidth, channel,
-        filterHeight, filterWidth,
-        padTop, padLeft,
-        strideY, strideX, N);
-}
-#endif // HAVE_HALF
-
 template <typename T>
 void AvgPooling2d<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    auto batch       = static_cast<int>(inputs[0]->shape.dim(0));
-    auto inputHeight = static_cast<int>(inputs[0]->shape.dim(1));
-    auto inputWidth  = static_cast<int>(inputs[0]->shape.dim(2));
-    auto channel     = static_cast<int>(inputs[0]->shape.dim(3));
+    auto batch       = static_cast<int>(inputs[0]->shape.batch);
+    auto inputHeight = static_cast<int>(inputs[0]->shape.dim(0));
+    auto inputWidth  = static_cast<int>(inputs[0]->shape.dim(1));
+    auto channel     = static_cast<int>(inputs[0]->shape.dim(2));
 
-    auto outputHeight = static_cast<int>(output->shape.dim(1));
-    auto outputWidth  = static_cast<int>(output->shape.dim(2));
+    auto outputHeight = static_cast<int>(output->shape.dim(0));
+    auto outputWidth  = static_cast<int>(output->shape.dim(1));
 
     int padY = std::max<int>(0, (outputHeight - 1) * static_cast<int>(strideY) + static_cast<int>(filterHeight) - inputHeight);
     int padX = std::max<int>(0, (outputWidth  - 1) * static_cast<int>(strideX) + static_cast<int>(filterWidth)  - inputWidth);
@@ -162,44 +131,15 @@ void AvgPooling2d<T>::backwardGPUImpl(T *dx, const T *dy,
 
     int N = batch * inputHeight * inputWidth * channel;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
+    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, AvgPooling2dBackwardKernel<T>, 0, N));
-
-    grideSize = (N + blockSize - 1) / blockSize;
-
-    AvgPooling2dBackwardKernel<T> << <grideSize, blockSize >> > (dx, dy,
+    AvgPooling2dBackwardKernel<T> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (dx, dy,
             batch, inputHeight, inputWidth,
             outputHeight, outputWidth, channel,
             filterHeight, filterWidth,
             padTop, padLeft,
             strideY, strideX, N);
 }
-
-#ifdef HAVE_HALF
-template <>
-void AvgPooling2d<half>::backwardGPUImpl(half *dx, const half *dy,
-                                    const int batch, const int inputHeight, const int inputWidth,
-                                    const int outputHeight, const int outputWidth, const int channel,
-                                    const int filterHeight, const int filterWidth,
-                                    const int padTop, const int padLeft,
-                                    const int strideY, const int strideX) {
-
-    int N = batch * inputHeight * inputWidth * channel;
-
-    int blockSize = 1024;
-    int grideSize = (N + blockSize - 1) / blockSize;
-
-    AvgPooling2dBackwardKernel<half> << <grideSize, blockSize >> > (dx, dy,
-        batch, inputHeight, inputWidth,
-        outputHeight, outputWidth, channel,
-        filterHeight, filterWidth,
-        padTop, padLeft,
-        strideY, strideX, N);
-}
-#endif
 
 template <typename T>
 void AvgPooling2d<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
@@ -210,13 +150,13 @@ void AvgPooling2d<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
 
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-    auto batch       = static_cast<int>(inputs[0]->shape.dim(0));
-    auto inputHeight = static_cast<int>(inputs[0]->shape.dim(1));
-    auto inputWidth  = static_cast<int>(inputs[0]->shape.dim(2));
-    auto channel     = static_cast<int>(inputs[0]->shape.dim(3));
+    auto batch       = static_cast<int>(inputs[0]->shape.batch);
+    auto inputHeight = static_cast<int>(inputs[0]->shape.dim(0));
+    auto inputWidth  = static_cast<int>(inputs[0]->shape.dim(1));
+    auto channel     = static_cast<int>(inputs[0]->shape.dim(2));
 
-    auto outputHeight = static_cast<int>(output->shape.dim(1));
-    auto outputWidth  = static_cast<int>(output->shape.dim(2));
+    auto outputHeight = static_cast<int>(output->shape.dim(0));
+    auto outputWidth  = static_cast<int>(output->shape.dim(1));
 
     int padY = std::max<int>(0, (outputHeight - 1) * static_cast<int>(strideY) + static_cast<int>(filterHeight) - inputHeight);
     int padX = std::max<int>(0, (outputWidth  - 1) * static_cast<int>(strideX) + static_cast<int>(filterWidth) - inputWidth);

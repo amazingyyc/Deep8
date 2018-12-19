@@ -2,19 +2,15 @@
 
 namespace Deep8 {
 
-VariableBase::VariableBase(): updateGradient(false) {
+VariableBase::VariableBase() {
 	this->type = NodeType::Variable;
 }
 
-VariableBase::VariableBase(bool update) : updateGradient(update) {
+VariableBase::VariableBase(Node* input) : Node(input) {
 	this->type = NodeType::Variable;
 }
 
-VariableBase::VariableBase(Node* input, bool update) : Node(input), updateGradient(update) {
-	this->type = NodeType::Variable;
-}
-
-VariableBase::VariableBase(std::vector<Node*> &inputs, bool update) : Node(inputs), updateGradient(update) {
+VariableBase::VariableBase(std::vector<Node*> &inputs) : Node(inputs) {
 	this->type = NodeType::Variable;
 }
 
@@ -28,16 +24,16 @@ void VariableBase::backward() {
 }
 
 template <typename T>
-Variable<T>::Variable(): VariableBase(false) {
+Variable<T>::Variable(): VariableBase(), updateGradient(false) {
 }
 
 template <typename T>
-Variable<T>::Variable(Tensor<T> &v): value(v), VariableBase(false) {
+Variable<T>::Variable(Tensor<T> &v): VariableBase(), updateGradient(false), value(v)  {
 	this->outputShape = this->value.shape;
 }
 
 template <typename T>
-Variable<T>::Variable(Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), VariableBase(true) {
+Variable<T>::Variable(Tensor<T> &v, Tensor<T> &g): VariableBase(), updateGradient(true), value(v), gradient(g) {
 	DEEP8_ARGUMENT_CHECK(this->value.device()->type == this->gradient.device()->type, "the values and gradient must be the same type");
 	DEEP8_ARGUMENT_CHECK(this->value.shape == this->gradient.shape, "the shape if Value and Gradient must be same");
 
@@ -45,7 +41,7 @@ Variable<T>::Variable(Tensor<T> &v, Tensor<T> &g): value(v), gradient(g), Variab
 }
 
 template <typename T>
-Variable<T>::Variable(Node *input, Shape &shape) : VariableBase(input, false) {
+Variable<T>::Variable(Node *input, Shape &shape) : VariableBase(input), updateGradient(false) {
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
 	for (auto i : inputs) {
@@ -57,7 +53,7 @@ Variable<T>::Variable(Node *input, Shape &shape) : VariableBase(input, false) {
 }
 
 template <typename T>
-Variable<T>::Variable(Node *input, Tensor<T> &v, Tensor<T> &g): VariableBase(input, true), value(v), gradient(g) {
+Variable<T>::Variable(Node *input, Tensor<T> &v, Tensor<T> &g): VariableBase(input), updateGradient(true), value(v), gradient(g) {
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
 	DEEP8_ARGUMENT_CHECK(value.device()->type == gradient.device()->type, "the values and gradient must be the same type");
@@ -83,6 +79,12 @@ void Variable<T>::zeroGradient() {
 	if (this->updateGradient) {
 		gradient.zero();
 	}
+}
+
+/**release the gradient*/
+template <typename T>
+void Variable<T>::releaseGradient() {
+	this->gradient.release();
 }
 
 /**

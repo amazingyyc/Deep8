@@ -1,4 +1,5 @@
 #include "ReLu.h"
+#include "AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
@@ -22,6 +23,56 @@ void ReLu<T>::check() {
 
 	/**the ReLu output shape equal the input*/
 	this->outputShape = this->inputs[0]->outputShape;
+}
+
+template <typename T>
+int ReLu<T>::supportAutoBatch() {
+    return -1;
+}
+
+/**auto batch code*/
+template <typename T>
+size_t ReLu<T>::autoBatchCode() {
+    AutoBatchCodeHelper helper;
+
+	// todo: aupport half
+    helper.functionType(FunctionType::ReLu);
+
+    return helper.autoBatchCode();
+}
+
+/**
+ * return the inputs[index]'s shape if it is be batched together.
+ * the shapes is the inputs[index]'s shape that will be batched.
+ */
+template <typename T>
+Shape ReLu<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+    DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
+
+    /**simple set it to a 1 batch shape*/
+    size_t size = 0;
+
+    for (auto item : shapes) {
+        size += item.size();
+    }
+
+    return Shape({ size });
+}
+
+/**
+ * return the inputs's index that can be auto batched
+ */
+template <typename T>
+std::vector<size_t> ReLu<T>::autoBatchIndexes() {
+    return std::vector<size_t>({ 0 });
+}
+
+/**
+ * clone current node for auto batch
+ */
+template <typename T>
+Node* ReLu<T>::autoBatchClone(std::vector<Node*> &inputs) {
+	return new ReLu<T>(inputs);
 }
 
 template <typename T>

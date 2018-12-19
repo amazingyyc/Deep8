@@ -31,8 +31,9 @@
 //#include "SoftmaxTest.h"
 //#include "SquareTest.h"
 //#include "TanhTest.h"
-//#include "LinearRegressionTest.h"
-//#include "AutoBatchTest.h"
+
+#include "LinearRegressionTest.h"?
+//#include "AutoBatchTest.h"?
 
 #ifdef HAVE_CUDA
 #include "LinearRegressionGPUTest.h"

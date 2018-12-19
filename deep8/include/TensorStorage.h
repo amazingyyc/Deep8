@@ -34,6 +34,9 @@ public:
 
 	TensorStorage& operator=(const TensorStorage &other);
 
+	/**release the reference to current memory*/
+	void release();
+
 protected:
 	void free();
 };

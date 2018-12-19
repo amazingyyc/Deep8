@@ -2,7 +2,7 @@
 #include "GPUException.h"
 #include "GPUMathUtils.h"
 #include "GPUDevice.h"
-#include "GPUElementWise.cuh"
+#include "GPUElementWise.h"
 #include "Minus.h"
 
 namespace Deep8 {

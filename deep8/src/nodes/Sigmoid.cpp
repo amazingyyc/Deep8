@@ -1,4 +1,5 @@
 #include "Sigmoid.h"
+#include "AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
@@ -28,6 +29,55 @@ void Sigmoid<T>::check() {
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Sigmoid Function needs only 1 input");
 
 	this->outputShape = this->inputs[0]->outputShape;
+}
+
+template <typename T>
+int Sigmoid<T>::supportAutoBatch() {
+    return -1;
+}
+
+/**auto batch code*/
+template <typename T>
+size_t Sigmoid<T>::autoBatchCode() {
+    AutoBatchCodeHelper helper;
+
+    helper.functionType(FunctionType::Sigmoid);
+
+    return helper.autoBatchCode();
+}
+
+/**
+ * return the inputs[index]'s shape if it is be batched together.
+ * the shapes is the inputs[index]'s shape that will be batched.
+ */
+template <typename T>
+Shape Sigmoid<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+    DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
+
+    /**simple set it to a 1 batch shape*/
+    size_t size = 0;
+
+    for (auto item : shapes) {
+        size += item.size();
+    }
+
+    return Shape({ size });
+}
+
+/**
+ * return the inputs's index that can be auto batched
+ */
+template <typename T>
+std::vector<size_t> Sigmoid<T>::autoBatchIndexes() {
+    return std::vector<size_t>({ 0 });
+}
+
+/**
+ * clone current node for auto batch
+ */
+template <typename T>
+Node* Sigmoid<T>::autoBatchClone(std::vector<Node*> &inputs) {
+	return new Sigmoid<T>(inputs);
 }
 
 template <typename T>

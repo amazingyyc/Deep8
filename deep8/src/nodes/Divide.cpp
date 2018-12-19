@@ -38,7 +38,7 @@ void Divide<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
         auto xBroad = xReshape;
         auto yBroad = yReshape;
 
-        for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+        for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
             if (xBroad[i] < zReshape[i]) {
                 xBroad[i] = zReshape[i];
             } else {
@@ -60,13 +60,13 @@ void Divide<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 template <typename T>
 template <int diffCount>
 void Divide<T>::backwardCPUImpl0(Eigen::ThreadPoolDevice *device,const Tensor<T> *yTensor, const Tensor<T> *outputGradient, Tensor<T> *iGradient) {
-    auto yElongateDims = enlongateShapeToMaxDim(yTensor->shape);
-    auto iElongateDims = enlongateShapeToMaxDim(iGradient->shape);
+    auto yElongateDims      = enlongateShapeToMaxDim(yTensor->shape);
+    auto iElongateDims      = enlongateShapeToMaxDim(iGradient->shape);
     auto outputElongateDims = enlongateShapeToMaxDim(outputGradient->shape);
 
     Eigen::array<int, diffCount> sumDims;
 
-    for (int i = 0, j = 0; i < MAX_TENSOR_DIMS; ++i) {
+    for (int i = 0, j = 0; i <= MAX_TENSOR_DIMS; ++i) {
         if (iElongateDims[i] != outputElongateDims[i]) {
             sumDims[j++] = i;
         }
@@ -74,7 +74,7 @@ void Divide<T>::backwardCPUImpl0(Eigen::ThreadPoolDevice *device,const Tensor<T>
 
     auto yBroad = yElongateDims;
 
-    for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+    for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
         if (yElongateDims[i] != outputElongateDims[i]) {
             yBroad[i] = outputElongateDims[i];
         } else {
@@ -89,14 +89,14 @@ void Divide<T>::backwardCPUImpl0(Eigen::ThreadPoolDevice *device,const Tensor<T>
 template <typename T>
 template <int diffCount>
 void Divide<T>::backwardCPUImpl1(Eigen::ThreadPoolDevice *device, const Tensor<T> *xTensor, const Tensor<T> *yTensor, const Tensor<T> *outputGradient, Tensor<T> *iGradient) {
-    auto xElongateDims = enlongateShapeToMaxDim(xTensor->shape);
-    auto yElongateDims = enlongateShapeToMaxDim(yTensor->shape);
+    auto xElongateDims      = enlongateShapeToMaxDim(xTensor->shape);
+    auto yElongateDims      = enlongateShapeToMaxDim(yTensor->shape);
     auto outputElongateDims = enlongateShapeToMaxDim(outputGradient->shape);
 
     auto xBroad = xElongateDims;
     auto yBroad = yElongateDims;
 
-    for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+    for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
         if (xElongateDims[i] != outputElongateDims[i]) {
             xBroad[i] = outputElongateDims[i];
         } else {
@@ -112,7 +112,7 @@ void Divide<T>::backwardCPUImpl1(Eigen::ThreadPoolDevice *device, const Tensor<T
 
     Eigen::array<int, diffCount> sumDims;
 
-    for (int i = 0, j = 0; i < MAX_TENSOR_DIMS; ++i) {
+    for (int i = 0, j = 0; i <= MAX_TENSOR_DIMS; ++i) {
         if (yElongateDims[i] != outputElongateDims[i]) {
             sumDims[j++] = i;
         }
@@ -131,9 +131,9 @@ void Divide<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
                  Tensor<T> *iGradient) {
     auto device = static_cast<CPUDevice *>(outputGradient->device())->eigenDevice;
 
-/**
- * Z = X / Y
- */
+    /**
+     * Z = X / Y
+     */
     if (0 == index) {
         auto xShape = iGradient->shape;
         auto yShape = inputs[1]->shape;
@@ -144,7 +144,7 @@ void Divide<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 
         int diffCount = 0;
 
-        for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+        for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
             if (xEnlongateDims[i] != zEnlongateDims[i]) {
                 diffCount++;
             }
@@ -173,7 +173,7 @@ void Divide<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 
         int diffCount = 0;
 
-        for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+        for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
             if (yEnlongateDims[i] != zEnlongateDims[i]) {
                 diffCount++;
             }

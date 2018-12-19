@@ -38,7 +38,7 @@ void Minus<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T>
 		auto xBroad = xReshape;
 		auto yBroad = yReshape;
 
-		for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+		for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
 			if (xBroad[i] < zReshape[i]) {
 				xBroad[i] = zReshape[i];
 			} else {
@@ -65,7 +65,7 @@ void Minus<T>::backwardCPUImpl(Eigen::ThreadPoolDevice *device, const Tensor<T> 
 
 	Eigen::array<int, diffCount> sumDims;
 
-	for (int i = 0, j = 0; i < MAX_TENSOR_DIMS; ++i) {
+	for (int i = 0, j = 0; i <= MAX_TENSOR_DIMS; ++i) {
 		if (outputGradShape[i] != iGradShape[i]) {
 			sumDims[j++] = i;
 		}
@@ -105,7 +105,7 @@ void Minus<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 
 	int diffCount = 0;
 
-	for (int i = 0; i < MAX_TENSOR_DIMS; ++i) {
+	for (int i = 0; i <= MAX_TENSOR_DIMS; ++i) {
 		if (iGradientReShape[i] != zReShape[i]) {
 			diffCount++;
 		}
@@ -119,6 +119,8 @@ void Minus<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
 		backwardCPUImpl<3>(device, outputGradient, iGradient, index);
 	} else if (4 == diffCount) {
 		backwardCPUImpl<4>(device, outputGradient, iGradient, index);
+	} else if (5 == diffCount) {
+		backwardCPUImpl<5>(device, outputGradient, iGradient, index);
 	} else {
 		DEEP8_RUNTIME_ERROR("the shape is error");
 	}

@@ -26,9 +26,17 @@ if (HAVE_GPU AND CUDA_FOUND)
 	message(STATUS "include the CUDA head files => ${CUDA_INCLUDE_DIRS}")
 	include_directories(SYSTEM ${CUDA_INCLUDE_DIRS})
 
+	#set the CUDA_LIBRARIES to cudart_static, nvlink does not support space in path
+	set(CUDA_LIBRARIES cudart_static)
+
 	# include the CUDA Random Number Generation library
 	message(STATUS "include the CUDA Random Number Generation library")
-    list(APPEND CUDA_LIBRARIES ${CUDA_curand_LIBRARY})
+    # list(APPEND CUDA_LIBRARIES ${CUDA_curand_LIBRARY})
+	list(APPEND CUDA_LIBRARIES curand)
+
+	message(STATUS "include the CUDA Blas library")
+	# list(APPEND CUDA_LIBRARIES ${CUDA_cublas_LIBRARY})
+	list(APPEND CUDA_LIBRARIES cublas)
 
 	# begin to find the cudnn
 	message(STATUS "begin to find the CUDNN at ENV{CUDNN_ROOT} or {CUDA_TOOLKIT_ROOT_DIR}")
@@ -52,7 +60,8 @@ if (HAVE_GPU AND CUDA_FOUND)
 		set(HAVE_CUDNN TRUE)
 
 		include_directories(SYSTEM ${CUDNN_INCLUDE_DIRS})
-		list(APPEND CUDA_LIBRARIES ${CUDNN_LIBRARIES})
+		# list(APPEND CUDA_LIBRARIES ${CUDNN_LIBRARIES})
+		list(APPEND CUDA_LIBRARIES cudnn)
 	else()
 		message(STATUS "can not find the CUDNN, some Function can not be used in Deep8")
 	endif()

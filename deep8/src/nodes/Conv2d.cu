@@ -106,17 +106,11 @@ void Conv2d<float>::forwardGPUImpl(Device* d, const float *x, const float *filte
     auto device = (GPUDevice*)d;
     int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dIm2ColKernel<float>, 0, size));
-
-    grideSize = (size + blockSize - 1) / blockSize;
+    int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     auto xCol = (float*)device->malloc(sizeof(float) * size * inputChannel);
 
-    Conv2dIm2ColKernel<float> << <grideSize, blockSize >> > (x, xCol,
+    Conv2dIm2ColKernel<float> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, xCol,
             batch, inputHeight, inputWidth, inputChannel,
             filterHeight, filterWidth, padTop, padLeft,
             strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -142,17 +136,11 @@ void Conv2d<double>::forwardGPUImpl(Device* d, const double *x, const double *fi
     auto device = (GPUDevice*)d;
     int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dIm2ColKernel<double>, 0, size));
-
-    grideSize = (size + blockSize - 1) / blockSize;
+    int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     auto xCol = (double*)device->malloc(sizeof(double) * size * inputChannel);
 
-    Conv2dIm2ColKernel<double> << <grideSize, blockSize >> > (x, xCol,
+    Conv2dIm2ColKernel<double> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, xCol,
             batch, inputHeight, inputWidth, inputChannel,
             filterHeight, filterWidth, padTop, padLeft,
             strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -179,12 +167,11 @@ void Conv2d<half>::forwardGPUImpl(Device* d, const half *x, const half *filter, 
         auto device = (GPUDevice*)d;
 		int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
 
-		int blockSize = 1024;
-		int grideSize = (size + blockSize - 1) / blockSize;
+		int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
 		auto xCol = (half*)device->malloc(sizeof(half) * size * inputChannel);
 
-		Conv2dIm2ColKernel<half> << <grideSize, blockSize >> > (x, xCol,
+		Conv2dIm2ColKernel<half> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, xCol,
 			batch, inputHeight, inputWidth, inputChannel,
 			filterHeight, filterWidth, padTop, padLeft,
 			strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -211,14 +198,14 @@ void Conv2d<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 
     auto y = output;
 
-    auto batch        = (int)x->shape.dim(0);
-    auto inputHeight  = (int)x->shape.dim(1);
-    auto inputWidth   = (int)x->shape.dim(2);
-    auto inputChannel = (int)x->shape.dim(3);
+    auto batch        = (int)x->shape.batch;
+    auto inputHeight  = (int)x->shape.dim(0);
+    auto inputWidth   = (int)x->shape.dim(1);
+    auto inputChannel = (int)x->shape.dim(2);
 
-    auto outputHeight  = (int)y->shape.dim(1);
-    auto outputWidth   = (int)y->shape.dim(2);
-    auto outputChannel = (int)y->shape.dim(3);
+    auto outputHeight  = (int)y->shape.dim(0);
+    auto outputWidth   = (int)y->shape.dim(1);
+    auto outputChannel = (int)y->shape.dim(2);
 
     auto filterHeight = (int)filter->shape.dim(1);
     auto filterWidth  = (int)filter->shape.dim(2);
@@ -244,13 +231,7 @@ void Conv2d<float>::backwardGPUInputImpl(Device* d, float *dx, const float *w, c
     auto device = (GPUDevice*)d;
     int size = batch * inputHeight * inputWidth;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dCol2ImKernel<float>, 0, size));
-
-    grideSize = (size + blockSize - 1) / blockSize;
+    int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     auto xCol = (float*)device->malloc(sizeof(float) * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel);
 
@@ -263,7 +244,7 @@ void Conv2d<float>::backwardGPUInputImpl(Device* d, float *dx, const float *w, c
 
     CUBLAS_CHECK(cublasSgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, w, m, dy, k, &beta, xCol, m));
 
-    Conv2dCol2ImKernel<float> << <grideSize, blockSize >> > (xCol, dx,
+    Conv2dCol2ImKernel<float> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (xCol, dx,
             batch, inputHeight, inputWidth, inputChannel,
             filterHeight, filterWidth, padTop, padLeft,
             strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -280,13 +261,7 @@ void Conv2d<double>::backwardGPUInputImpl(Device* d, double *dx, const double *w
     auto device = (GPUDevice*)d;
     int size = batch * inputHeight * inputWidth;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dCol2ImKernel<double>, 0, size));
-
-    grideSize = (size + blockSize - 1) / blockSize;
+    int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     auto xCol = (double*)device->malloc(sizeof(double) * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel);
 
@@ -299,7 +274,7 @@ void Conv2d<double>::backwardGPUInputImpl(Device* d, double *dx, const double *w
 
     CUBLAS_CHECK(cublasDgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, w, m, dy, k, &beta, xCol, m));
 
-    Conv2dCol2ImKernel<double> << <grideSize, blockSize >> > (xCol, dx,
+    Conv2dCol2ImKernel<double> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (xCol, dx,
             batch, inputHeight, inputWidth, inputChannel,
             filterHeight, filterWidth, padTop, padLeft,
             strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -317,8 +292,7 @@ void Conv2d<half>::backwardGPUInputImpl(Device* d, half *dx, const half *w, cons
         auto device = (GPUDevice*)d;
 		int size = batch * inputHeight * inputWidth;
 
-		int blockSize = 1024;
-		int grideSize = (size + blockSize - 1) / blockSize;
+		int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
 		auto xCol = (half*)device->malloc(sizeof(half) * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel);
 
@@ -331,7 +305,7 @@ void Conv2d<half>::backwardGPUInputImpl(Device* d, half *dx, const half *w, cons
 
 		CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, w, m, dy, k, &beta, xCol, m));
 
-		Conv2dCol2ImKernel<half> << <grideSize, blockSize >> > (xCol, dx,
+		Conv2dCol2ImKernel<half> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (xCol, dx,
 			batch, inputHeight, inputWidth, inputChannel,
 			filterHeight, filterWidth, padTop, padLeft,
 			strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -350,17 +324,11 @@ void Conv2d<float>::backwardGPUFilterImpl(Device* d, const float *x, float *dw, 
     auto device = (GPUDevice*)d;
     int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dIm2ColKernel<float>, 0, size));
-
-    grideSize = (size + blockSize - 1) / blockSize;
+    int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     auto xCol = (float*)device->malloc(sizeof(float) * size * inputChannel);
 
-    Conv2dIm2ColKernel<float> << <grideSize, blockSize >> > (x, xCol,
+    Conv2dIm2ColKernel<float> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, xCol,
             batch, inputHeight, inputWidth, inputChannel,
             filterHeight, filterWidth, padTop, padLeft,
             strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -386,17 +354,11 @@ void Conv2d<double>::backwardGPUFilterImpl(Device* d, const double *x, double *d
     auto device = (GPUDevice*)d;
     int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
 
-    int minGrideSize;
-    int blockSize;
-    int grideSize;
-
-    CUDA_CHECK(cudaOccupancyMaxPotentialBlockSize(&minGrideSize, &blockSize, Conv2dIm2ColKernel<double>, 0, size));
-
-    grideSize = (size + blockSize - 1) / blockSize;
+    int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     auto xCol = (double*)device->malloc(sizeof(double) * size * inputChannel);
 
-    Conv2dIm2ColKernel<double> << <grideSize, blockSize >> > (x, xCol,
+    Conv2dIm2ColKernel<double> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, xCol,
             batch, inputHeight, inputWidth, inputChannel,
             filterHeight, filterWidth, padTop, padLeft,
             strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -423,12 +385,11 @@ void Conv2d<half>::backwardGPUFilterImpl(Device* d, const half *x, half *dw, con
     auto device = (GPUDevice*)d;
     int size = batch * outputHeight * outputWidth * filterHeight * filterWidth;
 
-    int blockSize = 1024;
-    int grideSize = (size + blockSize - 1) / blockSize;
+    int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     auto xCol = (half*)device->malloc(sizeof(half) * size * inputChannel);
 
-    Conv2dIm2ColKernel<half> << <grideSize, blockSize >> > (x, xCol,
+    Conv2dIm2ColKernel<half> << <grideSize, DEEP8_GPU_BLOCK_SIZE >> > (x, xCol,
         batch, inputHeight, inputWidth, inputChannel,
         filterHeight, filterWidth, padTop, padLeft,
         strideY, strideX, dilationY, dilationX, outputHeight, outputWidth, size);
@@ -460,14 +421,14 @@ void Conv2d<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs,
     auto wShape = inputs[1]->shape;
     auto yShape = output->shape;
 
-    auto batch        = (int)xShape.dim(0);
-    auto inputHeight  = (int)xShape.dim(1);
-    auto inputWidth   = (int)xShape.dim(2);
-    auto inputChannel = (int)xShape.dim(3);
+    auto batch        = (int)xShape.batch;
+    auto inputHeight  = (int)xShape.dim(0);
+    auto inputWidth   = (int)xShape.dim(1);
+    auto inputChannel = (int)xShape.dim(2);
 
-    auto outputHeight  = (int)yShape.dim(1);
-    auto outputWidth   = (int)yShape.dim(2);
-    auto outputChannel = (int)yShape.dim(3);
+    auto outputHeight  = (int)yShape.dim(0);
+    auto outputWidth   = (int)yShape.dim(1);
+    auto outputChannel = (int)yShape.dim(2);
 
     auto filterHeight = (int)wShape.dim(1);
     auto filterWidth  = (int)wShape.dim(2);

@@ -23,6 +23,10 @@ public:
 	virtual size_t col()   const  = 0;
 
 	virtual size_t dim(size_t d) const  = 0;
+	virtual size_t stride(size_t d) const = 0;
+
+	/**release the storage*/
+	virtual void release() = 0;
 };
 
 /**
@@ -46,9 +50,10 @@ public:
 
 public:
 	explicit Tensor();
-	explicit Tensor(Shape &s);
-	explicit Tensor(TensorStorage &ts, size_t off, Shape &s);
-	explicit Tensor(TensorStorage &ts, size_t off, std::vector<size_t> &list);
+	explicit Tensor(Shape&);
+	explicit Tensor(TensorStorage&, size_t off, Shape&);
+	explicit Tensor(TensorStorage&, size_t off, std::vector<size_t>&);
+	explicit Tensor(TensorStorage&, size_t off, size_t batch, std::vector<size_t>&);
 
 public:
 	DeviceType deviceType();
@@ -74,6 +79,10 @@ public:
 	size_t row() const override;
 	size_t col() const override;
 	size_t dim(size_t d) const override;
+	size_t stride(size_t d) const override;
+	
+	/**release the storage*/
+	void release() override;
 
 	T scalar();
 

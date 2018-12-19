@@ -42,13 +42,6 @@ enum class FunctionType {
 };
 
 class FunctionBase: public Node {
-public:
-	/**
-	 * if a Function shared is true means the output Variable shared the memory with the input Variable
-	 * default is false
-	 */
-	bool shared;
-
 protected:
     explicit FunctionBase();
     explicit FunctionBase(std::vector<Node*> &inputs);
@@ -56,6 +49,12 @@ protected:
     virtual void check();
 
 public:
+	/**
+	 * if a Function shared is true means the output Variable shared the memory with the input Variable
+	 * default is false
+	 */
+	virtual bool isShared();
+
     void forward() override;
     void backward() override;
 };

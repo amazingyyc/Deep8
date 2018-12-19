@@ -50,6 +50,16 @@ public:
     void input2Begin();
     void input2End();
 
+    void attachBegin();
+    void attachEnd();
+
+    void key(std::string);
+
+    template <typename KeyType, typename ValueType>
+    void put(KeyType key, ValueType value) {
+        oss << key << colon << value;
+    }
+
     AutoBatchCodeHelper& operator << (int);
     AutoBatchCodeHelper& operator << (size_t);
     AutoBatchCodeHelper& operator << (std::string);

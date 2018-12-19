@@ -55,12 +55,10 @@ TEST(Abs, backwardCPU_float) {
     for (int i = 0; i < 10 * 400 * 200; ++i) {
         float temp;
 
-        if (inputValue.data()[i] > 0) {
+        if (inputValue.data()[i] >= 0) {
             temp = outputGrad.data()[i];
-        } else if (inputValue.data()[i] < 0) {
-            temp = -outputGrad.data()[i];
         } else {
-            temp = 0;
+            temp = -outputGrad.data()[i];
         }
 
         ASSERT_EQ(temp, inputGrad.data()[i]);

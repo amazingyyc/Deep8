@@ -4,25 +4,29 @@ namespace Deep8 {
 
 template <typename T>
 ReShape<T>::ReShape(std::vector<Node *> &inputs, Shape &shape): Function<T>(inputs) {
-	this->outputShape = shape;
-	this->shared = true;
-	check();
+	/**the outputShape's batch equal to inputs[0]'s*/
+	Function<T>::check();
+
+	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the input size must be 1");
+	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.batchSize() == shape.batchSize(), "the shape is error");
+
+	this->outputShape = Shape(this->inputs[0]->outputShape.batch, shape);
 }
 
 template <typename T>
 ReShape<T>::ReShape(std::vector<Node *> &inputs, std::vector<size_t> &list): Function<T>(inputs) {
-	this->outputShape.reShape(list);
-	this->shared = true;
-	check();
-}
-
-template <typename T>
-void ReShape<T>::check() {
 	Function<T>::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the input size must be 1");
-	DEEP8_ARGUMENT_CHECK(this->outputShape.nDims() <= MAX_TENSOR_DIMS, "the reShape is error");
-	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.size() == this->outputShape.size(), "the input's Shape size must be equal to reShape size");
+
+	this->outputShape = Shape(this->inputs[0]->outputShape.batch, list);
+
+	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.batchSize() == this->outputShape.batchSize(), "the shape is error");
+}
+
+template <typename T>
+bool ReShape<T>::isShared() {
+	return true;
 }
 
 template <typename T>
@@ -66,8 +70,7 @@ void ReShape<T>::forward() {
 		y->gradient.shape   = this->outputShape;
 	} else {
 		/**set the output gradient is empty*/
-		TensorStorage emptyStorage;
-		y->gradient.storage = emptyStorage;
+		y->releaseGradient();
 	}
 }
 

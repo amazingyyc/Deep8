@@ -13,23 +13,20 @@ void L2Norm<T>::check() {
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L2Norm Function needs only 1 input");
 
-	std::vector<size_t> vec({ this->inputs[0]->outputShape.batch(), 1 });
-
-    this->outputShape.reShape(vec);
+	this->outputShape = Shape(1, { 1 });
 }
 
 template<typename T>
 void L2Norm<T>::forwardCPU(const std::vector<const Tensor <T> *> &inputs, Tensor <T> *output) {
-    auto eigenDevice = static_cast<CPUDevice *>(output->device())->eigenDevice;
+	auto eigenDevice = static_cast<CPUDevice *>(output->device())->eigenDevice;
 
-    auto input = inputs[0];
-    auto batch = input->batch();
-    auto size = input->size() / batch;
+	auto x = inputs[0];
+	auto y = output;
 
-    Eigen::array<size_t, 2> reshapeDims = {batch, size};
-    Eigen::array<size_t, 1> sumDims = {1};
+	Eigen::array<size_t, 1> reshapeDims = { 1 };
+	Eigen::array<size_t, 1> sumDims = { 0 };
 
-    eTVec(output).device(*eigenDevice) = eTVec(input).square().reshape(reshapeDims).sum(sumDims).sqrt();
+	eTVec(y).device(*eigenDevice) = eTVec(x).square().sum(sumDims).sqrt().reshape(reshapeDims);
 }
 
 template<typename T>
@@ -38,19 +35,15 @@ void L2Norm<T>::backwardCPU(const std::vector<const Tensor <T> *> &inputs,
                             const Tensor <T> *outputGradient,
                             size_t index,
                             Tensor <T> *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index of L2Norm backwardCPU is error");
+	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L2Norm backwardCPU is error");
 
-    auto eigenDevice = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
+	auto eigenDevice = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
 
-    auto batch = iGradient->batch();
-    auto size  = iGradient->batchSize();
+	int size = (int)iGradient->size();
 
-    Eigen::array<size_t, 2> outputDims = {batch, 1};
-    Eigen::array<size_t, 2> outputBroad = {1, size};
-    Eigen::array<size_t, 2> iGradientDims = {batch, size};
+	Eigen::array<size_t, 1> outputBroad = { size };
 
-    eTVec(iGradient).reshape(iGradientDims).device(*eigenDevice) +=
-            (eTVec(outputGradient).reshape(outputDims) / eTVec(output).reshape(outputDims)).broadcast(outputBroad) * eTVec(inputs[0]).reshape(iGradientDims);
+	eTVec(iGradient).device(*eigenDevice) += (eTVec(outputGradient) / eTVec(output)).broadcast(outputBroad) * eTVec(inputs[0]);
 }
 
 DEEP8_RE_DECLARATION_HALF_FUNC(L2Norm);

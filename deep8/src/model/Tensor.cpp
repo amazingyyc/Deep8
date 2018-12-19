@@ -16,7 +16,11 @@ Tensor<T>::Tensor(TensorStorage &ts, size_t off, Shape &s) : storage(ts), offset
 }
 
 template<typename T>
-Tensor<T>::Tensor(TensorStorage &ts, size_t off, std::vector<size_t> &list) : storage(ts), offset(off), shape(list) {
+Tensor<T>::Tensor(TensorStorage &ts, size_t off, std::vector<size_t> &list) : Tensor(ts, off, 1, list) {
+}
+
+template<typename T>
+Tensor<T>::Tensor(TensorStorage &ts, size_t off, size_t batch, std::vector<size_t> &list) : storage(ts), offset(off), shape(batch, list) {
 }
 
 template<typename T>
@@ -77,7 +81,7 @@ void Tensor<T>::zero() {
 
 template<typename T>
 size_t Tensor<T>::nDims() const {
-	return shape.nDims();
+	return shape.nDims;
 }
 
 template<typename T>
@@ -92,7 +96,7 @@ size_t Tensor<T>::batchSize() const {
 
 template<typename T>
 size_t Tensor<T>::batch() const {
-	return shape.batch();
+	return shape.batch;
 }
 
 template<typename T>
@@ -108,6 +112,17 @@ size_t Tensor<T>::col() const {
 template<typename T>
 size_t Tensor<T>::dim(size_t d) const {
 	return shape.dim(d);
+}
+
+template<typename T>
+size_t Tensor<T>::stride(size_t d) const {
+	return shape.stride(d);
+}
+
+/**release the storage*/
+template<typename T>
+void Tensor<T>::release() {
+	storage.release();
 }
 
 template<typename T>
