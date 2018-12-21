@@ -40,7 +40,7 @@ void L2Norm<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 	auto x = inputs[0]->data();
 	auto y = output->data();
 
-	callAllReduceForward<T, L2NormForwardOp<T>>(x, y, N);
+	callAllReduceForward<T, L2NormForwardOp<T>>(x, y, N, L2NormForwardOp<T>());
 }
 
 template <typename T>
@@ -54,7 +54,7 @@ void L2Norm<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const T
 
 	int N = (int)iGradient->shape.size();
 
-	callAllReduceBackward<T, L2NormBackwardOp<T>>(x, dx, y, dy, N);
+	callAllReduceBackward<T, L2NormBackwardOp<T>>(x, dx, y, dy, N, L2NormBackwardOp<T>());
 }
 
 DEEP8_DECLARATION_GPU_FUNC(L2Norm);

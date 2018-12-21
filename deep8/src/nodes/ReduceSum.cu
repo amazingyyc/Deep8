@@ -58,10 +58,10 @@ void ReduceSum<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tenso
 
     if (1 == dim2) {
         /**tail reduce*/
-        callTailReduceForward<T, ReduceSumForwardOp<T>>(inputs[0]->data(), output->data(), dim0, dim1);
+        callTailReduceForward<T, ReduceSumForwardOp<T>>(inputs[0]->data(), output->data(), dim0, dim1, ReduceSumForwardOp<T>());
     } else if (1 == dim0) {
         /**head reduce*/
-        callHeadReduceForward<T, ReduceSumForwardOp<T>>(inputs[0]->data(), output->data(), dim1, dim2);
+        callHeadReduceForward<T, ReduceSumForwardOp<T>>(inputs[0]->data(), output->data(), dim1, dim2, ReduceSumForwardOp<T>());
     } else {
 		/**middle reduce*/
         int N = dim0 * dim2;

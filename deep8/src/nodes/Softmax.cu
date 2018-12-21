@@ -189,10 +189,10 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 	/**find max value*/
 	if (1 == dim2) {
 		/**tail reduce*/
-        callTailReduceForward<T, SoftmaxFindMaxOp<T>>(x, tempptr, dim0, dim1);
+        callTailReduceForward<T, SoftmaxFindMaxOp<T>>(x, tempptr, dim0, dim1, SoftmaxFindMaxOp<T>());
 	} else if (1 == dim0) {
 		/**head reduce*/
-        callHeadReduceForward<T, SoftmaxFindMaxOp<T>>(x, tempptr, dim1, dim2);
+        callHeadReduceForward<T, SoftmaxFindMaxOp<T>>(x, tempptr, dim1, dim2, SoftmaxFindMaxOp<T>());
 	} else {
 		/**middle reduce*/
         int N = dim0 * dim2;
@@ -287,10 +287,10 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
     /**calculate sum*/
 	if (1 == dim2) {
 		/**tail reduce*/
-        callTailReduceForward<T, SoftmaxSumOp<T>>(y, tempptr, dim0, dim1);
+        callTailReduceForward<T, SoftmaxSumOp<T>>(y, tempptr, dim0, dim1, SoftmaxSumOp<T>());
 	} else if (1 == dim0) {
 		/**head reduce*/
-        callHeadReduceForward<T, SoftmaxSumOp<T>>(y, tempptr, dim1, dim2);
+        callHeadReduceForward<T, SoftmaxSumOp<T>>(y, tempptr, dim1, dim2, SoftmaxSumOp<T>());
 	} else {
 		/**middle reduce*/
         int N = dim0 * dim2;

@@ -251,7 +251,7 @@ __global__ void HeadReduceBackward(const T *x, T *dx, const T *y, const T *dy, c
 }
 
 template <typename T, typename ReduceOp>
-void callHeadReduceForward(const T *x, T *y, const int row, const int col) {
+void callHeadReduceForward(const T *x, T *y, const int row, const int col, ReduceOp op) {
 	int blockSize = 1024;
 
 	if (blockSize > row) {
@@ -262,37 +262,37 @@ void callHeadReduceForward(const T *x, T *y, const int row, const int col) {
 
 	switch (blockSize) {
 	case 1024:
-		HeadReduceForward<T, ReduceOp, 1024> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 1024> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 512:
-		HeadReduceForward<T, ReduceOp, 512> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 512> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 256:
-		HeadReduceForward<T, ReduceOp, 256> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 256> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 128:
-		HeadReduceForward<T, ReduceOp, 128> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 128> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 64:
-		HeadReduceForward<T, ReduceOp, 64> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 64> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 32:
-		HeadReduceForward<T, ReduceOp, 32> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 32> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 16:
-		HeadReduceForward<T, ReduceOp, 16> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 16> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 8:
-		HeadReduceForward<T, ReduceOp, 8> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 8> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 4:
-		HeadReduceForward<T, ReduceOp, 4> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 4> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 2:
-		HeadReduceForward<T, ReduceOp, 2> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 2> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 1:
-		HeadReduceForward<T, ReduceOp, 1> << <col, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		HeadReduceForward<T, ReduceOp, 1> << <col, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	default:
 		DEEP8_RUNTIME_ERROR("the block size is error");
@@ -379,7 +379,7 @@ __global__ void TailReduceBackward(const T *x, T *dx, const T *y, const T *dy, c
 }
 
 template <typename T, typename ReduceOp>
-void callTailReduceForward(const T *x, T *y, const int row, const int col) {
+void callTailReduceForward(const T *x, T *y, const int row, const int col, ReduceOp op) {
 	int blockSize = 1024;
 
 	if (col < blockSize) {
@@ -390,37 +390,37 @@ void callTailReduceForward(const T *x, T *y, const int row, const int col) {
 
 	switch (blockSize) {
 	case 1024:
-		TailReduceForward<T, ReduceOp, 1024> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 1024> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 512:
-		TailReduceForward<T, ReduceOp, 512> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 512> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 256:
-		TailReduceForward<T, ReduceOp, 256> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 256> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 128:
-		TailReduceForward<T, ReduceOp, 128> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 128> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 64:
-		TailReduceForward<T, ReduceOp, 64> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 64> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 32:
-		TailReduceForward<T, ReduceOp, 32> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 32> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 16:
-		TailReduceForward<T, ReduceOp, 16> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 16> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 8:
-		TailReduceForward<T, ReduceOp, 8> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 8> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 4:
-		TailReduceForward<T, ReduceOp, 4> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 4> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 2:
-		TailReduceForward<T, ReduceOp, 2> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 2> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	case 1:
-		TailReduceForward<T, ReduceOp, 1> << <row, blockSize, sharedSize >> > (x, y, row, col, ReduceOp());
+		TailReduceForward<T, ReduceOp, 1> << <row, blockSize, sharedSize >> > (x, y, row, col, op);
 		break;
 	default:
 		DEEP8_RUNTIME_ERROR("the block size is error");
@@ -428,16 +428,19 @@ void callTailReduceForward(const T *x, T *y, const int row, const int col) {
 	}
 }
 
+/******************************************************************************************************
+ * all reduce  
+ *****************************************************************************************************/
 template <typename T, typename ReduceOp>
-void callAllReduceForward(const T *x, T *y, const int size) {
-	callTailReduceForward<T, ReduceOp>(x, y, 1, size);
+void callAllReduceForward(const T *x, T *y, const int size, ReduceOp op) {
+	callTailReduceForward<T, ReduceOp>(x, y, 1, size, op);
 }
 
 template <typename T, typename ReduceOp>
-void callAllReduceBackward(const T *x, T *dx, const T *y, const T *dy, const int size) {
+void callAllReduceBackward(const T *x, T *dx, const T *y, const T *dy, const int size, ReduceOp op) {
 	int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-	TailReduceBackward<T, ReduceOp> <<< grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, 1, size, ReduceOp(), size);
+	TailReduceBackward<T, ReduceOp> <<< grideSize, DEEP8_GPU_BLOCK_SIZE >>> (x, dx, y, dy, 1, size, op, size);
 }
 
 }

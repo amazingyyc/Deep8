@@ -28,7 +28,7 @@
 //#include "MultiplyScalarTest.h"
 //#include "ReLuTest.h"
 //#include "SigmoidTest.h"
-//#include "SoftmaxTest.h"
+#include "SoftmaxTest.h"
 //#include "SquareTest.h"
 //#include "TanhTest.h"
 
