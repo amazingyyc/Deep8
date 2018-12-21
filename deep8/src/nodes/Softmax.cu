@@ -403,8 +403,8 @@ void Softmax<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const 
     int gridSize  = dim0 * dim2;
     int blockSize = 1024;
 
-    if (blockSize > gridSize) {
-        blockSize = prevPowerOf2(gridSize);
+    if (blockSize > dim1) {
+        blockSize = prevPowerOf2(dim1);
     }
 
     int sharedSize = sizeof(T) * blockSize;

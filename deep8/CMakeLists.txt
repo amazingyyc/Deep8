@@ -36,6 +36,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/AvgPooling2d.cpp
 		src/nodes/Batch.cpp
 		src/nodes/Conv2d.cpp
+		src/nodes/CrossEntropy.cpp
 		src/nodes/DeConv2d.cpp
 		src/nodes/Divide.cpp
 		src/nodes/DivideScalar.cpp
@@ -82,6 +83,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/AvgPooling2d.cu
 		src/nodes/Batch.cu
 		src/nodes/Conv2d.cu
+		src/nodes/CrossEntropy.cu
 		src/nodes/DeConv2d.cu
 		src/nodes/Divide.cu
 		src/nodes/DivideScalar.cu
