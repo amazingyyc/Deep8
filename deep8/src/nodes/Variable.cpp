@@ -167,6 +167,38 @@ bool Variable<T>::isScalar() {
 	}
 }
 
+/**feed data to value*/
+template <typename T>
+void Variable<T>::feed(const void *ptr) {
+	DEEP8_ARGUMENT_CHECK(nullptr != ptr, "the pointer can not be null");
+
+	if (this->value.device()->type == DeviceType::CPU) {
+		this->value.device()->copy(ptr, this->value.raw(), sizeof(T) * this->value.size());
+	} else {
+#ifdef HAVE_CUDA
+		value.device()->copyFromCPUToGPU(ptr, value.raw(), sizeof(T) * value.size());
+#else
+		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
+#endif
+	}
+}
+
+/**fetch data from value*/
+template <typename T>
+void Variable<T>::fetch(void *ptr) {
+	DEEP8_ARGUMENT_CHECK(nullptr != ptr, "the pointer can not be null");
+
+	if (this->value.device()->type == DeviceType::CPU) {
+		this->value.device()->copy(this->value.raw(), ptr, sizeof(T) * this->value.size());
+	} else {
+#ifdef HAVE_CUDA
+		value.device()->copyFromGPUToCPUvalue.raw(), ptr, sizeof(T) * value.size());
+#else
+		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
+#endif
+	}
+}
+
 template <typename T>
 std::string Variable<T>::toString() {
 	std::stringstream ss;

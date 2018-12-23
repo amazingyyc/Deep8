@@ -38,6 +38,12 @@ public:
 
 	/**if the Variable is a Scalar*/
 	virtual bool isScalar() = 0;
+
+	/**feed data to value*/
+	virtual void feed(const void *) = 0;
+
+	/**fetch data from value*/
+	virtual void fetch(void *) = 0;
 };
 
 /**
@@ -97,7 +103,16 @@ public:
 	 */
 	void setGradientOne() override;
 
+	/**
+	 * if this is a scalar
+	 */
 	bool isScalar() override;
+
+	/**feed data to value*/
+	void feed(const void *) override;
+
+	/**fetch data from value*/
+	void fetch(void *) override;
 
 	std::string toString() override;
 };

@@ -23,8 +23,8 @@ void L2Norm<T>::forwardCPU(const std::vector<const Tensor <T> *> &inputs, Tensor
 	auto x = inputs[0];
 	auto y = output;
 
-	Eigen::array<size_t, 1> reshapeDims = { 1 };
-	Eigen::array<size_t, 1> sumDims = { 0 };
+	Eigen::array<int, 1> reshapeDims = { 1 };
+	Eigen::array<int, 1> sumDims = { 0 };
 
 	eTVec(y).device(*eigenDevice) = eTVec(x).square().sum(sumDims).sqrt().reshape(reshapeDims);
 }
@@ -41,7 +41,7 @@ void L2Norm<T>::backwardCPU(const std::vector<const Tensor <T> *> &inputs,
 
 	int size = (int)iGradient->size();
 
-	Eigen::array<size_t, 1> outputBroad = { size };
+	Eigen::array<int, 1> outputBroad = { size };
 
 	eTVec(iGradient).device(*eigenDevice) += (eTVec(outputGradient) / eTVec(output)).broadcast(outputBroad) * eTVec(inputs[0]);
 }

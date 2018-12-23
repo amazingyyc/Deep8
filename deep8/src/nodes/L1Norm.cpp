@@ -34,8 +34,8 @@ void L1Norm<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T
 	auto x = inputs[0];
 	auto y = output;
 
-	Eigen::array<size_t, 1> reshapeDims = { 1 };
-	Eigen::array<size_t, 1> sumDims = { 0 };
+	Eigen::array<int, 1> reshapeDims = { 1 };
+	Eigen::array<int, 1> sumDims = { 0 };
 
 	eTVec(y).device(*eigenDevice) = eTVec(x).abs().sum(sumDims).reshape(reshapeDims);
 }
@@ -48,7 +48,7 @@ void L1Norm<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const T
 
 	int size = (int) iGradient->size();
 
-	Eigen::array<size_t, 1> broadDims = { size };
+	Eigen::array<int, 1> broadDims = { size };
 
 	eTVec(iGradient).device(*eigenDevice) += eTVec(outputGradient).broadcast(broadDims).binaryExpr(eTVec(inputs[0]), L1NormBackwardExpr<T>());
 }
