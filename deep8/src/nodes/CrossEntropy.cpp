@@ -37,12 +37,12 @@ void CrossEntropy<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, c
 
     if (0 == index) {
         auto batch = iGradient->shape.batch;
-        auto scale = -outputGradient->scalar() / T(batch);
+        auto scale = -1 * outputGradient->data()[0] / T(batch);
 
         eTVec(iGradient).device(*device) += (eTVec(inputs[1]) / eTVec(inputs[0])) * scale;
     } else if (1 == index) {
         auto batch = iGradient->shape.batch;
-        auto scale = -outputGradient->scalar() / T(batch);
+        auto scale = -1 * outputGradient->data()[0] / T(batch);
 
         eTVec(iGradient).device(*device) += eTVec(inputs[0]).log() * scale;
     } else {

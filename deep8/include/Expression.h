@@ -9,6 +9,7 @@
 #include "AddScalar.h"
 #include "AvgPooling2d.h"
 #include "Conv2d.h"
+#include "CrossEntropy.h"
 #include "DeConv2d.h"
 #include "Divide.h"
 #include "DivideScalar.h"
@@ -57,6 +58,20 @@ public:
 	explicit Expression(Executor<T> *exe, Node *n) : executor(exe), node(n) {
 	}
 
+	/**feed the data only work for Parameter*/
+	void feed(const void *ptr) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call feed function in no-variable node");
+
+		static_cast<Variable<T>*>(node)->feed(ptr);
+	}
+
+	/**fetch data*/
+	void fetch(void *ptr) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call fetch function in no-variable node");
+
+		static_cast<Variable<T>*>(node)->fetch(ptr);
+	}
+
 	void forward() {
 		executor->forward(node);
 	}
@@ -73,10 +88,83 @@ public:
 		}
 	}
 
+	Expression<T> add(const Expression<T> &y) {
+		std::vector<Node*> inputs = { node, y.node };
+		return Expression<T>(executor, executor->addFunction(new Add<T>(inputs)));
+	}
+
+	Expression<T> add(T scalar) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new AddScalar<T>(inputs, scalar)));
+	}
+
+	Expression<T> minus(const Expression<T> &y) {
+		std::vector<Node*> inputs = { node, y.node };
+		return Expression<T>(executor, executor->addFunction(new Minus<T>(inputs)));
+	}
+
+	Expression<T> minus(T scalar) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new MinusScalar<T>(inputs, scalar)));
+	}
+
+	Expression<T> multiply(const Expression<T> &y) {
+		std::vector<Node*> inputs = { node, y.node };
+		return Expression<T>(executor, executor->addFunction(new Multiply<T>(inputs)));
+	}
+
+	Expression<T> multiply(T scalar) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new MultiplyScalar<T>(inputs, scalar)));
+	}
+
+	Expression<T> divide(const Expression<T> &y) {
+		std::vector<Node*> inputs = { node, y.node };
+		return Expression<T>(executor, executor->addFunction(new Divide<T>(inputs)));
+	}
+
+	Expression<T> divide(T scalar) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new DivideScalar<T>(inputs, scalar)));
+	}
+
 	/**one operand function*/
 	Expression<T> abs() {
 		std::vector<Node*> inputs = { node };
 		return Expression<T>(executor, executor->addFunction(new Abs<T>(inputs)));
+	}
+
+	Expression<T> avgPooling2d(bool covered = false, 
+								size_t filterHeight = 1, 
+								size_t filterWidth = 1, 
+								size_t strideY = 1, 
+								size_t strideX = 1) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new AvgPooling2d<T>(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
+	}
+
+	Expression<T> conv2d(const Expression<T> &filter, 
+							bool covered = false, 
+							size_t strideH = 1, 
+							size_t strideW = 1, 
+							size_t dilationY = 1, 
+							size_t dilationX = 1) {
+		std::vector<Node*> inputs = { node, filter.node };
+
+		return Expression<T>(executor, executor->addFunction(new Conv2d<T>(inputs, covered, strideH, strideW, dilationY, dilationX)));
+	}
+
+	Expression<T> crossEntropy(const Expression<T> &y) {
+		std::vector<Node*> inputs = { node, y.node };
+		return Expression<T>(executor, executor->addFunction(new CrossEntropy<T>(inputs)));
+	}
+
+	Expression<T> deConv2d(const Expression<T> &filter, 
+							bool covered = false, 
+							size_t strideY = 1, 
+							size_t strideX = 1) {
+		std::vector<Node*> inputs = { node, filter.node };
+    	return Expression<T>(executor, executor->addFunction(new DeConv2d<T>(inputs, covered, strideY, strideX)));
 	}
 
 	Expression<T> exp() {
@@ -107,6 +195,20 @@ public:
 	Expression<T> lReLu(T a) {
 		std::vector<Node*> inputs = { node };
 		return Expression<T>(executor, executor->addFunction(new LReLu<T>(inputs, a)));
+	}
+
+	Expression<T> matrixMultiply(const Expression<T> &y) {
+		std::vector<Node*> inputs = { node, y.node };
+    	return Expression<T>(executor, executor->addFunction(new MatrixMultiply<T>(inputs)));
+	}
+
+	Expression<T> maxPooling2d(bool covered = false, 
+							size_t filterHeight = 1, 
+							size_t filterWidth = 1, 
+							size_t strideY = 1, 
+							size_t strideX = 1) {
+		std::vector<Node*> inputs = { node };
+    	return Expression<T>(executor, executor->addFunction(new MaxPooling2d<T>(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
 	}
 
 	Expression<T> reLu() {
@@ -238,194 +340,33 @@ Expression<T> parameter(Executor<T> *executor, Shape &shape, bool updateGradient
 	return Expression<T>(executor, executor->addParameter(shape, updateGradient, ptr));
 }
 
-/**function*/
-template <typename T>
-Expression<T> add(const Expression<T> &x, const Expression<T> &y) {
-	std::vector<Node*> inputs = { x.node, y.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new Add<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> add(const Expression<T> &x, T scalar) {
-	std::vector<Node*> inputs = { x.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new AddScalar<T>(inputs, scalar)));
-}
-
+/**scalar + Node*/
 template <typename T>
 Expression<T> add(T scalar, const Expression<T> &x) {
 	std::vector<Node*> inputs = { x.node };
 	return Expression<T>(x.executor, x.executor->addFunction(new AddScalar<T>(inputs, scalar)));
 }
 
-template <typename T>
-Expression<T> minus(const Expression<T> &x, const Expression<T> &y) {
-	std::vector<Node*> inputs = { x.node, y.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new Minus<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> minus(const Expression<T> &x, T scalar) {
-	std::vector<Node*> inputs = { x.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new MinusScalar<T>(inputs, scalar)));
-}
-
+/**scalar - Node*/
 template <typename T>
 Expression<T> minus(T scalar, const Expression<T> &x) {
 	std::vector<Node*> inputs = { x.node };
 	return Expression<T>(x.executor, x.executor->addFunction(new ScalarMinus<T>(inputs, scalar)));
 }
 
-template <typename T>
-Expression<T> multiply(const Expression<T> &x, const Expression<T> &y) {
-	std::vector<Node*> inputs = { x.node, y.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new Multiply<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> multiply(const Expression<T> &x, T scalar) {
-	std::vector<Node*> inputs = { x.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new MultiplyScalar<T>(inputs, scalar)));
-}
-
+/**scalar * Node*/
 template <typename T>
 Expression<T> multiply(T scalar, const Expression<T> &x) {
 	std::vector<Node*> inputs = { x.node };
 	return Expression<T>(x.executor, x.executor->addFunction(new MultiplyScalar<T>(inputs, scalar)));
 }
 
-template <typename T>
-Expression<T> divide(const Expression<T> &x, const Expression<T> &y) {
-	std::vector<Node*> inputs = { x.node, y.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new Divide<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> divide(const Expression<T> &x, T scalar) {
-	std::vector<Node*> inputs = { x.node };
-	return Expression<T>(x.executor, x.executor->addFunction(new DivideScalar<T>(inputs, scalar)));
-}
-
+/**scalar / Node*/
 template <typename T>
 Expression<T> divide(T scalar, const Expression<T> &x) {
 	std::vector<Node*> inputs = { x.node };
 	return Expression<T>(x.executor, x.executor->addFunction(new ScalarDivide<T>(inputs, scalar)));
 }
-
-template <typename T>
-Expression<T> abs(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Abs<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> avgPooling2d(const Expression<T> &x, bool covered = false, size_t filterHeight = 1, size_t filterWidth = 1, size_t strideY = 1, size_t strideX = 1) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new AvgPooling2d<T>(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
-}
-
-template <typename T>
-Expression<T> conv2d(const Expression<T> &x, const Expression<T> &y, bool covered = false, size_t strideH = 1, size_t strideW = 1, size_t dilationY = 1, size_t dilationX = 1) {
-	std::vector<Node*> inputs = { x.node, y.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Conv2d<T>(inputs, covered, strideH, strideW, dilationY, dilationX)));
-}
-
-template <typename T>
-Expression<T> deConv2d(const Expression<T> &x, const Expression<T> &y, bool covered = false, size_t strideY = 1, size_t strideX = 1) {
-	std::vector<Node*> inputs = { x.node, y.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new DeConv2d<T>(inputs, covered, strideY, strideX)));
-}
-
-template <typename T>
-Expression<T> exp(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Exp<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> l1Norm(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new L1Norm<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> l2Norm(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new L2Norm<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> linear(const Expression<T> &x, T a, T b) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Linear<T>(inputs, a, b)));
-}
-
-template <typename T>
-Expression<T> log(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Log<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> lReLu(const Expression<T> &x, T a) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new LReLu<T>(inputs, a)));
-}
-
-template <typename T>
-Expression<T> matrixMultiply(const Expression<T> &x, const Expression<T> &y) {
-	std::vector<Node*> inputs = { x.node, y.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new MatrixMultiply<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> maxPooling2d(const Expression<T> &x, bool covered = false, size_t filterHeight = 1, size_t filterWidth = 1, size_t strideY = 1, size_t strideX = 1) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new MaxPooling2d<T>(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
-}
-
-template <typename T>
-Expression<T> reLu(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new ReLu<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> reShape(const Expression<T> &x, Shape &shape) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new ReShape<T>(inputs, shape)));
-}
-
-template <typename T>
-Expression<T> reShape(const Expression<T> &x, std::vector<size_t> list) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new ReShape<T>(inputs, list)));
-}
-
-template <typename T>
-Expression<T> sigmoid(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Sigmoid<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> softmax(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Softmax<T>(inputs)));
-}
-
-template <typename T>
-Expression<T> square(const Expression<T> &x, size_t axis = 0) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Square<T>(inputs, axis)));
-}
-
-template <typename T>
-Expression<T> tanh(const Expression<T> &x) {
-	std::vector<Node*> inputs = { x.node };
-    return Expression<T>(x.executor, x.executor->addFunction(new Tanh<T>(inputs)));
-}
-
-
 
 }
 
