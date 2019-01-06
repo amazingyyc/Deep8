@@ -202,7 +202,6 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 
 	/**y = exp(x - max)*/
     if (1 == dim2) {
-        /**tail reduce*/
         NVShape<2> xNVShape;
         NVShape<2> maxNVShape;
         NVShape<2> yNVShape;
@@ -227,7 +226,6 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 
        BinaryElementWiseForward<T, SoftmaxExpMinusOp<T>, 2> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(x, xNVShape, tempptr, maxNVShape, y, yNVShape, SoftmaxExpMinusOp<T>(), N);
     } else if (1 == dim0) {
-        /**head reduce*/
         NVShape<2> xNVShape;
         NVShape<2> maxNVShape;
         NVShape<2> yNVShape;
@@ -252,7 +250,6 @@ void Softmax<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<
 
         BinaryElementWiseForward<T, SoftmaxExpMinusOp<T>, 2> <<<grideSize, DEEP8_GPU_BLOCK_SIZE>>>(x, xNVShape, tempptr, maxNVShape, y, yNVShape, SoftmaxExpMinusOp<T>(), N);
     } else {
-        /**middle reduce*/
         NVShape<3> xNVShape;
         NVShape<3> maxNVShape;
         NVShape<3> yNVShape;

@@ -46,6 +46,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/L2Norm.cpp
 		src/nodes/Linear.cpp
 		src/nodes/Log.cpp
+		src/nodes/LogSoftmax.cpp
 		src/nodes/LReLu.cpp
 		src/nodes/MatrixMultiply.cpp
 		src/nodes/MaxPooling2d.cpp
@@ -92,6 +93,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/nodes/L2Norm.cu
 		src/nodes/Linear.cu
 		src/nodes/Log.cu
+		src/nodes/LogSoftmax.cu
 		src/nodes/LReLu.cu
 		src/nodes/MatrixMultiply.cu
 		src/nodes/MaxPooling2d.cu
