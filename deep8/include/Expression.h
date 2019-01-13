@@ -18,6 +18,7 @@
 #include "L2Norm.h"
 #include "Linear.h"
 #include "Log.h"
+#include "LogSoftmax.h"
 #include "LReLu.h"
 #include "MatrixMultiply.h"
 #include "MaxPooling2d.h"
@@ -192,7 +193,12 @@ public:
 		return Expression<T>(executor, executor->addFunction(new Log<T>(inputs)));
 	}
 
-	Expression<T> lReLu(T a) {
+	Expression<T> logSoftmax(int axis = -1) {
+		std::vector<Node*> inputs = { node };
+		return Expression<T>(executor, executor->addFunction(new LogSoftmax<T>(inputs, axis)));
+	}
+
+	Expression<T> lRelu(T a) {
 		std::vector<Node*> inputs = { node };
 		return Expression<T>(executor, executor->addFunction(new LReLu<T>(inputs, a)));
 	}
@@ -211,7 +217,7 @@ public:
     	return Expression<T>(executor, executor->addFunction(new MaxPooling2d<T>(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
 	}
 
-	Expression<T> reLu() {
+	Expression<T> relu() {
 		std::vector<Node*> inputs = { node };
 		return Expression<T>(executor, executor->addFunction(new ReLu<T>(inputs)));
 	}
@@ -231,7 +237,7 @@ public:
 		return Expression<T>(executor, executor->addFunction(new Sigmoid<T>(inputs)));
 	}
 
-	Expression<T> softmax(size_t axis = 0) {
+	Expression<T> softmax(int axis = -1) {
 		std::vector<Node*> inputs = { node };
 		return Expression<T>(executor, executor->addFunction(new Softmax<T>(inputs, axis)));
 	}

@@ -73,7 +73,7 @@ __global__ void TrainerNorm2HalfKernel(const half *x, float *y, const int size) 
 #endif
 
 template <>
-float Trainer<float>::clipGradientScaleGPU(Device *d, std::unordered_set<Parameter<float>*> &parameters, float clipThreshold) {
+float Trainer<float>::clipGradientScaleGPU(Executor *executor, Device *d, std::unordered_set<Parameter<float>*> &parameters, float clipThreshold) {
 	auto device = (GPUDevice*)d;
 
 	std::vector<float> l2NormVec;
@@ -110,7 +110,7 @@ float Trainer<float>::clipGradientScaleGPU(Device *d, std::unordered_set<Paramet
 
 
 template <>
-double Trainer<double>::clipGradientScaleGPU(Device *d, std::unordered_set<Parameter<double>*> &parameters, double clipThreshold) {
+double Trainer<double>::clipGradientScaleGPU(Executor *executor, Device *d, std::unordered_set<Parameter<double>*> &parameters, double clipThreshold) {
 	auto device = (GPUDevice*)d;
 
 	std::vector<double> l2NormVec;
@@ -145,7 +145,7 @@ double Trainer<double>::clipGradientScaleGPU(Device *d, std::unordered_set<Param
 
 #ifdef HAVE_HALF
 template <>
-half Trainer<half>::clipGradientScaleGPU(Device *d, std::unordered_set<Parameter<half>*> &parameters, half clipThreshold) {
+half Trainer<half>::clipGradientScaleGPU(Executor *executor, Device *d, std::unordered_set<Parameter<half>*> &parameters, half clipThreshold) {
 	auto device = (GPUDevice*)d;
 
 	int updateCount = 0;
@@ -268,40 +268,40 @@ __global__ void SGDTrainerKernel(real *gradient, const real scale, const real le
 #endif
 
 template <>
-void SGDTrainer<float>::trainingGPU(Parameter<float> *parameter, float scale) {
+void SGDTrainer<float>::updateGPU(Executor *executor, Parameter<float> *parameter, int64_t steps, float learningRate, float scale) {
 	auto value    = parameter->value;
 	auto gradient = parameter->gradient;
 
 	auto device = static_cast<GPUDevice*>(value.device());
 
-	float alpha = -1 * (this->learningRate * scale);
+	float alpha = -1 * (learningRate * scale);
 
 	CUBLAS_CHECK(cublasSaxpy(device->cublasHandle, (int)value.size(), &alpha, gradient.data(), 1, value.data(), 1));
 }
 
 template <>
-void SGDTrainer<double>::trainingGPU(Parameter<double> *parameter, double scale) {
-	auto value = parameter->value;
+void SGDTrainer<double>::updateGPU(Executor *executor, Parameter<double> *parameter, int64_t steps, double learningRate, double scale) {
+	auto value    = parameter->value;
 	auto gradient = parameter->gradient;
 
 	auto device = static_cast<GPUDevice*>(value.device());
 
-	double alpha = -1 * (this->learningRate * scale);
+	double alpha = -1 * (learningRate * scale);
 
 	CUBLAS_CHECK(cublasDaxpy(device->cublasHandle, (int)value.size(), &alpha, gradient.data(), 1, value.data(), 1));
 }
 
 #ifdef HAVE_HALF
 template <>
-void SGDTrainer<half>::trainingGPU(Parameter<half> *parameter, half scale) {
-	auto value = parameter->value;
+void SGDTrainer<half>::updateGPU(Executor *executor, Parameter<half> *parameter, int64_t steps, half learningRate, half scale) {
+	auto value    = parameter->value;
 	auto gradient = parameter->gradient;
 
 	int N = (int)value.size();
 	int blockSize = 1024;
 	int grideSize = (N + blockSize - 1) / blockSize;
 
-	SGDTrainerKernel<half> << <grideSize, blockSize >> > (gradient.data(), scale, this->learningRate, value.data(), N);
+	SGDTrainerKernel<half> << <grideSize, blockSize >> > (gradient.data(), scale, learningRate, value.data(), N);
 }
 #endif
 

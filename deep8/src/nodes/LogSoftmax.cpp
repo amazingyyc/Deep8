@@ -115,5 +115,4 @@ void LogSoftmax<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, con
 DEEP8_RE_DECLARATION_HALF_FUNC(LogSoftmax);
 DEEP8_DECLARATION_INSTANCE(LogSoftmax)
 
-
 }

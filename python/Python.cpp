@@ -197,7 +197,8 @@ void declareExpression(py::module &m, const std::string &suffix = "") {
             .def("l2Norm", &Class::l2Norm)
             .def("linear", &Class::linear)
             .def("log", &Class::log)
-            .def("lReLu", &Class::lReLu)
+            .def("logSoftmax", &Class::logSoftmax, py::arg("axis") = -1)
+            .def("lRelu", &Class::lRelu)
             .def("matrixMultiply", &Class::matrixMultiply)
             .def("maxPooling2d", &Class::maxPooling2d, 
                             py::arg("covered") = false, 
@@ -205,11 +206,11 @@ void declareExpression(py::module &m, const std::string &suffix = "") {
                             py::arg("filterWidth") = 1, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
-            .def("reLu", &Class::reLu)
+            .def("relu", &Class::relu)
             .def("reShape", (Expression<T> (Class::*)(Shape&)) &Class::reShape)
             .def("reShape", (Expression<T> (Class::*)(std::vector<size_t>)) &Class::reShape)
             .def("sigmoid", &Class::sigmoid)
-            .def("softmax", &Class::softmax, py::arg("axis") = 0)
+            .def("softmax", &Class::softmax, py::arg("axis") = -1)
             .def("square", &Class::square)
             .def("tanh", &Class::tanh)
             .def(py::self + py::self)
@@ -304,13 +305,10 @@ void declareExpressionFunction(py::module &m, const std::string &suffix = "") {
         return parameter<T>(executor, 1, list, false, info.ptr);
     });
 
-    m.def(("add" + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &add<T>);
-
-    m.def(("minus" + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &minus<T>);
-
+    m.def(("add"      + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &add<T>);
+    m.def(("minus"    + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &minus<T>);
     m.def(("multiply" + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &multiply<T>);
-
-    m.def(("divide" + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &divide<T>);
+    m.def(("divide"   + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &divide<T>);
 }
 
 /**

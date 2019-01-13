@@ -3,63 +3,64 @@
 
 #include "Tensor.h"
 #include "Parameter.h"
+#include "LearningRateIterator.h"
+#include "Executor.h"
 
 namespace Deep8 {
 
 template <typename T>
 class Trainer {
-public:
-	virtual ~Trainer() = default;
-
 protected:
-    /**the learning rate*/
-    T learningRate;
-
     /**clip the Gradient to void exploding gradient problem*/
     bool clipGradient;
 
     /**the clip threshold*/
     T clipThreshold;
 
-    /**the count of train*/
-    int64_t times;
+    /**the learning rate iterator*/
+    LearningRateIterator *learningRateIterator;
 
-    explicit Trainer(T lr = 0.1, bool cg = false, T ct = 5.0);
+    explicit Trainer(LearningRateIterator *learningRate, bool clipGradient = false, T clipThreshold = 5.0);
 
-	T clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
-
-	Tensor<T> createTensorCPU(Device* device, Shape &shape);
-
-	/**the sub class implement the function*/
-	virtual void trainingCPU(Parameter<T> *parameter, T scale) {
-		DEEP8_RUNTIME_ERROR("Can not call this function in Trainer");
-	}
+protected:
+	/**calculate the L2Norm of Parameter to void the exploding gradient problem*/
+	T clipGradientScale(Executor *executor, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
+	T clipGradientScaleCPU(Executor *executor,  Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
 
 #ifdef HAVE_CUDA
-	T clipGradientScaleGPU(Device *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
-
-	Tensor<T> createTensorGPU(Device* device, Shape &shape);
-
-	virtual void trainingGPU(Parameter<T> *parameter, T scale) {};
+	T clipGradientScaleGPU(Executor *executor, Device *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
 #endif
 
-	/**calculate the L2Norm of Parameter to void the exploding gradient problem*/
-	T clipGradientScale(std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
+	/**create a Tensor by shape*/
+	Tensor<T> createTensorCPU(Device* device, Shape &shape);
+
+#ifdef HAVE_CUDA
+	Tensor<T> createTensorGPU(Device* device, Shape &shape);
+#endif
+
+    /**update the parameter*/
+	virtual void updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale);
+
+#ifdef HAVE_CUDA
+	virtual void updateGPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale);
+#endif
 
 public:
-	void training(std::unordered_set<Parameter<T>*> &parameters);
+    virtual ~Trainer() = default;
+
+    void update(Executor *executor, std::unordered_set<Parameter<T>*> &parameters, int64_t steps);
 };
 
 template <typename T>
 class SGDTrainer: public Trainer<T> {
 public:
-    explicit SGDTrainer(T lr = 0.1, bool cg = false, T ct = 5.0);
+    explicit SGDTrainer(LearningRateIterator *learningRate, bool clipGradient = false, T clipThreshold = 5.0);
 
 protected:
-	void trainingCPU(Parameter<T> *parameter, T scale) override;
+	void updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) override;
 
 #ifdef HAVE_CUDA
-	void trainingGPU(Parameter<T> *parameter, T scale) override;
+	void updateGPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) override;
 #endif
 };
 
@@ -67,19 +68,17 @@ template <typename T>
 class AdagradTrainer: public Trainer<T> {
 public:
     T epsilon;
-    std::unordered_map<Parameter<T>*, Tensor<T>> accumulate;
+    // std::unordered_map<Parameter<T>*, Tensor<T>> accumulate;
 
-    explicit AdagradTrainer(T learningRate = 0.1, T epsilon = 1e-7, bool clipGradient = false, T clipThreshold = 5.0);
+    explicit AdagradTrainer(LearningRateIterator *learningRate, T epsilon = 1e-7, bool clipGradient = false, T clipThreshold = 5.0);
 
 	void check(T epsilon);
 
-    ~AdagradTrainer() override;
-
-protected: 
-	void trainingCPU(Parameter<T> *parameter, T scale) override;
+protected:
+	void updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) override;
 
 #ifdef HAVE_CUDA
-	void trainingGPU(Parameter<T> *parameter, T scale) override;
+	void updateGPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) override;
 #endif
 };
 

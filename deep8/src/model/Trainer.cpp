@@ -7,12 +7,35 @@ namespace Deep8 {
 /**Trainer*/
 /**********************************************************************/
 template <typename T>
-Trainer<T>::Trainer(T lr, bool cg, T ct):
-		learningRate(lr), clipGradient(cg), clipThreshold(ct), times(0) {
+Trainer<T>::Trainer(LearningRateIterator *lr, bool cg = false, T ct = 5.0):
+		learningRateIterator(lr), clipGradient(cg), clipThreshold(ct) {
+}
+
+/**
+ * calculate the L2Norm of Parameter to void the exploding gradient problem
+ */
+template <typename T>
+T Trainer<T>::clipGradientScale(Executor *executor, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
+	if (parameters.empty()) {
+		return T(1.0);
+	}
+
+	auto variable   = *parameters.begin();
+	auto device     = variable->value.device();
+
+	if (DeviceType::CPU == device->type) {
+		return clipGradientScaleCPU(executor, ((CPUDevice*)device)->eigenDevice, parameters, clipThreshold);
+	} else {
+#ifdef HAVE_CUDA
+		return clipGradientScaleGPU(executor, device, parameters, clipThreshold);
+#else
+		DEEP8_RUNTIME_ERROR("does not have a GPU");
+#endif
+	}
 }
 
 template <typename T>
-T Trainer<T>::clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
+T Trainer<T>::clipGradientScaleCPU(Executor *executor,  Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
 	std::vector<T> l2NormVec;
 
 	for (auto node : parameters) {
@@ -21,7 +44,7 @@ T Trainer<T>::clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unorder
 		}
 
 		auto parameter = node;
-		auto gradient = parameter->gradient;
+		auto gradient  = parameter->gradient;
 
 		l2NormVec.push_back(T(0));
 
@@ -40,7 +63,7 @@ T Trainer<T>::clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unorder
 	auto scale = clipThreshold / std::sqrt(sum);
 
 	if (isnan(scale) || isinf(scale)) {
-		return T(1);
+		return T(1.0);
 	}
 
 	return scale;
@@ -48,34 +71,10 @@ T Trainer<T>::clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unorder
 
 #ifdef HAVE_HALF
 template <>
-half Trainer<half>::clipGradientScaleCPU(Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<half>*> &parameters, half clipThreshold) {
+half Trainer<half>::clipGradientScaleCPU(Executor *executor,  Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
 	DEEP8_RUNTIME_ERROR("CPU not support half");
 }
 #endif
-
-/**
- * calculate the L2Norm of Parameter to void the exploding gradient problem
- */
-template <typename T>
-T Trainer<T>::clipGradientScale(std::unordered_set<Parameter<T>*> &parameters, T clipThreshold) {
-	if (parameters.empty()) {
-		return T(1.0);
-	}
-
-	auto variable   = *parameters.begin();
-	auto device     = variable->value.device();
-	auto deviceType = device->type;
-
-	if (DeviceType::CPU == deviceType) {
-		return clipGradientScaleCPU((static_cast<CPUDevice*>(device))->eigenDevice, parameters, clipThreshold);
-	} else {
-#ifdef HAVE_CUDA
-		return clipGradientScaleGPU(device, parameters, clipThreshold);
-#else
-		DEEP8_RUNTIME_ERROR("does not have a GPU");
-#endif
-	}
-}
 
 template <typename T>
 Tensor<T> Trainer<T>::createTensorCPU(Device *device, Shape &shape) {
@@ -89,30 +88,43 @@ Tensor<T> Trainer<T>::createTensorCPU(Device *device, Shape &shape) {
 	return Tensor<T>(storage, 0, shape);
 }
 
+/**update the parameter*/
 template <typename T>
-void Trainer<T>::training(std::unordered_set<Parameter<T>*> &parameters) {
+void Trainer<T>::updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) {
+	DEEP8_RUNTIME_ERROR("can not call this function in Trainer");
+}
+
+#ifdef HAVE_CUDA
+template <typename T>
+void Trainer<T>::updateGPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) {
+	DEEP8_RUNTIME_ERROR("can not call this function in Trainer");
+}
+#endif
+
+template <typename T>
+void Trainer<T>::update(Executor *executor, std::unordered_set<Parameter<T>*> &parameters, int64_t steps) {
 	if (parameters.empty()) {
 		return;
 	}
 
-	times++;
-
 	T scale(1.0);
 
 	if (clipGradient) {
-		scale = clipGradientScale(parameters, clipThreshold);
+		scale = clipGradientScale(executor, parameters, clipThreshold);
 	}
 
-	for (auto node : parameters) {
-		if (!node->updateGradient) {
+	T learningRate = learningRateIterator->generateLearningRate(steps);
+
+	for (auto parameter : parameters) {
+		if (!parameter->updateGradient) {
 			continue;
 		}
 
-		if (DeviceType::CPU == node->value.device()->type) {
-			trainingCPU(node, scale);
+		if (DeviceType::CPU == parameter->value.device()->type) {
+			updateCPU(executor, parameter, steps, learningRate, scale);
 		} else {
 #ifdef HAVE_CUDA
-			trainingGPU(node, scale);
+			updateGPU(executor, parameter, steps, learningRate, scale);
 #else
 			DEEP8_RUNTIME_ERROR("does not have a GPU");
 #endif
@@ -126,22 +138,22 @@ DEEP8_DECLARATION_INSTANCE(Trainer)
 /**SGDTrainer*/
 /**********************************************************************/
 template <typename T>
-SGDTrainer<T>::SGDTrainer(T lr, bool cg, T ct): Trainer<T>(lr, cg, ct) {
+SGDTrainer<T>::SGDTrainer(LearningRateIterator *lr, bool cg = false, T ct = 5.0): Trainer<T>(lr, cg, ct) {
 }
 
 template <typename T>
-void SGDTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {
+void SGDTrainer<T>::updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) {
 	auto value    = parameter->value;
 	auto gradient = parameter->gradient;
 
 	auto device = static_cast<CPUDevice*>(value.device())->eigenDevice;
 
-	eTVec(value).device(*device) -= eTVec(gradient) * (this->learningRate * scale);
+	eTVec(value).device(*device) -= eTVec(gradient) * (learningRate * scale);
 }
 
 #ifdef HAVE_HALF
 template <>
-void SGDTrainer<half>::trainingCPU(Parameter<half> *parameter, half scale) {
+void SGDTrainer<half>::updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) {
 	DEEP8_RUNTIME_ERROR("CPU not support half");
 }
 #endif
@@ -152,7 +164,7 @@ DEEP8_DECLARATION_INSTANCE(SGDTrainer)
 /**AdagradTrainer*/
 /**********************************************************************/
 template <typename T>
-AdagradTrainer<T>::AdagradTrainer(T learningRate, T epsilon, bool clipGradient, T clipThreshold)
+AdagradTrainer<T>::AdagradTrainer(LearningRateIterator *learningRate, T epsilon, bool clipGradient, T clipThreshold)
 		:Trainer<T>(learningRate, clipGradient, clipThreshold), epsilon(epsilon) {
 		check(epsilon);
 }
@@ -168,11 +180,6 @@ void AdagradTrainer<half>::check(half epsilon) {
 	DEEP8_ARGUMENT_CHECK(0 != __half2float(epsilon), "epsilon can not be 0");
 }
 #endif
-
-template <typename T>
-AdagradTrainer<T>::~AdagradTrainer() {
-	accumulate.clear();
-}
 
 template <typename T>
 void AdagradTrainer<T>::trainingCPU(Parameter<T> *parameter, T scale) {

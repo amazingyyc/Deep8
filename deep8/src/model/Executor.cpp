@@ -126,12 +126,11 @@ Parameter<T>* Executor<T>::addParameter(Shape &shape, bool updateGradient, void 
 	if (nullptr != ptr) {
 		parameter->feed(ptr);
 	} else {
-		TensorInit<T>().gaussian(parameter->value);
+		TensorInit<T>().gaussian(parameter->value, 0.0, 0.1);
 	}
 
 	return parameter;
 }
-
 
 template <typename T>
 Node* Executor<T>::addFunction(FunctionBase *function) {

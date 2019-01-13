@@ -20,6 +20,7 @@ set(DEEP8_SRC_FILES
 		src/model/Executor.cpp
 		src/model/EagerExecutor.cpp
 		src/model/LazyExecutor.cpp
+		src/model/LearningRateIterator.cpp
 		src/model/Device.cpp
 		src/model/MemoryAllocator.cpp
 		src/model/MemoryPool.cpp
