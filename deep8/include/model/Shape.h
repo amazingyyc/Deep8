@@ -9,7 +9,7 @@ namespace Deep8 {
 /**
  * @brief the max dimension size
  */
-#define MAX_TENSOR_DIMS 5
+#define MAX_TENSOR_DIMS 4
 
 template<int NumDims>
 struct NVArray {

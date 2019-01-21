@@ -35,6 +35,26 @@ inline Shape broadcastShape(const Shape &shape1, const Shape &shape2) {
 /**
  * broad the Shape to the MAX_TENSOR_DIMS dim like broadcastShape
  */
+inline Eigen::array<int, MAX_TENSOR_DIMS + 1> enlargeShapeToMaxDim(const Shape &shape) {
+    DEEP8_ARGUMENT_CHECK(MAX_TENSOR_DIMS >= shape.nDims && shape.nDims >= 1, "the dim is error");
+
+    Eigen::array<int64_t, MAX_TENSOR_DIMS + 1> dims;
+    dims[0] = (int) shape.batch;
+
+    for (int i = MAX_TENSOR_DIMS, j = (int)shape.nDims - 1; i > 0; --i, --j) {
+        if (j >= 0) {
+            dims[i] = (int) shape.dim(j);
+        } else {
+            dims[i] = 1;
+        }
+    }
+
+    return dims;
+}
+
+/**
+ * broad the Shape to the MAX_TENSOR_DIMS dim like broadcastShape
+ */
 inline Eigen::array<int64_t, MAX_TENSOR_DIMS + 1> enlongateShapeToMaxDim(const Shape &shape) {
     DEEP8_ARGUMENT_CHECK(MAX_TENSOR_DIMS >= shape.nDims && shape.nDims >= 1, "the dim is error");
 
