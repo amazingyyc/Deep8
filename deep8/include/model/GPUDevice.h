@@ -58,19 +58,14 @@ public:
 	void freeCPU(void *ptr) override;
 
 	void zero(void *ptr, size_t size) override;
-
 	void copy(const void *from, void *to, size_t size) override;
 
 	void copyFromCPUToGPU(const void *from, void *to, size_t size) override;
-
 	void copyFromGPUToCPU(const void *from, void *to, size_t size) override;
-
 	void copyFromGPUToGPU(const void *from, void *to, size_t size) override;
 
 	void* gpuOneHalf() override;
-
 	void* gpuOneFloat() override;
-
 	void* gpuOneDouble() override;
 };
 

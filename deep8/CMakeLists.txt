@@ -10,6 +10,12 @@ message(STATUS "================================================================
 
 # deep8 include
 include_directories(include)
+include_directories(include/basic)
+include_directories(include/math)
+include_directories(include/model)
+include_directories(include/nodes)
+include_directories(include/trainer)
+include_directories(include/utils)
 
 file(GLOB DEEP8_HEAD_FILES "include/*.h")
 file(GLOB DEEP8_CUDA_HEAD_FILES "include/*.cuh")

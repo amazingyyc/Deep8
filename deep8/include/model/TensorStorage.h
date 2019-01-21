@@ -25,9 +25,7 @@ public:
     size_t size;
 
 	explicit TensorStorage();
-
 	explicit TensorStorage(void *p, size_t *refP, size_t s, Device *d);
-
 	explicit TensorStorage(const TensorStorage &other);
 
 	~TensorStorage();

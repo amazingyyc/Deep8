@@ -1,3 +1,4 @@
+#include "Exception.h"
 #include "TensorStorage.h"
 
 namespace Deep8 {

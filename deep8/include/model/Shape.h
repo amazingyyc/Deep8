@@ -9,7 +9,7 @@ namespace Deep8 {
 /**
  * @brief the max dimension size
  */
-#define MAX_TENSOR_DIMS 4
+#define MAX_TENSOR_DIMS 5
 
 template<int NumDims>
 struct NVArray {
@@ -30,7 +30,7 @@ struct NVShape {
  * The dims means the dimension of this Tensor
  */
 class Shape {
-private:
+public:
 	/**the batch of this Tensor*/
 	size_t batch;
 
