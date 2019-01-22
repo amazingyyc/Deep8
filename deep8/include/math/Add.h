@@ -23,23 +23,23 @@ void AddGPU(const Tensor &x, const Tensor &y, Tensor &z);
 /**
  * calculate grad(x) for z = x + y
  */
-void AddGradX(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, const Tensor &z, const Tensor &dz);
+void AddGradX(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz);
 
-void AddGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, const Tensor &z, const Tensor &dz);
+void AddGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz);
 
 #ifdef HAVE_CUDA
-void AddGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, const Tensor &z, const Tensor &dz);
+void AddGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz);
 #endif
 
 /**
  * calculate grad(y) for z = x + y
  */
-void AddGradY(const Tensor &x, const Tensor &dx, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz);
+void AddGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz);
 
-void AddGradYCPU(const Tensor &x, const Tensor &dx, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz);
+void AddGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz);
 
 #ifdef HAVE_CUDA
-void AddGradYGPU(const Tensor &x, const Tensor &dx, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz);
+void AddGradYGPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz);
 #endif
 
 }
