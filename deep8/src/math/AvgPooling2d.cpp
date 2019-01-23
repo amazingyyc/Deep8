@@ -1,8 +1,50 @@
 #include "math/AvgPooling2d.h"
 
-
 namespace Deep8 {
 namespace Math {
+
+/**avg pooling 2d*/
+void AvgPooling2d(const Tensor &x, Tensor &y, 
+                  bool coverd, 
+                  int filterHeight, 
+                  int filterWidth, 
+                  int strideY, 
+                  int strideX) {
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType(), "the param device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.type == y.type, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims && 3 == y.nDims, "the tensor dim must be 3");
+    DEEP8_ARGUMENT_CHECK(filterHeight >= 1 && filterWidth >= 1 && strideY >= 1 && strideX >= 1, "the params is error");
+
+    auto batch        = (int)x.batch();
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - filterHeight) / strideY + 1;
+        outputWidth  = (inputWidth  - filterWidth)  / strideX + 1;
+    } else {
+        outputHeight = (inputHeight - filterHeight + strideY - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - filterWidth  + strideX - 1) / strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(outputHeight == (int)y.dim(0) && 
+                         outputWidth  == (int)y.dim(1) && 
+                         inputChannel == (int)y.dim(2), "the shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        AvgPooling2dCPU(x, y, coverd, filterHeight, filterWidth, strideY, strideX);
+    } else {
+#ifdef HAVE_CUDA
+        AvgPooling2dGPU(x, y, coverd, filterHeight, filterWidth, strideY, strideX);
+#else
+        DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif  
+    }
+}
 
 template <typename T>
 void AvgPooling2dCPUImpl(CPUDevice *device,
@@ -73,7 +115,7 @@ void AvgPooling2dCPU(const Tensor &x, Tensor &y,
                             x.data<float>(),
                             y.data<float>(),
                             batch,
-                            inputHeight, 
+                            inputHeight,
                             inputWidth,
                             outputHeight, 
                             outputWidth,
@@ -105,6 +147,54 @@ void AvgPooling2dCPU(const Tensor &x, Tensor &y,
 }
 
 /**grad of AvgPooling*/
+void AvgPooling2dGrad(const Tensor &x,
+                      Tensor &dx,
+                      const Tensor &y,
+                      const Tensor &dy,
+                      bool coverd,
+                      int filterHeight,
+                      int filterWidth,
+                      int strideY,
+                      int strideX) {
+    DEEP8_ARGUMENT_CHECK(x.shape == dx.shape, "the x and dx shape must be same");
+    DEEP8_ARGUMENT_CHECK(y.shape == dy.shape, "the y and dy shape must be same");
+    DEEP8_ARGUMENT_CHECK(x.type == dx.type && x.type == y.type && x.type == dy.type, "the type must be same");
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && 
+                         x.deviceType() == y.deviceType() && 
+                         x.deviceType() == dy.deviceType(), "the device type must be same");
+
+    auto batch        = (int)x.batch();
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - filterHeight) / strideY + 1;
+        outputWidth  = (inputWidth - filterWidth) / strideX + 1;
+    } else {
+        outputHeight = (inputHeight - filterHeight + strideY - 1) / strideY + 1;
+        outputWidth  = (inputWidth - filterWidth + strideX - 1) / strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(outputHeight == (int)y.dim(0) &&
+                         outputWidth  == (int)y.dim(1) &&
+                         inputChannel == (int)y.dim(2), "the shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        AvgPooling2dGradCPU(x, dx, y, dy, coverd, filterHeight, filterWidth, strideY, strideX);
+    } else {
+#ifdef HAVE_CUDA
+        AvgPooling2dGradGPU(x, dx, y, dy, coverd, filterHeight, filterWidth, strideY, strideX);
+#else
+        DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif  
+    }
+}
+
+
 template <typename T>
 void AvgPooling2dGradCPUImpl(T *dx, const T *dy,
                              int batch, 
