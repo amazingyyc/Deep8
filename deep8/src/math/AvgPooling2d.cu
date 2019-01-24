@@ -53,7 +53,6 @@ void AvgPooling2dGPU(const Tensor &x, Tensor &y,
                      int filterWidth,
                      int strideY,
                      int strideX) {
-
     auto batch       = (int)x.batch();
     auto inputHeight = (int)x.dim(0);
     auto inputWidth  = (int)x.dim(1);
