@@ -31,7 +31,8 @@ void AvgPooling2d(const Tensor &x, Tensor &y,
         outputWidth  = (inputWidth  - filterWidth  + strideX - 1) / strideX + 1;
     }
 
-    DEEP8_ARGUMENT_CHECK(outputHeight == (int)y.dim(0) && 
+    DEEP8_ARGUMENT_CHECK(batch        == (int)y.batch() &&
+                         outputHeight == (int)y.dim(0) && 
                          outputWidth  == (int)y.dim(1) && 
                          inputChannel == (int)y.dim(2), "the shape is error");
 

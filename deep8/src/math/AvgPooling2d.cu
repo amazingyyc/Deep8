@@ -109,6 +109,26 @@ void AvgPooling2dGPU(const Tensor &x, Tensor &y,
             padLeft,
             N);
         break;
+#ifdef HAVE_HALF
+    case DType::Float16:
+        AvgPooling2dKernel<half> << <grideSize, blockSize >> > (
+            x.data<half>(),
+            y.data<half>(),
+            batch,
+            inputHeight,
+            inputWidth,
+            outputHeight,
+            outputWidth,
+            channel,
+            filterHeight,
+            filterWidth,
+            strideY,
+            strideX,
+            padTop,
+            padLeft,
+            N);
+        break;
+#endif
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
         break;
@@ -222,6 +242,26 @@ void AvgPooling2dGradGPU(const Tensor &x, Tensor &dx,
             padLeft,
             N);
         break;
+#ifdef HAVE_HALF
+    case DType::Float16:
+        AvgPooling2dGradKernel<half> << <grideSize, blockSize >> > (
+            dx.data<half>(),
+            dy.data<half>(),
+            batch,
+            inputHeight,
+            inputWidth,
+            outputHeight,
+            outputWidth,
+            channel,
+            filterHeight,
+            filterWidth,
+            strideY,
+            strideX,
+            padTop,
+            padLeft,
+            N);
+        break;
+#endif
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
         break;

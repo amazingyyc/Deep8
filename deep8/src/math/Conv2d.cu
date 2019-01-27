@@ -302,6 +302,111 @@ void Conv2dGPUImpl<half>(GPUDevice* device,
 }
 #endif
 
+void Conv2dGPU( const Tensor &x, 
+                const Tensor &y, 
+                Tensor &z,
+                void *xcol,
+                bool convered,
+                int strideY,
+                int strideX,
+                int dilationY,
+                int dilationX) {
+    auto device = (GPUDevice*) x.device();
+
+    auto batch = (int)x.batch();
+
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputHeight  = (int)z.dim(0);
+    auto outputWidth   = (int)z.dim(1);
+    auto outputChannel = (int)z.dim(2);
+
+    auto filterHeight = (int)y.dim(1);
+    auto filterWidth  = (int)y.dim(2);
+
+    auto realFilterHeight = filterHeight + (filterHeight - 1) * (dilationY - 1);
+    auto realFilterWidth  = filterWidth  + (filterWidth  - 1) * (dilationX - 1);
+
+    auto padTop  = -(std::max<int>(0, (outputHeight - 1) * strideY + realFilterHeight - inputHeight) / 2);
+    auto padLeft = -(std::max<int>(0, (outputWidth  - 1) * strideX + realFilterWidth  - inputWidth)  / 2);
+
+    switch (x.type.id) {
+    case DType::Float32:
+        Conv2dGPUImpl<float>(device,
+                          x.data<float>(),
+                          y.data<float>(),
+                          z.data<float>(),
+                          (float*)xcol,
+                          batch,
+                          inputHeight,
+                          inputWidth,
+                          inputChannel,
+                          outputHeight,
+                          outputWidth,
+                          outputChannel,
+                          filterHeight,
+                          filterWidth,
+                          strideY,
+                          strideX,
+                          dilationY,
+                          dilationX,
+                          padTop,
+                          padLeft);
+        break;
+    case DType::Float64:
+        Conv2dGPUImpl<double>(device,
+                          x.data<double>(),
+                          y.data<double>(),
+                          z.data<double>(),
+                          (double*)xcol,
+                          batch,
+                          inputHeight,
+                          inputWidth,
+                          inputChannel,
+                          outputHeight,
+                          outputWidth,
+                          outputChannel,
+                          filterHeight,
+                          filterWidth,
+                          strideY,
+                          strideX,
+                          dilationY,
+                          dilationX,
+                          padTop,
+                          padLeft);
+        break;
+#ifdef HAVE_HALF
+    case DType::Float16:
+        Conv2dGPUImpl<half>(device,
+                          x.data<half>(),
+                          y.data<half>(),
+                          z.data<half>(),
+                          (half*)xcol,
+                          batch,
+                          inputHeight,
+                          inputWidth,
+                          inputChannel,
+                          outputHeight,
+                          outputWidth,
+                          outputChannel,
+                          filterHeight,
+                          filterWidth,
+                          strideY,
+                          strideX,
+                          dilationY,
+                          dilationX,
+                          padTop,
+                          padLeft);
+    break;
+#endif
+    default:
+        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        break;
+    }
+}
+
 /**grad of x*/
 template <typename T>
 void Conv2dGradXGPUImpl(GPUDevice* device,
@@ -495,6 +600,123 @@ void Conv2dGradXGPUImpl<half>(GPUDevice* device,
 }
 #endif
 
+/**gradient for x (input)*/
+void Conv2dGradXGPU(const Tensor& x, 
+                    Tensor& dx,
+                    const Tensor& y,
+                    const Tensor& z, 
+                    const Tensor& dz,
+                    void *dxcol,
+                    bool convered,
+                    int strideY,
+                    int strideX,
+                    int dilationY,
+                    int dilationX) {
+    auto device = (GPUDevice*) x.device();
+
+    auto batch = (int)x.batch();
+
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputHeight  = (int)z.dim(0);
+    auto outputWidth   = (int)z.dim(1);
+    auto outputChannel = (int)z.dim(2);
+
+    auto filterHeight = (int)y.dim(1);
+    auto filterWidth  = (int)y.dim(2);
+
+    auto realFilterHeight = filterHeight + (filterHeight - 1) * ((int)dilationY - 1);
+    auto realFilterWidth  = filterWidth  + (filterWidth  - 1) * ((int)dilationX - 1);
+
+    auto padTop  = -(std::max<int>(0, (outputHeight - 1) * strideY + realFilterHeight - inputHeight) / 2);
+    auto padLeft = -(std::max<int>(0, (outputWidth  - 1) * strideX + realFilterWidth  - inputWidth)  / 2);
+
+    switch (x.type.id) {
+    case DType::Float32:
+        Conv2dGradXGPUImpl<float>(device,
+                        x.data<float>(), 
+                        dx.data<float>(),
+                        y.data<float>(),
+                        z.data<float>(), 
+                        dz.data<float>(),
+                        (float*)dxcol,
+                        batch,
+                        inputHeight,
+                        inputWidth,
+                        inputChannel,
+                        outputHeight,
+                        outputWidth,
+                        outputChannel,
+                        filterHeight,
+                        filterWidth,
+                        convered,
+                        strideY,
+                        strideX,
+                        dilationY,
+                        dilationX,
+                        padTop,
+                        padLeft);
+        break;
+    case DType::Float64:
+        Conv2dGradXGPUImpl<double>(device,
+                        x.data<double>(), 
+                        dx.data<double>(),
+                        y.data<double>(),
+                        z.data<double>(), 
+                        dz.data<double>(),
+                        (double*)dxcol,
+                        batch,
+                        inputHeight,
+                        inputWidth,
+                        inputChannel,
+                        outputHeight,
+                        outputWidth,
+                        outputChannel,
+                        filterHeight,
+                        filterWidth,
+                        convered,
+                        strideY,
+                        strideX,
+                        dilationY,
+                        dilationX,
+                        padTop,
+                        padLeft);
+        break;
+#ifdef HAVE_HALF
+    case DType::Float16:
+        Conv2dGradXGPUImpl<half>(device,
+                        x.data<half>(), 
+                        dx.data<half>(),
+                        y.data<half>(),
+                        z.data<half>(), 
+                        dz.data<half>(),
+                        (half*)dxcol,
+                        batch,
+                        inputHeight,
+                        inputWidth,
+                        inputChannel,
+                        outputHeight,
+                        outputWidth,
+                        outputChannel,
+                        filterHeight,
+                        filterWidth,
+                        convered,
+                        strideY,
+                        strideX,
+                        dilationY,
+                        dilationX,
+                        padTop,
+                        padLeft);
+    break;
+#endif
+    default:
+        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        break;
+    }
+}
+
 /**grad for y (filter)*/
 template <typename T>
 void Conv2dGradYGPUImpl(GPUDevice* device,
@@ -687,6 +909,123 @@ void Conv2dGradYGPUImpl<half>(GPUDevice* device,
     CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, m, n, k, &alpha, xcol, m, dz, n, &beta, dy, m));
 }
 #endif
+
+
+void Conv2dGradYGPU(const Tensor &x,
+                    const Tensor &y, 
+                    Tensor &dy,
+                    const Tensor &z, 
+                    const Tensor& dz,
+                    void *xcol,
+                    bool convered,
+                    int strideY,
+                    int strideX,
+                    int dilationY,
+                    int dilationX) {
+    auto device = (GPUDevice*) x.device();
+
+    auto batch = (int)x.batch();
+
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputHeight  = (int)z.dim(0);
+    auto outputWidth   = (int)z.dim(1);
+    auto outputChannel = (int)z.dim(2);
+
+    auto filterHeight = (int)y.dim(1);
+    auto filterWidth  = (int)y.dim(2);
+
+    auto realFilterHeight = filterHeight + (filterHeight - 1) * ((int)dilationY - 1);
+    auto realFilterWidth  = filterWidth  + (filterWidth  - 1) * ((int)dilationX - 1);
+
+    auto padTop  = -(std::max<int>(0, (outputHeight - 1) * strideY + realFilterHeight - inputHeight) / 2);
+    auto padLeft = -(std::max<int>(0, (outputWidth  - 1) * strideX + realFilterWidth  - inputWidth)  / 2);
+
+    switch (x.type.id) {
+    case DType::Float32:
+        Conv2dGradYGPUImpl<float>(device,
+                        x.data<float>(),
+                        y.data<float>(), 
+                        dy.data<float>(),
+                        z.data<float>(), 
+                        dz.data<float>(),
+                        (float*)xcol,
+                        batch,
+                        inputHeight,
+                        inputWidth,
+                        inputChannel,
+                        outputHeight,
+                        outputWidth,
+                        outputChannel,
+                        filterHeight,
+                        filterWidth,
+                        convered,
+                        strideY,
+                        strideX,
+                        dilationY,
+                        dilationX,
+                        padTop,
+                        padLeft);
+        break;
+    case DType::Float64:
+        Conv2dGradYGPUImpl<double>(device,
+                x.data<double>(),
+                y.data<double>(), 
+                dy.data<double>(),
+                z.data<double>(), 
+                dz.data<double>(),
+                (double*)xcol,
+                batch,
+                inputHeight,
+                inputWidth,
+                inputChannel,
+                outputHeight,
+                outputWidth,
+                outputChannel,
+                filterHeight,
+                filterWidth,
+                convered,
+                strideY,
+                strideX,
+                dilationY,
+                dilationX,
+                padTop,
+                padLeft);
+        break;
+#ifdef HAVE_HALF
+    case DType::Float16:
+        Conv2dGradYGPUImpl<half>(device,
+                x.data<half>(),
+                y.data<half>(), 
+                dy.data<half>(),
+                z.data<half>(), 
+                dz.data<half>(),
+                (half*)xcol,
+                batch,
+                inputHeight,
+                inputWidth,
+                inputChannel,
+                outputHeight,
+                outputWidth,
+                outputChannel,
+                filterHeight,
+                filterWidth,
+                convered,
+                strideY,
+                strideX,
+                dilationY,
+                dilationX,
+                padTop,
+                padLeft);
+    break;
+#endif
+    default:
+        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        break;
+    }
+}
 
 }
 }
