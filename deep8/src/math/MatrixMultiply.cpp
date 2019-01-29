@@ -31,6 +31,65 @@ void MatrixMultiply(const Tensor &x, const Tensor &y, Tensor &z) {
     }
 }
 
+/**gradient for x*/
+void MatrixMultiplyGradX(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz) {
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == z.deviceType() && x.deviceType() == dz.deviceType(), "the device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.type == dx.type && x.type == y.type && x.type == z.type && x.type == dz.type, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && z.shape == dz.shape, "the shape is error");
+
+    auto xshape = x.shape;
+    auto yshape = y.shape;
+    auto zshape = z.shape;
+
+    DEEP8_ARGUMENT_CHECK(1 == xshape.batch || xshape.batch == zshape.batch, "the shape is error");
+    DEEP8_ARGUMENT_CHECK(1 == yshape.batch || yshape.batch == zshape.batch, "the shape is error");
+    DEEP8_ARGUMENT_CHECK((1 == xshape.nDims || 2 == xshape.nDims) &&
+                         (1 == yshape.nDims || 2 == yshape.nDims) &&
+                         (1 == zshape.nDims || 2 == zshape.nDims),
+                         "the shape is error");
+    DEEP8_ARGUMENT_CHECK(xshape.row() == zshape.row() && yshape.col() == zshape.col() && xshape.col() == yshape.row(), "the shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        MatrixMultiplyGradXCPU(x, dx, y, z, dz);
+    } else {
+#ifdef HAVE_CUDA
+        MatrixMultiplyGradXGPU(x, dx, y, z, dz);
+#else 
+        DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif
+    }
+}
+
+
+/**gradient for y*/
+void MatrixMultiplyGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType() && x.deviceType() == z.deviceType() && x.deviceType() == dz.deviceType(), "the device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.type == y.type && x.type == dy.type && x.type == z.type && x.type == dz.type, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(y.shape == dy.shape && z.shape == dz.shape, "the shape is error");
+
+    auto xshape = x.shape;
+    auto yshape = y.shape;
+    auto zshape = z.shape;
+
+    DEEP8_ARGUMENT_CHECK(1 == xshape.batch || xshape.batch == zshape.batch, "the shape is error");
+    DEEP8_ARGUMENT_CHECK(1 == yshape.batch || yshape.batch == zshape.batch, "the shape is error");
+    DEEP8_ARGUMENT_CHECK((1 == xshape.nDims || 2 == xshape.nDims) &&
+                         (1 == yshape.nDims || 2 == yshape.nDims) &&
+                         (1 == zshape.nDims || 2 == zshape.nDims),
+                         "the shape is error");
+    DEEP8_ARGUMENT_CHECK(xshape.row() == zshape.row() && yshape.col() == zshape.col() && xshape.col() == yshape.row(), "the shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        MatrixMultiplyGradYCPU(x, y, dy, z, dz);
+    } else {
+#ifdef HAVE_CUDA
+        MatrixMultiplyGradYGPU(x, y, dy, z, dz);
+#else
+        DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif
+}
+
+
 template <typename T>
 void MatrixMultiplyCPUImpl(const T *x, const Shape &xshape, const T *y, const Shape &yshape, T *z, const Shape &zshape) {
     if (1 == yshape.batch {
@@ -70,34 +129,6 @@ void MatrixMultiplyCPU(const Tensor &x, const Tensor &y, Tensor &z) {
     }
 }
 
-/**gradient for x*/
-void MatrixMultiplyGradX(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz) {
-    DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == z.deviceType() && x.deviceType() == dz.deviceType(), "the device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type == dx.type && x.type == y.type && x.type == z.type && x.type == dz.type, "the data type must be same");
-    DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && z.shape == dz.shape, "the shape is error");
-
-    auto xshape = x.shape;
-    auto yshape = y.shape;
-    auto zshape = z.shape;
-
-    DEEP8_ARGUMENT_CHECK(1 == xshape.batch || xshape.batch == zshape.batch, "the shape is error");
-    DEEP8_ARGUMENT_CHECK(1 == yshape.batch || yshape.batch == zshape.batch, "the shape is error");
-    DEEP8_ARGUMENT_CHECK((1 == xshape.nDims || 2 == xshape.nDims) &&
-                         (1 == yshape.nDims || 2 == yshape.nDims) &&
-                         (1 == zshape.nDims || 2 == zshape.nDims),
-                         "the shape is error");
-    DEEP8_ARGUMENT_CHECK(xshape.row() == zshape.row() && yshape.col() == zshape.col() && xshape.col() == yshape.row(), "the shape is error");
-
-    if (DeviceType::CPU == x.deviceType()) {
-        MatrixMultiplyGradXCPU(x, dx, y, z, dz);
-    } else {
-#ifdef HAVE_CUDA
-        MatrixMultiplyGradXGPU(x, dx, y, z, dz);
-#else 
-        DEEP8_RUNTIME_ERROR("do not have a GPU");
-#endif
-    }
-}
 
 template <typename T>
 void MatrixMultiplyGradXCPUImpl(const T *x, 
@@ -145,33 +176,6 @@ void MatrixMultiplyGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const 
     }
 }
 
-/**gradient for y*/
-void MatrixMultiplyGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {
-    DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType() && x.deviceType() == z.deviceType() && x.deviceType() == dz.deviceType(), "the device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type == y.type && x.type == dy.type && x.type == z.type && x.type == dz.type, "the data type must be same");
-    DEEP8_ARGUMENT_CHECK(y.shape == dy.shape && z.shape == dz.shape, "the shape is error");
-
-    auto xshape = x.shape;
-    auto yshape = y.shape;
-    auto zshape = z.shape;
-
-    DEEP8_ARGUMENT_CHECK(1 == xshape.batch || xshape.batch == zshape.batch, "the shape is error");
-    DEEP8_ARGUMENT_CHECK(1 == yshape.batch || yshape.batch == zshape.batch, "the shape is error");
-    DEEP8_ARGUMENT_CHECK((1 == xshape.nDims || 2 == xshape.nDims) &&
-                         (1 == yshape.nDims || 2 == yshape.nDims) &&
-                         (1 == zshape.nDims || 2 == zshape.nDims),
-                         "the shape is error");
-    DEEP8_ARGUMENT_CHECK(xshape.row() == zshape.row() && yshape.col() == zshape.col() && xshape.col() == yshape.row(), "the shape is error");
-
-    if (DeviceType::CPU == x.deviceType()) {
-        MatrixMultiplyGradYCPU(x, y, dy, z, dz);
-    } else {
-#ifdef HAVE_CUDA
-        MatrixMultiplyGradYGPU(x, y, dy, z, dz);
-#else
-        DEEP8_RUNTIME_ERROR("do not have a GPU");
-#endif
-}
 
 template <typename T>
 void MatrixMultiplyGradYCPUImpl(const T *x, 

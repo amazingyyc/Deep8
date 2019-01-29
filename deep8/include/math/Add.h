@@ -6,6 +6,8 @@
 #include "model/Tensor.h"
 
 namespace Deep8 {
+
+
 namespace Math {
 
 /**

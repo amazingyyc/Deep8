@@ -51,7 +51,7 @@ void AddGPU(const Tensor &x, const Tensor &y, Tensor &z) {
  */
 template <typename T>
 struct AddGradKernelOp {
-    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const real &x, const real &y, const real &z, const real &dz) {
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &z, const T &dz) {
         return dz;
     }
 };

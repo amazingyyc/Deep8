@@ -19,6 +19,27 @@ void Abs(const Tensor &x, Tensor &y) {
     }
 }
 
+
+/**
+ * calculate the grad(x)
+ */
+void AbsGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && x.shape == y.shape && x.shape == dy.shape, "the param shape must be same");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        AbsGradCPU(x, dx, y, dy);
+    } else {
+#ifdef HAVE_CUDA
+        AbsGradGPU(x, dx, y, dy);
+#else
+        DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif  
+    }
+}
+
+
 template <typename T>
 void AbsCPUImpl(CPUDevice *device, const T *x, T *y, int n) {
     auto eigenDevice = device->eigenDevice;
@@ -43,25 +64,6 @@ void AbsCPU(const Tensor &x, Tensor &y) {
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
         break;
-    }
-}
-
-/**
- * calculate the grad(x)
- */
-void AbsGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
-    DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
-    DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && x.shape == y.shape && x.shape == dy.shape, "the param shape must be same");
-
-    if (DeviceType::CPU == x.deviceType()) {
-        AbsGradCPU(x, dx, y, dy);
-    } else {
-#ifdef HAVE_CUDA
-        AbsGradGPU(x, dx, y, dy);
-#else
-        DEEP8_RUNTIME_ERROR("do not have a GPU");
-#endif  
     }
 }
 
