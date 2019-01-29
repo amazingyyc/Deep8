@@ -95,7 +95,7 @@ void MinusGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, c
         MinusGradYCPU(x, y, dy, z, dz);
     } else {
 #ifdef HAVE_CUDA
-        MinusGradYCPU(x, y, dy, z, dz);
+        MinusGradYGPU(x, y, dy, z, dz);
 #else 
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif

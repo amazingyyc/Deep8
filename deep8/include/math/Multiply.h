@@ -1,5 +1,5 @@
-#ifndef DEEP8_MULTIPLY_MINUS_H
-#define DEEP8_MULTIPLY_MINUS_H
+#ifndef DEEP8_MATH_MULTIPLY_H
+#define DEEP8_MATH_MULTIPLY_H
 
 #include "basic/Basic.h"
 #include "basic/Exception.h"

@@ -181,42 +181,7 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cuMinValue() {
 }
 
 
-/**
- * the CUDN does not support template shared memory
- * ref:https://wrf.ecse.rpi.edu//wiki/ParallelComputingSpring2015/cuda/nvidia/samples/0_Simple/simpleTemplates/sharedmem.cuh
- */
-template <typename T>
-struct SharedMemory {
-	__device__ T *pointer() {
-		return nullptr;
-	}
-};
 
-template <>
-struct SharedMemory<float> {
-	__device__ float *pointer() {
-		extern __shared__ float sharedFloat[];
-		return sharedFloat;
-	}
-};
-
-template <>
-struct SharedMemory<double> {
-	__device__ double *pointer() {
-		extern __shared__ double sharedDouble[];
-		return sharedDouble;
-	}
-};
-
-#ifdef HAVE_HALF
-template <>
-struct SharedMemory<half> {
-	__device__ half *pointer() {
-		extern __shared__ half sharedHalf[];
-		return sharedHalf;
-	}
-};
-#endif
 
 template <unsigned int blockSize, typename real>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE void warpSumReduce(volatile real *shared, int threadId) {

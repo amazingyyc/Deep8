@@ -95,10 +95,10 @@ void AbsGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
 
     switch (x.type.id) {
     case DType::Float32:
-        AbsGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), y.data<float>, n);
+        AbsGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), dy.data<float>, n);
         break;
     case DType::Float64:
-        AbsGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), y.data<double>, n);
+        AbsGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), dy.data<double>, n);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
