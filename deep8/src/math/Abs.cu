@@ -22,7 +22,7 @@ void AbsGPUImpl(const T *x, T *y, int n) {
 }
 
 void AbsGPU(const Tensor &x, Tensor &y) {
-    auto n = (int) x.shape();
+    auto n = (int) x.shape.size();
 
     switch (x.type.id) {
     case DType::Float32:
@@ -45,7 +45,7 @@ void AbsGPU(const Tensor &x, Tensor &y) {
 
 template <typename T>
 struct AbsGradKernelOp {
-    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const & y, const T &dy) {
+    DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &dy) {
         return x >= T(0) ? dy : -dy;
     }
 };
@@ -68,6 +68,7 @@ void AbsGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
     case DType::Float64:
         AbsGradGPUImpl<double>(x.data<double>(), dx.data<double>(), y.data<double>(), dy.data<double>(), n);
         break;
+        
 #ifdef HAVE_HALF
     case DType::Float16:
         AbsGradGPUImpl<half>(x.data<half>(), dx.data<half>(), y.data<half>(), dy.data<half>(), n);
