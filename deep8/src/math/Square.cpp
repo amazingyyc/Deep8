@@ -75,6 +75,7 @@ void SquareGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape
 void SquareGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
     auto device = x.device();
 
+    switch (x.type.id) {
     case DType::Float32:
         SquareGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape);
         break;

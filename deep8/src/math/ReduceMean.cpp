@@ -1,0 +1,163 @@
+#include "math/ReduceMean.h"
+
+namespace Deep8 {
+namespace Math {
+
+void ReduceMean(const Tensor &x, Tensor &y, int axis) {
+    DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.type  == y.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(axis < x.shape.nDims, "the axis is error");
+
+    int size = x.shape.batch();
+
+    for (int i = 0; i < axis; ++i) {
+        size *= (int)x.shape.dim(i);
+    }
+
+    for (int i = axis + 1; i < x.shape.nDims; ++i) {
+        size *= (int)x.shape.dim(i);
+    }
+
+    DEEP8_ARGUMENT_CHECK(size == (int)y.size(), "the shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        ReduceMeanCPU(x, y, axis);
+    } else {
+#ifdef HAVE_CUDA
+        ReduceMeanGPU(x, y, axis);
+#else
+        DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif  
+    }
+}
+
+void ReduceMeanGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis) {
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && y.shape == dy.shape, "the x/dx or y/dy shape must be same");
+
+    int size = x.shape.batch();
+
+    for (int i = 0; i < axis; ++i) {
+        size *= (int)x.shape.dim(i);
+    }
+
+    for (int i = axis + 1; i < x.shape.nDims; ++i) {
+        size *= (int)x.shape.dim(i);
+    }
+
+    DEEP8_ARGUMENT_CHECK(size == (int)y.size() && size == (int)dy.size(), "the shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        ReduceMeanGradCPU(x, dx, y, dy, axis);
+    } else {
+#ifdef HAVE_CUDA
+        ReduceMeanGradGPU(x, dx, y, dy, axis);
+#else
+        DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif  
+    }
+}
+
+template <typename T>
+void ReduceMeanCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape, int axis) {
+    auto eigenDevice = device->eigenDevice;
+
+    int dim0, dim1, dim2;
+
+    if (axis < 0) {
+        dim0 = (int) xshape.batch;
+        dim1 = (int) xshape.batchSize();
+        dim2 = 1;
+    } else {
+        dim0 = (int) xshape.batch;
+        dim1 = (int) xshape.dim(axis);
+        dim2 = 1;
+
+        for (int i = 0; i < axis; ++i) {
+            dim0 *= (int) xshape.dim(i);
+        }
+
+        for (int i = axis + 1; i < xshape.nDims; ++i) {
+            dim2 *= (int) xshape.dim(i);
+        }
+    }
+
+    Eigen::array<int, 1> reduceDims = { 1 };
+    Eigen::array<int, 2> reshape    = { dim0, dim2 };
+
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> xvec(x, dim0, dim1, dim2);
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>> yvec(y, dim0, dim2);
+
+    yvec.device(*eigenDevice) = xvec.mean(reduceDims).reshape(reshape);
+}
+
+void ReduceMeanCPU(const Tensor &x, Tensor &y, int axis) {
+    auto device = (CPUDevice*)x.device();
+
+    switch (x.type.id) {
+    case DType::Float32:
+        ReduceMeanCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape, axis);
+        break;
+    case DType::Float64:
+        ReduceMeanCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape, axis);
+        break;
+    default:
+        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        break;
+    }
+}
+
+template <typename T>
+void ReduceMeanGradCPUImpl(CPUDevice*device, const T *x, T *dx, const Shape &xshape, const T *y, const t *dy, const Shape &yshape, int axis) {
+    auto eigenDevice = device->eigenDevice;
+
+    int dim0, dim1, dim2;
+
+    if (axis < 0) {
+        dim0 = (int) xshape.batch;
+        dim1 = (int) xshape.batchSize();
+        dim2 = 1;
+    } else {
+        dim0 = (int) xshape.batch;
+        dim1 = (int) xshape.dim(axis);
+        dim2 = 1;
+
+        for (int i = 0; i < axis; ++i) {
+            dim0 *= (int) xshape.dim(i);
+        }
+
+        for (int i = axis + 1; i < xshape.nDims; ++i) {
+            dim2 *= (int) xshape.dim(i);
+        }
+    }
+
+    auto ratio = T(1) / T(dim1);
+    
+    Eigen::array<int, 3> broad = { 1, dim1, 1 };
+
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> dxvec(dx, dim0, dim1, dim2);
+    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> dyvec(dy, dim0,    1, dim2);
+
+    dxvec.device(*eigenDevice) += dyvec.broadcast(broad) * ratio;
+}
+
+void ReduceMeanGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis) {
+    auto device = (CPUDevice*)x.device();
+
+    switch (x.type.id) {
+    case DType::Float32:
+        ReduceMeanGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape, axis);
+        break;
+    case DType::Float64:
+        ReduceMeanGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>, y.shape, axis);
+        break;
+    default:
+        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        break;
+    }
+}
+
+
+}
+}
