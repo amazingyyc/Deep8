@@ -63,7 +63,7 @@ void ReduceSumGPU(const Tensor &x, Tensor &y, int axis) {
         if (1 == dim2) {
             CallTailReduceKernel<double, ReduceSumKernelOp<double>>(x.data<double>(), y.data<double>(), dim0, dim1, ReduceSumKernelOp<double>());
         } else if (1 == dim0) {
-            CallHeadReduceKernel<fldoubleoat, ReduceSumKernelOp<double>>(x.data<double>(), y.data<double>(), dim1, dim2, ReduceSumKernelOp<double>());
+            CallHeadReduceKernel<double, ReduceSumKernelOp<double>>(x.data<double>(), y.data<double>(), dim1, dim2, ReduceSumKernelOp<double>());
         } else {
             int N = dim0 * dim2;
             int blockSize = DEEP8_GPU_BLOCK_SIZE;

@@ -100,7 +100,7 @@ void ReduceMeanCPU(const Tensor &x, Tensor &y, int axis) {
         ReduceMeanCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape, axis);
         break;
     case DType::Float64:
-        ReduceMeanCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape, axis);
+        ReduceMeanCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape, axis);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
