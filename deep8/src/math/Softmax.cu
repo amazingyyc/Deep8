@@ -212,8 +212,8 @@ struct SoftmaxGradDotKernelOp {
 
 template <int blockSize, typename T>
 __global__ void SoftmaxGradDotKernel(const T *y, const T *dy, T *dotptr, const int dim0, const int dim1, const int dim2) {
-    GPUSharedMemory<real> shareMemory;
-    real *shared = shareMemory.pointer();
+    GPUSharedMemory<T> shareMemory;
+    T *shared = shareMemory.pointer();
 
     int threaId = threadIdx.x;
     int blockId = blockIdx.x;
