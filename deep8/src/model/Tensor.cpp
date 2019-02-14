@@ -53,6 +53,53 @@ void Tensor::zero() {
 	storage.device->zero(this->raw(), type.elementSize() * shape.size());
 }
 
+void Tensor::one() {
+	DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor is not a scalar");
+
+	if (DeviceType::CPU == this->deviceType()) {
+		switch (this->type.id) {
+		case DType::Float32:
+			this->data<float>()[0] = 1;
+			break;
+		case DType::Float64:
+			this->data<double>()[0] = 1;
+			break;
+		default:
+			DEEP8_RUNTIME_ERROR("the type is not support");
+			break;
+		}
+	} else {
+#ifdef HAVE_CUDA
+		switch (this->type.id) {
+		case DType::Float32:
+			auto device = this->device();
+			device->copyFromGPUToGPU(device->gpuOneFloat(), this->raw(), this->type.byteWidth);
+			break;
+		case DType::Float64:
+			auto device = this->device();
+			device->copyFromGPUToGPU(device->gpuOneDouble(), this->raw(), this->type.byteWidth);
+			break;
+#ifdef HAVE_HALF
+		case DType::Float16:
+			auto device = this->device();
+			device->copyFromGPUToGPU(device->gpuOneHalf(), this->raw(), this->type.byteWidth);
+			break;
+#endif
+		default:
+			DEEP8_RUNTIME_ERROR("the type is not support");
+			break;
+		}
+#else
+		DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif
+	}
+}
+
+size_t Tensor::byteCount() const  {
+	return this->type.byteWidth * this->size();
+}
+
+
 size_t Tensor::batch() const {
     return shape.batch;
 }

@@ -27,6 +27,7 @@ size_t OutputEntry::size() {
 /**get the first output*/
 Node* OutputEntry::first() {
 	DEEP8_ARGUMENT_CHECK(this->size() >=0, "the outputs is empty");
+	
 	return entries.begin()->first;
 }
 

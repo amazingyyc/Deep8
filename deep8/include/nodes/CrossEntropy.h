@@ -7,24 +7,22 @@ namespace Deep8 {
 
 /**
  * in training
- * inputs[0] means the Graph output
- * inputs[1] means the target output
+ * inputs[0]: the predict output
+ * inputs[1]: the target output
  */
-template <typename T>
-class CrossEntropy: public Function<T> {
+class CrossEntropy: public Function {
 public:
-    CrossEntropy(std::vector<Node *> &inputs);
+    CrossEntropy(std::vector<Node*> &inputs);
 
     void check() override;
 
 protected:
-	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-	void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
-
-#ifdef HAVE_CUDA
-	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-	void backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
-#endif
+	void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
+	void backward(const std::vector<const Tensor*> &inputs, 
+				  const Tensor *output, 
+				  const Tensor *outputGradient, 
+				  size_t index, 
+				  Tensor *iGradient) override;
 };
 
 }

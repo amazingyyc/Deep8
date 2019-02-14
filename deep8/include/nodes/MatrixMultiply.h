@@ -5,8 +5,7 @@
 
 namespace Deep8 {
 
-template <typename T>
-class MatrixMultiply: public Function<T> {
+class MatrixMultiply: public Function {
 public:
     explicit MatrixMultiply(std::vector<Node *> &inputs);
 
@@ -40,17 +39,13 @@ public:
 	 Node* autoBatchClone(std::vector<Node*> &) override;
 
 protected:
-    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-    void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
-
-#ifdef HAVE_CUDA
-	void forwardGPUImpl(Device *device, const T *A, const Shape &aShape, const T *B, const Shape &bShape, T *C, const Shape &cShape);
-	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-
-	void backwardGPUImpl0(Device* device, T *aGrad, const Shape &aShape, const T *B, const Shape &bShape, const T *cGrad, const Shape &cShape);
-	void backwardGPUImpl1(Device* device, const T *A, const Shape &aShape, T *bGrad, const Shape &bShape, const T *cGrad, const Shape &cShape);
-	void backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
-#endif
+    void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
+	void backward(const std::vector<const Tensor*> &inputs, 
+				  const Tensor *output, 
+				  const Tensor *outputGradient, 
+				  size_t index, 
+				  Tensor *iGradient) override;
+				  
 };
 
 

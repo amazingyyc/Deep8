@@ -28,63 +28,30 @@ namespace Deep8 {
  * inset (stride - 1) 0-unit into the input
  */
 
-template <typename T>
-class DeConv2d: public Function<T> {
+class DeConv2d: public Function {
 public:
     /**
      * the forwardStride and forwardCovered is the property of the forward Conv2d
      */
-    size_t forwardStrideY;
-    size_t forwardStrideX;
+    int forwardStrideY;
+    int forwardStrideX;
 
     /**
      * if the slide filter will cover the input of the Conv2d
      */
     bool forwardCovered;
 
-    DeConv2d(std::vector<Node *> &inputs, bool covered = false, size_t strideY = 1, size_t strideX = 1);
+    DeConv2d(std::vector<Node *> &inputs, bool covered = false, int strideY = 1, int strideX = 1);
 
     void check() override;
 
 protected:
-    void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-
-    void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-					const Tensor<T> *output,
-					const Tensor<T> *outputGradient,
-					size_t index,
-					Tensor<T> *iGradient) override;
-
-#ifdef HAVE_CUDA
-
-    void forwardGPUImpl(Device *device, const T *x, const T *filter, T *y,
-        int batch, int inputHeight, int inputWidth, int inputChannel,
-		int outputHeight, int outputWidth, int outputChannel,
-		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,
-		int padTop, int padLeft);
-
-	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-
-    void backwardGPUInputImpl(Device *device, T *dx, const T *filter, const T *dy,
-        int batch, int inputHeight, int inputWidth, int inputChannel,
-		int outputHeight, int outputWidth, int outputChannel,
-		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,
-		int padTop, int padLeft);
-
-    void backwardGPUFilterImpl(Device *device, const T *x, T *dw, const T *dy,
-        int batch, int inputHeight, int inputWidth, int inputChannel,
-		int outputHeight, int outputWidth, int outputChannel,
-		int filterHeight, int filterWidth, int forwardStrideY, int forwardStrideX,
-		int padTop, int padLeft);
-
-    void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
-                    const Tensor<T> *output,
-                    const Tensor<T> *outputGradient,
-                    size_t index,
-                    Tensor<T> *iGradient) override;
-
-#endif
-
+	void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
+	void backward(const std::vector<const Tensor*> &inputs, 
+				  const Tensor *output, 
+				  const Tensor *outputGradient, 
+				  size_t index, 
+				  Tensor *iGradient) override;
 };
 
 

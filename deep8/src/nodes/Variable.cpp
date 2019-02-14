@@ -2,164 +2,87 @@
 
 namespace Deep8 {
 
-VariableBase::VariableBase() {
+Variable::Variable(): Node(), updateGradient(false) {
 	this->type = NodeType::Variable;
 }
 
-VariableBase::VariableBase(Node* input) : Node(input) {
+Variable::Variable(Tensor &v): Node(), updateGradient(false), value(v)  {
 	this->type = NodeType::Variable;
-}
-
-VariableBase::VariableBase(std::vector<Node*> &inputs) : Node(inputs) {
-	this->type = NodeType::Variable;
-}
-
-/**
- * @brief the Variable do nothing in forward and backward process
- */
-void VariableBase::forward() {
-}
-
-void VariableBase::backward() {
-}
-
-template <typename T>
-Variable<T>::Variable(): VariableBase(), updateGradient(false) {
-}
-
-template <typename T>
-Variable<T>::Variable(Tensor<T> &v): VariableBase(), updateGradient(false), value(v)  {
 	this->outputShape = this->value.shape;
 }
 
-template <typename T>
-Variable<T>::Variable(Tensor<T> &v, Tensor<T> &g): VariableBase(), updateGradient(true), value(v), gradient(g) {
-	DEEP8_ARGUMENT_CHECK(this->value.device()->type == this->gradient.device()->type, "the values and gradient must be the same type");
-	DEEP8_ARGUMENT_CHECK(this->value.shape == this->gradient.shape, "the shape if Value and Gradient must be same");
+Variable::Variable(Tensor &v, Tensor &g): Node(), updateGradient(true), value(v), gradient(g) {
+	DEEP8_ARGUMENT_CHECK(value.deviceType() == gradient.deviceType(), "the values and gradient must be the same type");
+	DEEP8_ARGUMENT_CHECK(value.type == gradient.type, "the values and gradient data type must be the same");
+	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape of Value and Gradient must be same");
 
+	this->type = NodeType::Variable;
 	this->outputShape = this->value.shape;
 }
 
-template <typename T>
-Variable<T>::Variable(Node *input, Shape &shape) : VariableBase(input), updateGradient(false) {
+Variable::Variable(Node *input, Shape &shape) : Node(input), updateGradient(false) {
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
 	for (auto i : inputs) {
-		DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
 		DEEP8_ARGUMENT_CHECK(i->outputShape == shape, "the shape of the input is error")
 	}
 
+	this->type = NodeType::Variable;
 	this->outputShape = shape;
 }
 
-template <typename T>
-Variable<T>::Variable(Node *input, Tensor<T> &v, Tensor<T> &g): VariableBase(input), updateGradient(true), value(v), gradient(g) {
+Variable::Variable(Node *input, Tensor &v, Tensor &g): Node(input), updateGradient(true), value(v), gradient(g) {
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
-	DEEP8_ARGUMENT_CHECK(value.device()->type == gradient.device()->type, "the values and gradient must be the same type");
+	DEEP8_ARGUMENT_CHECK(value.deviceType() == gradient.deviceType(), "the values and gradient must be the same type");
+	DEEP8_ARGUMENT_CHECK(value.type == gradient.type, "the values and gradient data type must be the same");
 	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape of Value and Gradient must be same");
 
 	for (auto i : inputs) {
-		DEEP8_ARGUMENT_CHECK(nullptr != i, "the input can not be null");
 		DEEP8_ARGUMENT_CHECK(i->outputShape == value.shape, "the shape of the input, pointer and gradient must be same")
 	}
 
+	this->type = NodeType::Variable;
 	this->outputShape = value.shape;
 }
 
-template <typename T>
-void Variable<T>::check() {
+void Variable::check() {
 }
 
 /**
  * set the Gradient to be 0
  */
-template <typename T>
-void Variable<T>::zeroGradient() {
-	if (this->updateGradient) {
-		gradient.zero();
-	}
+void Variable::zeroGradient() {
+	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
+
+	gradient.zero();
 }
 
 /**release the gradient*/
-template <typename T>
-void Variable<T>::releaseGradient() {
+void Variable::releaseGradient() {
+	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
+
 	this->gradient.release();
 }
 
 /**
  * get the device type
  */
-template <typename T>
-DeviceType Variable<T>::deviceType() {
-	DEEP8_ARGUMENT_CHECK(nullptr != value.device(), "the value is null");
-
-	return value.device()->type;
+DeviceType Variable::deviceType() {
+	return value.deviceType();
 }
 
 /**
  * set the gradient be 1 for backward process
  */
-template <typename T>
-void Variable<T>::setGradientOne() {
-	DEEP8_RUNTIME_ERROR("must definition the function");
-}
-
-template <>
-void Variable<float>::setGradientOne() {
+void Variable::setGradientOne() {
 	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
-	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
 
-	if (DeviceType::CPU == gradient.device()->type) {
-		gradient.data()[0] = 1;
-	} else {
-#ifdef HAVE_CUDA
-		auto device = gradient.device();
-		device->copyFromGPUToGPU(device->gpuOneFloat(), gradient.raw(), sizeof(float));
-#else
-		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
-	}
+	/**set gradient to one*/
+	gradient.one();
 }
 
-template <>
-void Variable<double>::setGradientOne() {
-	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
-	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
-
-	if (DeviceType::CPU == gradient.device()->type) {
-		gradient.data()[0] = 1;
-	} else {
-#ifdef HAVE_CUDA
-		auto device = gradient.device();
-		device->copyFromGPUToGPU(device->gpuOneDouble(), gradient.raw(), sizeof(double));
-#else
-		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
-	}
-}
-
-#ifdef HAVE_HALF
-template <>
-void Variable<half>::setGradientOne() {
-	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
-	DEEP8_ARGUMENT_CHECK(gradient.isScalar(), "the gradient is  not scalar");
-
-	if (DeviceType::CPU == gradient.device()->type) {
-		DEEP8_RUNTIME_ERROR("CPU not support half");
-	} else {
-#ifdef HAVE_CUDA
-		auto device = gradient.device();
-		device->copyFromGPUToGPU(device->gpuOneHalf(), gradient.raw(), sizeof(half));
-#else
-		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
-#endif
-	}
-}
-#endif
-
-template <typename T>
-bool Variable<T>::isScalar() {
+bool Variable::isScalar() {
 	if (this->updateGradient) {
 		return value.isScalar() && gradient.isScalar();
 	} else {
@@ -168,15 +91,14 @@ bool Variable<T>::isScalar() {
 }
 
 /**feed data to value*/
-template <typename T>
-void Variable<T>::feed(const void *ptr) {
+void Variable::feed(const void *ptr) {
 	DEEP8_ARGUMENT_CHECK(nullptr != ptr, "the pointer can not be null");
 
-	if (this->value.device()->type == DeviceType::CPU) {
-		this->value.device()->copy(ptr, this->value.raw(), sizeof(T) * this->value.size());
+	if (DeviceType::CPU == value.deviceType()) {
+		value.device()->copy(ptr, value.raw(), value.byteCount());
 	} else {
 #ifdef HAVE_CUDA
-		value.device()->copyFromCPUToGPU(ptr, value.raw(), sizeof(T) * value.size());
+		value.device()->copyFromCPUToGPU(ptr, value.raw(), value.byteCount());
 #else
 		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
 #endif
@@ -184,33 +106,26 @@ void Variable<T>::feed(const void *ptr) {
 }
 
 /**fetch data from value*/
-template <typename T>
-void Variable<T>::fetch(void *ptr) {
+void Variable::fetch(void *ptr) {
 	DEEP8_ARGUMENT_CHECK(nullptr != ptr, "the pointer can not be null");
 
-	if (this->value.device()->type == DeviceType::CPU) {
-		this->value.device()->copy(this->value.raw(), ptr, sizeof(T) * this->value.size());
+	if (DeviceType::CPU == value.deviceType()) {
+		value.device()->copy(value.raw(), ptr, value.byteCount());
 	} else {
 #ifdef HAVE_CUDA
-		value.device()->copyFromGPUToCPUvalue.raw(), ptr, sizeof(T) * value.size());
+		value.device()->copyFromGPUToCPU(value.raw(), ptr, value.byteCount());
 #else
 		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
 #endif
 	}
 }
 
-template <typename T>
-std::string Variable<T>::toString() {
-	std::stringstream ss;
-	ss << "Value is " << this->value.toString();
-
-	if (this->updateGradient) {
-		ss << ", Gradient is " << this->gradient.toString();
-	}
-
-	return ss.str();
+void Variable::forward() {
+	/**do nothing*/
 }
 
-DEEP8_DECLARATION_INSTANCE(Variable)
+void Variable::backward() {
+	/**do nothing*/
+}
 
 }

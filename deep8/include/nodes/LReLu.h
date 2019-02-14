@@ -5,12 +5,11 @@
 
 namespace Deep8 {
 
-template <typename T>
-class LReLu: public Function<T> {
+class LReLu: public Function {
 public:
-    T a;
+    float a;
 
-    explicit LReLu(std::vector<Node*> &inputs, T a);
+    explicit LReLu(std::vector<Node*> &inputs, float a);
 
 	void check() override;
 
@@ -37,19 +36,14 @@ public:
 	 Node* autoBatchClone(std::vector<Node*> &) override; 
      
 protected:
-	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-	void backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) override;
+    void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
+	void backward(const std::vector<const Tensor*> &inputs, 
+				  const Tensor *output, 
+				  const Tensor *outputGradient, 
+				  size_t index, 
+				  Tensor *iGradient) override;
 
-#ifdef HAVE_CUDA
-
-	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-
-    void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
-                     const Tensor<T> *output,
-                     const Tensor<T> *outputGradient,
-                     size_t index,
-                     Tensor<T> *iGradient) override;
-#endif
+				  
 };
 
 

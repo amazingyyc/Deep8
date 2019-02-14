@@ -1,16 +1,15 @@
+#include "math/Conv2d.h"
 #include "Conv2d.h"
 
 namespace Deep8 {
 
-template <typename T>
-Conv2d<T>::Conv2d(std::vector<Node *> &inputs, bool covered, size_t strideH, size_t strideW, size_t dilationH , size_t dilationW)
-        :Function<T>(inputs), covered(covered), strideY(strideH), strideX(strideW), dilationY(dilationH), dilationX(dilationW) {
+Conv2d::Conv2d(std::vector<Node *> &inputs, bool covered, int sy, int sx, int dy , int dx)
+        :Function(inputs), covered(covered), strideY(sy), strideX(sx), dilationY(dy), dilationX(dx) {
     check();
 }
 
-template <typename T>
-void Conv2d<T>::check() {
-    Function<T>::check();
+void Conv2d::check() {
+    Function::check();
 
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "need 2 inputs node");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride can not smaller than 1");
@@ -27,19 +26,18 @@ void Conv2d<T>::check() {
                          "the filter width and height must bigger than 0");
 
     if (!covered) {
-        DEEP8_ARGUMENT_CHECK(
-                filterShape.dim(1) <= inputShape.dim(0) && filterShape.dim(2) <= inputShape.dim(1),
-                "the not forwardCovered mode Padding type needs filter smaller than input");
+        DEEP8_ARGUMENT_CHECK(filterShape.dim(1) <= inputShape.dim(0) && filterShape.dim(2) <= inputShape.dim(1),
+                "the not covered mode Padding type needs filter smaller than input");
     }
 
-    auto filterH = static_cast<int64_t>(filterShape.dim(1));
-    auto filterW = static_cast<int64_t>(filterShape.dim(2));
+    auto filterHeight = (int)(filterShape.dim(1));
+    auto filterWidth  = (int)(filterShape.dim(2));
 
-    auto inputH = static_cast<int64_t>(inputShape.dim(0));
-    auto inputW = static_cast<int64_t>(inputShape.dim(1));
+    auto inputHeight = (int)(inputShape.dim(0));
+    auto inputWidth  = (int)(inputShape.dim(1));
 
-    auto realFilterH = filterH + (filterH - 1) * (static_cast<int64_t>(dilationY) - 1);
-    auto realFilterW = filterW + (filterW - 1) * (static_cast<int64_t>(dilationX) - 1);
+    auto realFilterHeight = filterHeight + (filterHeight - 1) * (dilationY - 1);
+    auto realFilterWidth  = filterWidth  + (filterWidth  - 1) * (dilationX - 1);
 
     std::vector<size_t> outputDim(3);
     outputDim[2] = filterShape.dim(0);
@@ -50,252 +48,144 @@ void Conv2d<T>::check() {
      * output dimension is (batch, outputHeight, outputWidth, outputChannel)
      */
     if (!covered) {
-        int64_t outputH = (inputH - realFilterH) / static_cast<int64_t>(strideY) + 1;
-        int64_t outputW = (inputW - realFilterW) / static_cast<int64_t>(strideX) + 1;
+        int outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
+        int outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
 
-        DEEP8_ARGUMENT_CHECK(outputH > 0 && outputW > 0, "the output height or width must > 0")
+        DEEP8_ARGUMENT_CHECK(outputHeight > 0 && outputWidth > 0, "the output height or width must > 0")
 
-        outputDim[0] = static_cast<size_t>(outputH);
-        outputDim[1] = static_cast<size_t>(outputW);
+        outputDim[0] = outputHeight;
+        outputDim[1] = outputWidth;
     } else {
-        int64_t outputH = (inputH - realFilterH + static_cast<int64_t>(strideY) - 1) /
-                          static_cast<int64_t>(strideY) + 1;
-        int64_t outputW = (inputW - realFilterW + static_cast<int64_t>(strideX) - 1) /
-                          static_cast<int64_t>(strideX) + 1;
+        int outputHeight = (inputHeight - realFilterHeight + strideY - 1) / strideY + 1;
+        int outputWidth  = (inputWidth  - realFilterWidth  + strideX - 1) / strideX + 1;
 
-        DEEP8_ARGUMENT_CHECK(outputH > 0 && outputW > 0, "the output height or width must > 0")
+        DEEP8_ARGUMENT_CHECK(outputHeight > 0 && outputWidth > 0, "the output height or width must > 0")
 
-        outputDim[0] = static_cast<size_t>(outputH);
-        outputDim[1] = static_cast<size_t>(outputW);
+        outputDim[0] = outputHeight;
+        outputDim[1] = outputWidth;
     }
 
     this->outputShape = Shape(inputShape.batch, outputDim);
 }
 
-template <typename T>
-void Conv2d<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-    /**
-     * the input dimension in Deep8 is NHWC (batch, inputHeight, intputWidth, inputChannel)
-     * the filter dimension is NHWC (outputChannel, filterHeight, filterWidth, inputChannel)
-     * the output dimension is NHWC (batch, outputHeight, outputWidth, outputChannel)
-     */
-    typedef typename Eigen::internal::traits<Eigen::Tensor<T, 4, Eigen::RowMajor>>::Index TensorIndex;
+void Conv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+    auto device = output->device();
 
-    auto device = static_cast<CPUDevice *>(output->device())->eigenDevice;
+    if (DeviceType::CPU == device->type) {
+        Math::Conv2d(*(inputs[0]), *(inputs[1]), *output, nullptr, covered, strideY, strideX, dilationY, dilationX);
+    } else {
+        auto inputChannel = inputs[0]->shape.dim(2);
+        
+        auto filterHeight = inputs[1]->shape.dim(1);
+        auto filterWidth  = inputs[1]->shape.dim(2);
 
-    auto input  = inputs[0];
-    auto filter = inputs[1];
+        auto batch = output->shape.batch;
+        auto outputHeight = output->shape.dim(0);
+        auto outputWidth  = output->shape.dim(1);
 
-    auto batch = (TensorIndex) input->shape.batch;
+        auto size = inputs[0]->type.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+        auto ptr  = device->malloc(size);
 
-    auto inputHeight  = (TensorIndex) input->shape.dim(0);
-    auto inputWidth   = (TensorIndex) input->shape.dim(1);
-    auto inputChannel = (TensorIndex) input->shape.dim(2);
+        Math::Conv2d(*(inputs[0]), *(inputs[1]), *output, ptr, covered, strideY, strideX, dilationY, dilationX);
 
-    auto outputHeight  = (TensorIndex) output->shape.dim(0);
-    auto outputWidth   = (TensorIndex) output->shape.dim(1);
-    auto outputChannel = (TensorIndex) output->shape.dim(2);
-
-    auto filterHeight = (TensorIndex) filter->shape.dim(1);
-    auto filterWidth  = (TensorIndex) filter->shape.dim(2);
-
-    Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-            inputTensor(input->data(), batch, inputHeight, inputWidth, inputChannel);
-
-    Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-            filterTensor(filter->data(), outputChannel, filterHeight, filterWidth, inputChannel);
-
-    Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-            outputTensor(output->data(), batch, outputHeight, outputWidth, outputChannel);
-
-    Eigen::DSizes<TensorIndex, 2> preContractDims;
-    preContractDims[0] = batch * outputHeight * outputWidth;
-    preContractDims[1] = filterHeight * filterWidth * inputChannel;
-
-    Eigen::DSizes<TensorIndex, 2> shuffleDims;
-    shuffleDims[0] = 1;
-    shuffleDims[1] = 0;
- 
-    Eigen::array<Eigen::IndexPair<TensorIndex>, 1> contractDims;
-    contractDims[0] = Eigen::IndexPair<TensorIndex>(1, 0);
-
-    Eigen::DSizes<TensorIndex, 2> kernelDims;
-    kernelDims[0] = outputChannel;
-    kernelDims[1] = filterHeight * filterWidth * inputChannel;
-
-    auto realFilterHeight = filterHeight + (filterHeight - 1) * ((TensorIndex) (dilationY) - 1);
-    auto realFilterWidth = filterWidth + (filterWidth - 1) * ((TensorIndex) (dilationX) - 1);
-
-    auto padY = std::max<TensorIndex>(0, (outputHeight - 1) * (TensorIndex) (strideY) +
-                                         realFilterHeight - inputHeight);
-    auto padX = std::max<TensorIndex>(0, (outputWidth - 1) * (TensorIndex) (strideX) +
-                                         realFilterWidth - inputWidth);
-
-    auto padTop    = padY / 2;
-    auto padBottom = padY - padTop;
-    auto padLeft   = padX / 2;
-    auto padRight  = padX - padLeft;
-
-    outputTensor.device(*device) = inputTensor.extract_image_patches(filterWidth, filterHeight,
-                                                                     strideX, strideY, dilationX,
-                                                                     dilationY, 1, 1, padTop,
-                                                                     padBottom, padLeft, padRight,
-                                                                     0)
-            .reshape(preContractDims)
-            .contract(filterTensor.reshape(kernelDims).shuffle(shuffleDims), contractDims)
-            .reshape(outputTensor.dimensions());
-}
-
-template <typename T>
-void Conv2d<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-                 const Tensor<T> *output,
-                 const Tensor<T> *outputGradient,
-                 size_t index,
-                 Tensor<T> *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 == index || 1 == index, "the index is error");
-
-    typedef typename Eigen::internal::traits<Eigen::Tensor<T, 4, Eigen::RowMajor>>::Index TensorIndex;
-
-    auto device = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
-
-    auto inputShape  = inputs[0]->shape;
-    auto filterShape = inputs[1]->shape;
-    auto outputShape = output->shape;
-
-    auto batch = (TensorIndex) inputShape.batch;
-
-    auto inputHeight  = (TensorIndex) inputShape.dim(0);
-    auto inputWidth   = (TensorIndex) inputShape.dim(1);
-    auto inputChannel = (TensorIndex) inputShape.dim(2);
-
-    auto outputHeight  = (TensorIndex) outputShape.dim(0);
-    auto outputWidth   = (TensorIndex) outputShape.dim(1);
-    auto outputChannel = (TensorIndex) outputShape.dim(2);
-
-    auto filterHeight = (TensorIndex) filterShape.dim(1);
-    auto filterWidth  = (TensorIndex) filterShape.dim(2);
-
-    if (0 == index) {
-        /**
-         * calculate the grad for input
-         */
-        Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-                outputGradTensor(outputGradient->data(), batch, outputHeight, outputWidth,
-                                 outputChannel);
-
-        Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-                inputGradTensor(iGradient->data(), batch, inputHeight, inputWidth, inputChannel);
-
-        Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-                filterTensor(inputs[1]->data(), outputChannel, filterHeight, filterWidth,
-                             inputChannel);
-
-        Eigen::DSizes<TensorIndex, 2> preContractDims;
-        preContractDims[0] = batch * inputHeight * inputWidth;
-        preContractDims[1] = filterHeight * filterWidth * outputChannel;
-
-        Eigen::internal::conditional<false, Eigen::array<bool, 4>, Eigen::array<bool, 4>>::type filterReverse;
-        filterReverse[0] = false;
-        filterReverse[1] = true;
-        filterReverse[2] = true;
-        filterReverse[3] = false;
-
-        Eigen::DSizes<TensorIndex, 4> filterShuffle;
-        filterShuffle[0] = 1;
-        filterShuffle[1] = 2;
-        filterShuffle[2] = 0;
-        filterShuffle[3] = 3;
-
-        Eigen::DSizes<TensorIndex, 2> filterDim;
-        filterDim[0] = filterHeight * filterWidth * outputChannel;
-        filterDim[1] = inputChannel;
-
-        Eigen::array<Eigen::IndexPair<TensorIndex>, 1> contractDims;
-        contractDims[0] = Eigen::IndexPair<TensorIndex>(1, 0);
-
-        auto realFilterHeight = filterHeight + (filterHeight - 1) * ((TensorIndex) (dilationY) - 1);
-        auto realFilterWidth = filterWidth + (filterWidth - 1) * ((TensorIndex) (dilationX) - 1);
-
-        auto forwardPadTop = std::max<TensorIndex>(0,
-                                                   ((outputHeight - 1) * (TensorIndex) (strideY) +
-                                                    realFilterHeight - inputHeight) / 2);
-        auto forwardPadLeft = std::max<TensorIndex>(0,
-                                                    ((outputWidth - 1) * (TensorIndex) (strideX) +
-                                                     realFilterWidth - inputWidth) / 2);
-
-        auto padTop = realFilterHeight - 1 - forwardPadTop;
-        auto padLeft = realFilterWidth - 1 - forwardPadLeft;
-        auto padBottom = inputHeight - (outputHeight - 1) * (TensorIndex) (strideY) - 2 - padTop +
-                         realFilterHeight;
-        auto padRight = inputWidth - (outputWidth - 1) * (TensorIndex) (strideX) - 2 - padLeft +
-                        realFilterWidth;
-
-        inputGradTensor.device(*device) += outputGradTensor.extract_image_patches(filterWidth,
-                                                                                  filterHeight, 1,
-                                                                                  1, dilationX,
-                                                                                  dilationY,
-                                                                                  strideX, strideY,
-                                                                                  padTop, padBottom,
-                                                                                  padLeft, padRight,
-                                                                                  0)
-                .reshape(preContractDims)
-                .contract(filterTensor.reverse(filterReverse).shuffle(filterShuffle).reshape(
-                        filterDim), contractDims)
-                .reshape(inputGradTensor.dimensions());
-    } else if (1 == index) {
-        /**
-         * calculate the filter gradient
-         */
-        Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-                outputGradTensor(outputGradient->data(), batch, outputHeight, outputWidth,
-                                 outputChannel);
-
-        Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-                filterGradTensor(iGradient->data(), outputChannel, filterHeight, filterWidth,
-                                 inputChannel);
-
-        Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
-                inputTensor(inputs[0]->data(), batch, inputHeight, inputWidth, inputChannel);
-
-        Eigen::DSizes<TensorIndex, 2> preContractDims;
-        preContractDims[0] = batch * outputHeight * outputWidth;
-        preContractDims[1] = filterHeight * filterWidth * inputChannel;
-
-        Eigen::DSizes<TensorIndex, 2> outputGradDim;
-        outputGradDim[0] = batch * outputHeight * outputWidth;
-        outputGradDim[1] = outputChannel;
-
-        Eigen::array<Eigen::IndexPair<TensorIndex>, 1> contractDims;
-        contractDims[0] = Eigen::IndexPair<TensorIndex>(1, 0);
-
-        Eigen::DSizes<TensorIndex, 2> shuffleDims;
-        shuffleDims[0] = 1;
-        shuffleDims[1] = 0;
-
-        TensorIndex realFilterH =
-                filterHeight + (filterHeight - 1) * ((TensorIndex) (dilationY) - 1);
-        TensorIndex realFilterW = filterWidth + (filterWidth - 1) * ((TensorIndex) (dilationX) - 1);
-
-        TensorIndex padY = std::max<TensorIndex>(0, (outputHeight - 1) * (TensorIndex) (strideY) +
-                                                    realFilterH - inputHeight);
-        TensorIndex padX = std::max<TensorIndex>(0, (outputWidth - 1) * (TensorIndex) (strideX) +
-                                                    realFilterW - inputWidth);
-
-        TensorIndex padTop = padY / 2;
-        TensorIndex padBottom = padY - padTop;
-        TensorIndex padLeft = padX / 2;
-        TensorIndex padRight = padX - padLeft;
-
-        filterGradTensor.device(*device) += outputGradTensor.reshape(outputGradDim).shuffle(shuffleDims)
-                .contract(inputTensor.extract_image_patches(filterWidth, filterHeight, strideX,
-                                                            strideY, dilationX, dilationY, 1, 1,
-                                                            padTop, padBottom, padLeft, padRight,
-                                                            0).reshape(preContractDims), contractDims)
-                .reshape(filterGradTensor.dimensions());
+        device->free(ptr);
     }
 }
 
-DEEP8_RE_DECLARATION_HALF_FUNC(Conv2d);
-DEEP8_DECLARATION_INSTANCE(Conv2d);
+void Conv2d::backward(const std::vector<const Tensor*> &inputs, 
+                    const Tensor *output, 
+                    const Tensor *outputGradient, 
+                    size_t index, 
+                    Tensor *iGradient) {
+    if (0 == index) {
+        auto device = iGradient->device();
+
+        if (DeviceType::CPU == device->type) {
+            Math::Conv2dGradX(*(inputs[0]), 
+                            *iGradient, 
+                            *(inputs[1]),
+                            *output, 
+                            *outputGradient, 
+                            nullptr, 
+                            covered, 
+                            strideY, 
+                            strideX, 
+                            dilationY, 
+                            dilationX);
+        } else {
+            auto inputChannel = inputs[0]->shape.dim(2);
+        
+            auto filterHeight = inputs[1]->shape.dim(1);
+            auto filterWidth  = inputs[1]->shape.dim(2);
+
+            auto batch        = output->shape.batch;
+            auto outputHeight = output->shape.dim(0);
+            auto outputWidth  = output->shape.dim(1);
+
+            auto size = inputs[0]->type.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+            auto ptr  = device->malloc(size);
+
+            Math::Conv2dGradX(*(inputs[0]), 
+                            *iGradient, 
+                            *(inputs[1]),
+                            *output, 
+                            *outputGradient, 
+                            ptr, 
+                            covered, 
+                            strideY, 
+                            strideX, 
+                            dilationY, 
+                            dilationX);
+
+            device->free(ptr);
+        }
+    } else if (1 == index) {
+        auto device = iGradient->device();
+
+        if (DeviceType::CPU == device->type) {
+            Math::Conv2dGradY(*(inputs[0]), 
+                            *(inputs[1]), 
+                            *iGradient, 
+                            *output, 
+                            *outputGradient, 
+                            nullptr, 
+                            covered, 
+                            strideY, 
+                            strideX, 
+                            dilationY, 
+                            dilationX);
+        } else {
+            auto inputChannel = inputs[0]->shape.dim(2);
+        
+            auto filterHeight = inputs[1]->shape.dim(1);
+            auto filterWidth  = inputs[1]->shape.dim(2);
+
+            auto batch        = output->shape.batch;
+            auto outputHeight = output->shape.dim(0);
+            auto outputWidth  = output->shape.dim(1);
+
+            auto size = inputs[0]->type.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+            auto ptr  = device->malloc(size);
+
+            Math::Conv2dGradY(*(inputs[0]), 
+                *(inputs[1]), 
+                *iGradient, 
+                *output, 
+                *outputGradient, 
+                ptr, 
+                covered, 
+                strideY, 
+                strideX, 
+                dilationY, 
+                dilationX);
+
+            device->free(ptr);
+        }
+    } else {
+        DEEP8_RUNTIME_ERROR("the index is error");
+    }
+}
+
+
 
 }

@@ -60,25 +60,24 @@ public:
  * some not like Function output Variable, InputParameter or ConstantParameter
  * some Variable Node can be trained like Parameter but some not like InputParameter ConstantParameter
  */
-template <typename T>
-class Variable: public VariableBase {
+class Variable: public Node {
 public:
 	/**
 	 * @brief if will calculate the Gradient of this Variable in Backward process
 	 */
 	bool updateGradient;
 
-	Tensor<T> value;
-	Tensor<T> gradient;
+	Tensor value;
+	Tensor gradient;
 
 protected:
     explicit Variable();
-    explicit Variable(Tensor<T> &v);
-    explicit Variable(Tensor<T> &v, Tensor<T> &g);
+    explicit Variable(Tensor &v);
+    explicit Variable(Tensor &v, Tensor &g);
 
 public:
 	explicit Variable(Node *input, Shape &shape);
-    explicit Variable(Node *input, Tensor<T> &v, Tensor<T> &g);
+    explicit Variable(Node *input, Tensor &v, Tensor &g);
 
 protected:
 	virtual void check();
@@ -88,33 +87,38 @@ public:
 	/**
 	 * set the Gradient to be 0
 	 */
-	void zeroGradient() override;
+	void zeroGradient();
 
 	/**release the gradient*/
-	void releaseGradient() override;
+	void releaseGradient();
 
 	/**
 	 * get the device type
 	 */
-	DeviceType deviceType() override;
+	DeviceType deviceType();
 
 	/**
 	 * set the gradient be 1 for backward process
 	 */
-	void setGradientOne() override;
+	void setGradientOne();
 
 	/**
 	 * if this is a scalar
 	 */
-	bool isScalar() override;
+	bool isScalar();
 
 	/**feed data to value*/
-	void feed(const void *) override;
+	void feed(const void *);
 
 	/**fetch data from value*/
-	void fetch(void *) override;
+	void fetch(void *);
 
-	std::string toString() override;
+	/**
+	 * @brief the Variable do nothing in forward and backward process
+	 */
+	void forward() override;
+	void backward() override;
+
 };
 
 }

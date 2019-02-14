@@ -27,6 +27,12 @@ enum class NodeType {
 
 class Node {
 public:
+    /**what kind type of this Node, default is unknow*/
+    NodeType type;
+
+	/**the Node id*/
+	int64_t id;
+
 	/**store the input Node*/
     std::vector<Node*> inputs;
 
@@ -35,12 +41,6 @@ public:
     
 	/**the output shape of forward*/
     Shape outputShape;
-
-    /**what kind type of this Node, default is unknow*/
-    NodeType type;
-
-	/**the Node id*/
-	int64_t id;
 
 protected:
 	explicit Node();
@@ -51,7 +51,7 @@ public:
 	virtual ~Node();
 
     /**
-     * @brief for different Node the forward do different operation
+     * for different Node the forward do different operation
      * Function Node: in Function Node forward, the Function Node will get the input Tensors from the inputs Nodes
      * and calculate the result than put the Result Tensor in the output Node, So the Function Node must have correct inputs and output Node type.
      * Variable Node: the Variable Node forward do nothing, it just contain the trained Parameter and update grad

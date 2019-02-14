@@ -1,30 +1,27 @@
+#include "math/Linear.h"
 #include "Linear.h"
 #include "AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
-template <typename T>
-Linear<T>::Linear(std::vector<Node*> &inputs, T a, T b):Function<T>(inputs), a(a), b(b) {
+Linear::Linear(std::vector<Node*> &inputs, T a, T b):Function(inputs), a(a), b(b) {
 	check();
 }
 
-template <typename T>
-void Linear<T>::check() {
-	Function<T>::check();
+void Linear::check() {
+	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Linear Function needs only 1 input");
 
 	this->outputShape = this->inputs[0]->outputShape;
 }
 
-template <typename T>
-int Linear<T>::supportAutoBatch() {
+int Linear::supportAutoBatch() {
     return -1;
 }
 
 /**auto batch code*/
-template <typename T>
-size_t Linear<T>::autoBatchCode() {
+size_t Linear::autoBatchCode() {
     AutoBatchCodeHelper helper;
 
 	// todo: aupport half
@@ -41,8 +38,7 @@ size_t Linear<T>::autoBatchCode() {
  * return the inputs[index]'s shape if it is be batched together.
  * the shapes is the inputs[index]'s shape that will be batched.
  */
-template <typename T>
-Shape Linear<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+Shape Linear::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
 
     /**simple set it to a 1 batch shape*/
@@ -58,40 +54,29 @@ Shape Linear<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
 /**
  * return the inputs's index that can be auto batched
  */
-template <typename T>
-std::vector<size_t> Linear<T>::autoBatchIndexes() {
+std::vector<size_t> Linear::autoBatchIndexes() {
     return std::vector<size_t>({ 0 });
 }
 
 /**
  * clone current node for auto batch
  */
-template <typename T>
-Node* Linear<T>::autoBatchClone(std::vector<Node*> &inputs) {
-	return new Linear<T>(inputs, a, b);
+Node* Linear::autoBatchClone(std::vector<Node*> &inputs) {
+	return new Linear(inputs, a, b);
 } 
 
-template <typename T>
-void Linear<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-	auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
-
-	eTVec(output).device(*device) = eTVec(inputs[0]) * a + b;
+void Linear::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+	Math::Linear(*(inputs[0]), a, b, *output);
 }
 
-template <typename T>
-void Linear<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-							const Tensor<T> *output,
-							const Tensor<T> *outputGradient,
-							size_t index,
-							Tensor<T> *iGradient) {
+void Linear::backward(const std::vector<const Tensor*> &inputs, 
+					const Tensor *output, 
+					const Tensor *outputGradient, 
+					size_t index, 
+					Tensor *iGradient) {
 	DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
-
-	auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
-
-	eTVec(iGradient).device(*device) += eTVec(outputGradient) * a;
+	
+	Math::LinearGrad(*(inputs[0]), *iGradient, a, b, *output, *outputGradient);
 }
-
-DEEP8_RE_DECLARATION_HALF_FUNC(Linear);
-DEEP8_DECLARATION_INSTANCE(Linear)
 
 }

@@ -47,6 +47,9 @@ public:
 
     bool isScalar();
     void zero();
+    void one();
+
+    size_t byteCount() const;
 
     size_t batch() const;
     size_t nDims() const;
@@ -81,9 +84,6 @@ public:
     bool is() {
         return type.is<T>();
     }
-
-    //**convert the value to string to print*/
-    //std::string valueString();
 };
 
 //class TensorBase {
