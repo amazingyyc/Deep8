@@ -1,8 +1,8 @@
 #ifndef DEEP8_MEMORYPOOL_H
 #define DEEP8_MEMORYPOOL_H
 
-#include "MathUtils.h"
-#include "MemoryAllocator.h"
+#include "utils/MathUtils.h"
+#include "model/MemoryAllocator.h"
 
 namespace Deep8 {
 

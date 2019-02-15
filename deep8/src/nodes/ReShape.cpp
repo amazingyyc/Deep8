@@ -1,11 +1,10 @@
-#include "ReShape.h"
+#include "nodes/ReShape.h"
 
 namespace Deep8 {
 
-template <typename T>
-ReShape<T>::ReShape(std::vector<Node *> &inputs, Shape &shape): Function<T>(inputs) {
+ReShape::ReShape(std::vector<Node *> &inputs, Shape &shape): Function(inputs) {
 	/**the outputShape's batch equal to inputs[0]'s*/
-	Function<T>::check();
+	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the input size must be 1");
 	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.batchSize() == shape.batchSize(), "the shape is error");
@@ -13,9 +12,8 @@ ReShape<T>::ReShape(std::vector<Node *> &inputs, Shape &shape): Function<T>(inpu
 	this->outputShape = Shape(this->inputs[0]->outputShape.batch, shape);
 }
 
-template <typename T>
-ReShape<T>::ReShape(std::vector<Node *> &inputs, std::vector<size_t> &list): Function<T>(inputs) {
-	Function<T>::check();
+ReShape::ReShape(std::vector<Node *> &inputs, std::vector<size_t> &list): Function(inputs) {
+	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the input size must be 1");
 
@@ -24,27 +22,21 @@ ReShape<T>::ReShape(std::vector<Node *> &inputs, std::vector<size_t> &list): Fun
 	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.batchSize() == this->outputShape.batchSize(), "the shape is error");
 }
 
-template <typename T>
-bool ReShape<T>::isShared() {
+bool ReShape::isShared() {
 	return true;
 }
 
-template <typename T>
-void ReShape<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {}
+void ReShape::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+}
 
-template <typename T>
-void ReShape<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {}
+void ReShape::backward(const std::vector<const Tensor*> &inputs, 
+					const Tensor *output, 
+					const Tensor *outputGradient, 
+					size_t index, 
+					Tensor *iGradient) {
+}
 
-#ifdef HAVE_CUDA
-template <typename T>
-void ReShape<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {}
-
-template <typename T>
-void ReShape<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {}
-#endif
-
-template <typename T>
-void ReShape<T>::forward() {
+void ReShape::forward() {
 	for (auto item : this->inputs) {
 		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be Variable type");
 	}
@@ -53,8 +45,8 @@ void ReShape<T>::forward() {
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 	DEEP8_ARGUMENT_CHECK(this->outputShape  == this->outputs.first()->outputShape, "the output shape is error");
 
-	auto x = static_cast<Variable<T>*>(this->inputs[0]);
-	auto y = static_cast<Variable<T>*>(this->outputs.first());
+	auto x = (Variable*)(this->inputs[0]);
+	auto y = (Variable*)(this->outputs.first());
 
 	y->outputShape    = this->outputShape;
 	y->updateGradient = x->updateGradient;
@@ -62,11 +54,13 @@ void ReShape<T>::forward() {
 	/**value*/
 	y->value.storage = x->value.storage;
 	y->value.offset  = x->value.offset;
+	y->value.type    = x->value.type;
 	y->value.shape   = this->outputShape;
 
 	if (x->updateGradient) {
 		y->gradient.storage = x->gradient.storage;
 		y->gradient.offset  = x->gradient.offset;
+		y->gradient.type    = x->gradient.type;
 		y->gradient.shape   = this->outputShape;
 	} else {
 		/**set the output gradient is empty*/
@@ -74,11 +68,10 @@ void ReShape<T>::forward() {
 	}
 }
 
-template <typename T>
-void ReShape<T>::backward() {
+void ReShape::backward() {
 	/**do nothing*/
 }
 
-DEEP8_DECLARATION_INSTANCE(ReShape)
+
 
 }

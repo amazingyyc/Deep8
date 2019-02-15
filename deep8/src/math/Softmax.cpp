@@ -38,7 +38,7 @@ void SoftmaxGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy,
 }
 
 template <typename T>
-void SoftmaxCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape, int axis, T *ptr) {
+void SoftmaxCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape, int axis, T *ptr) {
     auto eigenDevice = device->eigenDevice;
 
     int dim0, dim1, dim2;
@@ -76,14 +76,14 @@ void SoftmaxCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, co
 }
 
 void SoftmaxCPU(const Tensor &x, Tensor &y, int axis, void *ptr) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {
     case DType::Float32:
-        SoftmaxCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape, axis, (float*)ptr);
+        SoftmaxCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape, axis, (float*)ptr);
         break;
     case DType::Float64:
-        SoftmaxCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape, axis, (double*)ptr);
+        SoftmaxCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape, axis, (double*)ptr);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -92,7 +92,7 @@ void SoftmaxCPU(const Tensor &x, Tensor &y, int axis, void *ptr) {
 }
 
 template <typename T>
-void SoftmaxGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, const T *y, const T *dy, int axis, T *ptr) {
+void SoftmaxGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape, int axis, T *ptr) {
     auto eigenDevice = device->eigenDevice;
 
     int dim0, dim1, dim2;
@@ -133,10 +133,10 @@ void SoftmaxGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &
 
     switch (x.type.id) {
     case DType::Float32:
-        SoftmaxGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape, axis, ptr);
+        SoftmaxGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape, axis, (float*)ptr);
         break;
     case DType::Float64:
-        SoftmaxGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>, y.shape, axis, ptr);
+        SoftmaxGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape, axis, (double*)ptr);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

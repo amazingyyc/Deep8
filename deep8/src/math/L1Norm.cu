@@ -1,4 +1,7 @@
-#incldue "math/GPUReduce.h"
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
+#include "math/GPUReduce.h"
 #include "math/L1Norm.h"
 
 namespace Deep8 {
@@ -11,7 +14,7 @@ struct L1NormKernelOp {
 	}
 
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init(T ret, T cur) {
-		return ret + CuMath::cuAbs(cur);
+		return ret + cudaAbs(cur);
 	}
 
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T step(T ret1, T ret2) {

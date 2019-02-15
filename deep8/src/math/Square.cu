@@ -1,3 +1,6 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
 #include "math/Square.h"
 
 namespace Deep8 {

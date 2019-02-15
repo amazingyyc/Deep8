@@ -1,9 +1,9 @@
 #ifndef DEEP8_AUTOBATCHHELPER_H
 #define DEEP8_AUTOBATCHHELPER_H
 
-#include "Basic.h"
-#include "Shape.h"
-#include "Function.h"
+#include "basic/Basic.h"
+#include "model/Shape.h"
+#include "nodes/Function.h"
 
 namespace Deep8 {
 

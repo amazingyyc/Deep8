@@ -48,12 +48,12 @@ void CrossEntropyGradX(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
 }
 
 void CrossEntropyGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {
-    DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && 
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == dy.deviceType() && 
                          x.deviceType() ==  y.deviceType() &&
                          x.deviceType() ==  z.deviceType() &&
                          x.deviceType() == dz.deviceType(), "the param device type must be same");
 
-    DEEP8_ARGUMENT_CHECK(x.type == dx.type &&
+    DEEP8_ARGUMENT_CHECK(x.type == dy.type &&
                          x.type ==  y.type &&
                          x.type ==  z.type &&
                          x.type == dz.type, "the param data type must be same");
@@ -76,12 +76,12 @@ void CrossEntropyGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tenso
 
 template <typename T>
 void CrossEntropyCPUImpl(CPUDevice *device, 
-                         const T *x, 
-                         const Shape &xshape, 
-                         const T *y, 
-                         const Shape &yshape, 
-                         T *z, 
-                         const Shape &zshape) {
+                        T *x, 
+                        const Shape &xshape, 
+                        T *y, 
+                        const Shape &yshape, 
+                        T *z, 
+                        const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
     auto batch = xshape.batch;
@@ -127,13 +127,13 @@ void CrossEntropyCPU(const Tensor &x, const Tensor &y, Tensor &z) {
 
 template <typename T>
 void CrossEntropyGradXCPUImpl(CPUDevice *device, 
-                              const T *x, 
+                              T *x, 
                               T *dx, 
                               const Shape &xshape, 
-                              const T *y, 
+                              T *y, 
                               const Shape &yshape, 
-                              const T *z, 
-                              const T *dz, 
+                              T *z, 
+                              T *dz, 
                               const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
@@ -185,13 +185,13 @@ void CrossEntropyGradXCPU(const Tensor &x,
 
 template <typename T>
 void CrossEntropyGradYCPUImpl(CPUDevice *device, 
-                              const T *x, 
+                                T *x, 
                               const Shape &xshape, 
-                              const T *y, 
-                              t *dy,
+                              T *y, 
+                              T *dy,
                               const Shape &yshape, 
-                              const T *z, 
-                              const T *dz, 
+                              T *z, 
+                              T *dz, 
                               const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 

@@ -1,10 +1,10 @@
+#include "model/AutoBatchCodeHelper.h"
 #include "math/Linear.h"
-#include "Linear.h"
-#include "AutoBatchCodeHelper.h"
+#include "nodes/Linear.h"
 
 namespace Deep8 {
 
-Linear::Linear(std::vector<Node*> &inputs, T a, T b):Function(inputs), a(a), b(b) {
+Linear::Linear(std::vector<Node*> &inputs, float a, float b):Function(inputs), a(a), b(b) {
 	check();
 }
 

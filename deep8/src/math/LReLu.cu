@@ -1,4 +1,7 @@
-#include "math:LReLu.h"
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
+#include "math/LReLu.h"
 
 namespace Deep8 {
 namespace Math {

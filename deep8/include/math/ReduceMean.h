@@ -26,3 +26,5 @@ void ReduceMeanGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
 
 }
 }
+
+#endif

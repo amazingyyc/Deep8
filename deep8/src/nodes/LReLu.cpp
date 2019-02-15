@@ -1,6 +1,6 @@
 #include "math/LReLu.h"
-#include "LReLu.h"
-#include "AutoBatchCodeHelper.h"
+#include "nodes/LReLu.h"
+#include "model/AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 

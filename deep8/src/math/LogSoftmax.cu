@@ -1,3 +1,6 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
 #include "math/LogSoftmax.h"
 
 namespace Deep8 {
@@ -6,7 +9,7 @@ namespace Math {
 template <typename T>
 struct LogSoftmaxMaxKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
-        return CuMath::cuMinValue<T>();
+        return cudaMinValue<T>();
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init(T ret, T cur) {
@@ -25,7 +28,7 @@ struct LogSoftmaxMaxKernelOp {
 template <typename T>
 struct LogSoftmaxExpMinusKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y) {
-        return CuMath::cuExp(x - y);
+        return cudaExp(x - y);
     }
 };
 
@@ -44,7 +47,7 @@ struct LogSoftmaxSumLogKernelOp {
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(T ret) {
-        return CuMath::cuLog(ret);
+        return cudaLog(ret);
     }
 };
 
@@ -209,7 +212,7 @@ __global__ void LogSoftmaxGradKernel(T *dx, const T *y, const T *dy, const T *su
 
         int j = d0 * dim2 + d2;
 
-        dx[i] += dy[i] - CuMath::cuExp(y[i]) * sumptr[j];
+        dx[i] += dy[i] - cudaExp(y[i]) * sumptr[j];
     }
 }
 

@@ -19,7 +19,6 @@ void Abs(const Tensor &x, Tensor &y) {
     }
 }
 
-
 /**
  * calculate the grad(x)
  */
@@ -41,9 +40,9 @@ void AbsGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
 
 
 template <typename T>
-void AbsCPUImpl(CPUDevice *device, const T *x, T *y, int n) {
+void AbsCPUImpl(CPUDevice *device, T *x, T *y, int n) {
     auto eigenDevice = device->eigenDevice;
-
+    
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, n);
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, n);
 
@@ -56,10 +55,10 @@ void AbsCPU(const Tensor &x, Tensor &y) {
 
     switch (x.type.id) {
     case DType::Float32:
-        AbsCPUImpl<float>(device, x.data<float>(), y.data<float>, n);
+        AbsCPUImpl<float>(device, x.data<float>(), y.data<float>(), n);
         break;
     case DType::Float64:
-        AbsCPUImpl<double>(device, x.data<double>(), y.data<double>, n);
+        AbsCPUImpl<double>(device, x.data<double>(), y.data<double>(), n);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -79,7 +78,7 @@ struct AbsGradEigenExpr {
 };
 
 template <typename T>
-void AbsGradCPUImpl(CPUDevice *device, const T *x, T *dx, const T *dy, int n) {
+void AbsGradCPUImpl(CPUDevice *device, T *x, T *dx, T *dy, int n) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, n);
@@ -95,10 +94,10 @@ void AbsGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
 
     switch (x.type.id) {
     case DType::Float32:
-        AbsGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), dy.data<float>, n);
+        AbsGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), dy.data<float>(), n);
         break;
     case DType::Float64:
-        AbsGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), dy.data<double>, n);
+        AbsGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), dy.data<double>(), n);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

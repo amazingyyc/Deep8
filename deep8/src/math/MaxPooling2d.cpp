@@ -5,14 +5,14 @@ namespace Math {
 
 void MaxPooling2d(const Tensor &x, 
                   Tensor &y, 
-                  bool coverd, 
+                  bool covered, 
                   int filterHeight, 
                   int filterWidth, 
                   int strideY, 
                   int strideX) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.type == y.type, "the data type must be same");
-    DEEP8_ARGUMENT_CHECK(3 == x.nDims && 3 == y.nDims, "the tensor dim must be 3");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 3 == y.nDims(), "the tensor dim must be 3");
     DEEP8_ARGUMENT_CHECK(filterHeight >= 1 && filterWidth >= 1 && strideY >= 1 && strideX >= 1, "the params is error");
 
     auto batch        = (int)x.batch();
@@ -37,10 +37,10 @@ void MaxPooling2d(const Tensor &x,
                          inputChannel == (int)y.dim(2), "the shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        MaxPooling2dCPU(x, y, coverd, filterHeight, filterWidth, strideY, strideX);
+        MaxPooling2dCPU(x, y, covered, filterHeight, filterWidth, strideY, strideX);
     } else {
 #ifdef HAVE_CUDA
-        MaxPooling2dGPU(x, y, coverd, filterHeight, filterWidth, strideY, strideX);
+        MaxPooling2dGPU(x, y, covered, filterHeight, filterWidth, strideY, strideX);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -52,7 +52,7 @@ void MaxPooling2dGrad(const Tensor &x,
                       Tensor &dx, 
                       const Tensor &y, 
                       const Tensor &dy, 
-                      bool coverd, 
+                      bool covered, 
                       int filterHeight, 
                       int filterWidth, 
                       int strideY, 
@@ -85,10 +85,10 @@ void MaxPooling2dGrad(const Tensor &x,
                          inputChannel == (int)y.dim(2), "the shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        MaxPooling2dGradCPU(x, dx, y, dy, coverd, filterHeight, filterWidth, strideY, strideX);
+        MaxPooling2dGradCPU(x, dx, y, dy, covered, filterHeight, filterWidth, strideY, strideX);
     } else {
 #ifdef HAVE_CUDA
-        MaxPooling2dGradGPU(x, dx, y, dy, coverd, filterHeight, filterWidth, strideY, strideX);
+        MaxPooling2dGradGPU(x, dx, y, dy, covered, filterHeight, filterWidth, strideY, strideX);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -97,7 +97,7 @@ void MaxPooling2dGrad(const Tensor &x,
 
 template <typename T>
 void MaxPooling2dCPUImpl(CPUDevice *device,
-                        const T *x;
+                        T *x,
                         T *y,
                         int batch,
                         int inputHeight, 
@@ -117,13 +117,13 @@ void MaxPooling2dCPUImpl(CPUDevice *device,
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
         ytensor(y, batch, outputHeight, outputWidth, channel);
 
-    Eigen::DSizes<TensorIndex, 4> preDims;
+    Eigen::DSizes<int, 4> preDims;
 	preDims[0] = batch * outputHeight * outputWidth;
 	preDims[1] = filterHeight;
 	preDims[2] = filterWidth;
-	preDims[3] = inputChannel;
+	preDims[3] = channel;
 
-	Eigen::DSizes<TensorIndex, 2> reductionDims;
+	Eigen::DSizes<int, 2> reductionDims;
 	reductionDims[0] = 1;
 	reductionDims[1] = 2;
 
@@ -196,9 +196,9 @@ void MaxPooling2dCPU(const Tensor &x,
 }
 
 template <typename T>
-void MaxPooling2dGradCPUImpl(const T *x,
+void MaxPooling2dGradCPUImpl(T *x,
                             T *dx,
-                            const T *dy,
+                            T *dy,
                             int batch,
                             int startChannel,
                             int endChannel,
@@ -221,11 +221,11 @@ void MaxPooling2dGradCPUImpl(const T *x,
         for (int k = startChannel; k < endChannel; ++k) {
             for (int h = 0; h < outputHeight; ++h) {
                 for (int w = 0; w < outputWidth; ++w) {
-                    auto startH = std::max<int>(0, padTop + y * strideY);
-                    auto endH   = std::min<int>(inputHeight, padTop + y * strideY + filterHeight);
+                    auto startH = std::max<int>(0, padTop + h * strideY);
+                    auto endH   = std::min<int>(inputHeight, padTop + h * strideY + filterHeight);
 
-                    auto startW = std::max<int>(0, padLeft + x * strideX);
-					auto endW   = std::min<int>(inputWidth, padLeft + x * strideX + filterWidth);
+                    auto startW = std::max<int>(0, padLeft + w * strideX);
+					auto endW   = std::min<int>(inputWidth, padLeft + w * strideX + filterWidth);
 
                     if (startH >= endH || startW >= endW) {
 						continue;
@@ -282,13 +282,13 @@ void MaxPooling2dGradCPU(const Tensor &x,
     int padTop  = -(padY / 2);
     int padLeft = -(padX / 2);
 
-    int threadNum = (int) device->numThreads();
+    int threadNum = (int) eigenDevice->numThreads();
     int blockSize = (channel + threadNum - 1) / threadNum;
 
     Eigen::Barrier barrier((unsigned int)(threadNum));
 
     if (DType::Float32 == x.type.id) {
-        auto blockFunc = [this, &barrier](const float *x,
+        auto blockFunc = [&barrier](      float *x,
                                           float *dx,
                                           float *dy,
                                           int batch,
@@ -328,9 +328,9 @@ void MaxPooling2dGradCPU(const Tensor &x,
 
         for (int i = 0; i < threadNum; ++i) {
             int startChannel = i * blockSize;
-            int endChannel   = std::min<int>(startChannel + blockSize, outputC);
+            int endChannel   = std::min<int>(startChannel + blockSize, channel);
 
-            device->enqueueNoNotification(blockFunc, 
+            eigenDevice->enqueueNoNotification(blockFunc, 
             x.data<float>(), 
             dx.data<float>(),
             dy.data<float>(),
@@ -352,7 +352,7 @@ void MaxPooling2dGradCPU(const Tensor &x,
 
         barrier.Wait();
     } else if (DType::Float64 == x.type.id) {
-        auto blockFunc = [this, &barrier](const double *x,
+        auto blockFunc = [&barrier](      double *x,
                                           double *dx,
                                           double *dy,
                                           int batch,
@@ -392,9 +392,9 @@ void MaxPooling2dGradCPU(const Tensor &x,
 
         for (int i = 0; i < threadNum; ++i) {
             int startChannel = i * blockSize;
-            int endChannel   = std::min<int>(startChannel + blockSize, outputC);
+            int endChannel   = std::min<int>(startChannel + blockSize, channel);
 
-            device->enqueueNoNotification(blockFunc, 
+            eigenDevice->enqueueNoNotification(blockFunc, 
             x.data<double>(), 
             dx.data<double>(),
             dy.data<double>(),

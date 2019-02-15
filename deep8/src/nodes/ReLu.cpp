@@ -1,23 +1,15 @@
-#include "ReLu.h"
-#include "AutoBatchCodeHelper.h"
+#include "math/ReLu.h"
+#include "nodes/ReLu.h"
+#include "model/AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
-template <typename T>
-struct ReLuBackwardExpr {
-	inline T operator()(T outputGrad, T in) const {
-		return outputGrad * (in > 0 ? 1.0 : 0);
-	}
-};
-
-template <typename T>
-ReLu<T>::ReLu(std::vector<Node *> &inputs) : Function<T>(inputs) {
+ReLu::ReLu(std::vector<Node *> &inputs) : Function(inputs) {
 	check();
 }
 
-template <typename T>
-void ReLu<T>::check() {
-	Function<T>::check();
+void ReLu::check() {
+	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReLu Function needs only 1 input");
 
@@ -25,17 +17,14 @@ void ReLu<T>::check() {
 	this->outputShape = this->inputs[0]->outputShape;
 }
 
-template <typename T>
-int ReLu<T>::supportAutoBatch() {
+int ReLu::supportAutoBatch() {
     return -1;
 }
 
 /**auto batch code*/
-template <typename T>
-size_t ReLu<T>::autoBatchCode() {
+size_t ReLu::autoBatchCode() {
     AutoBatchCodeHelper helper;
 
-	// todo: aupport half
     helper.functionType(FunctionType::ReLu);
 
     return helper.autoBatchCode();
@@ -45,8 +34,7 @@ size_t ReLu<T>::autoBatchCode() {
  * return the inputs[index]'s shape if it is be batched together.
  * the shapes is the inputs[index]'s shape that will be batched.
  */
-template <typename T>
-Shape ReLu<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+Shape ReLu::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
 
     /**simple set it to a 1 batch shape*/
@@ -62,38 +50,27 @@ Shape ReLu<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
 /**
  * return the inputs's index that can be auto batched
  */
-template <typename T>
-std::vector<size_t> ReLu<T>::autoBatchIndexes() {
+std::vector<size_t> ReLu::autoBatchIndexes() {
     return std::vector<size_t>({ 0 });
 }
 
 /**
  * clone current node for auto batch
  */
-template <typename T>
-Node* ReLu<T>::autoBatchClone(std::vector<Node*> &inputs) {
-	return new ReLu<T>(inputs);
+Node* ReLu::autoBatchClone(std::vector<Node*> &inputs) {
+	return new ReLu(inputs);
 }
 
-template <typename T>
-void ReLu<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-	auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
-	eTVec(output).device(*device) = eTVec(inputs[0]).cwiseMax(T(0));
+void ReLu::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+	Math::ReLu(*(inputs[0]), *output);
 }
 
-template <typename T>
-void ReLu<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-				const Tensor<T> *output,
-				const Tensor<T> *outputGradient,
-				size_t index,
-				Tensor<T> *iGradient) {
-	DEEP8_ARGUMENT_CHECK(0 == index, "the index of ReLu backwardCPU is error");
-
-	auto device = static_cast<CPUDevice*>(outputGradient->device())->eigenDevice;
-	eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), ReLuBackwardExpr<T>());
+void ReLu::backward(const std::vector<const Tensor*> &inputs, 
+				  const Tensor *output, 
+				  const Tensor *outputGradient, 
+				  size_t index, 
+				  Tensor *iGradient) {
+	Math::ReLuGrad(*(inputs[0]), *iGradient, *output, *outputGradient);
 }
-
-DEEP8_RE_DECLARATION_HALF_FUNC(ReLu);
-DEEP8_DECLARATION_INSTANCE(ReLu)
 
 }

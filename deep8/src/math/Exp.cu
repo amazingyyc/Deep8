@@ -1,6 +1,6 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
-#include "utils/GPUMathUtils.h"
+#include "math/GPUMath.h"
 #include "math/Exp.h"
 
 namespace Deep8 {
@@ -9,7 +9,7 @@ namespace Math {
 template <typename T>
 struct ExpKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x) {
-        return CuMath::cuExp(x);
+        return cudaExp(x);
     }
 };
 

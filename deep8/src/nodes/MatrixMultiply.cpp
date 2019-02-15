@@ -1,6 +1,6 @@
 #include "math/MatrixMultiply.h"
-#include "MatrixMultiply.h"
-#include "AutoBatchCodeHelper.h"
+#include "nodes/MatrixMultiply.h"
+#include "model/AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 

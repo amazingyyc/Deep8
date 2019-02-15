@@ -1,7 +1,7 @@
 #ifndef DEEP8_TENSORSTORAGE_H
 #define DEEP8_TENSORSTORAGE_H
 
-#include "Device.h"
+#include "model/Device.h"
 
 namespace Deep8 {
 

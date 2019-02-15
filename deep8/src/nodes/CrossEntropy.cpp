@@ -1,5 +1,5 @@
 #include "math/CrossEntropy.h"
-#include "CrossEntropy.h"
+#include "nodes/CrossEntropy.h"
 
 namespace Deep8 {
 

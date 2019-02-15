@@ -1,6 +1,3 @@
-#include "basic/GPUBasic.h"
-#include "model/GPUDevice.h"
-#include "utils/GPUMathUtils.h"
 #include "math/Conv2d.h"
 
 namespace Deep8 {
@@ -173,9 +170,9 @@ void Conv2dGradY(const Tensor &x,
 
 template <typename T>
 void Conv2dCPUImpl(CPUDevice *device,
-                   const T* x, const Shape& xshape,
-                   const T* y, const Shape& yshape,
-                         T* z, const Shape& zshape,
+                    T* x, const Shape& xshape,
+                    T* y, const Shape& yshape,
+                    T* z, const Shape& zshape,
                    bool convered,
                    int strideY,
                    int strideX,
@@ -183,18 +180,18 @@ void Conv2dCPUImpl(CPUDevice *device,
                    int dilationX) {
     auto eigenDevice = device->eigenDevice;
 
-    auto batch = (int)x.batch();
+    auto batch = (int)xshape.batch;
 
-    auto inputHeight  = (int)x.dim(0);
-    auto inputWidth   = (int)x.dim(1);
-    auto inputChannel = (int)x.dim(2);
+    auto inputHeight  = (int)xshape.dim(0);
+    auto inputWidth   = (int)xshape.dim(1);
+    auto inputChannel = (int)xshape.dim(2);
 
-    auto filterHeight = (int)y.dim(1);
-    auto filterWidth  = (int)y.dim(2);
+    auto filterHeight = (int)yshape.dim(1);
+    auto filterWidth  = (int)yshape.dim(2);
 
-    auto outputHeight  = (int)z.dim(0);
-    auto outputWidth   = (int)z.dim(1);
-    auto outputChannel = (int)z.dim(2);
+    auto outputHeight  = (int)zshape.dim(0);
+    auto outputWidth   = (int)zshape.dim(1);
+    auto outputChannel = (int)zshape.dim(2);
 
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
         xTensor(x, batch, inputHeight, inputWidth, inputChannel);
@@ -246,8 +243,10 @@ void Conv2dCPU(const Tensor &x,
                int strideX, 
                int dilationY, 
                int dilationX) {
+    auto device = (CPUDevice*) x.device();
+
     if (DType::Float32 == x.type.id) {
-        Conv2dCPUImpl<float>(x.device(), 
+        Conv2dCPUImpl<float>(device, 
                              x.data<float>(), x.shape, 
                              y.data<float>(), y.shape, 
                              z.data<float>(), z.shape, 
@@ -257,7 +256,7 @@ void Conv2dCPU(const Tensor &x,
                              dilationY, 
                              dilationX);
     } else if (DType::Float64 == x.type.id) {
-        Conv2dCPUImpl<double>(x.device(),
+        Conv2dCPUImpl<double>(device,
                              x.data<double>(), x.shape,
                              y.data<double>(), y.shape,
                              z.data<double>(), z.shape,
@@ -274,9 +273,11 @@ void Conv2dCPU(const Tensor &x,
 
 template <typename T>
 void Conv2dGradXCPUImpl(CPUDevice *device,
-                        const T* x, T* dx,
-                        const T* y,
-                        const T* z, const T* dz,
+                        T* x, 
+                        T* dx,
+                        T* y,
+                        T* z, 
+                        T* dz,
                         int batch,
                         int inputHeight,
                         int inputWidth,
@@ -291,7 +292,7 @@ void Conv2dGradXCPUImpl(CPUDevice *device,
                         int strideX,
                         int dilationY,
                         int dilationX) {
-    auto eigenDeviec = device->eigenDevice;
+    auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
         dzTensor(dz, batch, outputHeight, outputWidth, outputChannel);
@@ -366,8 +367,10 @@ void Conv2dGradXCPU(const Tensor& x,
     auto outputWidth   = (int)z.dim(1);
     auto outputChannel = (int)z.dim(2);
 
+    auto device = (CPUDevice*) x.device();
+
     if (DType::Float32 == x.type.id) {
-        Conv2dGradXCPUImpl<float>(x.device(),
+        Conv2dGradXCPUImpl<float>(device,
                                   x.data<float>(),
                                   dx.data<float>(),
                                   y.data<float>(),
@@ -388,7 +391,7 @@ void Conv2dGradXCPU(const Tensor& x,
                                   dilationY,
                                   dilationX);
     } else if (DType::Float64 == x.type.id) {
-        Conv2dGradXCPUImpl<double>(x.device(),
+        Conv2dGradXCPUImpl<double>(device,
                                   x.data<double>(),
                                   dx.data<double>(),
                                   y.data<double>(),
@@ -413,12 +416,13 @@ void Conv2dGradXCPU(const Tensor& x,
     }
 }
 
-
 template <typename T>
 void Conv2dGradYCPUImpl(CPUDevice* device,
-                        const T* x,
-                        const T* y, T* dy,
-                        const T* z, const T* dz,
+                        T* x,
+                        T* y, 
+                        T* dy,
+                        T* z, 
+                        T* dz,
                         int batch,
                         int inputHeight,
                         int inputWidth,
@@ -433,7 +437,7 @@ void Conv2dGradYCPUImpl(CPUDevice* device,
                         int strideX,
                         int dilationY,
                         int dilationX) {
-    auto eigenDeviec = device->eigenDevice;
+    auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
         dzTensor(dz, batch, outputHeight, outputWidth, outputChannel);
@@ -499,8 +503,10 @@ void Conv2dGradYCPU(const Tensor &x,
     auto outputWidth   = (int)z.dim(1);
     auto outputChannel = (int)z.dim(2);
 
+    auto device = (CPUDevice*) x.device();
+
     if (DType::Float32 == x.type.id) {
-        Conv2dGradYCPUImpl<float>(x.device(),
+        Conv2dGradYCPUImpl<float>(device,
                                   x.data<float>(),
                                   y.data<float>(),
                                   dy.data<float>(),
@@ -521,7 +527,7 @@ void Conv2dGradYCPU(const Tensor &x,
                                   dilationY,
                                   dilationX);
     } else if (DType::Float64 == x.type.id) {
-        Conv2dGradYCPUImpl<double>(x.device(),
+        Conv2dGradYCPUImpl<double>(device,
                                   x.data<double>(),
                                   y.data<double>(),
                                   dy.data<double>(),

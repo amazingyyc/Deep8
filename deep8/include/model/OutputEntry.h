@@ -1,8 +1,8 @@
 #ifndef DEEP8_OUTPUTENTRY_H
 #define DEEP8_OUTPUTENTRY_H
 
-#include "Basic.h"
-#include "Exception.h"
+#include "basic/Basic.h"
+#include "basic/Exception.h"
 
 namespace Deep8 {
 

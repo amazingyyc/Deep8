@@ -21,6 +21,10 @@ DeviceType Tensor::deviceType() {
 	return storage.device->type;
 }
 
+DeviceType Tensor::deviceType() const {
+	return storage.device->type;
+}
+
 Device* Tensor::device() {
 	return storage.device;
 }

@@ -1,3 +1,7 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
+#include "math/GPUReduce.h"
 #include "math/ReduceSum.h"
 
 namespace Deep8 {

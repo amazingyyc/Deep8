@@ -48,29 +48,45 @@ struct LReLuEigenExpr {
 };
 
 template <typename T>
-void LReLuCPUImpl(CPUDEvice *device, const T *x, const Shape &xshape, const T a,T *y, const Shape &yshape) {
+void LReLuCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T a,T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, (int)yshape.size());
 
-    yvec.device(*device) = xvec.unaryExpr(LReLuEigenExpr<T>(a));
+    yvec.device(*eigenDevice) = xvec.unaryExpr(LReLuEigenExpr<T>(a));
+}
+
+void LReLuCPU(const Tensor &x, const float a, Tensor &y) {
+    auto device = (CPUDevice*) x.device();
+
+    switch (x.type.id) {
+    case DType::Float32:
+        LReLuCPUImpl<float>(device, x.data<float>(), x.shape, a, y.data<float>(), y.shape);
+        break;
+    case DType::Float64:
+        LReLuCPUImpl<double>(device, x.data<double>(), x.shape, double(a), y.data<double>(), y.shape);
+        break;
+    default:
+        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        break;
+    }
 }
 
 template <typename T>
 struct LReLuGradEigenExpr {
-    T a:
+    T a;
 
     LReLuGradEigenExpr(T aa): a(aa) {
     }
 
 	inline T operator()(T dy, T x) const {
-		return x > 0 ? dy : a * dy;
+		return (x > 0 ? dy : a * dy);
 	}
 };
 
 template <typename T>
-void LReLuGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, const T a, const T *y, const T *dy, const Shape &yshape) {
+void LReLuGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T a, T *y, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  xvec( x, (int)xshape.size());
@@ -79,6 +95,23 @@ void LReLuGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape,
 
     dxvec.device(*eigenDevice) += dyvec.binaryExpr(xvec, LReLuGradEigenExpr<T>(a));
 }
+
+void LReLuGradCPU(const Tensor &x, Tensor &dx, const float a, const Tensor &y, const Tensor &dy) {
+    auto device = (CPUDevice*) x.device();
+
+    switch (x.type.id) {
+    case DType::Float32:
+        LReLuGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, a, y.data<float>(), dy.data<float>(), y.shape);
+        break;
+    case DType::Float64:
+        LReLuGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, double(a), y.data<double>(), dy.data<double>(), y.shape);
+        break;
+    default:
+        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        break;
+    }
+}
+
 
 }
 }

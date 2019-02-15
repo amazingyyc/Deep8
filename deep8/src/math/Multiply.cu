@@ -1,4 +1,7 @@
-#include "math/Multiply.cu"
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
+#include "math/Multiply.h"
 
 namespace Deep8 {
 namespace Math {

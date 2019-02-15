@@ -1,5 +1,5 @@
 #include "math/Exp.h"
-#include "Exp.h"
+#include "nodes/Exp.h"
 
 namespace Deep8 {
 

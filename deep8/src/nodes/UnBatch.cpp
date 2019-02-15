@@ -1,42 +1,34 @@
-#include "UnBatch.h"
+#include "nodes/UnBatch.h"
 
 namespace Deep8 {
 
-template <typename T>
-UnBatch<T>::UnBatch(std::vector<Node*> &inputs, size_t o, Shape &shape) : Function<T>(inputs), offset(o) {
+UnBatch::UnBatch(std::vector<Node*> &inputs, size_t o, Shape &shape) : Function(inputs), offset(o) {
 	this->outputShape = shape;
 	check();
 }
 
-template <typename T>
-void UnBatch<T>::check() {
-	Function<T>::check();
+void UnBatch::check() {
+	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the input size must be 1");
 	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.size() >= offset + this->outputShape.size(), "the shape is error");
 }
 
-template <typename T>
-bool UnBatch<T>::isShared() {
+bool UnBatch::isShared() {
 	return true;
 }
 
-template <typename T>
-void UnBatch<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {}
+void UnBatch::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+}
 
-template <typename T>
-void UnBatch<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {}
+void UnBatch::backward(const std::vector<const Tensor*> &inputs, 
+						const Tensor *output, 
+						const Tensor *outputGradient, 
+						size_t index, 
+						Tensor *iGradient) {
+}
 
-#ifdef HAVE_CUDA
-template <typename T>
-void UnBatch<T>::forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {}
-
-template <typename T>
-void UnBatch<T>::backwardGPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {}
-#endif
-
-template <typename T>
-void UnBatch<T>::forward() {
+void UnBatch::forward() {
 	for (auto item : this->inputs) {
 		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be Variable type");
 	}
@@ -45,19 +37,21 @@ void UnBatch<T>::forward() {
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 	DEEP8_ARGUMENT_CHECK(this->outputShape  == this->outputs.first()->outputShape, "the output shape is error");
 
-	auto x = static_cast<Variable<T>*>(this->inputs[0]);
-	auto y = static_cast<Variable<T>*>(this->outputs.first());
+	auto x = (Variable*)(this->inputs[0]);
+	auto y = (Variable*)(this->outputs.first());
 
 	y->outputShape    = this->outputShape;
 	y->updateGradient = x->updateGradient;
 
 	y->value.storage = x->value.storage;
-	y->value.offset  = x->value.offset + sizeof(T) * offset;
+	y->value.offset  = x->value.offset + x->value.type.byteWidth * offset;
+	y->value.type    = x->value.type;
 	y->value.shape   = this->outputShape;
 
 	if (x->updateGradient) {
 		y->gradient.storage = x->gradient.storage;
-		y->gradient.offset  = x->gradient.offset + sizeof(T) * offset;
+		y->gradient.offset  = x->gradient.offset + x->gradient.type.byteWidth * offset;
+		y->gradient.type    = x->gradient.type;
 		y->gradient.shape   = this->outputShape;
 	} else {
 		/**set the output gradient is empty to save the memory*/
@@ -65,12 +59,10 @@ void UnBatch<T>::forward() {
 	}
 }
 
-template <typename T>
-void UnBatch<T>::backward() {
+void UnBatch::backward() {
 	/**do nothing*/
 }
 
-DEEP8_RE_DECLARATION_HALF_FUNC(UnBatch);
-DEEP8_DECLARATION_INSTANCE(UnBatch)
+
 
 }

@@ -1,6 +1,6 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
-#include "utils/GPUMathUtils.h"
+#include "math/GPUMath.h"
 #include "math/AvgPooling2d.h"
 
 namespace Deep8 {
@@ -48,7 +48,7 @@ __global__ void AvgPooling2dKernel(const T *x, T *y,
 }
 
 void AvgPooling2dGPU(const Tensor &x, Tensor &y,
-                     bool coverd,
+                     bool covered,
                      int filterHeight,
                      int filterWidth,
                      int strideY,
@@ -181,7 +181,7 @@ __global__ void AvgPooling2dGradKernel(T *dx, T *dy,
 
 void AvgPooling2dGradGPU(const Tensor &x, Tensor &dx, 
                          const Tensor &y, const Tensor &dy, 
-                         bool coverd, 
+                         bool covered, 
                          int filterHeight, 
                          int filterWidth, 
                          int strideY, 

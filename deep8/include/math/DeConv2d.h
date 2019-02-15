@@ -99,3 +99,5 @@ void DeConv2dGradYGPU(  const Tensor &x,
 
 }
 }
+
+#endif

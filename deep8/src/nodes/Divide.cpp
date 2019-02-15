@@ -1,5 +1,5 @@
 #include "math/Divide.h"
-#include "Divide.h"
+#include "nodes/Divide.h"
 
 namespace Deep8 {
 

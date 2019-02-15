@@ -1,6 +1,6 @@
+#include "model/AutoBatchCodeHelper.h"
 #include "math/Abs.h"
-#include "Abs.h"
-#include "AutoBatchCodeHelper.h"
+#include "nodes/Abs.h"
 
 namespace Deep8 {
 

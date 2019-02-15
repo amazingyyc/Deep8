@@ -43,7 +43,7 @@ struct TanhEigenExpr {
 };
 
 template <typename T>
-void TanhCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape) {
+void TanhCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
@@ -57,10 +57,10 @@ void TanhCPU(const Tensor &x, Tensor &y) {
 
     switch (x.type.id) {
     case DType::Float32:
-        TanhCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape);
+        TanhCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        TanhCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape);
+        TanhCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -76,7 +76,7 @@ struct TanhGradEigenExpr {
 };
 
 template <typename T>
-void TanhGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, const T *y, const T *dy, const Shape &yshape) {
+void TanhGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, (int)xshape.size());
@@ -87,13 +87,14 @@ void TanhGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, 
 }
 
 void TanhGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
+    switch (x.type.id) {
     case DType::Float32:
-        TanhGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape);
+        TanhGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        TanhGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>, y.shape);
+        TanhGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

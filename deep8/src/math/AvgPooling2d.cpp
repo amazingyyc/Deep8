@@ -5,14 +5,14 @@ namespace Math {
 
 /**avg pooling 2d*/
 void AvgPooling2d(const Tensor &x, Tensor &y, 
-                  bool coverd, 
+                  bool covered, 
                   int filterHeight, 
                   int filterWidth, 
                   int strideY, 
                   int strideX) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.type == y.type, "the data type must be same");
-    DEEP8_ARGUMENT_CHECK(3 == x.nDims && 3 == y.nDims, "the tensor dim must be 3");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 3 == y.nDims(), "the tensor dim must be 3");
     DEEP8_ARGUMENT_CHECK(filterHeight >= 1 && filterWidth >= 1 && strideY >= 1 && strideX >= 1, "the params is error");
 
     auto batch        = (int)x.batch();
@@ -37,10 +37,10 @@ void AvgPooling2d(const Tensor &x, Tensor &y,
                          inputChannel == (int)y.dim(2), "the shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        AvgPooling2dCPU(x, y, coverd, filterHeight, filterWidth, strideY, strideX);
+        AvgPooling2dCPU(x, y, covered, filterHeight, filterWidth, strideY, strideX);
     } else {
 #ifdef HAVE_CUDA
-        AvgPooling2dGPU(x, y, coverd, filterHeight, filterWidth, strideY, strideX);
+        AvgPooling2dGPU(x, y, covered, filterHeight, filterWidth, strideY, strideX);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -52,7 +52,7 @@ void AvgPooling2dGrad(const Tensor &x,
                       Tensor &dx,
                       const Tensor &y,
                       const Tensor &dy,
-                      bool coverd,
+                      bool covered,
                       int filterHeight,
                       int filterWidth,
                       int strideY,
@@ -85,10 +85,10 @@ void AvgPooling2dGrad(const Tensor &x,
                          inputChannel == (int)y.dim(2), "the shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        AvgPooling2dGradCPU(x, dx, y, dy, coverd, filterHeight, filterWidth, strideY, strideX);
+        AvgPooling2dGradCPU(x, dx, y, dy, covered, filterHeight, filterWidth, strideY, strideX);
     } else {
 #ifdef HAVE_CUDA
-        AvgPooling2dGradGPU(x, dx, y, dy, coverd, filterHeight, filterWidth, strideY, strideX);
+        AvgPooling2dGradGPU(x, dx, y, dy, covered, filterHeight, filterWidth, strideY, strideX);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -97,17 +97,18 @@ void AvgPooling2dGrad(const Tensor &x,
 
 template <typename T>
 void AvgPooling2dCPUImpl(CPUDevice *device,
-                         const T *x, T *y,
-                         int batch,
-                         int inputHeight, 
-                         int inputWidth,
-                         int outputHeight, 
-                         int outputWidth,
-                         int channel,
-                         int filterHeight, 
-                         int filterWidth,
-                         int strideY, 
-                         int strideX) {
+                        T *x, 
+                        T *y,
+                        int batch,
+                        int inputHeight, 
+                        int inputWidth,
+                        int outputHeight, 
+                        int outputWidth,
+                        int channel,
+                        int filterHeight, 
+                        int filterWidth,
+                        int strideY, 
+                        int strideX) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
@@ -116,13 +117,13 @@ void AvgPooling2dCPUImpl(CPUDevice *device,
     Eigen::TensorMap<Eigen::Tensor<T, 4, Eigen::RowMajor>>
         ytensor(y, batch, outputHeight, outputWidth, channel);
 
-    Eigen::DSizes<TensorIndex, 4> preDims;
+    Eigen::DSizes<int, 4> preDims;
     preDims[0] = batch * outputHeight * outputWidth;
     preDims[1] = filterHeight;
     preDims[2] = filterWidth;
     preDims[3] = channel;
 
-    Eigen::DSizes<TensorIndex, 2> reductionDims;
+    Eigen::DSizes<int, 2> reductionDims;
     reductionDims[0] = 1;
     reductionDims[1] = 2;
 
@@ -142,7 +143,7 @@ void AvgPooling2dCPUImpl(CPUDevice *device,
 }
 
 void AvgPooling2dCPU(const Tensor &x, Tensor &y, 
-                     bool coverd = false, 
+                     bool covered, 
                      int filterHeight, 
                      int filterWidth, 
                      int strideY, 
@@ -224,7 +225,7 @@ void AvgPooling2dGradCPUImpl(T *dx,
                     auto startH = std::max<int>(0, padTop + y * strideY);
                     auto endH   = std::min<int>(inputHeight, padTop + y * strideY + filterHeight);
 
-                    auto startW = std::max<int>(0, padLeft + x * strideW);
+                    auto startW = std::max<int>(0, padLeft + x * strideX);
                     auto endW   = std::min<int>(inputWidth, padLeft + x * strideX + filterWidth);
 
                     if (startH >= endH || startW >= endW) {
@@ -246,7 +247,7 @@ void AvgPooling2dGradCPUImpl(T *dx,
 
 void AvgPooling2dGradCPU(const Tensor &x, Tensor &dx,
                          const Tensor &y, const Tensor &dy,
-                         bool coverd,
+                         bool covered,
                          int filterHeight,
                          int filterWidth,
                          int strideY,
@@ -268,13 +269,13 @@ void AvgPooling2dGradCPU(const Tensor &x, Tensor &dx,
     int padTop  = -(padY / 2);
     int padLeft = -(padX / 2);
 
-    int threadNum = (int) device->numThreads();
+    int threadNum = (int) eigenDevice->numThreads();
     int blockSize = (channel + threadNum - 1) / threadNum;
 
     Eigen::Barrier barrier((unsigned int)(threadNum));
 
     if (DType::Float32 == x.type.id) {
-        auto blockFunc = [this, &barrier](float *dx,
+        auto blockFunc = [&barrier](float *dx,
                                           float *dy,
                                           int batch,
                                           int startChannel,
@@ -335,7 +336,7 @@ void AvgPooling2dGradCPU(const Tensor &x, Tensor &dx,
 
         barrier.Wait();
     } else if (DType::Float64 == x.type.id) {
-        auto blockFunc = [this, &barrier](double *dx,
+        auto blockFunc = [&barrier](double *dx,
                                           double *dy,
                                           int batch,
                                           int startChannel,

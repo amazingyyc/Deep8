@@ -1,3 +1,4 @@
+#include "utils/ShapeUtils.h"
 #include "math/Divide.h"
 
 namespace Deep8 {
@@ -110,12 +111,12 @@ void DivideGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, 
 
 
 template <typename T>
-void DivideCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, const T *y, const Shape &yshape, T *z, const Shape &zshape) {
+void DivideCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape, T *z, const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
-    xarray = enlargeShapeToMaxDim(xshape);
-    yarray = enlargeShapeToMaxDim(yshape);
-    zarray = enlargeShapeToMaxDim(zshape);
+    auto xarray = enlargeShapeToMaxDim(xshape);
+    auto yarray = enlargeShapeToMaxDim(yshape);
+    auto zarray = enlargeShapeToMaxDim(zshape);
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int) xshape.size());
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, (int) yshape.size());
@@ -167,9 +168,9 @@ template <typename T, int diffCount>
 void DivideGradXCPUImpl(CPUDevice *device, 
                         T *dx, 
                         const Shape &xshape, 
-                        const T *y, 
+                        T *y, 
                         const Shape &yshape, 
-                        const T *dz, 
+                        T *dz, 
                         const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
@@ -215,27 +216,29 @@ void DivideGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &
         }
     }
 
+    auto device = (CPUDevice*) dx.device();
+
     switch (x.type.id) {
     case DType::Float32:
         
         switch (diffCount) {
         case 0:
-            DivideGradXCPUImpl<float, 0>(dx.device(), dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
+            DivideGradXCPUImpl<float, 0>(device, dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
             break;
         case 1:
-            DivideGradXCPUImpl<float, 1>(dx.device(), dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
+            DivideGradXCPUImpl<float, 1>(device, dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
             break;
         case 2:
-            DivideGradXCPUImpl<float, 2>(dx.device(), dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
+            DivideGradXCPUImpl<float, 2>(device, dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
             break;
         case 3:
-            DivideGradXCPUImpl<float, 3>(dx.device(), dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
+            DivideGradXCPUImpl<float, 3>(device, dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
             break;
         case 4:
-            DivideGradXCPUImpl<float, 4>(dx.device(), dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
+            DivideGradXCPUImpl<float, 4>(device, dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
             break;
         case 5:
-            DivideGradXCPUImpl<float, 5>(dx.device(), dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
+            DivideGradXCPUImpl<float, 5>(device, dx.data<float>(), dx.shape, y.data<float>(), y.shape, dz.data<float>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -247,22 +250,22 @@ void DivideGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &
         
         switch (diffCount) {
         case 0:
-            DivideGradXCPUImpl<double, 0>(dx.device(), dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
+            DivideGradXCPUImpl<double, 0>(device, dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
             break;
         case 1:
-            DivideGradXCPUImpl<double, 1>(dx.device(), dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
+            DivideGradXCPUImpl<double, 1>(device, dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
             break;
         case 2:
-            DivideGradXCPUImpl<double, 2>(dx.device(), dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
+            DivideGradXCPUImpl<double, 2>(device, dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
             break;
         case 3:
-            DivideGradXCPUImpl<double, 3>(dx.device(), dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
+            DivideGradXCPUImpl<double, 3>(device, dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
             break;
         case 4:
-            DivideGradXCPUImpl<double, 4>(dx.device(), dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
+            DivideGradXCPUImpl<double, 4>(device, dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
             break;
         case 5:
-            DivideGradXCPUImpl<double, 5>(dx.device(), dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
+            DivideGradXCPUImpl<double, 5>(device, dx.data<double>(), dx.shape, y.data<double>(), y.shape, dz.data<double>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -279,12 +282,12 @@ void DivideGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &
 /**gradient for y*/
 template <typename T, int diffCount>
 void DivideGradYCPUImpl(CPUDevice *device, 
-                        const T *x, 
+                        T *x, 
                         const Shape &xshape, 
-                        const T *y,
+                        T *y,
                         T *dy, 
                         const Shape &yshape, 
-                        const T *dz, 
+                        T *dz, 
                         const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
@@ -339,27 +342,29 @@ void DivideGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &
         }
     }
 
+    auto device = (CPUDevice*) dy.device();
+
     switch (x.type.id) {
     case DType::Float32:
 
         switch (diffCount) {
         case 0:
-            DivideGradYCPUImpl<float, 0>(dy.device(), x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            DivideGradYCPUImpl<float, 0>(device, x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 1:
-            DivideGradYCPUImpl<float, 1>(dy.device(), x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            DivideGradYCPUImpl<float, 1>(device, x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 2:
-            DivideGradYCPUImpl<float, 2>(dy.device(), x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            DivideGradYCPUImpl<float, 2>(device, x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 3:
-            DivideGradYCPUImpl<float, 3>(dy.device(), x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            DivideGradYCPUImpl<float, 3>(device, x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 4:
-            DivideGradYCPUImpl<float, 4>(dy.device(), x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            DivideGradYCPUImpl<float, 4>(device, x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 5:
-            DivideGradYCPUImpl<float, 5>(dy.device(), x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            DivideGradYCPUImpl<float, 5>(device, x.data<float>(), x.shape, y.data<float>(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -371,22 +376,22 @@ void DivideGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &
 
         switch (diffCount) {
         case 0:
-            DivideGradYCPUImpl<double, 0>(dy.device(), x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            DivideGradYCPUImpl<double, 0>(device, x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 1:
-            DivideGradYCPUImpl<double, 1>(dy.device(), x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            DivideGradYCPUImpl<double, 1>(device, x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 2:
-            DivideGradYCPUImpl<double, 2>(dy.device(), x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            DivideGradYCPUImpl<double, 2>(device, x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 3:
-            DivideGradYCPUImpl<double, 3>(dy.device(), x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            DivideGradYCPUImpl<double, 3>(device, x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 4:
-            DivideGradYCPUImpl<double, 4>(dy.device(), x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            DivideGradYCPUImpl<double, 4>(device, x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 5:
-            DivideGradYCPUImpl<double, 5>(dy.device(), x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            DivideGradYCPUImpl<double, 5>(device, x.data<double>(), x.shape, y.data<double>(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");

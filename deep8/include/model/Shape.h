@@ -1,8 +1,8 @@
 #ifndef DEEP8_SHAPE_H
 #define DEEP8_SHAPE_H
 
-#include "Basic.h"
-#include "Exception.h"
+#include "basic/Basic.h"
+#include "basic/Exception.h"
 
 namespace Deep8 {
 
@@ -58,8 +58,8 @@ public:
 
 	Shape& operator = (const Shape&);
 
-	bool operator == (const Shape&);
-	bool operator != (const Shape&);
+	bool operator == (const Shape&) const;
+	bool operator != (const Shape&) const;
 
 	size_t operator [] (size_t);
 

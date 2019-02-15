@@ -1,4 +1,7 @@
-#incldue "math/GPUReduce.h"
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
+#include "math/GPUReduce.h"
 #include "math/L2Norm.h"
 
 namespace Deep8 {
@@ -19,7 +22,7 @@ struct L2NormKernelOp {
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(T ret) {
-        return CuMath::cuSqrt(ret);
+        return cudaSqrt(ret);
     }
 };
     

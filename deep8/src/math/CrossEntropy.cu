@@ -1,3 +1,6 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
 #include "math/CrossEntropy.h"
 
 namespace Deep8 {
@@ -21,7 +24,7 @@ __global__ void CrossEntropyKernel(const T *x, const T *y, T *z, const T scale, 
     shared[threaId] = 0;
 
     while (i < N) {
-        ret += y[i] * CuMath::cuLog(x[i]);
+        ret += y[i] * cudaLog(x[i]);
 
         i += blockSize;
     }
@@ -242,7 +245,7 @@ __global__ void CrossEntropyGradYKernel(const T *x, const T *y, T *dy, const T *
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		dy[i] += scale * dz[0] * CuMath::cuLog(x[i]);
+		dy[i] += scale * dz[0] * cudaLog(x[i]);
 	}
 }
 

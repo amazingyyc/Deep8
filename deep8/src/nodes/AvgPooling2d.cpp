@@ -1,5 +1,5 @@
 #include "math/AvgPooling2d.h"
-#include "AvgPooling2d.h"
+#include "nodes/AvgPooling2d.h"
 
 namespace Deep8 {
 

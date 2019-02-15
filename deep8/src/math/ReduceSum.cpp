@@ -8,7 +8,7 @@ void ReduceSum(const Tensor &x, Tensor &y, int axis) {
     DEEP8_ARGUMENT_CHECK(x.type  == y.type, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(axis < x.shape.nDims, "the axis is error");
 
-    int size = x.shape.batch();
+    int size = x.shape.batch;
 
     for (int i = 0; i < axis; ++i) {
         size *= (int)x.shape.dim(i);
@@ -36,7 +36,7 @@ void ReduceSumGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
     DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && y.shape == dy.shape, "the x/dx or y/dy shape must be same");
 
-    int size = x.shape.batch();
+    int size = x.shape.batch;
 
     for (int i = 0; i < axis; ++i) {
         size *= (int)x.shape.dim(i);
@@ -61,7 +61,7 @@ void ReduceSumGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
 
 
 template <typename T>
-void ReduceSumCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape, int axis) {
+void ReduceSumCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape, int axis) {
     auto eigenDevice = device->eigenDevice;
 
     int dim0, dim1, dim2;
@@ -98,10 +98,10 @@ void ReduceSumCPU(const Tensor &x, Tensor &y, int axis) {
 
     switch (x.type.id) {
     case DType::Float32:
-        ReduceSumCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape, axis);
+        ReduceSumCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape, axis);
         break;
     case DType::Float64:
-        ReduceSumCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape, axis);
+        ReduceSumCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape, axis);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -110,7 +110,7 @@ void ReduceSumCPU(const Tensor &x, Tensor &y, int axis) {
 }
 
 template <typename T>
-void ReduceSumGradCPUImpl(CPUDevice*device, const T *x, T *dx, const Shape &xshape, const T *y, const t *dy, const Shape &yshape, int axis) {
+void ReduceSumGradCPUImpl(CPUDevice*device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape, int axis) {
     auto eigenDevice = device->eigenDevice;
 
     int dim0, dim1, dim2;
@@ -146,10 +146,10 @@ void ReduceSumGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor
 
     switch (x.type.id) {
     case DType::Float32:
-        ReduceSumGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape, axis);
+        ReduceSumGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape, axis);
         break;
     case DType::Float64:
-        ReduceSumGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>, y.shape, axis);
+        ReduceSumGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape, axis);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

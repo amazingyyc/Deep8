@@ -38,7 +38,7 @@ void LogSoftmaxGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &
 }
 
 template <typename T>
-void LogSoftmaxCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape, int axis, void *maxptr, void *sumptr) {
+void LogSoftmaxCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape, int axis, T *maxptr, T *sumptr) {
     auto eigenDevice = device->eigenDevice;
 
     int dim0, dim1, dim2;
@@ -76,14 +76,14 @@ void LogSoftmaxCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y,
 }
 
 void LogSoftmaxCPU(const Tensor &x, Tensor &y, int axis, void *maxptr, void *sumptr) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {
     case DType::Float32:
-        LogSoftmaxCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape, axis, (float*)maxptr, (float*)sumptr);
+        LogSoftmaxCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape, axis, (float*)maxptr, (float*)sumptr);
         break;
     case DType::Float64:
-        LogSoftmaxCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape, axis, (double*)maxptr, (double*)sumptr);
+        LogSoftmaxCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape, axis, (double*)maxptr, (double*)sumptr);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -93,14 +93,14 @@ void LogSoftmaxCPU(const Tensor &x, Tensor &y, int axis, void *maxptr, void *sum
 
 template <typename T>
 void LogSoftmaxGradCPUImpl( CPUDevice *device, 
-                            const T *x, 
+                            T *x, 
                             T *dx, 
                             const Shape &xshape, 
-                            const T *y, 
-                            const T *dy, 
+                            T *y, 
+                            T *dy, 
                             const Shape &yshape,
                             int axis, 
-                            void *sumptr) {
+                            T *sumptr) {
     auto eigenDevice = device->eigenDevice;
 
     int dim0, dim1, dim2;
@@ -141,10 +141,10 @@ void LogSoftmaxGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
 
     switch (x.type.id) {
     case DType::Float32:
-        LogSoftmaxGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape, axis, sumptr);
+        LogSoftmaxGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape, axis, (float*)sumptr);
         break;
     case DType::Float64:
-        LogSoftmaxGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>, y.shape, axis, sumptr);
+        LogSoftmaxGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape, axis, (double*)sumptr);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -153,4 +153,5 @@ void LogSoftmaxGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
 }
 
 
+}
 }

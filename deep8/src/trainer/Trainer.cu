@@ -317,7 +317,7 @@ __global__ void AdagradTrainerKernel(real *gradient, real scale, real *square, r
 	for (int i = start; i < N; i += stride) {
 		gradient[i] *= scale;
 		square[i] += gradient[i] * gradient[i];
-		value[i] -= learningRate * gradient[i] / CuMath::cuSqrt(square[i] + epsilon);
+		value[i] -= learningRate * gradient[i] / cudaSqrt(square[i] + epsilon);
 	}
 }
 #endif
@@ -364,7 +364,7 @@ __global__ void AdamTrainerKernel(real *gradient, real scale, real *mt, real *vt
 		gradient[i] *= scale;
 		mt[i] = mt[i] * beta1 + (real(1.0) - beta1) * gradient[i];
 		vt[i] = vt[i] * beta2 + gradient[i] * gradient[i] * (real(1.0) - beta2);
-		value[i] -= mt[i] / (CuMath::cuSqrt(vt[i]) + epsilon) * learningRate;
+		value[i] -= mt[i] / (cudaSqrt(vt[i]) + epsilon) * learningRate;
 	}
 }
 #endif
@@ -437,7 +437,7 @@ __global__ void RMSPropTrainerKernel(real *gradient, real scale, real *vt, real 
 	for (int i = start; i < N; i += stride) {
 		gradient[i] *= scale;
 		vt[i] = vt[i] * decay + gradient[i] * gradient[i] * (real(1.0) - decay);
-		value[i] -= gradient[i] / CuMath::cuSqrt(vt[i] + epsilon) * learningRate;
+		value[i] -= gradient[i] / cudaSqrt(vt[i] + epsilon) * learningRate;
 	}
 }
 #endif

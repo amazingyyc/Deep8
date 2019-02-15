@@ -1,9 +1,9 @@
 #ifndef DEEP8_GPUDEVICE_H
 #define DEEP8_GPUDEVICE_H
 
-#include "Device.h"
-#include "MemoryPool.h"
-#include "GPUMemoryPool.h"
+#include "model/Device.h"
+#include "model/MemoryPool.h"
+#include "model/GPUMemoryPool.h"
 
 namespace Deep8 {
 

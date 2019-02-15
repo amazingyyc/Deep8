@@ -43,7 +43,7 @@ void LogGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
 
 
 template <typename T>
-void LogCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape) {
+void LogCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
@@ -57,10 +57,10 @@ void LogCPU(const Tensor &x, Tensor &y) {
 
     switch (x.type.id) {
     case DType::Float32:
-        LogCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape);
+        LogCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        LogCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape);
+        LogCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -76,7 +76,7 @@ struct LogGradEigenExpr {
 };
 
 template <typename T>
-void LogGradCPUImpl(CPUDevice *device, const T *x, T * dx, const Shape &xshape, const T *y, const T *dy, const Shape &yshape) {
+void LogGradCPUImpl(CPUDevice *device, T *x, T * dx, const Shape &xshape, T *y, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  xvec( x, (int)xshape.size());
@@ -87,13 +87,14 @@ void LogGradCPUImpl(CPUDevice *device, const T *x, T * dx, const Shape &xshape, 
 }
 
 void LogGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
+    switch (x.type.id) {
     case DType::Float32:
-        LogGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape);
+        LogGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        LogGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>, y.shape);
+        LogGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

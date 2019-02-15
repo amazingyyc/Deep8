@@ -36,7 +36,7 @@ void SquareGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
 }
 
 template <typename T>
-void SquareCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape) {
+void SquareCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
@@ -50,10 +50,10 @@ void SquareCPU(const Tensor &x, Tensor &y) {
 
     switch (x.type.id) {
     case DType::Float32:
-        SquareCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape);
+        SquareCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        SquareCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape);
+        SquareCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -62,7 +62,7 @@ void SquareCPU(const Tensor &x, Tensor &y) {
 }
 
 template <typename T>
-void SquareGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, const T *y, const T *dy, const Shape &yshape) {
+void SquareGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, (int)xshape.size());
@@ -73,14 +73,14 @@ void SquareGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape
 }
 
 void SquareGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {
     case DType::Float32:
-        SquareGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape);
+        SquareGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        SquareGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>, y.shape);
+        SquareGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

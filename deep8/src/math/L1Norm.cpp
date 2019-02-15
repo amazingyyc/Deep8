@@ -42,7 +42,7 @@ void L1NormGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
 }
 
 template <typename T>
-void L1NormCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape) {
+void L1NormCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
 	Eigen::array<int, 1> reshapeDims = { 1 };
@@ -59,10 +59,10 @@ void L1NormCPU(const Tensor &x, Tensor &y) {
 
     switch (x.type.id) {
     case DType::Float32:
-        L1NormCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape);
+        L1NormCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        L1NormCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape);
+        L1NormCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -82,7 +82,7 @@ struct L1NormGradEigenExpr {
 };
 
 template <typename T>
-void L1NormGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, const T *dy, const Shape &yshape) {
+void L1NormGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     int xsize = (int)xshape.size();
@@ -102,10 +102,10 @@ void L1NormGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
 
     switch (x.type.id) {
     case DType::Float32:
-        L1NormGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, dy.data<float>, y.shape);
+        L1NormGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        L1NormGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, dy.data<double>, y.shape);
+        L1NormGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

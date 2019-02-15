@@ -26,3 +26,6 @@ void SoftmaxGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &
 
 }
 }
+
+
+#endif

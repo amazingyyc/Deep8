@@ -60,7 +60,7 @@ Shape& Shape::operator=(const Shape &other) {
 	return (*this);
 }
 
-bool Shape::operator==(const Shape &other) {
+bool Shape::operator==(const Shape &other) const {
 	if (this->nDims != other.nDims || this->batch != other.batch) {
 		return false;
 	}
@@ -74,7 +74,7 @@ bool Shape::operator==(const Shape &other) {
 	return true;
 }
 
-bool Shape::operator!=(const Shape &other) {
+bool Shape::operator!=(const Shape &other) const {
 	return !((*this) == other);
 }
 

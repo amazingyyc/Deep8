@@ -43,7 +43,7 @@ void ExpGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
 
 
 template <typename T>
-void ExpCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape) {
+void ExpCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
@@ -57,10 +57,10 @@ void ExpCPU(const Tensor &x, Tensor &y) {
 
     switch (x.type.id) {
     case DType::Float32:
-        ExpCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape);
+        ExpCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        ExpCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape);
+        ExpCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -69,7 +69,7 @@ void ExpCPU(const Tensor &x, Tensor &y) {
 }
 
 template <typename T>
-void ExpGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, const T *y, const T *dy, const Shape &yshape) {
+void ExpGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, (int)xshape.size());
@@ -80,14 +80,14 @@ void ExpGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, c
 }
 
 void ExpGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {
     case DType::Float32:
-        ExpGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.sahpe, y.data<float>(), dy.data<float>, y.shape);
+        ExpGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        ExpGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.sahpe, y.data<double>(), dy.data<double>, y.shape);
+        ExpGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

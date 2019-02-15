@@ -8,8 +8,7 @@ namespace Deep8 {
 /**
  *  axis < 0 means all reduce
  */
-template <typename T>
-class ReduceSum: public Function<T> {
+class ReduceSum: public Function {
 public:
     int axis;
     bool keepDims;
@@ -19,23 +18,13 @@ public:
 	void check() override;
 
 protected:
-	void forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-
-	void backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-					const Tensor<T> *output,
-					const Tensor<T> *outputGradient,
-					size_t index,
-					Tensor<T> *iGradient) override;
-
-#ifdef HAVE_CUDA
-	void forwardGPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) override;
-	
-    void backwardGPU(const std::vector<const Tensor<T>*> &inputs,
-                     const Tensor<T> *output,
-                     const Tensor<T> *outputGradient,
-                     size_t index,
-                     Tensor<T> *iGradient) override;
-#endif
+	void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
+	void backward(const std::vector<const Tensor*> &inputs, 
+				  const Tensor *output, 
+				  const Tensor *outputGradient, 
+				  size_t index, 
+				  Tensor *iGradient) override;
+                  
 };
 
 }

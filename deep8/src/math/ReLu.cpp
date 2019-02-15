@@ -36,13 +36,13 @@ void ReLuGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
 }
 
 template <typename T>
-void ReLuCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape) {
+void ReLuCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, (int)yshape.size());
 
-    yvec.device(*eigenDevice) = xvec.cwiseMax(0);
+    yvec.device(*eigenDevice) = xvec.cwiseMax(T(0));
 }
 
 void ReLuCPU(const Tensor &x, Tensor &y) {
@@ -50,10 +50,10 @@ void ReLuCPU(const Tensor &x, Tensor &y) {
 
     switch (x.type.id) {
     case DType::Float32:
-        ReLuCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>, y.shape);
+        ReLuCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        ReLuCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>, y.shape);
+        ReLuCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -69,7 +69,7 @@ struct ReLuGradEigenExpr {
 };
 
 template <typename T>
-void ReLuGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, const T *y, const T *dy, const Shape &yshape) {
+void ReLuGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  xvec( x, (int)xshape.size());
@@ -80,13 +80,14 @@ void ReLuGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, 
 }
 
 void ReLuGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
+    switch (x.type.id) {
     case DType::Float32:
-        ReLuGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>, y.shape);
+        ReLuGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        ReLuGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>, y.shape);
+        ReLuGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

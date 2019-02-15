@@ -1,4 +1,4 @@
-#include "Function.h"
+#include "nodes/Function.h"
 
 namespace Deep8 {
 
@@ -97,7 +97,7 @@ void Function::backward() {
 		inputValues.emplace_back(&(inputVariable->value));
 	}
 
-	for (size_t i = 0; i < inputs.size; ++i) {
+	for (size_t i = 0; i < inputs.size(); ++i) {
 		auto inputVariable = (Variable*)(inputs[i]);
 
 		if (inputVariable->updateGradient) {

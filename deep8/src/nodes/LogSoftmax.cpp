@@ -1,5 +1,5 @@
 #include "math/LogSoftmax.h"
-#include "LogSoftmax.h"
+#include "nodes/LogSoftmax.h"
 
 namespace Deep8 {
 

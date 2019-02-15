@@ -1,5 +1,5 @@
 #include "math/Log.h"
-#include "Log.h"
+#include "nodes/Log.h"
 
 namespace Deep8 {
 

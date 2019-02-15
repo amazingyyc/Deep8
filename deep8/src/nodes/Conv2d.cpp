@@ -1,5 +1,5 @@
 #include "math/Conv2d.h"
-#include "Conv2d.h"
+#include "nodes/Conv2d.h"
 
 namespace Deep8 {
 

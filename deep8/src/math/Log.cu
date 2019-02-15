@@ -1,3 +1,6 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
 #include "math/Log.h"
 
 namespace Deep8 {
@@ -7,7 +10,7 @@ template <typename T>
 struct LogKernelOp {
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x) {
-        return CuMath::cuLog(x);
+        return cudaLog(x);
     }
 };
 

@@ -1,7 +1,7 @@
 #ifndef DEEP8_MATHUTILS_H
 #define DEEP8_MATHUTILS_H
 
-#include "Basic.h"
+#include "basic/Basic.h"
 
 namespace Deep8 {
 

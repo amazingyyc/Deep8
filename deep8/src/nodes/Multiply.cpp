@@ -1,5 +1,5 @@
 #include "math/Multiply.h"
-#include "Multiply.h"
+#include "nodes/Multiply.h"
 
 namespace Deep8 {
 

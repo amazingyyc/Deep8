@@ -8,14 +8,13 @@ namespace Deep8 {
 /**
  * the Parameter Node is a special Variable Node that need to be trained
  */
-template <typename T>
-class Parameter: public Variable<T> {
+class Parameter: public Variable {
 protected:
     explicit Parameter();
     
 public:
-	explicit Parameter(Tensor<T> &value);
-    explicit Parameter(Tensor<T> &value, Tensor<T> &gradient);
+	explicit Parameter(Tensor &value);
+    explicit Parameter(Tensor &value, Tensor &gradient);
 	
 protected:
 	void check() override;
@@ -23,4 +22,4 @@ protected:
 
 }
 
-#endif //DEEP8_PARAMETER_H
+#endif

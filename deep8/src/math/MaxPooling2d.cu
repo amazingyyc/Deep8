@@ -1,6 +1,6 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
-#include "utils/GPUMathUtils.h"
+#include "math/GPUMath.h"
 #include "math/MaxPooling2d.h"
 
 namespace Deep8 {
@@ -149,7 +149,7 @@ void MaxPooling2dGPUImpl<half>(GPUDevice* device,
 #endif
 #endif
 
-void MaxPooling2dGPU(const Tensor &x, Tensor &y, bool coverd, int filterHeight, int filterWidth, int strideY, int strideX) {
+void MaxPooling2dGPU(const Tensor &x, Tensor &y, bool covered, int filterHeight, int filterWidth, int strideY, int strideX) {
     auto inputHeight = (int)(x.shape.dim(0));
     auto inputWidth  = (int)(x.shape.dim(1));
 
@@ -384,7 +384,7 @@ void MaxPooling2dGradGPU(const Tensor &x,
                         Tensor &dx, 
                         const Tensor &y, 
                         const Tensor &dy, 
-                        bool coverd, 
+                        bool covered, 
                         int filterHeight, 
                         int filterWidth, 
                         int strideY, 

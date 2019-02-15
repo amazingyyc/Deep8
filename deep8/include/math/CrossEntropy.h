@@ -34,3 +34,5 @@ void CrossEntropyGradYGPU(const Tensor &x, const Tensor &y, Tensor &dy, const Te
 
 }
 }
+
+#endif

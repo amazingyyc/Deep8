@@ -1,5 +1,5 @@
 #include "math/L1Norm.h"
-#include "L1Norm.h"
+#include "nodes/L1Norm.h"
 
 namespace Deep8 {
 

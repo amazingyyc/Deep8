@@ -1,5 +1,5 @@
 #include "math/MaxPooling2d.h"
-#include "MaxPooling2d.h"
+#include "nodes/MaxPooling2d.h"
 
 namespace Deep8 {
 
@@ -60,7 +60,7 @@ void MaxPooling2d::backward(const std::vector<const Tensor*> &inputs,
 							Tensor *iGradient) {
 	DEEP8_ARGUMENT_CHECK(0 == index, "the index is error");
 
-	MaxPooling2dGrad(*(inputs[0]), *iGradient, *output, *outputGradient, covered, filterHeight, filterWidth, strideY, strideX);
+	Math::MaxPooling2dGrad(*(inputs[0]), *iGradient, *output, *outputGradient, covered, filterHeight, filterWidth, strideY, strideX);
 }
 
 

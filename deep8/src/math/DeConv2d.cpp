@@ -113,6 +113,15 @@ void DeConv2dGradY( const Tensor &x,
     DEEP8_ARGUMENT_CHECK(y.shape == dy.shape && z.shape == dz.shape, "the shape is error");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride must >= 1");
     DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
+    
+    auto inputBatch   = (int)x.batch();
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputChannel = (int)y.dim(0);
+    auto filterHeight  = (int)y.dim(1);
+    auto filterWidth   = (int)y.dim(2);
 
     int outputHeight;
     int outputWidth;
@@ -143,9 +152,9 @@ void DeConv2dGradY( const Tensor &x,
 
 template <typename T>
 void DeConv2dCPUImpl(   CPUDevice *device, 
-                        const T *x, 
+                        T *x, 
                         const Shape &xshape, 
-                        const T *y,
+                        T *y,
                         const Shape &yshape, 
                         T *z, 
                         const Shape &zshape,
@@ -206,7 +215,7 @@ void DeConv2dCPUImpl(   CPUDevice *device,
 }
 
 void DeConv2dCPU(const Tensor &x, const Tensor &y, Tensor &z, bool convered, int strideY, int strideX) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {
     case DType::Float32:
@@ -241,13 +250,13 @@ void DeConv2dCPU(const Tensor &x, const Tensor &y, Tensor &z, bool convered, int
 
 template <typename T>
 void DeConv2dGradXCPUImpl(  CPUDevice *device,
-                            const T *x,
+                            T *x,
                             T *dx,
                             const Shape &xshape,
-                            const T *y,
-                            const Shape &yahspe,
-                            const T *z,
-                            const T *da,
+                            T *y,
+                            const Shape &yshape,
+                            T *z,
+                            T *dz,
                             const Shape &zshape,
                             bool convered,
                             int strideY,
@@ -360,13 +369,13 @@ void DeConv2dGradXCPU(  const Tensor& x,
 
 template <typename T>
 void DeConv2dGradYCPUImpl(  CPUDevice *device,
-                            const T *x,
+                            T *x,
                             const Shape &xshape,
-                            const T *y,
+                            T *y,
                             T *dy,
-                            const Shape &yahspe,
-                            const T *z,
-                            const T *da,
+                            const Shape &yshape,
+                            T *z,
+                            T *dz,
                             const Shape &zshape,
                             bool convered,
                             int strideY,
@@ -418,7 +427,7 @@ void DeConv2dGradYCPUImpl(  CPUDevice *device,
     auto padLeft = padW / 2;
     auto padRight = padW - padLeft;
 
-    dyvec.device(*device) += dzvec.reshape(outputGradDim).shuffle(shuffleDims)
+    dyvec.device(*eigenDevice) += dzvec.reshape(outputGradDim).shuffle(shuffleDims)
                 .contract(xvec.extract_image_patches(filterWidth, filterHeight, 1, 1,
                                                             1, 1, strideX,
                                                             strideY, padTop,

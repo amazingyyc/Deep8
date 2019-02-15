@@ -1,4 +1,4 @@
-#include "utils/TensorUtils.h"
+#include "utils/ShapeUtils.h"
 #include "math/Add.h"
 
 namespace Deep8 {
@@ -108,14 +108,14 @@ void AddGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, con
 
 template <typename T>
 void AddCPUImpl(CPUDevice *device,
-                const T *x, Shape &xshape,
-                const T *y, Shape &yshape,
-                      T *z, Shape &zshape) {
+                T *x, const Shape &xshape,
+                T *y, const Shape &yshape,
+                T *z, const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
-    xarray = enlargeShapeToMaxDim(xshape);
-    yarray = enlargeShapeToMaxDim(yshape);
-    zarray = enlargeShapeToMaxDim(zshape);
+    auto xarray = enlargeShapeToMaxDim(xshape);
+    auto yarray = enlargeShapeToMaxDim(yshape);
+    auto zarray = enlargeShapeToMaxDim(zshape);
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int) xshape.size());
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, (int) yshape.size());
@@ -147,7 +147,7 @@ void AddCPUImpl(CPUDevice *device,
 }
 
 void AddCPU(const Tensor &x, const Tensor &y, Tensor &z) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {
     case DType::Float32:
@@ -166,7 +166,7 @@ void AddCPU(const Tensor &x, const Tensor &y, Tensor &z) {
  * calculate the grad for Add
  */
 template <typename T, int diffCount>
-void AddGradCPUImpl(CPUDevice *device, T *dxy, Shape &xyshape, const T *dz, Shape &zshape) {
+void AddGradCPUImpl(CPUDevice *device, T *dxy, const Shape &xyshape, T *dz, const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxyvec(dxy, (int)xyshape.size());
@@ -203,27 +203,29 @@ void AddGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, 
         }
     }
 
+    auto device = (CPUDevice*) dx.device();
+
     switch (x.type.id) {
     case DType::Float32:
         
         switch (diffCout) {
         case 0:
-            AddGradCPUImpl<float, 0>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 0>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 1:
-            AddGradCPUImpl<float, 1>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 1>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 2:
-            AddGradCPUImpl<float, 2>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 2>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 3:
-            AddGradCPUImpl<float, 3>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 3>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 4:
-            AddGradCPUImpl<float, 4>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 4>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 5:
-            AddGradCPUImpl<float, 5>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 5>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -235,22 +237,22 @@ void AddGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, 
         
         switch (diffCout) {
         case 0:
-            AddGradCPUImpl<double, 0>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 0>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 1:
-            AddGradCPUImpl<double, 1>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 1>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 2:
-            AddGradCPUImpl<double, 2>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 2>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 3:
-            AddGradCPUImpl<double, 3>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 3>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 4:
-            AddGradCPUImpl<double, 4>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 4>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 5:
-            AddGradCPUImpl<double, 5>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 5>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -276,27 +278,29 @@ void AddGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, 
         }
     }
 
+    auto device = (CPUDevice*) dy.device();
+
     switch (x.type.id) {
     case DType::Float32:
 
         switch (diffCount) {
         case 0:
-            AddGradCPUImpl<float, 0>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 0>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 1:
-            AddGradCPUImpl<float, 1>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 1>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 2:
-            AddGradCPUImpl<float, 2>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 2>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 3:
-            AddGradCPUImpl<float, 3>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 3>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 4:
-            AddGradCPUImpl<float, 4>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 4>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 5:
-            AddGradCPUImpl<float, 5>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            AddGradCPUImpl<float, 5>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -308,22 +312,22 @@ void AddGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, 
 
         switch (diffCount) {
         case 0:
-            AddGradCPUImpl<double, 0>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 0>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 1:
-            AddGradCPUImpl<double, 1>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 1>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 2:
-            AddGradCPUImpl<double, 2>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 2>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 3:
-            AddGradCPUImpl<double, 3>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 3>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 4:
-            AddGradCPUImpl<double, 4>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 4>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 5:
-            AddGradCPUImpl<double, 5>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            AddGradCPUImpl<double, 5>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");

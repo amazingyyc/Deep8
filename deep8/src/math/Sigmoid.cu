@@ -1,3 +1,6 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
 #include "math/Sigmoid.h"
 
 namespace Deep8 {
@@ -6,7 +9,7 @@ namespace Math {
 template <typename T>
 struct SigmoidKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x) {
-        return CuMath::cuSigmoid(x);
+        return cudaSigmoid(x);
     }
 };
 

@@ -1,4 +1,4 @@
-#include "Node.h"
+#include "nodes/Node.h"
 
 namespace Deep8 {
 

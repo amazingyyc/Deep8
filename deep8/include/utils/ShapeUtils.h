@@ -1,6 +1,9 @@
 #ifndef DEEP8_SHAPEUTILS_H
 #define DEEP8_SHAPEUTILS_H
 
+#include "basic/Basic.h"
+#include "model/Shape.h"
+
 namespace Deep8 {
 
 /**
@@ -38,7 +41,7 @@ inline Shape broadcastShape(const Shape &shape1, const Shape &shape2) {
 inline Eigen::array<int, MAX_TENSOR_DIMS + 1> enlargeShapeToMaxDim(const Shape &shape) {
     DEEP8_ARGUMENT_CHECK(MAX_TENSOR_DIMS >= shape.nDims && shape.nDims >= 1, "the dim is error");
 
-    Eigen::array<int64_t, MAX_TENSOR_DIMS + 1> dims;
+    Eigen::array<int, MAX_TENSOR_DIMS + 1> dims;
     dims[0] = (int) shape.batch;
 
     for (int i = MAX_TENSOR_DIMS, j = (int)shape.nDims - 1; i > 0; --i, --j) {

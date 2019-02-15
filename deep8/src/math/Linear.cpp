@@ -42,7 +42,7 @@ void LinearGrad(const Tensor &x, Tensor &dx, const float a, const float b, const
 }
 
 template <typename T>
-void LinearCPUImpl(CPUDEvice *device, const T *x, const Shape &xshape, const T a, const T b, T *y, const Shape &yshape) {
+void LinearCPUImpl(CPUDevice *device, T *x, const Shape &xshape, const T a, const T b, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
@@ -56,10 +56,10 @@ void LinearCPU(const Tensor &x, const float a, const float b, Tensor &y) {
 
     switch (x.type.id) {
     case DType::Float32:
-        LinearCPUImpl<float>(device, x.data<float>(), x.shape, a, b, y.data<float>, y.shape);
+        LinearCPUImpl<float>(device, x.data<float>(), x.shape, a, b, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        LinearCPUImpl<double>(device, x.data<double>(), x.shape, double(a), double(b), y.data<double>, y.shape);
+        LinearCPUImpl<double>(device, x.data<double>(), x.shape, double(a), double(b), y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
@@ -68,7 +68,7 @@ void LinearCPU(const Tensor &x, const float a, const float b, Tensor &y) {
 }
 
 template <typename T>
-void LinearGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape, const T a, const T b, const T *y, const T *dy, const Shape &yshape) {
+void LinearGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, const T a, const T b, T *y, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, (int)xshape.size());
@@ -78,13 +78,14 @@ void LinearGradCPUImpl(CPUDevice *device, const T *x, T *dx, const Shape &xshape
 }
 
 void LinearGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
+    switch (x.type.id) {
     case DType::Float32:
-        LinearGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.sahpe, a, b, y.data<float>(), dy.data<float>, y.shape);
+        LinearGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, a, b, y.data<float>(), dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        LinearGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, double(a), double(b), y.data<double>(), dy.data<double>, y.shape);
+        LinearGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, double(a), double(b), y.data<double>(), dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");

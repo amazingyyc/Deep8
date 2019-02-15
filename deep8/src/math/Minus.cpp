@@ -1,3 +1,4 @@
+#include "utils/ShapeUtils.h"
 #include "math/Minus.h"
 
 namespace Deep8 {
@@ -105,12 +106,12 @@ void MinusGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, c
 
 /**z = x - y*/
 template <typename T>
-void MinusCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, const T *y, const Shape &yshape, T *z, const Shape &zshape) {
+void MinusCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape, T *z, const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
-    xarray = enlargeShapeToMaxDim(xshape);
-    yarray = enlargeShapeToMaxDim(yshape);
-    zarray = enlargeShapeToMaxDim(zshape);
+    auto xarray = enlargeShapeToMaxDim(xshape);
+    auto yarray = enlargeShapeToMaxDim(yshape);
+    auto zarray = enlargeShapeToMaxDim(zshape);
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int) xshape.size());
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, (int) yshape.size());
@@ -142,7 +143,7 @@ void MinusCPUImpl(CPUDevice *device, const T *x, const Shape &xshape, const T *y
 }
 
 void MinusCPU(const Tensor &x, const Tensor &y, Tensor &z) {
-    auto device = x.device();
+    auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {
     case DType::Float32:
@@ -162,7 +163,7 @@ template <typename T, int diffCount>
 void MinusGradXCPUImpl( CPUDevice *device, 
                         T *dx, 
                         const Shape &xshape, 
-                        const T *dz, 
+                        T *dz, 
                         const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
@@ -200,27 +201,29 @@ void MinusGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z
         }
     }
 
+    auto device = (CPUDevice*)dx.device();
+
     switch (x.type.id) {
     case DType::Float32:
         
         switch (diffCout) {
         case 0:
-            MinusGradXCPUImpl<float, 0>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            MinusGradXCPUImpl<float, 0>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 1:
-            MinusGradXCPUImpl<float, 1>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            MinusGradXCPUImpl<float, 1>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 2:
-            MinusGradXCPUImpl<float, 2>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            MinusGradXCPUImpl<float, 2>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 3:
-            MinusGradXCPUImpl<float, 3>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            MinusGradXCPUImpl<float, 3>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 4:
-            MinusGradXCPUImpl<float, 4>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            MinusGradXCPUImpl<float, 4>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         case 5:
-            MinusGradXCPUImpl<float, 5>(dx.device(), dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
+            MinusGradXCPUImpl<float, 5>(device, dx.data<float>(), dx.shape, dz.data<float>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -232,22 +235,22 @@ void MinusGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z
         
         switch (diffCout) {
         case 0:
-            MinusGradXCPUImpl<double, 0>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            MinusGradXCPUImpl<double, 0>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 1:
-            MinusGradXCPUImpl<double, 1>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            MinusGradXCPUImpl<double, 1>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 2:
-            MinusGradXCPUImpl<double, 2>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            MinusGradXCPUImpl<double, 2>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 3:
-            MinusGradXCPUImpl<double, 3>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            MinusGradXCPUImpl<double, 3>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 4:
-            MinusGradXCPUImpl<double, 4>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            MinusGradXCPUImpl<double, 4>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         case 5:
-            MinusGradXCPUImpl<double, 5>(dx.device(), dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
+            MinusGradXCPUImpl<double, 5>(device, dx.data<double>(), dx.shape, dz.data<double>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -265,7 +268,7 @@ template <typename T, int diffCount>
 void MinusGradYCPUImpl( CPUDevice *device, 
                         T *dy, 
                         const Shape &yshape, 
-                        const T *dz, 
+                        T *dz, 
                         const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
@@ -288,7 +291,7 @@ void MinusGradYCPUImpl( CPUDevice *device,
         }
     }
 
-    dyvec.reshape(xarray).device(*eigenDevice) -= dzvec.reshape(zarray).sum(sumDims).reshape(yarray);
+    dyvec.reshape(yarray).device(*eigenDevice) -= dzvec.reshape(zarray).sum(sumDims).reshape(yarray);
 }
 
 void MinusGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {
@@ -303,27 +306,29 @@ void MinusGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z
         }
     }
 
+    auto device = (CPUDevice*) dy.device();
+
     switch (x.type.id) {
     case DType::Float32:
 
         switch (diffCount) {
         case 0:
-            MinusGradYCPUImpl<float, 0>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            MinusGradYCPUImpl<float, 0>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 1:
-            MinusGradYCPUImpl<float, 1>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            MinusGradYCPUImpl<float, 1>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 2:
-            MinusGradYCPUImpl<float, 2>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            MinusGradYCPUImpl<float, 2>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 3:
-            MinusGradYCPUImpl<float, 3>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            MinusGradYCPUImpl<float, 3>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 4:
-            MinusGradYCPUImpl<float, 4>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            MinusGradYCPUImpl<float, 4>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         case 5:
-            MinusGradYCPUImpl<float, 5>(dy.device(), dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
+            MinusGradYCPUImpl<float, 5>(device, dy.data<float>(), dy.shape, dz.data<float>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");
@@ -335,22 +340,22 @@ void MinusGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z
 
         switch (diffCount) {
         case 0:
-            MinusGradYCPUImpl<double, 0>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            MinusGradYCPUImpl<double, 0>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 1:
-            MinusGradYCPUImpl<double, 1>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            MinusGradYCPUImpl<double, 1>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 2:
-            MinusGradYCPUImpl<double, 2>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            MinusGradYCPUImpl<double, 2>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 3:
-            MinusGradYCPUImpl<double, 3>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            MinusGradYCPUImpl<double, 3>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 4:
-            MinusGradYCPUImpl<double, 4>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            MinusGradYCPUImpl<double, 4>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         case 5:
-            MinusGradYCPUImpl<double, 5>(dy.device(), dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
+            MinusGradYCPUImpl<double, 5>(device, dy.data<double>(), dy.shape, dz.data<double>(), dz.shape);
             break;
         default:
             DEEP8_RUNTIME_ERROR("the shape is error");

@@ -1,8 +1,8 @@
 #ifndef DEEP8_MEMORYALLOCATOR_H
 #define DEEP8_MEMORYALLOCATOR_H
 
-#include "Basic.h"
-#include "Exception.h"
+#include "basic/Basic.h"
+#include "basic/Exception.h"
 
 namespace Deep8 {
 

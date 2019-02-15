@@ -32,3 +32,5 @@ void SquareGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
 
 }
 }
+
+#endif

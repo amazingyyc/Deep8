@@ -1,5 +1,5 @@
 #include "math/Minus.h"
-#include "Minus.h"
+#include "nodes/Minus.h"
 
 namespace Deep8 {
 

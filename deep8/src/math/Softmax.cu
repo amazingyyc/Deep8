@@ -1,3 +1,6 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
 #include "math/Softmax.h"
 
 namespace Deep8 {
@@ -6,7 +9,7 @@ namespace Math {
 template <typename T>
 struct SoftmaxMaxKernelOp {
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
-		return CuMath::cuMinValue<T>();
+		return cudaMinValue<T>();
 	}
 
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init(T ret, T cur) {
@@ -25,7 +28,7 @@ struct SoftmaxMaxKernelOp {
 template <typename T>
 struct SoftmaxExpMinusKernelOp {
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y) {
-		return CuMath::cuExp(x - y);
+		return cudaExp(x - y);
 	}
 };
 
