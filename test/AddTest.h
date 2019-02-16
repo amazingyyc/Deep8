@@ -1,7 +1,7 @@
 #ifndef DEEP8_ADDTEST_H
 #define DEEP8_ADDTEST_H
 
-#include "Add.h"
+#include "nodes/Add.h"
 
 namespace Deep8 {
 
@@ -11,65 +11,58 @@ namespace Deep8 {
 TEST(Add, forwardCPU_float) {
 	CPUDevice device;
 
-    auto t1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
-    auto t2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
-    auto t3 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto t1 = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto t2 = createTensor(device, ElementType::from<float>(),  1, {200});
+    auto t3 = createTensor(device, ElementType::from<float>(), 10, {500, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar2 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    Add<float> add(inputs);
+    Add add(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&t1, &t2};
+    std::vector<const Tensor*> inputTensor = {&t1, &t2};
 
-    add.forwardCPU(inputTensor, &t3);
+    add.forward(inputTensor, &t3);
 
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {
             for (int k = 0; k < 200; ++k) {
-                ASSERT_EQ(t1.data()[i * 500 * 200 + j * 200 + k] + t2.data()[k], t3.data()[i * 500 * 200 + j * 200 + k]);
+                ASSERT_EQ(t1.data<float>()[i * 500 * 200 + j * 200 + k] + t2.data<float>()[k], t3.data<float>()[i * 500 * 200 + j * 200 + k]);
             }
         }
     }
-
-    freeTensor<CPUDevice, float>(device, t1);
-    freeTensor<CPUDevice, float>(device, t2);
-    freeTensor<CPUDevice, float>(device, t3);
-
-    freeFakeVariable(inputVar1);
-    freeFakeVariable(inputVar2);
 }
 
 TEST(Add, backwardCPU_float) {
 	CPUDevice device;
 
-    auto inputValue1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
-    auto inputValue2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
+    auto inputValue1 = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto inputValue2 = createTensor(device, ElementType::from<float>(), 1, {200});
 
-    auto inputGrad1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
-    auto inputGrad2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
+    auto inputGrad1 = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto inputGrad2 = createTensor(device, ElementType::from<float>(), 1, {200});
 
-    auto outputValue = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
-    auto outputGrad  = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto outputValue = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), 10, {500, 200});
 
     /**create fake Add Function*/
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar2 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    Add<float> add(inputs);
+    Add add(inputs);
 
     zeroTensor(device, inputGrad1);
     zeroTensor(device, inputGrad2);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue1, &inputValue2};
+    std::vector<const Tensor*> inputValues = {&inputValue1, &inputValue2};
 
-    add.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
-    add.backwardCPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad2);
+    add.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
+    add.backward(inputValues, &outputValue, &outputGrad, 1, &inputGrad2);
 
     for (int i = 0; i < 10 * 500 * 200; ++i) {
-        ASSERT_EQ(inputGrad1.data()[i], outputGrad.data()[i]);
+        ASSERT_EQ(inputGrad1.data<float>()[i], outputGrad.data<float>()[i]);
     }
 
     for (int i = 0; i < 200; ++i) {
@@ -77,22 +70,12 @@ TEST(Add, backwardCPU_float) {
 
         for (int m = 0; m < 10; ++m) {
             for (int n = 0; n < 500; ++n) {
-                temp += outputGrad.data()[m * 500 * 200 + n * 200 + i];
+                temp += outputGrad.data<float>()[m * 500 * 200 + n * 200 + i];
             }
         }
 
-        ASSERT_EQ(inputGrad2.data()[i], temp);
+        ASSERT_EQ(inputGrad2.data<float>()[i], temp);
     }
-
-    freeTensor<CPUDevice, float>(device, inputValue1);
-    freeTensor<CPUDevice, float>(device, inputValue2);
-    freeTensor<CPUDevice, float>(device, inputGrad1);
-    freeTensor<CPUDevice, float>(device, inputGrad2);
-    freeTensor<CPUDevice, float>(device, outputValue);
-    freeTensor<CPUDevice, float>(device, outputGrad);
-
-    freeFakeVariable(inputVar1);
-    freeFakeVariable(inputVar2);
 }
 
 #ifdef HAVE_CUDA

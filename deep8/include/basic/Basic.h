@@ -42,4 +42,7 @@
 /**define the byte type*/
 typedef unsigned char byte;
 
+#define private public
+#define protected public
+
 #endif

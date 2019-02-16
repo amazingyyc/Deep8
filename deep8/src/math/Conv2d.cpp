@@ -31,7 +31,7 @@ void Conv2d(const Tensor &x,
     int outputHeight;
     int outputWidth;
 
-    if (convered) {
+    if (!convered) {
         outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
         outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
     } else {
@@ -88,7 +88,7 @@ void Conv2dGradX(const Tensor& x,
     int outputHeight;
     int outputWidth;
 
-    if (convered) {
+    if (!convered) {
         outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
         outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
     } else {
@@ -144,7 +144,7 @@ void Conv2dGradY(const Tensor &x,
     int outputHeight;
     int outputWidth;
 
-    if (convered) {
+    if (!convered) {
         outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
         outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
     } else {

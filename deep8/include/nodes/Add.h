@@ -8,7 +8,6 @@ namespace Deep8 {
 /**
  * Z = X + Y
  */
-
 class Add: public Function {
 public:
 	explicit Add(std::vector<Node *> &inputs);

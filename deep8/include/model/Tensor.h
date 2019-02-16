@@ -69,14 +69,14 @@ public:
 
     template <typename T>
     T* data() {
-        DEEP8_ARGUMENT_CHECK(type.is<T>(), "Tensor type is error, type is: " << type.elementName());
+        DEEP8_ARGUMENT_CHECK(type.is<T>(), "Tensor type is error, type is: " << type.name);
 
         return (T*) (this->raw());
     }
 
     template <typename T>
     T* data() const {
-        DEEP8_ARGUMENT_CHECK(type.is<T>(), "Tensor type is error, type is: " << type.elementName());
+        DEEP8_ARGUMENT_CHECK(type.is<T>(), "Tensor type is error, type is: " << type.name);
 
         return (T*)(this->raw());
     }

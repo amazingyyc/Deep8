@@ -54,7 +54,7 @@ bool Tensor::isScalar() {
 }
 
 void Tensor::zero() {
-	storage.device->zero(this->raw(), type.elementSize() * shape.size());
+	storage.device->zero(this->raw(), type.byteWidth * shape.size());
 }
 
 void Tensor::one() {

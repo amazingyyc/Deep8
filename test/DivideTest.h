@@ -1,81 +1,74 @@
 #ifndef DEEP8_DIVIDETEST_H
 #define DEEP8_DIVIDETEST_H
 
-#include "Divide.h"
+#include "nodes/Divide.h"
 
 namespace Deep8 {
 
 TEST(Divide, forwardCPU) {
 	CPUDevice device;
 
-    auto t1 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
-    auto t2 = createTensor<CPUDevice, float>(device, size_t(1), size_t(200));
-    auto t3 = createTensor<CPUDevice, float>(device, size_t(10), size_t(500), size_t(200));
+    auto t1 = createTensor(device, ElementType::from<float>(), size_t(10), {size_t(500), size_t(200)});
+    auto t2 = createTensor(device, ElementType::from<float>(), size_t(1), {size_t(200)});
+    auto t3 = createTensor(device, ElementType::from<float>(), size_t(10), {size_t(500), size_t(200)});
 
     for (int i = 0; i < 200; ++i) {
-        if (t2.data()[i] == 0) {
-            t2.data()[i] = 1.0;
+        if (t2.data<float>()[i] == 0) {
+            t2.data<float>()[i] = 1.0;
         }
     }
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar2 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    Divide<float> divide(inputs);
+    Divide divide(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&t1, &t2};
+    std::vector<const Tensor*> inputTensor = {&t1, &t2};
 
-    divide.forwardCPU(inputTensor, &t3);
+    divide.forward(inputTensor, &t3);
 
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {
             for (int k = 0; k < 200; ++k) {
-                ASSERT_EQ(t1.data()[i * 500 * 200 + j * 200 + k] / t2.data()[k], t3.data()[i * 500 * 200 + j * 200 + k]);
+                ASSERT_EQ(t1.data<float>()[i * 500 * 200 + j * 200 + k] / t2.data<float>()[k], t3.data<float>()[i * 500 * 200 + j * 200 + k]);
             }
         }
     }
-
-    freeTensor<CPUDevice, float>(device, t1);
-    freeTensor<CPUDevice, float>(device, t2);
-    freeTensor<CPUDevice, float>(device, t3);
-
-    freeFakeVariable(inputVar1);
-    freeFakeVariable(inputVar2);
 }
 
 TEST(Divide, backwardCPU) {
 	CPUDevice device;
 
-    auto inputValue0 = createTensor<CPUDevice, double>(device, size_t(10), size_t(100), size_t(200));
-    auto inputValue1 = createTensor<CPUDevice, double>(device, size_t(1), size_t(200));
+    auto inputValue0 = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(100), size_t(200)});
+    auto inputValue1 = createTensor(device, ElementType::from<double>(), size_t(1), {size_t(200)});
 
-    auto inputGrad0 = createTensor<CPUDevice, double>(device, size_t(10), size_t(100), size_t(200));
-    auto inputGrad1 = createTensor<CPUDevice, double>(device, size_t(1), size_t(200));
+    auto inputGrad0 = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(100), size_t(200)});
+    auto inputGrad1 = createTensor(device, ElementType::from<double>(), size_t(1), {size_t(200)});
 
-    auto outputValue = createTensor<CPUDevice, double>(device, size_t(10), size_t(100), size_t(200));
-    auto outputGrad  = createTensor<CPUDevice, double>(device, size_t(10), size_t(100), size_t(200));
+    auto outputValue = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(100), size_t(200)});
+    auto outputGrad  = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(100), size_t(200)});
 
     for (int i = 0; i < 200; ++i) {
-        if (inputValue1.data()[i] == 0) {
-            inputValue1.data()[i] = 1.0;
+        if (inputValue1.data<double>()[i] == 0) {
+            inputValue1.data<double>()[i] = 1.0;
         }
     }
 
     /**create fake Add Function*/
-    auto inputVar0 = createFakeVariable<CPUDevice, double>(device);
-    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
+    auto inputVar0 = createFakeVariable(device, ElementType::from<double>());
+    auto inputVar1 = createFakeVariable(device, ElementType::from<double>());
 
     std::vector<Node*> inputs = {&inputVar0, &inputVar1};
-    Divide<double> divide(inputs);
+    Divide divide(inputs);
 
     zeroTensor(device, inputGrad0);
     zeroTensor(device, inputGrad1);
 
-    std::vector<const Tensor<double>*> inputValues = {&inputValue0, &inputValue1};
+    std::vector<const Tensor*> inputValues = {&inputValue0, &inputValue1};
 
-    divide.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
-    divide.backwardCPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
+    divide.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
+    divide.backward(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
 
     /**
      * test inputGrad0
@@ -83,7 +76,7 @@ TEST(Divide, backwardCPU) {
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 100; ++j) {
             for (int k = 0; k < 200; ++k) {
-                ASSERT_EQ(inputGrad0.data()[i * 100 * 200 + j * 200 + k], outputGrad.data()[i * 100 * 200 + j * 200 + k] / inputValue1.data()[k]);
+                ASSERT_EQ(inputGrad0.data<double>()[i * 100 * 200 + j * 200 + k], outputGrad.data<double>()[i * 100 * 200 + j * 200 + k] / inputValue1.data<double>()[k]);
             }
         }
     }
@@ -96,22 +89,12 @@ TEST(Divide, backwardCPU) {
 
         for (int m = 0; m < 10; ++m) {
             for (int n = 0; n < 100; ++n) {
-                temp += (outputGrad.data()[m * 100 * 200 + n * 200 + i] * -1 * inputValue0.data()[m * 100 * 200 + n * 200 + i] / (inputValue1.data()[i] * inputValue1.data()[i]));
+                temp += (outputGrad.data<double>()[m * 100 * 200 + n * 200 + i] * -1 * inputValue0.data<double>()[m * 100 * 200 + n * 200 + i] / (inputValue1.data<double>()[i] * inputValue1.data<double>()[i]));
             }
         }
 
-        ASSERT_TRUE(std::abs(inputGrad1.data()[i] - temp) < 1e-6);
+        ASSERT_TRUE(std::abs(inputGrad1.data<double>()[i] - temp) < 1e-6);
     }
-
-    freeTensor<CPUDevice, double>(device, inputValue0);
-    freeTensor<CPUDevice, double>(device, inputValue1);
-    freeTensor<CPUDevice, double>(device, inputGrad0);
-    freeTensor<CPUDevice, double>(device, inputGrad1);
-    freeTensor<CPUDevice, double>(device, outputValue);
-    freeTensor<CPUDevice, double>(device, outputGrad);
-
-    freeFakeVariable(inputVar0);
-    freeFakeVariable(inputVar1);
 }
 
 #ifdef HAVE_CUDA

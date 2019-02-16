@@ -8,7 +8,6 @@ namespace Deep8 {
 /**
  * y = |x|
  */
-
 class Abs: public Function {
 public:
 	explicit Abs(std::vector<Node *> &inputs);

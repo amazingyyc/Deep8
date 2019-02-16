@@ -1,7 +1,7 @@
 #ifndef DEEP8_DECONV2DTEST_H
 #define DEEP8_DECONV2DTEST_H
 
-#include "DeConv2d.h"
+#include "nodes/DeConv2d.h"
 
 namespace Deep8 {
 
@@ -25,19 +25,19 @@ TEST(DeConv2d, forwardCPU) {
 
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-    auto filter = createTensor<CPUDevice, float>(device, 1, outputChannel, filterH,  filterW, inputChannel);
-    auto output = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
+    auto input  = createTensor(device, ElementType::from<float>(), batch, {inputHeight, inputWidth, inputChannel});
+    auto filter = createTensor(device, ElementType::from<float>(), 1, {outputChannel, filterH,  filterW, inputChannel});
+    auto output = createTensor(device, ElementType::from<float>(), batch, {outputHeight, outputWidth, outputChannel});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device, { 1,  size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>(), size_t(batch), {size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
+    auto inputVar2 = createFakeVariable(device, ElementType::from<float>(),  1,  {size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    DeConv2d<float> transposeConv2d(inputs, isCovered, size_t(strideY), size_t(strideX));
+    DeConv2d transposeConv2d(inputs, isCovered, size_t(strideY), size_t(strideX));
 
-    std::vector<const Tensor<float>*> inputTensor = {&input, &filter};
+    std::vector<const Tensor*> inputTensor = {&input, &filter};
 
-    transposeConv2d.forwardCPU(inputTensor, &output);
+    transposeConv2d.forward(inputTensor, &output);
 
     int64_t padH = std::max<int64_t>(0, outputHeight + filterH - (inputHeight - 1) * static_cast<int64_t>(strideY) - 2);
     int64_t padW = std::max<int64_t>(0, outputWidth + filterW - (inputWidth - 1) * static_cast<int64_t>(strideX) - 2);
@@ -71,24 +71,17 @@ TEST(DeConv2d, forwardCPU) {
                             }
 
                             for (int64_t k = 0; k < inputChannel; ++k) {
-                                temp += input.data()[b * inputHeight * inputWidth * inputChannel + realInY * inputWidth * inputChannel + realInX * inputChannel + k]
-                                        * filter.data()[c * filterH * filterW * inputChannel + y * filterW * inputChannel + x * inputChannel + k];
+                                temp += input.data<float>()[b * inputHeight * inputWidth * inputChannel + realInY * inputWidth * inputChannel + realInX * inputChannel + k]
+                                        * filter.data<float>()[c * filterH * filterW * inputChannel + y * filterW * inputChannel + x * inputChannel + k];
                             }
                         }
                     }
 
-                    ASSERT_EQ(temp, output.data()[b * outputHeight * outputWidth * outputChannel + h * outputWidth * outputChannel + w * outputChannel + c]);
+                    ASSERT_EQ(temp, output.data<float>()[b * outputHeight * outputWidth * outputChannel + h * outputWidth * outputChannel + w * outputChannel + c]);
                 }
             }
         }
     }
-
-    freeTensor(device, input);
-    freeTensor(device, filter);
-    freeTensor(device, output);
-
-	freeFakeVariable(inputVar1);
-	freeFakeVariable(inputVar2);
 }
 
 TEST(DeConv2d, backwardCPU) {
@@ -111,27 +104,27 @@ TEST(DeConv2d, backwardCPU) {
 
 	CPUDevice device;
 
-	auto input = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-	auto filter = createTensor<CPUDevice, float>(device, 1, outputChannel, filterH, filterW, inputChannel);
-	auto output = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
+	auto input  = createTensor(device,ElementType::from<float>(), batch, {inputHeight, inputWidth, inputChannel});
+	auto filter = createTensor(device,ElementType::from<float>(), 1, {outputChannel, filterH, filterW, inputChannel});
+	auto output = createTensor(device,ElementType::from<float>(), batch, {outputHeight, outputWidth, outputChannel});
 
-    auto inputGrad  = createTensor<CPUDevice, float>(device, batch, inputHeight, inputWidth, inputChannel);
-    auto filterGrad = createTensor<CPUDevice, float>(device, 1, outputChannel, filterH,  filterW, inputChannel);
-    auto outputGrad = createTensor<CPUDevice, float>(device, batch, outputHeight, outputWidth, outputChannel);
+    auto inputGrad  = createTensor(device, ElementType::from<float>(), batch, {inputHeight, inputWidth, inputChannel});
+    auto filterGrad = createTensor(device, ElementType::from<float>(), 1, {outputChannel, filterH,  filterW, inputChannel});
+    auto outputGrad = createTensor(device, ElementType::from<float>(), batch, {outputHeight, outputWidth, outputChannel});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device, {size_t(batch), size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device, { 1, size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>(), size_t(batch), {size_t(inputHeight), size_t(inputWidth), size_t(inputChannel)});
+    auto inputVar2 = createFakeVariable(device, ElementType::from<float>(),  1, {size_t(outputChannel), size_t(filterH),  size_t(filterW), size_t(inputChannel)});
 
     zeroTensor(device, inputGrad);
     zeroTensor(device, filterGrad);
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    DeConv2d<float> transposeConv2d(inputs, isCovered, size_t(strideH), size_t(strideW));
+    DeConv2d transposeConv2d(inputs, isCovered, size_t(strideH), size_t(strideW));
 
-    std::vector<const Tensor<float>*> inputTensor = {&input, &filter};
+    std::vector<const Tensor*> inputTensor = {&input, &filter};
 
-    transposeConv2d.backwardCPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
-    transposeConv2d.backwardCPU(inputTensor, &output, &outputGrad, 1, &filterGrad);
+    transposeConv2d.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
+    transposeConv2d.backward(inputTensor, &output, &outputGrad, 1, &filterGrad);
 
     int64_t padH = std::max<int64_t>(0, outputHeight + filterH - (inputHeight - 1) * static_cast<int64_t>(strideH) - 2);
     int64_t padW = std::max<int64_t>(0, outputWidth + filterW - (inputWidth - 1) * static_cast<int64_t>(strideW) - 2);
@@ -153,7 +146,7 @@ TEST(DeConv2d, backwardCPU) {
             float temp = 0;
 
             for (int64_t k = 0; k < outputChannel; ++k) {
-                temp += outputGrad.data()[m * outputChannel + k] * filter.data()[k * filterH * filterW * inputChannel + n];
+                temp += outputGrad.data<float>()[m * outputChannel + k] * filter.data<float>()[k * filterH * filterW * inputChannel + n];
             }
 
             inputMat[m * filterH * filterW * inputChannel + n] = temp;
@@ -197,7 +190,7 @@ TEST(DeConv2d, backwardCPU) {
     }
 
     for (int64_t i = 0; i < batch * inputHeight * inputWidth * inputChannel; ++i) {
-        ASSERT_EQ(inputGradTemp[i], inputGrad.data()[i]);
+        ASSERT_EQ(inputGradTemp[i], inputGrad.data<float>()[i]);
     }
 
     /**
@@ -237,7 +230,7 @@ TEST(DeConv2d, backwardCPU) {
             }
 
             inputMat[row * filterH * filterW * inputChannel + col] =
-                    input.data()[b * inputHeight * inputWidth * inputChannel + realInH * inputWidth * inputChannel + realInW * inputChannel + inC];
+                    input.data<float>()[b * inputHeight * inputWidth * inputChannel + realInH * inputWidth * inputChannel + realInW * inputChannel + inC];
         }
     }
 
@@ -246,22 +239,12 @@ TEST(DeConv2d, backwardCPU) {
 			float temp = 0;
 
 			for (int64_t k = 0; k < batch * outputHeight * outputWidth; ++k) {
-				temp += inputMat[k * filterH * filterW * inputChannel + n] * outputGrad.data()[k * outputChannel + m];
+				temp += inputMat[k * filterH * filterW * inputChannel + n] * outputGrad.data<float>()[k * outputChannel + m];
 			}
 
-			ASSERT_EQ(temp, filterGrad.data()[m * filterH * filterW * inputChannel + n]);
+			ASSERT_EQ(temp, filterGrad.data<float>()[m * filterH * filterW * inputChannel + n]);
 		}
 	}
-
-    freeTensor(device, input);
-    freeTensor(device, filter);
-    freeTensor(device, output);
-    freeTensor(device, inputGrad);
-    freeTensor(device, filterGrad);
-    freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar1);
-	freeFakeVariable(inputVar2);
 
     device.free(inputMat);
     device.free(inputGradTemp);
