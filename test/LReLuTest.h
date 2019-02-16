@@ -1,79 +1,67 @@
 #ifndef DEEP8_LRELUTEST_H
 #define DEEP8_LRELUTEST_H
 
-#include "LReLu.h"
+#include "nodes/LReLu.h"
 
 namespace Deep8 {
 
 TEST(LReLu, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, 10, 400, 200);
-    auto output = createTensor<CPUDevice, float>(device, 10, 400, 200);
+    auto input  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto output = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     float a = 2.3;
 
     std::vector<Node*> inputs = {&inputVar1};
-    LReLu<float> lrelu(inputs, a);
+    LReLu lrelu(inputs, a);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    lrelu.forwardCPU(inputTensor, &output);
+    lrelu.forward(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        if (input.data()[i] < 0) {
-            ASSERT_EQ(input.data()[i] * a, output.data()[i]);
+        if (input.data<float>()[i] < 0) {
+            ASSERT_EQ(input.data<float>()[i] * a, output.data<float>()[i]);
         } else {
-            ASSERT_EQ(input.data()[i], output.data()[i]);
+            ASSERT_EQ(input.data<float>()[i], output.data<float>()[i]);
         }
     }
-
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-    freeFakeVariable(inputVar1);
 
 }
 
 TEST(LReLu, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
-	auto inputGrad = createTensor<CPUDevice, float>(device, 10, 400, 200);
+	auto inputValue = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto inputGrad  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-    auto outputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
-    auto outputGrad  = createTensor<CPUDevice, float>(device, 10, 400, 200);
+    auto outputValue = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar = createFakeVariable(device, ElementType::from<float>());
 
     float a = 2.3;
 
     std::vector<Node*> inputs = {&inputVar};
-    LReLu<float> lreLu(inputs, a);
+    LReLu lreLu(inputs, a);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue};
+    std::vector<const Tensor*> inputValues = {&inputValue};
 
-    lreLu.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+    lreLu.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        if (inputValue.data()[i] > 0) {
-            ASSERT_EQ(inputGrad.data()[i], outputGrad.data()[i]);
+        if (inputValue.data<float>()[i] > 0) {
+            ASSERT_EQ(inputGrad.data<float>()[i], outputGrad.data<float>()[i]);
         } else {
-            ASSERT_EQ(inputGrad.data()[i], outputGrad.data()[i] * a);
+            ASSERT_EQ(inputGrad.data<float>()[i], outputGrad.data<float>()[i] * a);
         }
     }
-
-    freeTensor(device, inputValue);
-    freeTensor(device, inputGrad);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-    freeFakeVariable(inputVar);
 }
 
 #ifdef HAVE_CUDA

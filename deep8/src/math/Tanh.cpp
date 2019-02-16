@@ -86,7 +86,7 @@ void TanhGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y, 
     dxvec.device(*eigenDevice) += dyvec.binaryExpr(yvec, TanhGradEigenExpr<T>());
 }
 
-void TanhGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
+void TanhGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {

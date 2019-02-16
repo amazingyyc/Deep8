@@ -2,82 +2,69 @@
 #define DEEP8_EXPTEST_H
 
 #include <cmath>
-#include "Exp.h"
+#include "nodes/Exp.h"
 
 namespace Deep8 {
 
 TEST(Exp, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
-    auto output = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
+    auto input  = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(400), size_t(200)});
+    auto output = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(400), size_t(200)});
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        if (input.data()[i] > 10) {
-            input.data()[i] = 10;
+        if (input.data<double>()[i] > 10) {
+            input.data<double>()[i] = 10;
         }
     }
 
-    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<double>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    Exp<double> expFunc(inputs);
+    Exp expFunc(inputs);
 
-    std::vector<const Tensor<double>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    expFunc.forwardCPU(inputTensor, &output);
+    expFunc.forward(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        ASSERT_TRUE(std::abs(std::exp(input.data()[i]) - output.data()[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(std::exp(input.data<double>()[i]) - output.data<double>()[i]) < 1e-6);
     }
-
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-    freeFakeVariable(inputVar1);
 }
 
 TEST(Exp, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
-	auto inputGrad = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
+	auto inputValue = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(400), size_t(200)});
+	auto inputGrad  = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(400), size_t(200)});
 
-    auto outputValue = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
-    auto outputGrad  = createTensor<CPUDevice, double>(device, size_t(10), size_t(400), size_t(200));
+    auto outputValue = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(400), size_t(200)});
+    auto outputGrad  = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(400), size_t(200)});
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        if (inputValue.data()[i] > 10) {
-            inputValue.data()[i] = 10;
+        if (inputValue.data<double>()[i] > 10) {
+            inputValue.data<double>()[i] = 10;
         }
     }
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, double>(device);
+    auto inputVar = createFakeVariable(device, ElementType::from<double>());
 
     std::vector<Node*> inputs = {&inputVar};
-    Exp<double> expFunc(inputs);
+    Exp expFunc(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<double>*> inputValues = {&inputValue};
+    std::vector<const Tensor*> inputValues = {&inputValue};
 
-    expFunc.forwardCPU(inputValues, &outputValue);
-    expFunc.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+    expFunc.forward(inputValues, &outputValue);
+    expFunc.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        double temp = std::exp(inputValue.data()[i]) * outputGrad.data()[i];
+        double temp = std::exp(inputValue.data<double>()[i]) * outputGrad.data<double>()[i];
 
-        ASSERT_TRUE(std::abs(temp - inputGrad.data()[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(temp - inputGrad.data<double>()[i]) < 1e-6);
     }
-
-    freeTensor(device, inputValue);
-    freeTensor(device, inputGrad);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-    freeFakeVariable(inputVar);
-
 }
 
 #ifdef HAVE_CUDA

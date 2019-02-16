@@ -1,36 +1,32 @@
 #ifndef DEEP8_LINEARTEST_H
 #define DEEP8_LINEARTEST_H
 
-#include "Linear.h"
+#include "nodes/Linear.h"
 
 namespace Deep8 {
 
 TEST(Linear, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, 10, 400, 200);
-    auto output = createTensor<CPUDevice, float>(device, 10, 400, 200);
+    auto input  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto output = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     float a = 2.0;
     float b = 3.5;
 
     std::vector<Node*> inputs = {&inputVar1};
-    Linear<float> linear(inputs, a, b);
+    Linear linear(inputs, a, b);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    linear.forwardCPU(inputTensor, &output);
+    linear.forward(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        ASSERT_EQ(input.data()[i] * a + b, output.data()[i]);
+        ASSERT_EQ(input.data<float>()[i] * a + b, output.data<float>()[i]);
     }
 
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-    freeFakeVariable(inputVar1);
 
 }
 

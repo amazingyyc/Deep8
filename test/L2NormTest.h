@@ -1,74 +1,62 @@
 #ifndef DEEP8_L2NORMTEST_H
 #define DEEP8_L2NORMTEST_H
 
-#include "L2Norm.h"
+#include "nodes/L2Norm.h"
 
 namespace Deep8 {
 
 TEST(L2Norm, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, double>(device, 10, 200);
-    auto output = createTensor<CPUDevice, double>(device, 1, 1);
+    auto input  = createTensor(device, ElementType::from<double>(), 10, {200});
+    auto output = createTensor(device, ElementType::from<double>(), 1, {1});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<double>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    L2Norm<double> l2Norm(inputs);
+    L2Norm l2Norm(inputs);
 
-    std::vector<const Tensor<double>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    l2Norm.forwardCPU(inputTensor, &output);
+    l2Norm.forward(inputTensor, &output);
 
 	double temp = 0;
 
 	for (int i = 0; i < 10 * 200; ++i) {
-		temp += input.data()[i] * input.data()[i];
+		temp += input.data<double>()[i] * input.data<double>()[i];
 	}
 
-	ASSERT_EQ(sqrt(temp), output.data()[0]);
-
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-	freeFakeVariable(inputVar1);
+	ASSERT_EQ(sqrt(temp), output.data<double>()[0]);
 
 }
 
 TEST(L2Norm, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, float>(device, 400, 200);
-	auto inputGrad = createTensor<CPUDevice, float>(device, 400, 200);
+	auto inputValue = createTensor(device, ElementType::from<float>(), 400, {200});
+	auto inputGrad = createTensor(device, ElementType::from<float>(), 400, {200});
 
-    auto outputValue = createTensor<CPUDevice, float>(device, 1, 1);
-    auto outputGrad  = createTensor<CPUDevice, float>(device, 1, 1);
+    auto outputValue = createTensor(device, ElementType::from<float>(), 1, {1});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), 1, {1});
 
-    auto inputVar = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar};
-    L2Norm<float> l2Norm(inputs);
+    L2Norm l2Norm(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue};
+    std::vector<const Tensor*> inputValues = {&inputValue};
 
-    l2Norm.forwardCPU(inputValues, &outputValue);
-    l2Norm.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+    l2Norm.forward(inputValues, &outputValue);
+    l2Norm.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
 
 	for (int i = 0; i < 400 * 200; ++i) {
-		auto temp = outputGrad.data()[0] / outputValue.data()[0];
+		auto temp = outputGrad.data<float>()[0] / outputValue.data<float>()[0];
 
-		ASSERT_EQ(temp * inputValue.data()[i], inputGrad.data()[i]);
+		ASSERT_EQ(temp * inputValue.data<float>()[i], inputGrad.data<float>()[i]);
 	}
-
-    freeTensor(device, inputValue);
-    freeTensor(device, inputGrad);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar);
 
 }
 

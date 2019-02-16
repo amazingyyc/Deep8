@@ -86,7 +86,7 @@ void LogGradCPUImpl(CPUDevice *device, T *x, T * dx, const Shape &xshape, T *y, 
     dxvec.device(*eigenDevice) += dyvec.binaryExpr(xvec, LogGradEigenExpr<T>());
 }
 
-void LogGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
+void LogGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {

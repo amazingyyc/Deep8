@@ -1,75 +1,63 @@
 #ifndef DEEP8_RELUTEST_H
 #define DEEP8_RELUTEST_H
 
-#include "ReLu.h"
+#include "nodes/ReLu.h"
 
 namespace Deep8 {
 
 TEST(ReLu, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, 10, 400, 200);
-    auto output = createTensor<CPUDevice, float>(device, 10, 400, 200);
+    auto input  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto output = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    ReLu<float> relu(inputs);
+    ReLu relu(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    relu.forwardCPU(inputTensor, &output);
+    relu.forward(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        if (input.data()[i] < 0) {
-            ASSERT_EQ(0, output.data()[i]);
+        if (input.data<float>()[i] < 0) {
+            ASSERT_EQ(0, output.data<float>()[i]);
         } else {
-            ASSERT_EQ(input.data()[i], output.data()[i]);
+            ASSERT_EQ(input.data<float>()[i], output.data<float>()[i]);
         }
     }
 
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-    freeFakeVariable(inputVar1);
 
 }
 
 TEST(ReLu, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
-	auto inputGrad = createTensor<CPUDevice, float>(device, 10, 400, 200);
+	auto inputValue  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto inputGrad   = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto outputValue = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto outputGrad  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-	auto outputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
-	auto outputGrad = createTensor<CPUDevice, float>(device, 10, 400, 200);
-
-    /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, float>(device);
+   	/**create fake Add Function*/
+    auto inputVar = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar};
-    ReLu<float> reLu(inputs);
+    ReLu reLu(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue};
+    std::vector<const Tensor*> inputValues = {&inputValue};
 
-    reLu.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+    reLu.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        if (inputValue.data()[i] > 0) {
-            ASSERT_EQ(inputGrad.data()[i], outputGrad.data()[i]);
+        if (inputValue.data<float>()[i] >= 0) {
+            ASSERT_EQ(inputGrad.data<float>()[i], outputGrad.data<float>()[i]);
         } else {
-            ASSERT_EQ(inputGrad.data()[i], 0);
+            ASSERT_EQ(inputGrad.data<float>()[i], 0);
         }
     }
-
-    freeTensor(device, inputValue);
-    freeTensor(device, inputGrad);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-    freeFakeVariable(inputVar);
 
 }
 

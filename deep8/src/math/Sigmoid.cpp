@@ -86,7 +86,7 @@ void SigmoidGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *
     dxvec.device(*eigenDevice) += dyvec.binaryExpr(yvec, SigmoidGradEigenExpr<T>());
 }
 
-void SigmoidGradCPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
+void SigmoidGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     auto device = (CPUDevice*) x.device();
 
     switch (x.type.id) {

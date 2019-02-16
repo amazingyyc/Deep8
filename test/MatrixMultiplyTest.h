@@ -1,31 +1,31 @@
 #ifndef DEEP8_MATRIXMULTIPLYTEST_H
 #define DEEP8_MATRIXMULTIPLYTEST_H
 
-#include "MatrixMultiply.h"
+#include "nodes/MatrixMultiply.h"
 
 namespace Deep8 {
 
 TEST(MatrixMultiply, forwardCPU) {
 	CPUDevice device;
 
-    auto input0 = createTensor<CPUDevice, float>(device, 10, 400, 200);
-    auto input1 = createTensor<CPUDevice, float>(device, 1,  200, 300);
-    auto output = createTensor<CPUDevice, float>(device, 10, 400, 300);
+    auto input0 = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto input1 = createTensor(device, ElementType::from<float>(), 1,  {200, 300});
+    auto output = createTensor(device, ElementType::from<float>(), 10, {400, 300});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar2 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    MatrixMultiply<float> mm(inputs);
+    MatrixMultiply mm(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input0, &input1};
+    std::vector<const Tensor*> inputTensor = {&input0, &input1};
 
-    mm.forwardCPU(inputTensor, &output);
+    mm.forward(inputTensor, &output);
 
     for (int b = 0; b < 10; ++b) {
-        auto inputPtr0 = input0.data() + b * 400 * 200;
-        auto inputPtr1 = input1.data();
-        auto outputPtr = output.data() + b * 400 * 300;
+        auto inputPtr0 = input0.data<float>() + b * 400 * 200;
+        auto inputPtr1 = input1.data<float>();
+        auto outputPtr = output.data<float>() + b * 400 * 300;
 
         for (int m = 0; m < 400; ++m) {
             for (int n = 0; n < 300; ++n) {
@@ -40,13 +40,6 @@ TEST(MatrixMultiply, forwardCPU) {
         }
     }
 
-    freeTensor(device, input0);
-    freeTensor(device, input1);
-    freeTensor(device, output);
-
-    freeFakeVariable(inputVar1);
-    freeFakeVariable(inputVar2);
-
 }
 
 TEST(MatrixMultiply, forwardCPU2) {
@@ -57,24 +50,24 @@ TEST(MatrixMultiply, forwardCPU2) {
 
 	CPUDevice device;
 
-    auto input0 = createTensor<CPUDevice, float>(device, 1, m, k);
-    auto input1 = createTensor<CPUDevice, float>(device, batch,  k, n);
-    auto output = createTensor<CPUDevice, float>(device, batch, m, n);
+    auto input0 = createTensor(device, ElementType::from<float>(), 1, {m, k});
+    auto input1 = createTensor(device, ElementType::from<float>(), batch,  {k, n});
+    auto output = createTensor(device, ElementType::from<float>(), batch, {m, n});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar2 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    MatrixMultiply<float> mm(inputs);
+    MatrixMultiply mm(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input0, &input1};
+    std::vector<const Tensor*> inputTensor = {&input0, &input1};
 
-    mm.forwardCPU(inputTensor, &output);
+    mm.forward(inputTensor, &output);
 
     for (int b = 0; b < batch; ++b) {
-        auto inputPtr0 = input0.data();
-        auto inputPtr1 = input1.data() + b * k * n;
-        auto outputPtr = output.data() + b * m * n;
+        auto inputPtr0 = input0.data<float>();
+        auto inputPtr1 = input1.data<float>() + b * k * n;
+        auto outputPtr = output.data<float>() + b * m * n;
 
         for (int i = 0; i < m; ++i) {
             for (int j = 0; j < n; ++j) {
@@ -89,48 +82,42 @@ TEST(MatrixMultiply, forwardCPU2) {
         }
     }
 
-    freeTensor(device, input0);
-    freeTensor(device, input1);
-    freeTensor(device, output);
-
-    freeFakeVariable(inputVar1);
-    freeFakeVariable(inputVar2);
 
 }
 
 TEST(MatrixMultiply, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue0 = createTensor<CPUDevice, float>(device, 10, 400, 200);
-	auto inputValue1 = createTensor<CPUDevice, float>(device, 1, 200, 300);
+	auto inputValue0 = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto inputValue1 = createTensor(device, ElementType::from<float>(), 1, {200, 300});
 
-	auto inputGrad0 = createTensor<CPUDevice, float>(device, 10, 400, 200);
-	auto inputGrad1 = createTensor<CPUDevice, float>(device, 1, 200, 300);
+	auto inputGrad0 = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto inputGrad1 = createTensor(device, ElementType::from<float>(), 1, {200, 300});
 
-    auto outputValue = createTensor<CPUDevice, float>(device, 10, 400, 300);
-    auto outputGrad  = createTensor<CPUDevice, float>(device, 10, 400, 300);
+    auto outputValue = createTensor(device, ElementType::from<float>(), 10, {400, 300});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), 10, {400, 300});
 
-    auto inputVar0 = createFakeVariable<CPUDevice, float>(device);
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar0 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar0, &inputVar1};
-    MatrixMultiply<float> matrixMultiply(inputs);
+    MatrixMultiply matrixMultiply(inputs);
 
     zeroTensor(device, inputGrad0);
     zeroTensor(device, inputGrad1);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue0, &inputValue1};
+    std::vector<const Tensor*> inputValues = {&inputValue0, &inputValue1};
 
-     matrixMultiply.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
-     matrixMultiply.backwardCPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
+     matrixMultiply.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
+     matrixMultiply.backward(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
 
     /**
      * test the inputGrad0
      */
      for (int b = 0; b < 10; ++b) {
-         auto inputGradPtr0 = inputGrad0.data() + b * 400 * 200;
-         auto inputPtr1 = inputValue1.data();
-         auto outputGradPtr = outputGrad.data() + b * 400 * 300;
+         auto inputGradPtr0 = inputGrad0.data<float>() + b * 400 * 200;
+         auto inputPtr1 = inputValue1.data<float>();
+         auto outputGradPtr = outputGrad.data<float>() + b * 400 * 300;
 
          for (int m = 0; m < 400; ++m) {
              for (int n = 0; n < 200; ++n) {
@@ -153,28 +140,19 @@ TEST(MatrixMultiply, backwardCPU) {
              float temp = 0;
 
              for (int b = 0; b < 10; ++b) {
-                 auto inputPtr0     = inputValue0.data() + b * 400 * 200;
-                 auto inputGradPtr1 = inputGrad1.data();
-                 auto outputGradPtr = outputGrad.data() + b * 400 * 300;
+                 auto inputPtr0     = inputValue0.data<float>() + b * 400 * 200;
+                 auto inputGradPtr1 = inputGrad1.data<float>();
+                 auto outputGradPtr = outputGrad.data<float>() + b * 400 * 300;
 
                  for (int k = 0; k < 400; ++k) {
                      temp += outputGradPtr[k * 300 + n] * inputPtr0[k * 200 + m];
                  }
              }
 
-             ASSERT_EQ(temp, inputGrad1.data()[m * 300 + n]);
+             ASSERT_EQ(temp, inputGrad1.data<float>()[m * 300 + n]);
          }
      }
 
-    freeTensor(device, inputValue0);
-    freeTensor(device, inputValue1);
-    freeTensor(device, inputGrad0);
-    freeTensor(device, inputGrad1);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-    freeFakeVariable(inputVar0);
-    freeFakeVariable(inputVar1);
 
 }
 
@@ -186,28 +164,28 @@ TEST(MatrixMultiply, backwardCPU2) {
 
 	CPUDevice device;
 
-    auto inputValue0 = createTensor<CPUDevice, float>(device, 1, m, k);
-    auto inputValue1 = createTensor<CPUDevice, float>(device, batch, k, n);
+    auto inputValue0 = createTensor(device, ElementType::from<float>(), 1, {m, k});
+    auto inputValue1 = createTensor(device, ElementType::from<float>(), batch, {k, n});
 
-    auto inputGrad0 = createTensor<CPUDevice, float>(device, 1, m, k);
-    auto inputGrad1 = createTensor<CPUDevice, float>(device, batch, k, n);
+    auto inputGrad0  = createTensor(device, ElementType::from<float>(), 1, {m, k});
+    auto inputGrad1  = createTensor(device, ElementType::from<float>(), batch, {k, n});
 
-    auto outputValue = createTensor<CPUDevice, float>(device, batch, m, n);
-    auto outputGrad  = createTensor<CPUDevice, float>(device, batch, m, n);
+    auto outputValue = createTensor(device, ElementType::from<float>(), batch, {m, n});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), batch, {m, n});
 
-    auto inputVar0 = createFakeVariable<CPUDevice, float>(device);
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar0 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar0, &inputVar1};
-    MatrixMultiply<float> matrixMultiply(inputs);
+    MatrixMultiply matrixMultiply(inputs);
 
     zeroTensor(device, inputGrad0);
     zeroTensor(device, inputGrad1);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue0, &inputValue1};
+    std::vector<const Tensor*> inputValues = {&inputValue0, &inputValue1};
 
-    matrixMultiply.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
-    matrixMultiply.backwardCPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
+    matrixMultiply.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
+    matrixMultiply.backward(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
 
     /**
      * test the inputGrad0
@@ -217,8 +195,8 @@ TEST(MatrixMultiply, backwardCPU2) {
 
     for (int b = 0; b < batch; ++b) {
         auto tempPtr0 = temp0;
-        auto inputPtr1 = inputValue1.data() + b * k * n;
-        auto outputGradPtr = outputGrad.data() + b * m * n;
+        auto inputPtr1 = inputValue1.data<float>() + b * k * n;
+        auto outputGradPtr = outputGrad.data<float>() + b * m * n;
 
         for (int i = 0; i < m; ++i) {
             for (int j = 0; j < k; ++j) {
@@ -231,7 +209,7 @@ TEST(MatrixMultiply, backwardCPU2) {
 
     for (int i = 0; i < m; ++i) {
         for (int j = 0; j < k; ++j) {
-            ASSERT_EQ(temp0[i * k + j], inputGrad0.data()[i * k + j]);
+            ASSERT_EQ(temp0[i * k + j], inputGrad0.data<float>()[i * k + j]);
         }
     }
 
@@ -239,9 +217,9 @@ TEST(MatrixMultiply, backwardCPU2) {
     device.zero(temp1, sizeof(float) * batch * k * n);
 
     for (int b = 0; b < batch; ++b) {
-        auto inputPtr0 =  inputValue0.data();
+        auto inputPtr0 =  inputValue0.data<float>();
         auto tempPtr1 = temp1 + b * k * n;
-        auto outputGradPtr = outputGrad.data() + b * m * n;
+        auto outputGradPtr = outputGrad.data<float>() + b * m * n;
 
         for (int i = 0; i < k; ++i) {
             for (int j = 0; j < n; ++j) {
@@ -253,18 +231,8 @@ TEST(MatrixMultiply, backwardCPU2) {
     }
 
     for (int i = 0; i < batch * k * n; ++i) {
-        ASSERT_EQ(temp1[i], inputGrad1.data()[i]);
+        ASSERT_EQ(temp1[i], inputGrad1.data<float>()[i]);
     }
-
-    freeTensor(device, inputValue0);
-    freeTensor(device, inputValue1);
-    freeTensor(device, inputGrad0);
-    freeTensor(device, inputGrad1);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-    freeFakeVariable(inputVar0);
-    freeFakeVariable(inputVar1);
 
     device.free(temp0);
     device.free(temp1);

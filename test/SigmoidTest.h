@@ -1,72 +1,62 @@
 #ifndef DEEP8_SIGMOIDTEST_H
 #define DEEP8_SIGMOIDTEST_H
 
-#include "Sigmoid.h"
+#include "nodes/Sigmoid.h"
 
 namespace Deep8 {
 
 TEST(Sigmoid, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, 10, 400, 200);
-    auto output = createTensor<CPUDevice, float>(device, 10, 400, 200);
+    auto input  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto output = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    Sigmoid<float> sigmoid(inputs);
+    Sigmoid sigmoid(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    sigmoid.forwardCPU(inputTensor,&output);
+    sigmoid.forward(inputTensor,&output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        float temp = 1.f / (1.f + std::exp(-1.f * input.data()[i]));
+        float temp = 1.f / (1.f + std::exp(-1.f * input.data<float>()[i]));
 
-        ASSERT_TRUE(std::abs(temp - output.data()[i]) <= 1e-6);
+        ASSERT_TRUE(std::abs(temp - output.data<float>()[i]) <= 1e-6);
     }
 
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-	freeFakeVariable(inputVar1);
 
 }
 
 TEST(Sigmoid, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, double>(device, 10, 400, 200);
-	auto inputGrad = createTensor<CPUDevice, double>(device, 10, 400, 200);
+	auto inputValue = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto inputGrad = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-    auto outputValue = createTensor<CPUDevice, double>(device, 10, 400, 200);
-    auto outputGrad  = createTensor<CPUDevice, double>(device, 10, 400, 200);
+    auto outputValue = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, double>(device);
+    auto inputVar = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar};
-    Sigmoid<double> sigmoid(inputs);
+    Sigmoid sigmoid(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<double>*> inputValues = {&inputValue};
+    std::vector<const Tensor*> inputValues = {&inputValue};
 
-    sigmoid.forwardCPU(inputValues, &outputValue);
-    sigmoid.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+    sigmoid.forward(inputValues, &outputValue);
+    sigmoid.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        double temp = outputGrad.data()[i] * outputValue.data()[i] * (1 - outputValue.data()[i]);
+        double temp = outputGrad.data<float>()[i] * outputValue.data<float>()[i] * (1 - outputValue.data<float>()[i]);
 
-        ASSERT_EQ(inputGrad.data()[i], temp);
+        ASSERT_EQ(inputGrad.data<float>()[i], temp);
     }
 
-    freeTensor(device, inputValue);
-    freeTensor(device, inputGrad);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar);
 
 }
 

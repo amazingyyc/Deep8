@@ -7,7 +7,7 @@ void Softmax(const Tensor &x, Tensor &y, int axis, void *ptr) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.type  == y.type, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape  == y.shape, "the shape must be same");
-    DEEP8_ARGUMENT_CHECK(axis < x.shape.nDims, "the axis is error");
+    DEEP8_ARGUMENT_CHECK(axis < (int) x.shape.nDims, "the axis is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         SoftmaxCPU(x, y, axis, ptr);
@@ -24,7 +24,7 @@ void SoftmaxGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy,
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && x.shape == y.shape && x.shape == dy.shape, "the param shape must be same");
-    DEEP8_ARGUMENT_CHECK(axis < x.shape.nDims, "the axis is error");
+    DEEP8_ARGUMENT_CHECK(axis < (int) x.shape.nDims, "the axis is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         SoftmaxGradCPU(x, dx, y, dy, axis, ptr);
