@@ -3,7 +3,7 @@
 
 #include <stdarg.h>
 
-#include "basic/ElementType.h"
+#include "model/ElementType.h"
 #include "model/Shape.h"
 #include "model/Tensor.h"
 #include "nodes/Variable.h"

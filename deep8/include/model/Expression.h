@@ -1,43 +1,61 @@
-//#ifndef DEEP8_EXPRESSION_H
-//#define DEEP8_EXPRESSION_H
-//
-//#include "Node.h"
-//#include "Variable.h"
-//#include "Parameter.h"
-//#include "Abs.h"
-//#include "Add.h"
-//#include "AddScalar.h"
-//#include "AvgPooling2d.h"
-//#include "Conv2d.h"
-//#include "CrossEntropy.h"
-//#include "DeConv2d.h"
-//#include "Divide.h"
-//#include "DivideScalar.h"
-//#include "Exp.h"
-//#include "L1Norm.h"
-//#include "L2Norm.h"
-//#include "Linear.h"
-//#include "Log.h"
-//#include "LogSoftmax.h"
-//#include "LReLu.h"
-//#include "MatrixMultiply.h"
-//#include "MaxPooling2d.h"
-//#include "Minus.h"
-//#include "MinusScalar.h"
-//#include "Multiply.h"
-//#include "MultiplyScalar.h"
-//#include "ReLu.h"
-//#include "ReShape.h"
-//#include "ScalarDivide.h"
-//#include "ScalarMinus.h"
-//#include "Sigmoid.h"
-//#include "Softmax.h"
-//#include "Square.h"
-//#include "Tanh.h"
-//
-//#include "Executor.h"
-//#include "EagerExecutor.h"
-//
+#ifndef DEEP8_EXPRESSION_H
+#define DEEP8_EXPRESSION_H
+
+#include "nodes/Node.h"
+#include "nodes/Variable.h"
+#include "nodes/Parameter.h"
+#include "nodes/Abs.h"
+#include "nodes/Add.h"
+#include "nodes/AvgPooling2d.h"
+#include "nodes/Conv2d.h"
+#include "nodes/CrossEntropy.h"
+#include "nodes/DeConv2d.h"
+#include "nodes/Divide.h"
+#include "nodes/Exp.h"
+#include "nodes/L1Norm.h"
+#include "nodes/L2Norm.h"
+#include "nodes/Linear.h"
+#include "nodes/Log.h"
+#include "nodes/LogSoftmax.h"
+#include "nodes/LReLu.h"
+#include "nodes/MatrixMultiply.h"
+#include "nodes/MaxPooling2d.h"
+#include "nodes/Minus.h"
+#include "nodes/Multiply.h"
+#include "nodes/ReLu.h"
+#include "nodes/ReShape.h"
+#include "nodes/Sigmoid.h"
+#include "nodes/Softmax.h"
+#include "nodes/Square.h"
+#include "nodes/Tanh.h"
+
+#include "model/Executor.h"
+
+namespace Deep8 {
+
+class Executor;
+
+class Expression {
+public:
+    /**the executor*/
+    Executor *executor;
+
+    /**the Node pointer that contacted to this Expression*/
+    Node *node;
+
+    explicit Expression() : executor(nullptr), node(nullptr) {
+	}
+
+	explicit Expression(Executor *exe, Node *n) : executor(exe), node(n) {
+	}
+};
+
+
+}
+
+
+#endif
+
 //namespace Deep8 {
 //
 //template <typename T>

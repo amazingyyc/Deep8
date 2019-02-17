@@ -17,6 +17,19 @@ bool Function::isShared() {
 	return false;
 }
 
+/**if all inputs node do not need update gradient than return false*/
+bool Function::needUpdateGradient() {
+	for (auto item : this->inputs) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be a Variable");
+
+		if (((Variable*)item)->updateGradient) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Function::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
 	DEEP8_RUNTIME_ERROR("can not call this forward by Function class");
 }
@@ -52,23 +65,6 @@ void Function::forward() {
 
 	/**calculate the output*/
 	this->forward(inputValues, outputValue);
-
-	// /**if all inputs's updateGradient is false than set the output's updateGradient is false and releae the memory*/
-	// bool updateGradient = false;
-
-	// for (auto item : this->inputs) {
-	// 	auto var = (Variable*)(item);
-
-	// 	if (var->updateGradient) {
-	// 		updateGradient = true;
-	// 		break;
-	// 	}
-	// }
-
-	// if (!updateGradient) {
-	// 	outputVariable->releaseGradient();
-	// 	outputVariable->updateGradient = false;
-	// }
 }
 
 void Function::backward() {

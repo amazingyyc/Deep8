@@ -53,6 +53,9 @@ public:
 	 */
 	virtual bool isShared();
 
+	/**if all inputs node do not need update gradient than return false*/
+	bool needUpdateGradient();
+
 	void forward() override;
 	void backward() override;
 };

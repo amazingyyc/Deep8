@@ -72,11 +72,12 @@ public:
 
 protected:
     explicit Variable();
+public:
     explicit Variable(Tensor &v);
     explicit Variable(Tensor &v, Tensor &g);
 
-public:
 	explicit Variable(Node *input, Shape &shape);
+	explicit Variable(Node *input, Tensor &v);
     explicit Variable(Node *input, Tensor &v, Tensor &g);
 
 protected:

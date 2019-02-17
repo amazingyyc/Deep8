@@ -1,68 +1,68 @@
-#include "Expression.h"
-#include "EagerExecutor.h"
+#include "model/Expression.h"
+#include "model/EagerExecutor.h"
 
 namespace Deep8 {
 
-template <typename T>
-EagerExecutor<T>::EagerExecutor(Trainer<T> *tr, DeviceType deviceType, bool flag) :
-	Executor<T>(tr, deviceType), clearFlag(flag) {
+EagerExecutor::EagerExecutor(DeviceType deviceType, bool flag) :
+	Executor(deviceType), clearInterim(flag) {
 }
 
-template <typename T>
-Node* EagerExecutor<T>::addFunction(FunctionBase *function) {
-	auto variable = this->createVariableWithFunction(function);
+Node* EagerExecutor::addFunction(Function *function, DType type) {
+	auto variable = this->createVariableByFunction(function, type);
 
-	function->id = this->generateNodeId();
-	variable->id = this->generateNodeId();
+	function->id = this->generateUniqueId();
+	variable->id = this->generateUniqueId();
 
-	this->nodeCollection.insert(function);
-	this->nodeCollection.insert(variable);
+	this->allNodes[function->id] = function;
+	this->allNodes[variable->id] = variable;
 
-	this->nonParameterCollection.insert(function);
-	this->nonParameterCollection.insert(variable);
+	this->allFunctions[function->id] = function;
+	this->allVariables[variable->id] = variable;
 
+	/**add to interim node*/
+	this->interimNodes[function->id] = function;
+	this->interimNodes[variable->id] = variable;
+
+	/**calculate output*/
 	function->forward();
 
 	return variable;
 }
 
-template <typename T>
-void EagerExecutor<T>::clearIntermediaryNodes() {
+void EagerExecutor::clearInterimNodes() {
 	/**clear all node output*/
-	for (auto item : this->nodeCollection) {
-		item->inputs.clear();
-		item->outputs.clear();
+	for (auto item : this->allNodes) {
+		item.second->inputs.clear();
+		item.second->outputs.clear();
 	}
 
-	for (auto item : this->nonParameterCollection) {
-		this->nodeCollection.erase(item);
+	for (auto item : this->interimNodes) {
+		this->allNodes.erase(item.first);
+		this->allFunctions.erase(item.first);
+		this->allVariables.erase(item.first);
 
-		delete item;
+		delete item.second;
 	}
 
-	this->nonParameterCollection.clear();
+	this->interimNodes.clear();
 }
 
-template <typename T>
-void EagerExecutor<T>::forward(Expression<T> &e) {
+void EagerExecutor::forward(Expression &e) {
 	DEEP8_RUNTIME_ERROR("the EagerExecutor can not call the forward");
 }
 
-template <typename T>
-void EagerExecutor<T>::forward(Node *) {
+void EagerExecutor::forward(Node *) {
 	DEEP8_RUNTIME_ERROR("the EagerExecutor can not call the forward");
 }
 
-template <typename T>
-void EagerExecutor<T>::backward(Expression<T> &e) {
+void EagerExecutor::backward(Expression &e) {
 	backward(e.node);
 }
 
-template <typename T>
-void EagerExecutor<T>::backward(Node *last) {
+void EagerExecutor::backward(Node *last) {
 	DEEP8_ARGUMENT_CHECK(nullptr != last && last->type == NodeType::Variable, "the last node must be a Variable");
 
-	auto lastVariable = static_cast<VariableBase*>(last);
+	auto lastVariable = (Variable*)(last);
 
 	DEEP8_ARGUMENT_CHECK(lastVariable->isScalar(), "the last Variable gradient must be scalar");
 
@@ -80,7 +80,7 @@ void EagerExecutor<T>::backward(Node *last) {
 		que.pop();
 
 		if (NodeType::Variable == node->type) {
-			static_cast<VariableBase*>(node)->zeroGradient();
+			((Variable*)node)->zeroGradient();
 		}
 
 		for (auto input : node->inputs) {
@@ -91,7 +91,7 @@ void EagerExecutor<T>::backward(Node *last) {
 		}
 	}
 
-	/**set the last Variable Gradient is 1*/
+	/**set the last Variable Gradient to 1*/
 	lastVariable->setGradientOne();
 
 	/**calculate the gradient for the Variable*/
@@ -113,15 +113,12 @@ void EagerExecutor<T>::backward(Node *last) {
 		}
 	}
 
-	/**update the parameter*/
-	this->trainer->training(this->parameterCollection);
-
 	/**clear the function and variable*/
-	if (clearFlag) {
-		this->clearIntermediaryNodes();
+	if (clearInterim) {
+		this->clearInterimNodes();
 	}
 }
 
-DEEP8_DECLARATION_INSTANCE(EagerExecutor)
+
 
 }

@@ -1,8 +1,8 @@
 #ifndef DEEP8_GPUEXCEPTION_H
 #define DEEP8_GPUEXCEPTION_H
 
-#include "Exception.h"
-#include "GPUBasic.h"
+#include "basic/Exception.h"
+#include "basic/GPUBasic.h"
 
 namespace Deep8 {
 

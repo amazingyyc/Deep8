@@ -1,7 +1,7 @@
 #ifndef DEEP8_DEFAULTEXECUTOR_H
 #define DEEP8_DEFAULTEXECUTOR_H
 
-#include "Executor.h"
+#include "model/Executor.h"
 
 namespace Deep8 {
 
@@ -13,36 +13,24 @@ namespace Deep8 {
  * Than create a Function Add and the Variable Z.
  * When create the Function Add DefaultExecutor will calculate the result put it into Z immediately.
  */
-template <typename T>
-class EagerExecutor : public Executor<T> {
+class EagerExecutor : public Executor {
 protected:
-	/**
-	 * @brief if the Executor will delete the Function and Variable after the backward process.
-	 * the default is true
-	 * in dynamic Deep Learning, it will build a compute graph for every sample, so if we do not delete the Function and Variable Node
-	 * the temp Node will be consume the memory
-	 * like a graph Z = W * X + B
-	 * the X is InputParameter, W and B is Parameter
-	 * for every sample if will generate 2 intermediary Variable, one is the output of W * X, another is T1 + B
-	 * so if have 400 sample it will generate 800 intermediary Variable and Function in the memory.
-	 * and it will consume a lot of memory
-	 *
-	 * if the user want watch the intermediary result, it could set the clearFlag is false
-	 * and clean the intermediary Node by himself using function cleanIntermediaryNodes()
-	 */
-	bool clearFlag;
+	bool clearInterim;
+
+	std::unordered_map<int64_t, Node*> interimNodes;
 
 public:
-	explicit EagerExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true);
+	explicit EagerExecutor(DeviceType deviceType = DeviceType::CPU, bool flag = true);
 
-	Node *addFunction(FunctionBase *function) override;
+	/**give a function and create the output Variable*/
+	Node *addFunction(Function *func, DType type) override;
 
-	void clearIntermediaryNodes();
+	void clearInterimNodes();
 
-	void forward(Expression<T> &e) override;
-	void forward(Node *) override;
+	void forward(Expression &e) override;
+	void forward(Node *last) override;
 
-	void backward(Expression<T> &e) override;
+	void backward(Expression &e) override;
 	void backward(Node *last) override;
 };
 

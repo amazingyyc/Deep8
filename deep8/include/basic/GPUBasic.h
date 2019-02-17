@@ -1,7 +1,7 @@
 #ifndef DEEP8_GPUBASIC_H
 #define DEEP8_GPUBASIC_H
 
-#include "Basic.h"
+#include "basic/Basic.h"
 
 #ifdef HAVE_CUDA
 

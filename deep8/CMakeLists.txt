@@ -49,10 +49,10 @@ set(DEEP8_SRC_FILES
 
 		src/model/AutoBatchCodeHelper.cpp
 		src/model/Device.cpp
-		#src/model/EagerExecutor.cpp
-		#src/model/Executor.cpp
-		#src/model/LazyExecutor.cpp
-		#src/model/LearningRateIterator.cpp
+		src/model/EagerExecutor.cpp
+		src/model/Executor.cpp
+		# src/model/LazyExecutor.cpp
+		# src/model/LearningRateIterator.cpp
 		src/model/MemoryAllocator.cpp
 		src/model/MemoryPool.cpp
 		src/model/OutputEntry.cpp
@@ -125,13 +125,13 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Square.cu
 		src/math/Tanh.cu
 
-		#src/model/Executor.cu
+		src/model/Executor.cu
 		src/model/GPUDevice.cu
 		src/model/GPUMemoryAllocator.cu
 		src/model/GPUMemoryPool.cu
-		#src/model/TensorInit.cu
+		# src/model/TensorInit.cu
 
-		#src/trainer/Trainer.cu
+		# src/trainer/Trainer.cu
 		)
 
 if (HAVE_GPU AND HAVE_CUDA)

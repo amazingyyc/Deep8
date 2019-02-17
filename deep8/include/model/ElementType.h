@@ -1,7 +1,7 @@
 #ifndef DEEP8_ELEMENTTYPE_H
 #define DEEP8_ELEMENTTYPE_H
 
-#include "Basic.h"
+#include "basic/Basic.h"
 
 namespace Deep8 {
 
@@ -57,6 +57,57 @@ public:
     template <typename T>
     static ElementType from() {
         DEEP8_RUNTIME_ERROR("Unknow type");
+    }
+
+    static ElementType from(DType type) {
+        switch (type) {
+        case DType::UnKnown:
+            return ElementType(DType::UnKnown, 0, "unknown");
+            break;
+        case DType::Bool:
+            return ElementType(DType::Bool, sizeof(bool), "bool");
+            break;
+        case DType::Uint8:
+            return ElementType(DType::Uint8, sizeof(uint8_t), "uint8_t");
+            break;
+        case DType::Int8:
+            return ElementType(DType::Int8, sizeof(int8_t), "int8_t");
+            break;
+        case DType::Uint16:
+            return ElementType(DType::Int16, sizeof(int16_t), "int16_t");
+            break;
+        case DType::Int16:
+            return ElementType(DType::Int16, sizeof(int16_t), "int16_t");
+            break;
+        case DType::Uint32:
+            return ElementType(DType::Uint32, sizeof(uint32_t), "uint32_t");
+            break;
+        case DType::Int32:
+            return ElementType(DType::Int32, sizeof(int32_t), "int32_t");
+            break;
+        case DType::Uint64:
+            return ElementType(DType::Uint64, sizeof(uint64_t), "uint64_t");
+            break;
+        case DType::Int64:
+            return ElementType(DType::Int64, sizeof(int64_t), "int64_t");
+            break;
+
+#ifdef HAVE_HALF
+        case DType::Float16:
+            return ElementType(DType::Float16, sizeof(half), "float16");
+            break;
+#endif
+
+        case DType::Float32:
+            return ElementType(DType::Float32, sizeof(float), "float32");
+            break;
+        case DType::Float64:
+            return ElementType(DType::Float64, sizeof(double), "float64");
+            break;
+        default:
+            DEEP8_RUNTIME_ERROR("the dtype is error");
+            break;
+        }
     }
 };
 

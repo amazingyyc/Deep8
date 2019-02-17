@@ -31,6 +31,17 @@ Variable::Variable(Node *input, Shape &shape) : Node(input), updateGradient(fals
 	this->outputShape = shape;
 }
 
+Variable::Variable(Node *input, Tensor &v): Node(input), updateGradient(false), value(v) {
+	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
+
+	for (auto i : inputs) {
+		DEEP8_ARGUMENT_CHECK(i->outputShape == value.shape, "the shape of the input and value must be same")
+	}
+
+	this->type = NodeType::Variable;
+	this->outputShape = value.shape;
+}
+
 Variable::Variable(Node *input, Tensor &v, Tensor &g): Node(input), updateGradient(true), value(v), gradient(g) {
 	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
 
@@ -39,7 +50,7 @@ Variable::Variable(Node *input, Tensor &v, Tensor &g): Node(input), updateGradie
 	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape of Value and Gradient must be same");
 
 	for (auto i : inputs) {
-		DEEP8_ARGUMENT_CHECK(i->outputShape == value.shape, "the shape of the input, pointer and gradient must be same")
+		DEEP8_ARGUMENT_CHECK(i->outputShape == value.shape, "the shape of the inputs, value and gradient must be same")
 	}
 
 	this->type = NodeType::Variable;
