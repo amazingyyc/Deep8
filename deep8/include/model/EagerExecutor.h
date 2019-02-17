@@ -17,15 +17,16 @@ class EagerExecutor : public Executor {
 protected:
 	bool clearInterim;
 
+	/**store the interim Nodes*/
 	std::unordered_map<int64_t, Node*> interimNodes;
 
 public:
 	explicit EagerExecutor(DeviceType deviceType = DeviceType::CPU, bool flag = true);
 
-	/**give a function and create the output Variable*/
-	Node *addFunction(Function *func, DType type) override;
-
 	void clearInterimNodes();
+
+	/**give a function and create the output Variable*/
+	Node *addFunction(Function *func) override;
 
 	void forward(Expression &e) override;
 	void forward(Node *last) override;

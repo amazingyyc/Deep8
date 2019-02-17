@@ -9,11 +9,14 @@ namespace Deep8 {
  * lazyexecutor is different with eagerexecutor, it does not calculate the result when add a function
  * it will calculate when call forward func, and will optimize the compute graph
  */
-template <typename T>
-class LazyExecutor : public Executor<T> {
+class LazyExecutor : public Executor {
 protected:
-	bool clearFlag;
+	bool clearInterim;
 
+	/**store the interim Nodes*/
+	std::unordered_map<int64_t, Node*> interimNodes;
+
+protected:
 	/**use the auto batch algorithm to optimize the compute graph*/
 	void autoBatchGraph(Node *);
 
@@ -21,19 +24,19 @@ protected:
 	void autoBatchGraphLayer(std::vector<Node*>&);
 
 	/**malloc Intermediary Variable*/
-	void mallocIntermediaryVariable(Node*);
+	void mallocInterimVariable(Node*);
 
 public:
-	explicit LazyExecutor(Trainer<T> *tr, DeviceType deviceType = DeviceType::CPU, bool flag = true);
+	explicit LazyExecutor(DeviceType deviceType = DeviceType::CPU, bool flag = true);
 
-	void clearIntermediaryNodes();
+	void clearInterimNodes();
 
-	Node *addFunction(FunctionBase *function) override;
+	Node *addFunction(Function *func) override;
 
-	void forward(Expression<T> &e) override;
+	void forward(Expression &e) override;
 	void forward(Node *) override;
 
-	void backward(Expression<T> &e) override;
+	void backward(Expression &e) override;
 	void backward(Node *last) override;
 };
 

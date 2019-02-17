@@ -7,8 +7,8 @@ EagerExecutor::EagerExecutor(DeviceType deviceType, bool flag) :
 	Executor(deviceType), clearInterim(flag) {
 }
 
-Node* EagerExecutor::addFunction(Function *function, DType type) {
-	auto variable = this->createVariableByFunction(function, type);
+Node* EagerExecutor::addFunction(Function *function) {
+	auto variable = this->createVariableByFunction(function);
 
 	function->id = this->generateUniqueId();
 	variable->id = this->generateUniqueId();

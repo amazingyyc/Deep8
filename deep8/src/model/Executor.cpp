@@ -64,7 +64,9 @@ int64_t Executor::generateUniqueId() {
 	return uniqueId++;
 }
 
-Variable* Executor::createVariableByFunction(Function *func, DType type) {
+Variable* Executor::createVariableByFunction(Function *func) {
+	auto type = func->outputElementType();
+
 	if (func->isShared()) {
 		auto variable = new Variable(func, func->outputShape);
 
@@ -148,7 +150,7 @@ Function* Executor::getFunctionById(int64_t id) {
 	return nullptr;
 }
 
-Node* Executor::addFunction(Function *function, DType type) {
+Node* Executor::addFunction(Function *function) {
 	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
 }
 

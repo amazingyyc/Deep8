@@ -55,7 +55,7 @@ protected:
 	int64_t generateUniqueId();
 
 	/**create a Variable to store the function output*/
-	Variable* createVariableByFunction(Function *func, DType type);
+	Variable* createVariableByFunction(Function *func);
 
 public:
 	virtual ~Executor();
@@ -71,7 +71,7 @@ public:
 	Function* getFunctionById(int64_t id);
 
 	/**give a function and create the output Variable*/
-	virtual Node *addFunction(Function *func, DType type);
+	virtual Node *addFunction(Function *func);
 
 	virtual void forward(Expression &e);
 	virtual void backward(Expression &e);

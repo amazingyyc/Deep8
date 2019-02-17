@@ -30,6 +30,24 @@ bool Function::needUpdateGradient() {
 	return false;
 }
 
+/**the output element type*/
+ElementType Function::outputElementType() {
+	if (this->inputs.empty()) {
+		return ElementType::from<UnKnownType>();
+	}
+
+	for (int i = 0; i < this->inputs.size(); ++i) {
+		DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->inputs[i]->type, "the inputs must be a Variable");
+
+		if (i > 0) {
+			DEEP8_ARGUMENT_CHECK( ((Variable*)(this->inputs[i - 1]))->value.type == ((Variable*)(this->inputs[i]))->value.type, 
+			"the input ElementType must be same");
+		}
+	}
+
+	return ((Variable*)(this->inputs[0]))->value.type;
+}
+
 void Function::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
 	DEEP8_RUNTIME_ERROR("can not call this forward by Function class");
 }
