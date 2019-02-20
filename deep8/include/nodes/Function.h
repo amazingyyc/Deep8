@@ -37,28 +37,22 @@ enum class FunctionType {
 
 class Function: public Node {
 protected:
-	explicit Function();
-    explicit Function(std::vector<Node*> &inputs);
+    /**
+     * if a Function shared is true means the output Variable shared the memory with the input Variable
+     * default is false
+     */
+	bool isShared;
 	
 protected:
+    explicit Function();
+    explicit Function(std::vector<Node*>& inputs);
+
 	virtual void check();
 
 	virtual void forward(const std::vector<const Tensor*> &inputs, Tensor *output);
 	virtual void backward(const std::vector<const Tensor*> &inputs, const Tensor *output, const Tensor *outputGradient, size_t index, Tensor *iGradient);
 
 public:
-	/**
-	 * if a Function shared is true means the output Variable shared the memory with the input Variable
-	 * default is false
-	 */
-	virtual bool isShared();
-
-	/**if all inputs node do not need update gradient than return false*/
-	bool needUpdateGradient();
-
-	/**the output element type*/
-	ElementType outputElementType();
-
 	void forward() override;
 	void backward() override;
 };

@@ -4,8 +4,14 @@
 namespace Deep8 {
 
 Batch::Batch(std::vector<Node *> &inputs, Shape &shape) : Function(inputs), continuous(false) {
-	this->outputShape = shape;
-	check();
+	this->shape = shape;
+
+    size_t totalSize = 0;
+    for (auto item : this->inputs) {
+        totalSize += item->shape.size();
+    }
+
+    DEEP8_ARGUMENT_CHECK(totalSize == this->shape.size(), "the inputs's shape is error");
 }
 
 void Batch::check() {
@@ -13,12 +19,13 @@ void Batch::check() {
 
 	DEEP8_ARGUMENT_CHECK(!this->inputs.empty(), "the input can not be empty");
 
-	size_t totalSize = 0;
-	for (auto item : this->inputs) {
-		totalSize += item->outputShape.size();
-	}
+	auto sameElementType = this->inputs[0]->elementType;
 
-	DEEP8_ARGUMENT_CHECK(totalSize == this->outputShape.size(), "the inputs's output shape is error");
+    for (auto item : this->inputs) {
+        DEEP8_ARGUMENT_CHECK(sameElementType == item->elementType, "the inputs element type must be same");
+    }
+
+    this->elementType = sameElementType;
 }
 
 void Batch::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
@@ -46,15 +53,15 @@ void Batch::backward(const std::vector<const Tensor*> &inputs, const Tensor *out
 	Tensor dx;
 	Tensor dy;
 
-	dx.storage = iGradient->storage;
-	dx.offset  = iGradient->offset;
-	dx.shape   = Shape(1, {size});
-	dx.type    = iGradient->type;
+	dx.storage     = iGradient->storage;
+	dx.offset      = iGradient->offset;
+	dx.shape       = Shape(1, {size});
+	dx.elementType = iGradient->elementType;
 
-	dy.storage = outputGradient->storage;
-	dy.offset  = outputGradient->offset + offset;
-	dy.shape   = Shape(1, {size});
-	dy.type    = outputGradient->type;
+	dy.storage     = outputGradient->storage;
+	dy.offset      = outputGradient->offset + offset;
+	dy.shape       = Shape(1, {size});
+	dy.elementType = outputGradient->elementType;
 
 	Math::Add(dy, dx, dx);
 }
@@ -66,7 +73,7 @@ void Batch::forward() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the outputs size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
-	DEEP8_ARGUMENT_CHECK(this->outputShape == this->outputs.first()->outputShape, "the output shape is error");
+	DEEP8_ARGUMENT_CHECK(this->shape == this->outputs.first()->shape, "the output shape is error");
 
 	/**
 	 * 2 condition the continuous is true
@@ -131,19 +138,20 @@ void Batch::forward() {
 		auto x = (Variable*)this->inputs[0];
 		auto y = (Variable*)this->outputs.first();
 
-		y->outputShape    = this->outputShape;
-		y->updateGradient = allUpdateGradient;
+		y->shape          = this->shape;
+		y->updateGradient = this->updateGradient;
+        y->elementType    = this->elementType;
 
-		y->value.storage = x->value.storage;
-		y->value.offset  = x->value.offset;
-		y->value.type    = x->value.type;
-		y->value.shape   = this->outputShape;
+		y->value.storage     = x->value.storage;
+		y->value.offset      = x->value.offset;
+		y->value.elementType = x->value.elementType;
+		y->value.shape       = this->shape;
 
 		if (allUpdateGradient) {
-			y->gradient.storage = x->gradient.storage;
-			y->gradient.offset  = x->gradient.offset;
-			y->gradient.type    = x->gradient.type;
-			y->gradient.shape   = this->outputShape;
+			y->gradient.storage     = x->gradient.storage;
+			y->gradient.offset      = x->gradient.offset;
+			y->gradient.elementType = x->gradient.elementType;
+			y->gradient.shape       = this->shape;
 		} else {
 			/**release the gradient memory*/
 			y->releaseGradient();
@@ -183,6 +191,7 @@ void Batch::backward() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the output size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
+    DEEP8_ARGUMENT_CHECK(this->shape == this->outputs.first()->shape, "the output shape is error");
 
 	auto outputVariable = (Variable*)(this->outputs.first());
 

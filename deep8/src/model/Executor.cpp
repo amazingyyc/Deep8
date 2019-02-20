@@ -65,24 +65,22 @@ int64_t Executor::generateUniqueId() {
 }
 
 Variable* Executor::createVariableByFunction(Function *func) {
-	auto type = func->outputElementType();
-
-	if (func->isShared()) {
-		auto variable = new Variable(func, func->outputShape);
+	if (func->isShared) {
+		auto variable = new Variable(func, func->shape);
 
 		return variable;
 	}
 
-	if (func->needUpdateGradient()) {
+	if (func->updateGradient) {
 		/**the output need gradient*/
-		auto value    = createTensor(func->outputShape, type);
-		auto gradient = createTensor(func->outputShape, type);
+		auto value    = createTensor(func->shape, func->elementType);
+		auto gradient = createTensor(func->shape, func->elementType);
 
 		auto variable = new Variable(func, value, gradient);
 
 		return variable;
 	} else {
-		auto value = createTensor(func->outputShape, type);
+		auto value = createTensor(func->shape, func->elementType);
 
 		auto variable = new Variable(func, value);
 
@@ -125,7 +123,7 @@ Variable* Executor::addVariable(Shape &shape, DType type, bool updateGradient) {
 	return variable;
 }
 
-	/**get a Node/Variable/Function by Id*/
+/**get a Node/Variable/Function by Id*/
 Node* Executor::getNodeById(int64_t id) {
 	if (allNodes.find(id) != allNodes.end()) {
 		return allNodes[id];

@@ -5,7 +5,7 @@ namespace Math {
 
 void Softmax(const Tensor &x, Tensor &y, int axis, void *ptr) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == y.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType  == y.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape  == y.shape, "the shape must be same");
     DEEP8_ARGUMENT_CHECK(axis < (int) x.shape.nDims, "the axis is error");
 
@@ -22,7 +22,7 @@ void Softmax(const Tensor &x, Tensor &y, int axis, void *ptr) {
 
 void SoftmaxGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis, void *ptr) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType  == dx.elementType  && x.elementType == y.elementType && x.elementType  == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && x.shape == y.shape && x.shape == dy.shape, "the param shape must be same");
     DEEP8_ARGUMENT_CHECK(axis < (int) x.shape.nDims, "the axis is error");
 
@@ -78,7 +78,7 @@ void SoftmaxCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Sh
 void SoftmaxCPU(const Tensor &x, Tensor &y, int axis, void *ptr) {
     auto device = (CPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         SoftmaxCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape, axis, (float*)ptr);
         break;
@@ -86,7 +86,7 @@ void SoftmaxCPU(const Tensor &x, Tensor &y, int axis, void *ptr) {
         SoftmaxCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape, axis, (double*)ptr);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -131,7 +131,7 @@ void SoftmaxGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *
 void SoftmaxGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis, void *ptr) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         SoftmaxGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape, axis, (float*)ptr);
         break;
@@ -139,7 +139,7 @@ void SoftmaxGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &
         SoftmaxGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape, axis, (double*)ptr);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

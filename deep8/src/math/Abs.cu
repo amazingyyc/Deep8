@@ -24,7 +24,7 @@ void AbsGPUImpl(const T *x, T *y, int n) {
 void AbsGPU(const Tensor &x, Tensor &y) {
     auto n = (int) x.shape.size();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         AbsGPUImpl<float>(x.data<float>(), y.data<float>(), n);
         break;
@@ -38,7 +38,7 @@ void AbsGPU(const Tensor &x, Tensor &y) {
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

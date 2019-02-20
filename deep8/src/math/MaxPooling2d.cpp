@@ -11,7 +11,7 @@ void MaxPooling2d(const Tensor &x,
                   int strideY, 
                   int strideX) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type == y.type, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 3 == y.nDims(), "the tensor dim must be 3");
     DEEP8_ARGUMENT_CHECK(filterHeight >= 1 && filterWidth >= 1 && strideY >= 1 && strideX >= 1, "the params is error");
 
@@ -59,7 +59,7 @@ void MaxPooling2dGrad(const Tensor &x,
                       int strideX) {
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape, "the x and dx shape must be same");
     DEEP8_ARGUMENT_CHECK(y.shape == dy.shape, "the y and dy shape must be same");
-    DEEP8_ARGUMENT_CHECK(x.type == dx.type && x.type == y.type && x.type == dy.type, "the type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType && x.elementType == y.elementType && x.elementType == dy.elementType, "the type must be same");
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && 
                          x.deviceType() == y.deviceType() && 
                          x.deviceType() == dy.deviceType(), "the device type must be same");
@@ -158,7 +158,7 @@ void MaxPooling2dCPU(const Tensor &x,
     auto outputHeight = (int)y.dim(0);
     auto outputWidth  = (int)y.dim(1);
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         MaxPooling2dCPUImpl<float>(device,
                             x.data<float>(),
@@ -190,7 +190,7 @@ void MaxPooling2dCPU(const Tensor &x,
                                    strideX);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -287,7 +287,7 @@ void MaxPooling2dGradCPU(const Tensor &x,
 
     Eigen::Barrier barrier((unsigned int)(threadNum));
 
-    if (DType::Float32 == x.type.id) {
+    if (DType::Float32 == x.elementType.id) {
         auto blockFunc = [&barrier](      float *x,
                                           float *dx,
                                           float *dy,
@@ -351,7 +351,7 @@ void MaxPooling2dGradCPU(const Tensor &x,
         }
 
         barrier.Wait();
-    } else if (DType::Float64 == x.type.id) {
+    } else if (DType::Float64 == x.elementType.id) {
         auto blockFunc = [&barrier](      double *x,
                                           double *dx,
                                           double *dy,
@@ -416,7 +416,7 @@ void MaxPooling2dGradCPU(const Tensor &x,
 
         barrier.Wait();
     } else {
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
     }
 }
 

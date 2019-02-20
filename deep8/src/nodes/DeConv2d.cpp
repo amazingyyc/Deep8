@@ -5,17 +5,17 @@ namespace Deep8 {
 
 DeConv2d::DeConv2d(std::vector<Node *> &inputs, bool covered, int strideY, int strideX)
         :Function(inputs), forwardCovered(covered), forwardStrideY(strideY), forwardStrideX(strideX) {
-    check();
 }
 
 void DeConv2d::check() {
     Function::check();
 
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "need 2 inputs node");
+    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
     DEEP8_ARGUMENT_CHECK(forwardStrideY >= 1 && forwardStrideX >= 1, "the stride is error");
 
-    auto inputShape  = this->inputs[0]->outputShape;
-    auto filterShape = this->inputs[1]->outputShape;
+    auto inputShape  = this->inputs[0]->shape;
+    auto filterShape = this->inputs[1]->shape;
 
     DEEP8_ARGUMENT_CHECK(3 == inputShape.nDims, "Conv2d needs inputs nDims is 3");
     DEEP8_ARGUMENT_CHECK(4 == filterShape.nDims && 1 == filterShape.batch, "Conv2d needs filter nDims is 4, the batch must be 1");
@@ -53,7 +53,8 @@ void DeConv2d::check() {
         outputDim[1] = outputWidth;
     }
 
-    this->outputShape = Shape(inputShape.batch, outputDim);
+    this->shape       = Shape(inputShape.batch, outputDim);
+    this->elementType = this->inputs[0]->elementType;
 }
 
 void DeConv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
@@ -71,7 +72,7 @@ void DeConv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output)
 
         auto outputChannel = output->shape.dim(2);
 
-        auto ptr = device->malloc(inputs[1]->type.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
+        auto ptr = device->malloc(inputs[1]->elementType.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
 
         Math::DeConv2d(*(inputs[0]), *(inputs[1]), *output, ptr, forwardCovered, forwardStrideY, forwardStrideX);
 
@@ -107,7 +108,7 @@ void DeConv2d::backward(const std::vector<const Tensor*> &inputs,
 
             auto outputChannel = output->shape.dim(2);
 
-            auto ptr = device->malloc(output->type.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
+            auto ptr = device->malloc(output->elementType.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
             
             Math::DeConv2dGradX(*(inputs[0]), 
                                 *iGradient, 
@@ -144,7 +145,7 @@ void DeConv2d::backward(const std::vector<const Tensor*> &inputs,
 
             auto outputChannel = output->shape.dim(2);
 
-            auto ptr = device->malloc(output->type.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
+            auto ptr = device->malloc(output->elementType.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
 
             Math::DeConv2dGradY(*(inputs[0]),   
                                 *(inputs[1]), 

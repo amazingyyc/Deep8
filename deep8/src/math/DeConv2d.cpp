@@ -10,7 +10,7 @@ void DeConv2d(  const Tensor &x,
                 bool convered,
                 int strideY,
                 int strideX) {
-    DEEP8_ARGUMENT_CHECK(x.type == y.type && x.type == z.type, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == z.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1 , "the stride must >= 1");
     DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
 
@@ -59,7 +59,7 @@ void DeConv2dGradX( const Tensor& x,
                     bool convered,
                     int strideY,
                     int strideX) {
-    DEEP8_ARGUMENT_CHECK(x.type == dx.type && x.type == y.type && x.type == z.type && x.type == dz.type, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType && x.elementType == y.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && z.shape == dz.shape, "the shape is error");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride must >= 1");
     DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
@@ -109,7 +109,7 @@ void DeConv2dGradY( const Tensor &x,
                     bool convered,
                     int strideY,
                     int strideX) {
-    DEEP8_ARGUMENT_CHECK(x.type == y.type && x.type == dy.type && x.type == z.type && x.type == dz.type, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == dy.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(y.shape == dy.shape && z.shape == dz.shape, "the shape is error");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride must >= 1");
     DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
@@ -217,7 +217,7 @@ void DeConv2dCPUImpl(   CPUDevice *device,
 void DeConv2dCPU(const Tensor &x, const Tensor &y, Tensor &z, bool convered, int strideY, int strideX) {
     auto device = (CPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         DeConv2dCPUImpl<float>( device, 
                                 x.data<float>(), 
@@ -243,7 +243,7 @@ void DeConv2dCPU(const Tensor &x, const Tensor &y, Tensor &z, bool convered, int
                                 strideX);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -332,7 +332,7 @@ void DeConv2dGradXCPU(  const Tensor& x,
                         int strideX) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         DeConv2dGradXCPUImpl<float>(device, 
                 x.data<float>(), 
@@ -362,7 +362,7 @@ void DeConv2dGradXCPU(  const Tensor& x,
                 strideX);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -446,7 +446,7 @@ void DeConv2dGradYCPU(  const Tensor &x,
                         int strideX) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         DeConv2dGradYCPUImpl<float>(device, 
                     x.data<float>(), 
@@ -476,7 +476,7 @@ void DeConv2dGradYCPU(  const Tensor &x,
                     strideX);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

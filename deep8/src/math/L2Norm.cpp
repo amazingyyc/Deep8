@@ -8,7 +8,7 @@ namespace Math {
  */
 void L2Norm(const Tensor &x, Tensor &y) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == y.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType  == y.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(1 == y.shape.size(), "the y size must be 1");
 
     if (DeviceType::CPU == x.deviceType()) {
@@ -27,7 +27,7 @@ void L2Norm(const Tensor &x, Tensor &y) {
  */
 void L2NormGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType  == dx.elementType  && x.elementType == y.elementType && x.elementType  == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && y.shape == dy.shape && 1 == y.shape.size(), "the param shape error");
 
     if (DeviceType::CPU == x.deviceType()) {
@@ -57,7 +57,7 @@ void L2NormCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Sha
 void L2NormCPU(const Tensor &x, Tensor &y) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         L2NormCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
@@ -65,7 +65,7 @@ void L2NormCPU(const Tensor &x, Tensor &y) {
         L2NormCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -90,7 +90,7 @@ void L2NormGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y
 void L2NormGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         L2NormGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape);
         break;
@@ -98,7 +98,7 @@ void L2NormGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
         L2NormGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 

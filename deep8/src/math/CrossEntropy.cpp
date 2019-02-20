@@ -5,7 +5,7 @@ namespace Math {
 
 void CrossEntropy(const Tensor &x, const Tensor &y, Tensor &z) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType() && x.deviceType()  == z.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == y.type && x.type  == z.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == z.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.size() == y.size() && x.batch() == y.batch(), "the x/y shape error");
     DEEP8_ARGUMENT_CHECK(1 == z.size(), "the z size must be 1");
 
@@ -26,10 +26,10 @@ void CrossEntropyGradX(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
                          x.deviceType() ==  z.deviceType() &&
                          x.deviceType() == dz.deviceType(), "the param device type must be same");
 
-    DEEP8_ARGUMENT_CHECK(x.type == dx.type &&
-                         x.type ==  y.type &&
-                         x.type ==  z.type &&
-                         x.type == dz.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType &&
+                         x.elementType ==  y.elementType &&
+                         x.elementType ==  z.elementType &&
+                         x.elementType == dz.elementType, "the param data type must be same");
     
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape, "the x shape is error");
     DEEP8_ARGUMENT_CHECK(z.shape == dz.shape && 1 == z.size(), "the z shape is error");
@@ -53,10 +53,10 @@ void CrossEntropyGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tenso
                          x.deviceType() ==  z.deviceType() &&
                          x.deviceType() == dz.deviceType(), "the param device type must be same");
 
-    DEEP8_ARGUMENT_CHECK(x.type == dy.type &&
-                         x.type ==  y.type &&
-                         x.type ==  z.type &&
-                         x.type == dz.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == dy.elementType &&
+                         x.elementType ==  y.elementType &&
+                         x.elementType ==  z.elementType &&
+                         x.elementType == dz.elementType, "the param data type must be same");
     
     DEEP8_ARGUMENT_CHECK(y.shape == dy.shape, "the y shape is error");
     DEEP8_ARGUMENT_CHECK(z.shape == dz.shape && 1 == z.size(), "the z shape is error");
@@ -100,7 +100,7 @@ void CrossEntropyCPUImpl(CPUDevice *device,
 void CrossEntropyCPU(const Tensor &x, const Tensor &y, Tensor &z) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CrossEntropyCPUImpl<float>( device, 
                                     x.data<float>(), 
@@ -120,7 +120,7 @@ void CrossEntropyCPU(const Tensor &x, const Tensor &y, Tensor &z) {
                                     z.shape);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -154,7 +154,7 @@ void CrossEntropyGradXCPU(const Tensor &x,
                         const Tensor &dz) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CrossEntropyGradXCPUImpl<float>(device, 
                 x.data<float>(), 
@@ -178,7 +178,7 @@ void CrossEntropyGradXCPU(const Tensor &x,
                 z.shape);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -207,7 +207,7 @@ void CrossEntropyGradYCPUImpl(CPUDevice *device,
 void CrossEntropyGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CrossEntropyGradYCPUImpl<float>(device, 
                     x.data<float>(), 
@@ -231,7 +231,7 @@ void CrossEntropyGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Te
                     z.shape);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

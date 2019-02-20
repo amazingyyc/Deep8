@@ -4,7 +4,6 @@
 namespace Deep8 {
 
 Softmax::Softmax(std::vector<Node *> &inputs, int a): Function(inputs), axis(a) {
-	check();
 }
 
 void Softmax::check() {
@@ -12,11 +11,12 @@ void Softmax::check() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Softmax Function needs only 1 input");
 
-	auto inputShape = this->inputs[0]->outputShape;
+	auto inputShape = this->inputs[0]->shape;
 
 	DEEP8_ARGUMENT_CHECK(axis < (int) inputShape.nDims, "the axis is error");
 
-	this->outputShape = inputShape;
+    this->shape = this->inputs[0]->shape;
+    this->elementType = this->inputs[0]->elementType;
 }
 
 void Softmax::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
@@ -43,7 +43,7 @@ void Softmax::forward(const std::vector<const Tensor*> &inputs, Tensor *output) 
         }
     }
 
-    auto ptr = device->malloc(output->type.byteWidth * dim0 * dim2);
+    auto ptr = device->malloc(output->elementType.byteWidth * dim0 * dim2);
 
     Math::Softmax(*(inputs[0]), *output, axis, ptr);
 
@@ -78,7 +78,7 @@ void Softmax::backward(const std::vector<const Tensor*> &inputs,
         }
     }
 
-    auto ptr = device->malloc(iGradient->type.byteWidth * dim0 * dim2);
+    auto ptr = device->malloc(iGradient->elementType.byteWidth * dim0 * dim2);
 
     Math::SoftmaxGrad(*(inputs[0]), *iGradient, *output, *outputGradient, axis, ptr);
 

@@ -2,50 +2,28 @@
 
 namespace Deep8 {
 
-Function::Function(): Node() {
+Function::Function(): Node(), isShared(false) {
 	this->type = NodeType::Function;
+    this->check();
 }
 
-Function::Function(std::vector<Node*> &inputs): Node(inputs) {
+Function::Function(std::vector<Node*> &inputs): Node(inputs), isShared(false) {
 	this->type = NodeType::Function;
+    this->check();
 }
 
 void Function::check() {
-}
+    bool anyUpdateGradient = false;
 
-bool Function::isShared() {
-	return false;
-}
+    for (auto item : this->inputs) {
+        if (item->updateGradient) {
+            anyUpdateGradient = true;
 
-/**if all inputs node do not need update gradient than return false*/
-bool Function::needUpdateGradient() {
-	for (auto item : this->inputs) {
-		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be a Variable");
+            break;
+        }
+    }
 
-		if (((Variable*)item)->updateGradient) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-/**the output element type*/
-ElementType Function::outputElementType() {
-	if (this->inputs.empty()) {
-		return ElementType::from<UnKnownType>();
-	}
-
-	for (int i = 0; i < this->inputs.size(); ++i) {
-		DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->inputs[i]->type, "the inputs must be a Variable");
-
-		if (i > 0) {
-			DEEP8_ARGUMENT_CHECK( ((Variable*)(this->inputs[i - 1]))->value.type == ((Variable*)(this->inputs[i]))->value.type, 
-			"the input ElementType must be same");
-		}
-	}
-
-	return ((Variable*)(this->inputs[0]))->value.type;
+    this->updateGradient = anyUpdateGradient;
 }
 
 void Function::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
@@ -64,7 +42,7 @@ void Function::forward() {
 
 	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be a Variable type");
-	DEEP8_ARGUMENT_CHECK(this->outputShape  == this->outputs.first()->outputShape, "the output shape is error");
+	DEEP8_ARGUMENT_CHECK(this->shape  == this->outputs.first()->shape, "the output shape is error");
 
 	auto outputVariable = (Variable*)this->outputs.first();
 

@@ -5,7 +5,7 @@ namespace Math {
 
 void LogSoftmax(const Tensor &x, Tensor &y, int axis, void *maxptr, void *sumptr) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == y.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType  == y.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape  == y.shape, "the shape must be same");
     DEEP8_ARGUMENT_CHECK(axis < x.shape.nDims, "the axis is error");
 
@@ -22,7 +22,7 @@ void LogSoftmax(const Tensor &x, Tensor &y, int axis, void *maxptr, void *sumptr
 
 void LogSoftmaxGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis, void *sumptr) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType  == dx.elementType  && x.elementType == y.elementType && x.elementType  == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && x.shape == y.shape && x.shape == dy.shape, "the param shape must be same");
     DEEP8_ARGUMENT_CHECK(axis < x.shape.nDims, "the axis is error");
 
@@ -78,7 +78,7 @@ void LogSoftmaxCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const
 void LogSoftmaxCPU(const Tensor &x, Tensor &y, int axis, void *maxptr, void *sumptr) {
     auto device = (CPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         LogSoftmaxCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape, axis, (float*)maxptr, (float*)sumptr);
         break;
@@ -86,7 +86,7 @@ void LogSoftmaxCPU(const Tensor &x, Tensor &y, int axis, void *maxptr, void *sum
         LogSoftmaxCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape, axis, (double*)maxptr, (double*)sumptr);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -139,7 +139,7 @@ void LogSoftmaxGradCPUImpl( CPUDevice *device,
 void LogSoftmaxGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis, void *sumptr) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         LogSoftmaxGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape, axis, (float*)sumptr);
         break;
@@ -147,7 +147,7 @@ void LogSoftmaxGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
         LogSoftmaxGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape, axis, (double*)sumptr);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

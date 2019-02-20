@@ -5,7 +5,6 @@
 namespace Deep8 {
 
 Sigmoid::Sigmoid(std::vector<Node*> &inputs): Function(inputs) {
-		check();
 }
 
 void Sigmoid::check() {
@@ -13,7 +12,8 @@ void Sigmoid::check() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Sigmoid Function needs only 1 input");
 
-	this->outputShape = this->inputs[0]->outputShape;
+	this->shape = this->inputs[0]->shape;
+    this->elementType = this->inputs[0]->elementType;
 }
 
 int Sigmoid::supportAutoBatch() {

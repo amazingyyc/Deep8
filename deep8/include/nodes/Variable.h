@@ -5,46 +5,46 @@
 
 namespace Deep8 {
 
-class VariableBase : public Node {
-protected:
-	explicit VariableBase();
-	explicit VariableBase(Node* input);
-	explicit VariableBase(std::vector<Node*> &inputs);
-
-public:
-	/**
-	 * @brief the Variable do nothing in forward and backward process
-	 */
-	void forward() override;
-	void backward() override;
-
-	/**
-	 * set the Gradient to be 0
-	 */
-	virtual void zeroGradient() = 0;
-
-	/**release the gradient*/
-	virtual void releaseGradient() = 0;
-
-	/**
-	 * get the device type
-	 */
-	virtual DeviceType deviceType() = 0;
-
-    /**
-     * set the gradient be 1 for backward process
-     */
-	virtual void setGradientOne() = 0;
-
-	/**if the Variable is a Scalar*/
-	virtual bool isScalar() = 0;
-
-	/**feed data to value*/
-	virtual void feed(const void *) = 0;
-
-	/**fetch data from value*/
-	virtual void fetch(void *) = 0;
-};
+//class VariableBase : public Node {
+//protected:
+//	explicit VariableBase();
+//	explicit VariableBase(Node* input);
+//	explicit VariableBase(std::vector<Node*> &inputs);
+//
+//public:
+//	/**
+//	 * @brief the Variable do nothing in forward and backward process
+//	 */
+//	void forward() override;
+//	void backward() override;
+//
+//	/**
+//	 * set the Gradient to be 0
+//	 */
+//	virtual void zeroGradient() = 0;
+//
+//	/**release the gradient*/
+//	virtual void releaseGradient() = 0;
+//
+//	/**
+//	 * get the device type
+//	 */
+//	virtual DeviceType deviceType() = 0;
+//
+//    /**
+//     * set the gradient be 1 for backward process
+//     */
+//	virtual void setGradientOne() = 0;
+//
+//	/**if the Variable is a Scalar*/
+//	virtual bool isScalar() = 0;
+//
+//	/**feed data to value*/
+//	virtual void feed(const void *) = 0;
+//
+//	/**fetch data from value*/
+//	virtual void fetch(void *) = 0;
+//};
 
 /**
  * @brief the  Variable Node is a Data Node for store the calculate result or the user input data
@@ -62,16 +62,12 @@ public:
  */
 class Variable: public Node {
 public:
-	/**
-	 * @brief if will calculate the Gradient of this Variable in Backward process
-	 */
-	bool updateGradient;
-
 	Tensor value;
 	Tensor gradient;
 
 protected:
     explicit Variable();
+
 public:
     explicit Variable(Tensor &v);
     explicit Variable(Tensor &v, Tensor &g);
@@ -80,8 +76,6 @@ public:
 	explicit Variable(Node *input, Tensor &v);
     explicit Variable(Node *input, Tensor &v, Tensor &g);
 
-protected:
-	virtual void check();
 
 public:
 

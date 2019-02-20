@@ -15,7 +15,6 @@ public:
 	explicit UnBatch(std::vector<Node *> &inputs, size_t offset, Shape &outShape);
 
 	void check() override;
-	bool isShared() override;
 
 protected:
 	void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;

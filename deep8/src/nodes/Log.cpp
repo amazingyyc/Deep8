@@ -5,7 +5,6 @@ namespace Deep8 {
 
 
 Log::Log(std::vector<Node *> &inputs): Function(inputs) {
-	check();
 }
 
 void Log::check() {
@@ -13,7 +12,8 @@ void Log::check() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Log Function needs only 1 input");
 
-	this->outputShape = this->inputs[0]->outputShape;
+	this->shape       = this->inputs[0]->shape;
+    this->elementType = this->inputs[0]->elementType;
 }
 
 void Log::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

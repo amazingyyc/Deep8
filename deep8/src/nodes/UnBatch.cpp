@@ -3,19 +3,18 @@
 namespace Deep8 {
 
 UnBatch::UnBatch(std::vector<Node*> &inputs, size_t o, Shape &shape) : Function(inputs), offset(o) {
-	this->outputShape = shape;
-	check();
+	this->shape = shape;
+    this->isShared = true;
+
+    DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.size() >= offset + this->shape.size(), "the shape is error");
 }
 
 void UnBatch::check() {
 	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the input size must be 1");
-	DEEP8_ARGUMENT_CHECK(this->inputs[0]->outputShape.size() >= offset + this->outputShape.size(), "the shape is error");
-}
-
-bool UnBatch::isShared() {
-	return true;
+	
+    this->elementType = this->inputs[0]->elementType;
 }
 
 void UnBatch::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
@@ -35,24 +34,25 @@ void UnBatch::forward() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the outputs size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
-	DEEP8_ARGUMENT_CHECK(this->outputShape  == this->outputs.first()->outputShape, "the output shape is error");
+	DEEP8_ARGUMENT_CHECK(this->shape == this->outputs.first()->shape, "the output shape is error");
 
 	auto x = (Variable*)(this->inputs[0]);
 	auto y = (Variable*)(this->outputs.first());
 
-	y->outputShape    = this->outputShape;
-	y->updateGradient = x->updateGradient;
+	y->shape          = this->shape;
+	y->updateGradient = this->updateGradient;
+    y->elementType    = this->elementType;
 
-	y->value.storage = x->value.storage;
-	y->value.offset  = x->value.offset + x->value.type.byteWidth * offset;
-	y->value.type    = x->value.type;
-	y->value.shape   = this->outputShape;
+	y->value.storage     = x->value.storage;
+	y->value.offset      = x->value.offset + x->value.elementType.byteWidth * this->offset;
+	y->value.elementType = x->value.elementType;
+	y->value.shape       = this->shape;
 
 	if (x->updateGradient) {
-		y->gradient.storage = x->gradient.storage;
-		y->gradient.offset  = x->gradient.offset + x->gradient.type.byteWidth * offset;
-		y->gradient.type    = x->gradient.type;
-		y->gradient.shape   = this->outputShape;
+		y->gradient.storage     = x->gradient.storage;
+		y->gradient.offset      = x->gradient.offset + x->gradient.elementType.byteWidth * this->offset;
+		y->gradient.elementType = x->gradient.elementType;
+		y->gradient.shape       = this->shape;
 	} else {
 		/**set the output gradient is empty to save the memory*/
 		y->releaseGradient();

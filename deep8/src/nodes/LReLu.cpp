@@ -5,7 +5,6 @@
 namespace Deep8 {
 
 LReLu::LReLu(std::vector<Node*> &inputs, float a): Function(inputs), a(a) {
-	check();
 }
 
 void LReLu::check() {
@@ -13,7 +12,8 @@ void LReLu::check() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the LReLu Function needs only 1 input");
 
-	this->outputShape = this->inputs[0]->outputShape;
+    this->shape = this->inputs[0]->shape;
+    this->elementType = this->inputs[0]->elementType;
 }
 
 int LReLu::supportAutoBatch() {

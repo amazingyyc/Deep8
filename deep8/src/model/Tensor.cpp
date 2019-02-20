@@ -2,19 +2,19 @@
 
 namespace Deep8 {
 
-Tensor::Tensor(): storage(), offset(0), shape(), type(ElementType::from<UnKnownType>()) {
+Tensor::Tensor(): storage(), offset(0), shape(), elementType(ElementType::unknown()) {
 }
 
-Tensor::Tensor(Shape &s): storage(), offset(0), shape(s), type(ElementType::from<UnKnownType>()) {
+Tensor::Tensor(Shape &s): storage(), offset(0), shape(s), elementType(ElementType::unknown()) {
 }
 
-Tensor::Tensor(TensorStorage &ts, size_t off, Shape &s, ElementType et): storage(ts), offset(off), shape(s), type(et) {
+Tensor::Tensor(TensorStorage &ts, size_t off, Shape &s, ElementType et): storage(ts), offset(off), shape(s), elementType(et) {
 }
 
 Tensor::Tensor(TensorStorage &ts, size_t off, std::vector<size_t> &list, ElementType et): Tensor(ts, off, 1, list, et) {
 }
 
-Tensor::Tensor(TensorStorage &ts, size_t off, size_t batch, std::vector<size_t> &list, ElementType et): storage(ts), offset(off), shape(batch, list), type(et) {
+Tensor::Tensor(TensorStorage &ts, size_t off, size_t batch, std::vector<size_t> &list, ElementType et): storage(ts), offset(off), shape(batch, list), elementType(et) {
 }
 
 DeviceType Tensor::deviceType() {
@@ -54,14 +54,14 @@ bool Tensor::isScalar() {
 }
 
 void Tensor::zero() {
-	storage.device->zero(this->raw(), type.byteWidth * shape.size());
+	storage.device->zero(this->raw(), elementType.byteWidth * shape.size());
 }
 
 void Tensor::one() {
 	DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor is not a scalar");
 
 	if (DeviceType::CPU == this->deviceType()) {
-		switch (this->type.id) {
+		switch (this->elementType.id) {
 		case DType::Float32:
 			this->data<float>()[0] = 1;
 			break;
@@ -100,7 +100,7 @@ void Tensor::one() {
 }
 
 size_t Tensor::byteCount() const  {
-	return this->type.byteWidth * this->size();
+	return this->elementType.byteWidth * this->size();
 }
 
 

@@ -36,9 +36,17 @@ public:
 
 	/**store the output Node*/
 	OutputEntry outputs;
-    
-	/**the output shape of forward*/
-    Shape outputShape;
+
+    /**
+     * the shape, elementType, updateGradient
+     * for Variable, the shape and elementType is the Value's shape and elementType. updateGradient is true means it have a gradient or does not
+     * for Function, the shape and elementType is the output shape and ElementType, updateGradient means if the output Variable have a gradient
+     */
+    Shape shape;
+
+    ElementType elementType;
+
+    bool updateGradient;
 
 protected:
 	explicit Node();

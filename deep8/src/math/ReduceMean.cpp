@@ -5,7 +5,7 @@ namespace Math {
 
 void ReduceMean(const Tensor &x, Tensor &y, int axis) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == y.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType  == y.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(axis < x.shape.nDims, "the axis is error");
 
     int size = x.shape.batch;
@@ -33,7 +33,7 @@ void ReduceMean(const Tensor &x, Tensor &y, int axis) {
 
 void ReduceMeanGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType  == dx.elementType  && x.elementType == y.elementType && x.elementType  == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && y.shape == dy.shape, "the x/dx or y/dy shape must be same");
 
     int size = x.shape.batch;
@@ -95,7 +95,7 @@ void ReduceMeanCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const
 void ReduceMeanCPU(const Tensor &x, Tensor &y, int axis) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         ReduceMeanCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape, axis);
         break;
@@ -103,7 +103,7 @@ void ReduceMeanCPU(const Tensor &x, Tensor &y, int axis) {
         ReduceMeanCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape, axis);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -145,7 +145,7 @@ void ReduceMeanGradCPUImpl(CPUDevice*device, T *x, T *dx, const Shape &xshape, T
 void ReduceMeanGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis) {
     auto device = (CPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         ReduceMeanGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape, axis);
         break;
@@ -153,7 +153,7 @@ void ReduceMeanGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
         ReduceMeanGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape, axis);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

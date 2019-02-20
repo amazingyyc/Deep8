@@ -5,18 +5,18 @@ namespace Deep8 {
 
 Conv2d::Conv2d(std::vector<Node *> &inputs, bool covered, int sy, int sx, int dy , int dx)
         :Function(inputs), covered(covered), strideY(sy), strideX(sx), dilationY(dy), dilationX(dx) {
-    check();
 }
 
 void Conv2d::check() {
     Function::check();
 
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "need 2 inputs node");
+    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride can not smaller than 1");
     DEEP8_ARGUMENT_CHECK(dilationY >= 1 && dilationX >= 1, "the dilation can not smaller than 1");
 
-    auto inputShape  = this->inputs[0]->outputShape;
-    auto filterShape = this->inputs[1]->outputShape;
+    auto inputShape  = this->inputs[0]->shape;
+    auto filterShape = this->inputs[1]->shape;
 
     DEEP8_ARGUMENT_CHECK(3 == inputShape.nDims, "Conv2d needs inputs nDims is 3");
     DEEP8_ARGUMENT_CHECK(4 == filterShape.nDims && 1 == filterShape.batch, "Conv2d needs filter nDims is 4, the batch must be 1");
@@ -65,7 +65,8 @@ void Conv2d::check() {
         outputDim[1] = outputWidth;
     }
 
-    this->outputShape = Shape(inputShape.batch, outputDim);
+    this->shape = Shape(inputShape.batch, outputDim);
+    this->elementType = this->inputs[0]->elementType;
 }
 
 void Conv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
@@ -83,7 +84,7 @@ void Conv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
         auto outputHeight = output->shape.dim(0);
         auto outputWidth  = output->shape.dim(1);
 
-        auto size = inputs[0]->type.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+        auto size = inputs[0]->elementType.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
         auto ptr  = device->malloc(size);
 
         Math::Conv2d(*(inputs[0]), *(inputs[1]), *output, ptr, covered, strideY, strideX, dilationY, dilationX);
@@ -122,7 +123,7 @@ void Conv2d::backward(const std::vector<const Tensor*> &inputs,
             auto outputHeight = output->shape.dim(0);
             auto outputWidth  = output->shape.dim(1);
 
-            auto size = inputs[0]->type.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+            auto size = inputs[0]->elementType.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
             auto ptr  = device->malloc(size);
 
             Math::Conv2dGradX(*(inputs[0]), 
@@ -164,7 +165,7 @@ void Conv2d::backward(const std::vector<const Tensor*> &inputs,
             auto outputHeight = output->shape.dim(0);
             auto outputWidth  = output->shape.dim(1);
 
-            auto size = inputs[0]->type.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+            auto size = inputs[0]->elementType.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
             auto ptr  = device->malloc(size);
 
             Math::Conv2dGradY(*(inputs[0]), 

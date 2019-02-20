@@ -4,7 +4,6 @@
 namespace Deep8 {
 
 LogSoftmax::LogSoftmax(std::vector<Node *> &inputs, int a): Function(inputs), axis(a) {
-    check();
 }
 
 void LogSoftmax::check() {
@@ -12,11 +11,12 @@ void LogSoftmax::check() {
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the LogSoftmax Function needs only 1 input");
 
-    auto inputShape = this->inputs[0]->outputShape;
+    auto inputShape = this->inputs[0]->shape;
 
     DEEP8_ARGUMENT_CHECK(axis < (int) inputShape.nDims, "the axis is error");
 
-    this->outputShape = inputShape;
+    this->shape = inputShape;
+    this->elementType = this->inputs[0]->elementType;
 }
 
 void LogSoftmax::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
@@ -43,8 +43,8 @@ void LogSoftmax::forward(const std::vector<const Tensor*> &inputs, Tensor *outpu
         }
     }
 
-    auto maxptr = device->malloc(output->type.byteWidth * dim0 * dim2);
-    auto sumptr = device->malloc(output->type.byteWidth * dim0 * dim2);
+    auto maxptr = device->malloc(output->elementType.byteWidth * dim0 * dim2);
+    auto sumptr = device->malloc(output->elementType.byteWidth * dim0 * dim2);
 
     Math::LogSoftmax(*(inputs[0]), *output, axis, maxptr, sumptr);
 
@@ -82,7 +82,7 @@ void LogSoftmax::backward(const std::vector<const Tensor*> &inputs,
         }
     }
 
-    auto sumptr = device->malloc(iGradient->type.byteWidth * dim0 * dim2);
+    auto sumptr = device->malloc(iGradient->elementType.byteWidth * dim0 * dim2);
 
     Math::LogSoftmaxGrad(*(inputs[0]), *iGradient, *output, *outputGradient, axis, sumptr);
 

@@ -15,9 +15,6 @@ protected:
 public:
 	explicit Parameter(Tensor &value);
     explicit Parameter(Tensor &value, Tensor &gradient);
-	
-protected:
-	void check() override;
 };
 
 }

@@ -48,6 +48,10 @@ public:
         return this->id != other.id;
     }
 
+    static ElementType unknown() {
+        return ElementType(DType::UnKnown, 0, "unknown");
+    }
+
     template <typename T>
     bool is() const {
         DEEP8_RUNTIME_ERROR("Unknow type");

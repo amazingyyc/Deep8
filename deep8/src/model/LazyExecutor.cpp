@@ -93,7 +93,7 @@ void LazyExecutor::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 		/**get all inputs node and shape*/
 		for (auto item : nodes) {
 			inputs.emplace_back(item->inputs[i]);
-			inputsShape.emplace_back(item->inputs[i]->outputShape);
+			inputsShape.emplace_back(item->inputs[i]->shape);
 		}
 
 		auto bactedShape = nodes[0]->autoBatchShape(i, inputsShape);
@@ -122,12 +122,12 @@ void LazyExecutor::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 	size_t offset = 0;
 
 	for (size_t i = 0; i < nodes.size(); ++i) {
-		auto unBatchNode = new UnBatch(unBatchInputs, offset, nodes[i]->outputShape);
+		auto unBatchNode = new UnBatch(unBatchInputs, offset, nodes[i]->shape);
 		this->addFunction(unBatchNode);
 
 		unBatchNodes.emplace_back(unBatchNode);
 
-		offset += unBatchNode->outputShape.size();
+		offset += unBatchNode->shape.size();
 	}
 
 	/**should clean the nodes and it's inputs, outputs*/

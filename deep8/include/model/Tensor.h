@@ -24,7 +24,7 @@ public:
     Shape shape;
 
     /**the element type*/
-    ElementType type;
+    ElementType elementType;
 
 public:
     explicit Tensor();
@@ -69,14 +69,14 @@ public:
 
     template <typename T>
     T* data() {
-        DEEP8_ARGUMENT_CHECK(type.is<T>(), "Tensor type is error, type is: " << type.name);
+        DEEP8_ARGUMENT_CHECK(elementType.is<T>(), "Tensor type is error, type is: " << elementType.name);
 
         return (T*) (this->raw());
     }
 
     template <typename T>
     T* data() const {
-        DEEP8_ARGUMENT_CHECK(type.is<T>(), "Tensor type is error, type is: " << type.name);
+        DEEP8_ARGUMENT_CHECK(elementType.is<T>(), "Tensor type is error, type is: " << elementType.name);
 
         return (T*)(this->raw());
     }

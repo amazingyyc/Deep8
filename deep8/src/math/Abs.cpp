@@ -4,8 +4,8 @@ namespace Deep8 {
 namespace Math {
 
 void Abs(const Tensor &x, Tensor &y) {
-    DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == y.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType(), "the param device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == y.shape, "the param shape must be same");
 
     if (DeviceType::CPU == x.deviceType()) {
@@ -24,7 +24,7 @@ void Abs(const Tensor &x, Tensor &y) {
  */
 void AbsGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.type  == dx.type  && x.type == y.type && x.type  == dy.type, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType && x.elementType == y.elementType && x.elementType == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && x.shape == y.shape && x.shape == dy.shape, "the param shape must be same");
 
     if (DeviceType::CPU == x.deviceType()) {
@@ -53,7 +53,7 @@ void AbsCPU(const Tensor &x, Tensor &y) {
     auto device = (CPUDevice*) x.device();
     auto n      = (int) x.shape.size();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         AbsCPUImpl<float>(device, x.data<float>(), y.data<float>(), n);
         break;
@@ -61,7 +61,7 @@ void AbsCPU(const Tensor &x, Tensor &y) {
         AbsCPUImpl<double>(device, x.data<double>(), y.data<double>(), n);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -92,7 +92,7 @@ void AbsGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
     auto device = (CPUDevice*)x.device();
     auto n      = (int)x.shape.size();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         AbsGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), dy.data<float>(), n);
         break;
@@ -100,7 +100,7 @@ void AbsGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
         AbsGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), dy.data<double>(), n);
         break;
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

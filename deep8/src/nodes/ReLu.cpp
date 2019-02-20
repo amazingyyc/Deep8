@@ -5,7 +5,6 @@
 namespace Deep8 {
 
 ReLu::ReLu(std::vector<Node *> &inputs) : Function(inputs) {
-	check();
 }
 
 void ReLu::check() {
@@ -14,7 +13,8 @@ void ReLu::check() {
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReLu Function needs only 1 input");
 
 	/**the ReLu output shape equal the input*/
-	this->outputShape = this->inputs[0]->outputShape;
+	this->shape = this->inputs[0]->shape;
+    this->elementType = this->inputs[0]->elementType;
 }
 
 int ReLu::supportAutoBatch() {

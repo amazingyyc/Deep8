@@ -4,7 +4,6 @@
 namespace Deep8 {
 
 L1Norm::L1Norm(std::vector<Node *> &inputs): Function(inputs) {
-    check();
 }
 
 void L1Norm::check() {
@@ -12,7 +11,8 @@ void L1Norm::check() {
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L1Norm Function needs only 1 input");
 
-	this->outputShape = Shape(1, { 1 });
+	this->shape       = Shape(1, { 1 });
+    this->elementType = this->inputs[0]->elementType;
 }
 
 void L1Norm::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

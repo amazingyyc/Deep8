@@ -5,16 +5,16 @@
 namespace Deep8 {
 
 MatrixMultiply::MatrixMultiply(std::vector<Node *> &inputs) : Function(inputs) {
-    check();
 }
 
 void MatrixMultiply::check() {
     Function::check();
 
     DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the inputs dim must be 2");
+    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
 
-    auto xShape = this->inputs[0]->outputShape;
-    auto yShape = this->inputs[1]->outputShape;
+    auto xShape = this->inputs[0]->shape;
+    auto yShape = this->inputs[1]->shape;
 
     DEEP8_ARGUMENT_CHECK(xShape.batch == yShape.batch || 1 == xShape.batch || 1 == yShape.batch,
             "the batch of input is error");
@@ -25,10 +25,12 @@ void MatrixMultiply::check() {
                          "the col of input1 must same to the row of input2");
 
     if (1 == yShape.col()) {
-        this->outputShape = Shape(std::max<size_t>(xShape.batch, yShape.batch), {xShape.row()});
+        this->shape = Shape(std::max<size_t>(xShape.batch, yShape.batch), {xShape.row()});
     } else {
-        this->outputShape = Shape(std::max<size_t>(xShape.batch, yShape.batch), {xShape.row(), yShape.col()});
+        this->shape = Shape(std::max<size_t>(xShape.batch, yShape.batch), {xShape.row(), yShape.col()});
     }
+
+    this->elementType = this->inputs[0]->elementType;
 }
 
 /**
@@ -41,8 +43,8 @@ void MatrixMultiply::check() {
  * then the type 1 will be selected
  */
 int MatrixMultiply::supportAutoBatch() {
-    auto &xshape = this->inputs[0]->outputShape;
-    auto &yshape = this->inputs[1]->outputShape;
+    auto &xshape = this->inputs[0]->shape;
+    auto &yshape = this->inputs[1]->shape;
 
     if (1 == xshape.batch && 1 == yshape.col()) {
         return 1;
@@ -65,7 +67,7 @@ size_t MatrixMultiply::autoBatchCode() {
         helper.functionType(FunctionType::MatrixMultiply);
 
         helper.input0Begin();
-        helper.col(this->inputs[0]->outputShape.col());
+        helper.col(this->inputs[0]->shape.col());
         helper.input0End();
 
         helper.input1Begin();
@@ -83,8 +85,8 @@ size_t MatrixMultiply::autoBatchCode() {
         helper.input0End();
 
         helper.input1Begin();
-        helper.row(this->inputs[1]->outputShape.row());
-        helper.row(this->inputs[1]->outputShape.col());
+        helper.row(this->inputs[1]->shape.row());
+        helper.row(this->inputs[1]->shape.col());
         helper.input1End();
 
         return helper.autoBatchCode();

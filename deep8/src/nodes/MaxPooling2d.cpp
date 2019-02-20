@@ -5,7 +5,6 @@ namespace Deep8 {
 
 MaxPooling2d::MaxPooling2d(std::vector<Node *> &inputs, bool covered, int fh, int fw, int sy, int sx )
 		:Function(inputs), covered(covered), filterHeight(fh), filterWidth(fw), strideY(sy), strideX(sx) {
-	check();
 }
 
 void MaxPooling2d::check() {
@@ -13,9 +12,9 @@ void MaxPooling2d::check() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the MaxPooling2d only need 1 input");
 	DEEP8_ARGUMENT_CHECK(filterHeight >= 1 && filterWidth >= 1 && strideY >= 1 && strideX >= 1, "the filter size or stride is error");
-	DEEP8_ARGUMENT_CHECK(3 == this->inputs[0]->outputShape.nDims, "MaxPooling2d needs inputs nDims is 3");
+	DEEP8_ARGUMENT_CHECK(3 == this->inputs[0]->shape.nDims, "MaxPooling2d needs inputs nDims is 3");
 
-	auto inputShape = this->inputs[0]->outputShape;
+	auto inputShape = this->inputs[0]->shape;
 
 	if (!covered) {
 		DEEP8_ARGUMENT_CHECK(filterHeight <= inputShape.dim(0) && filterWidth <= inputShape.dim(1),
@@ -46,7 +45,8 @@ void MaxPooling2d::check() {
 		outputDim[1] = outputWidth;
 	}
 
-	this->outputShape = Shape(inputShape.batch, outputDim);
+	this->shape       = Shape(inputShape.batch, outputDim);
+    this->elementType = this->inputs[0]->elementType;
 }
 
 
