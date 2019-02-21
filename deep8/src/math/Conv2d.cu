@@ -335,7 +335,7 @@ void Conv2dGPU( const Tensor &x,
     auto padTop  = -(std::max<int>(0, (outputHeight - 1) * strideY + realFilterHeight - inputHeight) / 2);
     auto padLeft = -(std::max<int>(0, (outputWidth  - 1) * strideX + realFilterWidth  - inputWidth)  / 2);
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         Conv2dGPUImpl<float>(device,
                           x.data<float>(),
@@ -405,7 +405,7 @@ void Conv2dGPU( const Tensor &x,
     break;
 #endif
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -636,7 +636,7 @@ void Conv2dGradXGPU(const Tensor& x,
     auto padTop  = -(std::max<int>(0, (outputHeight - 1) * strideY + realFilterHeight - inputHeight) / 2);
     auto padLeft = -(std::max<int>(0, (outputWidth  - 1) * strideX + realFilterWidth  - inputWidth)  / 2);
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         Conv2dGradXGPUImpl<float>(device,
                         x.data<float>(), 
@@ -715,7 +715,7 @@ void Conv2dGradXGPU(const Tensor& x,
     break;
 #endif
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -946,7 +946,7 @@ void Conv2dGradYGPU(const Tensor &x,
     auto padTop  = -(std::max<int>(0, (outputHeight - 1) * strideY + realFilterHeight - inputHeight) / 2);
     auto padLeft = -(std::max<int>(0, (outputWidth  - 1) * strideX + realFilterWidth  - inputWidth)  / 2);
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         Conv2dGradYGPUImpl<float>(device,
                         x.data<float>(),
@@ -1025,7 +1025,7 @@ void Conv2dGradYGPU(const Tensor &x,
     break;
 #endif
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

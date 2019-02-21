@@ -33,7 +33,7 @@ void Conv2dCPU( const Tensor &x,
                 int dilationY = 1,
                 int dilationX = 1);
 
-#ifdef HVA_CUDA
+#ifdef HAVE_CUDA
 void Conv2dGPU( const Tensor &x, 
                 const Tensor &y, 
                 Tensor &z,

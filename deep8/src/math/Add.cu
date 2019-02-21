@@ -1,6 +1,7 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
+#include "math/GPUBinaryElementWise.h"
 #include "math/Add.h"
 
 namespace Deep8 {
@@ -17,7 +18,7 @@ struct AddKernelOp {
 };
 
 void AddGPU(const Tensor &x, const Tensor &y, Tensor &z) {
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CallBinaryElementWiseKernel<float, AddKernelOp<float>>(
                                                         x.data<float>(), x.shape, 
@@ -43,7 +44,7 @@ void AddGPU(const Tensor &x, const Tensor &y, Tensor &z) {
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -60,11 +61,11 @@ struct AddGradKernelOp {
 };
 
 void AddGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz) {
-    switch (dx.type.id) {
+    switch (dx.elementType.id) {
     case DType::Float32:
         CallBinaryElementWiseGradXKernel<float, AddGradKernelOp<float>>(
             x.data<float>(), dx.data<float>(), x.shape,
-            y.data<float>(),                 , y.shape,
+            y.data<float>(),                   y.shape,
             z.data<float>(), dz.data<float>(), z.shape,
             AddGradKernelOp<float>()
             );
@@ -72,7 +73,7 @@ void AddGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, 
     case DType::Float64:
         CallBinaryElementWiseGradXKernel<double, AddGradKernelOp<double>>(
             x.data<double>(), dx.data<double>(), x.shape,
-            y.data<double>(),                  , y.shape,
+            y.data<double>(),                    y.shape,
             z.data<double>(), dz.data<double>(), z.shape,
             AddGradKernelOp<double>()
             );
@@ -81,7 +82,7 @@ void AddGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, 
     case DType::Float16:
         CallBinaryElementWiseGradXKernel<half, AddGradKernelOp<half>>(
             x.data<half>(), dx.data<half>(), x.shape,
-            y.data<half>(),                , y.shape,
+            y.data<half>(),                  y.shape,
             z.data<half>(), dz.data<half>(), z.shape,
             AddGradKernelOp<half>()
             );
@@ -89,42 +90,42 @@ void AddGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, 
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
 
 void AddGradYGPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {
-    switch (dx.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CallBinaryElementWiseGradYKernel<float, AddGradKernelOp<float>>(
-            x.data<float>, x.shape,
-            y.data<float>, dy.data<float>(), y.shape,
-            z.data<float>, dz.data<float>(), z.shape,
+            x.data<float>(), x.shape,
+            y.data<float>(), dy.data<float>(), y.shape,
+            z.data<float>(), dz.data<float>(), z.shape,
             AddGradKernelOp<float>()
             );
         break;
     case DType::Float64:
         CallBinaryElementWiseGradYKernel<double, AddGradKernelOp<double>>(
-            x.data<double>, x.shape,
-            y.data<double>, dy.data<double>(), y.shape,
-            z.data<double>, dz.data<double>(), z.shape,
+            x.data<double>(), x.shape,
+            y.data<double>(), dy.data<double>(), y.shape,
+            z.data<double>(), dz.data<double>(), z.shape,
             AddGradKernelOp<double>()
             );
         break;
 #ifdef HAVE_HALF
     case DType::Float16:
         CallBinaryElementWiseGradYKernel<half, AddGradKernelOp<half>>(
-            x.data<half>, x.shape,
-            y.data<half>, dy.data<half>(), y.shape,
-            z.data<half>, dz.data<half>(), z.shape,
+            x.data<half>(), x.shape,
+            y.data<half>(), dy.data<half>(), y.shape,
+            z.data<half>(), dz.data<half>(), z.shape,
             AddGradKernelOp<half>()
             );
         break;
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

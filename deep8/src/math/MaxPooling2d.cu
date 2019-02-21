@@ -162,11 +162,11 @@ void MaxPooling2dGPU(const Tensor &x, Tensor &y, bool covered, int filterHeight,
     int padTop  = (padY / 2);
     int padLeft = (padX / 2);
 
-    auto device = x.device();
+    auto device = (GPUDevice*)x.device();
 
 #ifdef HAVE_CUDNN
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
         case DType::Float32:
             MaxPooling2dGPUImpl<float>(device, 
                                     x.data<float>(), 
@@ -209,7 +209,7 @@ void MaxPooling2dGPU(const Tensor &x, Tensor &y, bool covered, int filterHeight,
         break;
 #endif
         default:
-            DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+            DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
             break;
     }
 #else
@@ -401,10 +401,10 @@ void MaxPooling2dGradGPU(const Tensor &x,
     int padTop  = (padY / 2);
     int padLeft = (padX / 2);
 
-    auto device = x.device();
+    auto device = (GPUDevice*) x.device();
 
 #ifdef HAVE_CUDNN
-    switch (x.type.id) {
+    switch (x.elementType.id) {
         case DType::Float32:
             MaxPooling2dGradGPUImpl<float>(device, 
                                 x.data<float>(),
@@ -453,7 +453,7 @@ void MaxPooling2dGradGPU(const Tensor &x,
         break;
 #endif
         default:
-            DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+            DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
             break;
     }
 #else

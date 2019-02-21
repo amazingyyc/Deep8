@@ -1,7 +1,9 @@
 #ifndef DEEP8_MATH_GPUBINARYELEMENTWISE_H
 #define DEEP8_MATH_GPUBINARYELEMENTWISE_H
 
-#include "GPUBasic.h"
+#include "basic/GPUBasic.h"
+#include "model/Shape.h"
+#include "utils/ShapeUtils.h"
 
 namespace Deep8 {
 namespace Math {
@@ -194,7 +196,7 @@ void CallBinaryElementWiseKernel(const T *x, const Shape &xshape, const T *y, co
 				);
 		break;
 	case 5:
-		BinaryElementWiseKernel<real, BinaryOp, 5> << <grideSize, blockSize >> >
+		BinaryElementWiseKernel<T, BinaryOp, 5> << <grideSize, blockSize >> >
 			(
 				x, convertToNVShape<5>(xshape),
 				y, convertToNVShape<5>(yshape),

@@ -74,19 +74,18 @@ void Tensor::one() {
 		}
 	} else {
 #ifdef HAVE_CUDA
-		switch (this->type.id) {
+        Device* device = this->device();
+
+		switch (this->elementType.id) {
 		case DType::Float32:
-			auto device = this->device();
-			device->copyFromGPUToGPU(device->gpuOneFloat(), this->raw(), this->type.byteWidth);
+			device->copyFromGPUToGPU(device->gpuOneFloat(), this->raw(), this->elementType.byteWidth);
 			break;
 		case DType::Float64:
-			auto device = this->device();
-			device->copyFromGPUToGPU(device->gpuOneDouble(), this->raw(), this->type.byteWidth);
+			device->copyFromGPUToGPU(device->gpuOneDouble(), this->raw(), this->elementType.byteWidth);
 			break;
 #ifdef HAVE_HALF
 		case DType::Float16:
-			auto device = this->device();
-			device->copyFromGPUToGPU(device->gpuOneHalf(), this->raw(), this->type.byteWidth);
+			device->copyFromGPUToGPU(device->gpuOneHalf(), this->raw(), this->elementType.byteWidth);
 			break;
 #endif
 		default:

@@ -1,6 +1,7 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
+#include "math/GPUUnaryElementWise.h"
 #include "math/ReLu.h"
 
 namespace Deep8 {
@@ -19,7 +20,7 @@ void ReLuGPU(const Tensor &x, Tensor &y) {
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (n + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
         case DType::Float32:
         UnaryElementWiseKernel<float, ReLuKernelOp<float>> <<<grideSize, blockSize>>>(
             x.data<float>(), 
@@ -49,7 +50,7 @@ void ReLuGPU(const Tensor &x, Tensor &y) {
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -67,7 +68,7 @@ void ReLuGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy)
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (n + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
         case DType::Float32:
         UnaryElementWiseGradKernel<float, ReLuGradKernelOp<float>> <<<grideSize, blockSize>>> (
             x.data<float>(),
@@ -103,7 +104,7 @@ void ReLuGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy)
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

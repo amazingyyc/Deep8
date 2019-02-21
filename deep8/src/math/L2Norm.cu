@@ -27,7 +27,7 @@ struct L2NormKernelOp {
 };
     
 void L2NormGPU(const Tensor &x, Tensor &y) {
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CallReduceKernel<float, L2NormKernelOp<float>>(x.data<float>(), y.data<float>(), (int)x.shape.size(), L2NormKernelOp<float>());
         break;
@@ -42,7 +42,7 @@ void L2NormGPU(const Tensor &x, Tensor &y) {
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -55,25 +55,25 @@ struct L2NormGradKernelOp {
 };
 
 void L2NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
-    switch (x.type.id) {
+    switch (x.elementType.id) {
         case DType::Float32:
-            CallReduceGradKernel<float, L2NormGradKernelOp<float>>(x.data<float>(), dx.data<float>(), dy.data<float>(), (int)dx.shape.size(), L2NormGradKernelOp<float>());
+            CallReduceGradKernel<float, L2NormGradKernelOp<float>>(x.data<float>(), dx.data<float>(), y.data<float>(), dy.data<float>(), (int)dx.shape.size(), L2NormGradKernelOp<float>());
             break;
         case DType::Float64:
-            CallReduceGradKernel<double, L2NormGradKernelOp<double>>(x.data<double>(), dx.data<double>(), dy.data<double>(), (int)dx.shape.size(), L2NormGradKernelOp<double>());
+            CallReduceGradKernel<double, L2NormGradKernelOp<double>>(x.data<double>(), dx.data<double>(), y.data<double>(), dy.data<double>(), (int)dx.shape.size(), L2NormGradKernelOp<double>());
             break;
     
     #ifdef HAVE_HALF
         case DType::Float16:
-            CallReduceGradKernel<half, L2NormGradKernelOp<half>>(x.data<half>(), dx.data<half>(), dy.data<half>(), (int)dx.shape.size(), L2NormGradKernelOp<half>());
+            CallReduceGradKernel<half, L2NormGradKernelOp<half>>(x.data<half>(), dx.data<half>(), y.data<half>(), dy.data<half>(), (int)dx.shape.size(), L2NormGradKernelOp<half>());
             break;
     #endif
     
         default:
-            DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+            DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
             break;
-        }
     }
+}
 
 }
 }

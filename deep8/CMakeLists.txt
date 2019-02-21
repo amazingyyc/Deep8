@@ -108,9 +108,9 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Divide.cu
 		src/math/Exp.cu
 		src/math/L1Norm.cu
-		src/math/L2Norm.cu
-		src/math/Linear.cu
-		src/math/Log.cu
+	    src/math/L2Norm.cu
+	    src/math/Linear.cu
+	    src/math/Log.cu
 		src/math/LogSoftmax.cu
 		src/math/LReLu.cu
 		src/math/MatrixMultiply.cu

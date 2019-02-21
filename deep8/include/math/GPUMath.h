@@ -207,3 +207,5 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cudaMinValue() {
 
 }
 }
+
+#endif

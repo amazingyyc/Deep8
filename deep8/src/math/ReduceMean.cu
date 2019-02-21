@@ -11,7 +11,7 @@ template <typename T>
 struct ReduceMeanKernelOp {
 	T ratios;
 
-    ReduceMeanKernelOp(T r) : ratio(r) {
+    ReduceMeanKernelOp(T r) : ratios(r) {
     }
 
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
@@ -53,61 +53,62 @@ void ReduceMeanGPU(const Tensor &x, Tensor &y, int axis) {
         }
     }
 
-    switch (x.type.id) {
-    case DType::Float32:
-		float ratio = float(dim1);
+    float fratio = float(dim1);
+    double dratio = double(dim1);
 
+#ifdef HAVE_HALF
+    half hratio = float(dim1);
+#endif
+
+    switch (x.elementType.id) {
+    case DType::Float32:
         if (1 == dim2) {
-            CallTailReduceKernel<float, ReduceMeanKernelOp<float>>(x.data<float>(), y.data<float>(), dim0, dim1, ReduceMeanKernelOp<float>(ratio));
+            CallTailReduceKernel<float, ReduceMeanKernelOp<float>>(x.data<float>(), y.data<float>(), dim0, dim1, ReduceMeanKernelOp<float>(fratio));
         } else if (1 == dim0) {
-            CallHeadReduceKernel<float, ReduceMeanKernelOp<float>>(x.data<float>(), y.data<float>(), dim1, dim2, ReduceMeanKernelOp<float>(ratio));
+            CallHeadReduceKernel<float, ReduceMeanKernelOp<float>>(x.data<float>(), y.data<float>(), dim1, dim2, ReduceMeanKernelOp<float>(fratio));
         } else {
             int N = dim0 * dim2;
             int blockSize = DEEP8_GPU_BLOCK_SIZE;
             int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-            MiddleReduceKernel<float, ReduceMeanKernelOp<float>> <<<grideSize, blockSize>>>(x.data<float>(), y.data<float>(), dim0, dim1, dim2, ReduceMeanKernelOp<float>(ratio), N);
+            MiddleReduceKernel<float, ReduceMeanKernelOp<float>> <<<grideSize, blockSize>>>(x.data<float>(), y.data<float>(), dim0, dim1, dim2, ReduceMeanKernelOp<float>(fratio), N);
         }
 
         break;
-    case DType::Float64:
-		double ratio = double(dim1);
-        
+    case DType::Float64:        
 		if (1 == dim2) {
-            CallTailReduceKernel<double, ReduceMeanKernelOp<double>>(x.data<double>(), y.data<double>(), dim0, dim1, ReduceMeanKernelOp<double>(ratio));
+            CallTailReduceKernel<double, ReduceMeanKernelOp<double>>(x.data<double>(), y.data<double>(), dim0, dim1, ReduceMeanKernelOp<double>(dratio));
         } else if (1 == dim0) {
-            CallHeadReduceKernel<fldoubleoat, ReduceMeanKernelOp<double>>(x.data<double>(), y.data<double>(), dim1, dim2, ReduceMeanKernelOp<double>(ratio));
+            CallHeadReduceKernel<double, ReduceMeanKernelOp<double>>(x.data<double>(), y.data<double>(), dim1, dim2, ReduceMeanKernelOp<double>(dratio));
         } else {
             int N = dim0 * dim2;
             int blockSize = DEEP8_GPU_BLOCK_SIZE;
             int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-            MiddleReduceKernel<double, ReduceMeanKernelOp<double>> <<<grideSize, blockSize>>>(x.data<double>(), y.data<double>(), dim0, dim1, dim2, ReduceMeanKernelOp<double>(ratio), N);
+            MiddleReduceKernel<double, ReduceMeanKernelOp<double>> <<<grideSize, blockSize>>>(x.data<double>(), y.data<double>(), dim0, dim1, dim2, ReduceMeanKernelOp<double>(dratio), N);
         }
 
         break;
 
 #ifdef HAVE_HALF
-    case DType::Float16:
-		half ratio = half(dim1);
-        
+    case DType::Float16:        
 		if (1 == dim2) {
-            CallTailReduceKernel<half, ReduceMeanKernelOp<half>>(x.data<half>(), y.data<half>(), dim0, dim1, ReduceMeanKernelOp<half>(ratio));
+            CallTailReduceKernel<half, ReduceMeanKernelOp<half>>(x.data<half>(), y.data<half>(), dim0, dim1, ReduceMeanKernelOp<half>(hratio));
         } else if (1 == dim0) {
-            CallHeadReduceKernel<half, ReduceMeanKernelOp<half>>(x.data<half>(), y.data<half>(), dim1, dim2, ReduceMeanKernelOp<half>(ratio));
+            CallHeadReduceKernel<half, ReduceMeanKernelOp<half>>(x.data<half>(), y.data<half>(), dim1, dim2, ReduceMeanKernelOp<half>(hratio));
         } else {
             int N = dim0 * dim2;
             int blockSize = DEEP8_GPU_BLOCK_SIZE;
             int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-            MiddleReduceKernel<half, ReduceMeanKernelOp<half>> <<<grideSize, blockSize>>>(x.data<half>(), y.data<half>(), dim0, dim1, dim2, ReduceMeanKernelOp<half>(ratio), N);
+            MiddleReduceKernel<half, ReduceMeanKernelOp<half>> <<<grideSize, blockSize>>>(x.data<half>(), y.data<half>(), dim0, dim1, dim2, ReduceMeanKernelOp<half>(hratio), N);
         }
 
         break;
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -149,10 +150,15 @@ void ReduceMeanGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
     
-    switch (x.type.id) {
-    case DType::Float32:
-		float ratio = float(dim1);
+    float fratio = float(dim1);
+    double dratio = double(dim1);
 
+#ifdef HAVE_HALF
+    half hratio = float(dim1);
+#endif
+
+    switch (x.elementType.id) {
+    case DType::Float32:
         MiddleReduceGradKernel<float, ReduceMeanGradKernelOp<float>> <<<grideSize, blockSize>>>(
             x.data<float>(), 
             dx.data<float>(), 
@@ -161,12 +167,10 @@ void ReduceMeanGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
             dim0, 
             dim1, 
             dim2, 
-            ReduceMeanGradKernelOp<float>(ratio), 
+            ReduceMeanGradKernelOp<float>(fratio),
             N);
         break;
     case DType::Float64:
-		double ratio = double(dim1);
-
         MiddleReduceGradKernel<double, ReduceMeanGradKernelOp<double>> <<<grideSize, blockSize>>>(
             x.data<double>(), 
             dx.data<double>(), 
@@ -175,14 +179,12 @@ void ReduceMeanGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
             dim0, 
             dim1, 
             dim2, 
-            ReduceMeanGradKernelOp<double>(ratio), 
+            ReduceMeanGradKernelOp<double>(dratio),
             N);
         break;
 
 #ifdef HAVE_HALF
     case DType::Float16:
-		half ratio = half(dim1);
-
         MiddleReduceGradKernel<half, ReduceMeanGradKernelOp<half>> <<<grideSize, blockSize>>>(
             x.data<half>(), 
             dx.data<half>(), 
@@ -191,13 +193,13 @@ void ReduceMeanGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
             dim0, 
             dim1, 
             dim2, 
-            ReduceMeanGradKernelOp<half>(ratio), 
+            ReduceMeanGradKernelOp<half>(hratio),
             N);
         break;
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

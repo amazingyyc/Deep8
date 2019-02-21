@@ -1,6 +1,7 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
+#include "math/GPUReduce.h"
 #include "math/CrossEntropy.h"
 
 namespace Deep8 {
@@ -24,7 +25,7 @@ __global__ void CrossEntropyKernel(const T *x, const T *y, T *z, const T scale, 
     shared[threaId] = 0;
 
     while (i < N) {
-        ret += y[i] * cudaLog(x[i]);
+        shared[threaId] += y[i] * cudaLog(x[i]);
 
         i += blockSize;
     }
@@ -121,9 +122,9 @@ void CrossEntropyGPUImpl(GPUDevice *device,
 }
 
 void CrossEntropyGPU(const Tensor &x, const Tensor &y, Tensor &z) {
-    auto device = x.device();
+    auto device = (GPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CrossEntropyGPUImpl<float>(device, 
                                 x.data<float>(), 
@@ -156,7 +157,7 @@ void CrossEntropyGPU(const Tensor &x, const Tensor &y, Tensor &z) {
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -192,9 +193,9 @@ void CrossEntropyGradXGPUImpl(GPUDevice *device,
 }
 
 void CrossEntropyGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz) {
-    auto device = x.device();
+    auto device = (GPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CrossEntropyGradXGPUImpl<float>(device, 
             x.data<float>(), 
@@ -233,7 +234,7 @@ void CrossEntropyGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Te
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -270,9 +271,9 @@ void CrossEntropyGradYGPUImpl(GPUDevice *device,
 }
 
 void CrossEntropyGradYGPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {
-    auto device = x.device();
+    auto device = (GPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         CrossEntropyGradYGPUImpl<float>(device, 
             x.data<float>(), 
@@ -311,7 +312,7 @@ void CrossEntropyGradYGPU(const Tensor &x, const Tensor &y, Tensor &dy, const Te
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

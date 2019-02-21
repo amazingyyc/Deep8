@@ -1,6 +1,8 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
+#include "math/GPUReduce.h"
+#include "math/GPUBinaryElementWise.h"
 #include "math/Softmax.h"
 
 namespace Deep8 {
@@ -179,9 +181,9 @@ void SoftmaxGPUImpl(GPUDevice *device,
 }
 
 void SoftmaxGPU(const Tensor &x, Tensor &y, int axis, void *ptr) {
-    auto device = x.device();
+    auto device = (GPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         SoftmaxGPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape, axis, (float*)ptr);
         break;
@@ -196,7 +198,7 @@ void SoftmaxGPU(const Tensor &x, Tensor &y, int axis, void *ptr) {
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -280,7 +282,7 @@ __global__ void SoftmaxGradDotKernel(const T *y, const T *dy, T *dotptr, const i
 }
 
 template <typename T>
-__global__ void SoftmaxGradKernel(real *dx, const T *y, const T *dy, const T *dotptr, const int dim0, const int dim1, const int dim2, const int N) {
+__global__ void SoftmaxGradKernel(T *dx, const T *y, const T *dy, const T *dotptr, const int dim0, const int dim1, const int dim2, const int N) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
 
@@ -331,6 +333,8 @@ void SoftmaxGradGPUImpl(GPUDevice *device,
         blockSize = prevPowerOf2(dim1);
     }
 
+    int sharedSize = sizeof(T) * blockSize;
+
     if (1024 == blockSize) {
         SoftmaxGradDotKernel<1024, T> << <gridSize, blockSize, sharedSize >> > (y, dy, dotptr, dim0, dim1, dim2);
     } else if (512 == blockSize) {
@@ -359,16 +363,16 @@ void SoftmaxGradGPUImpl(GPUDevice *device,
 
     int N = (int)xshape.size();
 
-    int blockSize = DEEP8_GPU_BLOCK_SIZE;
+    blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     SoftmaxGradKernel<T><<<grideSize, blockSize >>>(dx, y, dy, dotptr, dim0, dim1, dim2, N);
 }
 
 void SoftmaxGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis, void *ptr) {
-    auto device = x.device();
+    auto device = (GPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         SoftmaxGradGPUImpl<float>(device,
                                  x.data<float>(),
@@ -407,7 +411,7 @@ void SoftmaxGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

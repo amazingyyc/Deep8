@@ -1,6 +1,7 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
+#include "math/GPUUnaryElementWise.h"
 #include "math/Linear.h"
 
 namespace Deep8 {
@@ -25,7 +26,7 @@ void LinearGPU(const Tensor &x, const float a, const float b, Tensor &y) {
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (n + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
         case DType::Float32:
         UnaryElementWiseKernel<float, LinearKernelOp<float>> <<<grideSize, blockSize>>>(
             x.data<float>(), 
@@ -55,7 +56,7 @@ void LinearGPU(const Tensor &x, const float a, const float b, Tensor &y) {
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -79,7 +80,7 @@ void LinearGradGPU(const Tensor &x, Tensor &dx, const float a, const float b, co
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (n + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
         case DType::Float32:
         UnaryElementWiseGradKernel<float, LinearGradKernelOp<float>> <<<grideSize, blockSize>>> (
             x.data<float>(),
@@ -115,7 +116,7 @@ void LinearGradGPU(const Tensor &x, Tensor &dx, const float a, const float b, co
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

@@ -1,6 +1,8 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
+#include "math/GPUReduce.h"
+#include "math/GPUBinaryElementWise.h"
 #include "math/LogSoftmax.h"
 
 namespace Deep8 {
@@ -67,7 +69,7 @@ __global__ void LogSoftmaxKernel(const T *x, const T *maxptr, const T *sumlogptr
 }
 
 template <typename T>
-void LogSoftmaxGPUImpl(GPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape, T *maxptr, T *sumlogptr) {
+void LogSoftmaxGPUImpl(GPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape, int axis, T *maxptr, T *sumlogptr) {
     int dim0, dim1, dim2;
 
     if (axis < 0) {
@@ -130,7 +132,7 @@ void LogSoftmaxGPUImpl(GPUDevice *device, const T *x, const Shape &xshape, T *y,
         int blockSize = DEEP8_GPU_BLOCK_SIZE;
         int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-        BinaryElementWiseForward<T, LogSoftmaxExpMinusKernelOp<T>, 3> <<<grideSize, blockSize>>>(x, xNVShape, maxptr, maxNVShape, y, yNVShape, LogSoftmaxExpMinusKernelOp<T>(), N);
+        BinaryElementWiseKernel<T, LogSoftmaxExpMinusKernelOp<T>, 3> <<<grideSize, blockSize>>>(x, xNVShape, maxptr, maxNVShape, y, yNVShape, LogSoftmaxExpMinusKernelOp<T>(), N);
     }
 
     /**calculate sum*/
@@ -159,9 +161,9 @@ void LogSoftmaxGPUImpl(GPUDevice *device, const T *x, const Shape &xshape, T *y,
 }
 
 void LogSoftmaxGPU(const Tensor &x, Tensor &y, int axis, void *maxptr, void *sumptr) {
-    auto device = x.device();
+    auto device = (GPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         LogSoftmaxGPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape, axis, (float*)maxptr, (float*)sumptr);
         break;
@@ -176,7 +178,7 @@ void LogSoftmaxGPU(const Tensor &x, Tensor &y, int axis, void *maxptr, void *sum
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -259,9 +261,9 @@ void LogSoftmaxGradGPUImpl(GPUDevice *device, const T *x, T *dx, const Shape &xs
 }
 
 void LogSoftmaxGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis, void *sumptr) {
-    auto device = x.device();
+    auto device = (GPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         LogSoftmaxGradGPUImpl<float>(device,
                                  x.data<float>(),
@@ -300,7 +302,7 @@ void LogSoftmaxGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

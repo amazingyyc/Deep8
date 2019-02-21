@@ -48,7 +48,7 @@ void ReduceSumGPU(const Tensor &x, Tensor &y, int axis) {
         }
     }
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         if (1 == dim2) {
             CallTailReduceKernel<float, ReduceSumKernelOp<float>>(x.data<float>(), y.data<float>(), dim0, dim1, ReduceSumKernelOp<float>());
@@ -96,7 +96,7 @@ void ReduceSumGPU(const Tensor &x, Tensor &y, int axis) {
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -134,7 +134,7 @@ void ReduceSumGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
     
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         MiddleReduceGradKernel<float, ReduceSumGradKernelOp<float>> <<<grideSize, blockSize>>>(
             x.data<float>(), 
@@ -176,7 +176,7 @@ void ReduceSumGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 

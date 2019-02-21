@@ -83,7 +83,7 @@ public:
 
     template <typename T>
     bool is() {
-        return type.is<T>();
+        return elementType.is<T>();
     }
 };
 

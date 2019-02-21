@@ -32,10 +32,10 @@ __global__ void AvgPooling2dKernel(const T *x, T *y,
 
         T sum = 0;
 
-        for (int y = 0; y < filterHeight; ++y) {
-            for (int x = 0; x < filterWidth; ++x) {
-                int inputY = outputY * strideY + padTop + y;
-                int inputX = outputX * strideX + padLeft + x;
+        for (int h = 0; h < filterHeight; ++h) {
+            for (int w = 0; w < filterWidth; ++w) {
+                int inputY = outputY * strideY + padTop  + h;
+                int inputX = outputX * strideX + padLeft + w;
 
                 if (0 <= inputY && inputY < inputHeight && 0 <= inputX && inputX < inputWidth) {
                     sum += x[((b * inputHeight + inputY) * inputWidth + inputX) * channel + offset];
@@ -72,7 +72,7 @@ void AvgPooling2dGPU(const Tensor &x, Tensor &y,
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         AvgPooling2dKernel<float><<<grideSize, blockSize >>>(
             x.data<float>(), 
@@ -130,7 +130,7 @@ void AvgPooling2dGPU(const Tensor &x, Tensor &y,
         break;
 #endif
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -205,7 +205,7 @@ void AvgPooling2dGradGPU(const Tensor &x, Tensor &dx,
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         AvgPooling2dGradKernel<float> << <grideSize, blockSize >> > (
             dx.data<float>(),
@@ -263,7 +263,7 @@ void AvgPooling2dGradGPU(const Tensor &x, Tensor &dx,
         break;
 #endif
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

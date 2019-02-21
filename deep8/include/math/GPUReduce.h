@@ -43,7 +43,7 @@ __global__ void MiddleReduceGradKernel( const T *x,
                                         const int dim0,
                                         const int dim1, 
                                         const int dim2,
-                                        ReduceOP op, 
+                                        ReduceOp op,
                                         const int N) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
@@ -394,6 +394,10 @@ void CallReduceGradKernel(const T *x, T *dx, const T *y, const T *dy, const int 
 
     TailReduceGradKernel<T, ReduceOp> <<< grideSize, blockSize >>> (x, dx, y, dy, 1, size, op, size);
 }
+
+
+
+
 
 }
 }

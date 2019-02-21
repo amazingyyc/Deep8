@@ -23,7 +23,7 @@ void DeConv2dCPU(   const Tensor &x,
                     int strideY = 1,
                     int strideX = 1);
 
-#ifdef HVA_CUDA
+#ifdef HAVE_CUDA
 void DeConv2dGPU(   const Tensor &x, 
                     const Tensor &y, 
                     Tensor &z,

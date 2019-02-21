@@ -1,5 +1,6 @@
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
+#include "math/GPUUnaryElementWise.h"
 #include "math/GPUMath.h"
 #include "math/Abs.h"
 
@@ -59,9 +60,9 @@ void AbsGradGPUImpl(const T *x, T *dx, const T *y, const T *dy, int n) {
 }
 
 void AbsGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
-    auto n = (int)x.shape();
+    auto n = (int)x.shape.size();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         AbsGradGPUImpl<float>(x.data<float>(), dx.data<float>(), y.data<float>(), dy.data<float>(), n);
         break;
@@ -76,7 +77,7 @@ void AbsGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

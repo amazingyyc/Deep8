@@ -1,4 +1,5 @@
 #include "basic/GPUBasic.h"
+#include "basic/GPUException.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
 #include "math/DeConv2d.h"
@@ -64,7 +65,7 @@ void DeConv2dGPUImpl(GPUDevice *device,
                     const Shape &yshape, 
                     T *z, 
                     const Shape &zshape,
-                    float *zmat,
+                    T *zmat,
                     bool convered,
                     int strideY,
                     int strideX) {
@@ -254,9 +255,9 @@ void DeConv2dGPU(   const Tensor &x,
                     bool convered,
                     int strideY,
                     int strideX) {
-    auto device = x.device();
+    auto device = (GPUDevice*) x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         DeConv2dGPUImpl<float>(device, 
                                 x.data<float>(), 
@@ -265,7 +266,7 @@ void DeConv2dGPU(   const Tensor &x,
                                 y.shape, 
                                 z.data<float>(), 
                                 z.shape,
-                                zmat,
+                                (float*) zmat,
                                 convered,
                                 strideY,
                                 strideX);
@@ -278,7 +279,7 @@ void DeConv2dGPU(   const Tensor &x,
                                 y.shape, 
                                 z.data<double>(), 
                                 z.shape,
-                                zmat,
+                                (double*) zmat,
                                 convered,
                                 strideY,
                                 strideX);
@@ -293,7 +294,7 @@ void DeConv2dGPU(   const Tensor &x,
                                 y.shape, 
                                 z.data<half>(), 
                                 z.shape,
-                                zmat,
+                                (half*)zmat,
                                 convered,
                                 strideY,
                                 strideX);
@@ -301,7 +302,7 @@ void DeConv2dGPU(   const Tensor &x,
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -562,9 +563,9 @@ void DeConv2dGradXGPU(  const Tensor& x,
                         bool convered,
                         int strideY,
                         int strideX) {
-    auto device = x.device();
+    auto device = (GPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         DeConv2dGradXGPUImpl<float>(device, 
             x.data<float>(), 
@@ -575,7 +576,7 @@ void DeConv2dGradXGPU(  const Tensor& x,
             z.data<float>(),
             dz.data<float>(),
             z.shape,
-            dzmat,
+            (float*)dzmat,
             convered,
             strideY,
             strideX);
@@ -590,7 +591,7 @@ void DeConv2dGradXGPU(  const Tensor& x,
             z.data<double>(),
             dz.data<double>(),
             z.shape,
-            dzmat,
+            (double*)dzmat,
             convered,
             strideY,
             strideX);
@@ -607,7 +608,7 @@ void DeConv2dGradXGPU(  const Tensor& x,
             z.data<half>(),
             dz.data<half>(),
             z.shape,
-            dzmat,
+            (half*)dzmat,
             convered,
             strideY,
             strideX);
@@ -615,7 +616,7 @@ void DeConv2dGradXGPU(  const Tensor& x,
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -671,7 +672,7 @@ void DeConv2dGradYGPUImpl<float>(GPUDevice *device,
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    DeConv2dIm2ColKernel<float><<<grideSize, blockSize>>>(dyzat, 
+    DeConv2dIm2ColKernel<float><<<grideSize, blockSize>>>(dzmat,
                                                             dz,
                                                             batch, 
                                                             inputHeight, 
@@ -732,7 +733,7 @@ void DeConv2dGradYGPUImpl<double>(GPUDevice *device,
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    DeConv2dIm2ColKernel<double><<<grideSize, blockSize>>>(dyzat, 
+    DeConv2dIm2ColKernel<double><<<grideSize, blockSize>>>(dzmat,
                                                             dz,
                                                             batch, 
                                                             inputHeight, 
@@ -794,7 +795,7 @@ void DeConv2dGradYGPUImpl<half>(GPUDevice *device,
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    DeConv2dIm2ColKernel<half><<<grideSize, blockSize>>>(dyzat, 
+    DeConv2dIm2ColKernel<half><<<grideSize, blockSize>>>(dzmat,
                                                             dz,
                                                             batch, 
                                                             inputHeight, 
@@ -831,9 +832,9 @@ void DeConv2dGradYGPU(  const Tensor &x,
                         bool convered,
                         int strideY,
                         int strideX) {
-    auto device = x.device();
+    auto device = (GPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         DeConv2dGradYGPUImpl<float>(device, 
             x.data<float>(), 
@@ -844,7 +845,7 @@ void DeConv2dGradYGPU(  const Tensor &x,
             z.data<float>(),
             dz.data<float>(),
             z.shape,
-            dzmat,
+            (float*)dzmat,
             convered,
             strideY,
             strideX);
@@ -859,7 +860,7 @@ void DeConv2dGradYGPU(  const Tensor &x,
             z.data<double>(),
             dz.data<double>(),
             z.shape,
-            dzmat,
+            (double*)dzmat,
             convered,
             strideY,
             strideX);
@@ -876,7 +877,7 @@ void DeConv2dGradYGPU(  const Tensor &x,
             z.data<half>(),
             dz.data<half>(),
             z.shape,
-            dzmat,
+            (half*)dzmat,
             convered,
             strideY,
             strideX);
@@ -884,7 +885,7 @@ void DeConv2dGradYGPU(  const Tensor &x,
 #endif
 
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }

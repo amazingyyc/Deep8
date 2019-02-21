@@ -139,7 +139,7 @@ void MatrixMultiplyGPUImpl<half>(GPUDevice* device,
 void MatrixMultiplyGPU(const Tensor &x, const Tensor &y, Tensor &z) {
     auto device = (GPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         MatrixMultiplyGPUImpl<float>(device,
                                     x.data<float>(),
@@ -170,7 +170,7 @@ void MatrixMultiplyGPU(const Tensor &x, const Tensor &y, Tensor &z) {
         break;
 #endif
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -202,7 +202,7 @@ void MatrixMultiplyGradXGPUImpl<float>( GPUDevice *device,
     float alpha = 1;
     float beta  = 1;
 
-    if (1 == yhape.batch) {
+    if (1 == yshape.batch) {
         int b = xshape.batch;
         int m = xshape.row();
         int k = xshape.col();
@@ -244,7 +244,7 @@ void MatrixMultiplyGradXGPUImpl<double>( GPUDevice *device,
     double alpha = 1;
     double beta  = 1;
 
-    if (1 == yhape.batch) {
+    if (1 == yshape.batch) {
         int b = xshape.batch;
         int m = xshape.row();
         int k = xshape.col();
@@ -287,7 +287,7 @@ void MatrixMultiplyGradXGPUImpl<half>( GPUDevice *device,
     half alpha = 1.0;
     half beta  = 1.0;
 
-    if (1 == yhape.batch) {
+    if (1 == yshape.batch) {
         int b = xshape.batch;
         int m = xshape.row();
         int k = xshape.col();
@@ -320,7 +320,7 @@ void MatrixMultiplyGradXGPUImpl<half>( GPUDevice *device,
 void MatrixMultiplyGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz) {
     auto device = (GPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
     MatrixMultiplyGradXGPUImpl<float>(device, 
                                         x.data<float>(), 
@@ -357,7 +357,7 @@ void MatrixMultiplyGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const 
         break;
 #endif
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
@@ -476,23 +476,23 @@ void MatrixMultiplyGradYGPUImpl<half>( GPUDevice *device,
     half beta = 1.0;
 
     if (1 == yshape.batch) {
-        int b = xshape.batch;
-        int m = xshape.row();
-        int k = xshape.col();
-        int n = yshape.col();
+        int b = (int)xshape.batch;
+        int m = (int)xshape.row();
+        int k = (int)xshape.col();
+        int n = (int)yshape.col();
 
         CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m * b, &alpha, dz, n, x, k, &beta, dy, n));
     } else if (1 == xshape.batch && 1 == yshape.col()) {
-        int m = xshape.row();
-        int k = xshape.col();
-        int b = yshape.batch;
+        int m = (int)xshape.row();
+        int k = (int)xshape.col();
+        int b = (int)yshape.batch;
 
         CUBLAS_CHECK(cublasHgemm(device->cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, k, b, m, &alpha, x, k, dz, m, &beta, dy, k));
     } else {
         int batch = zshape.batch;
-        int m = xshape.row();
-        int k = xshape.col();
-        int n = yshape.col();
+        int m = (int)xshape.row();
+        int k = (int)xshape.col();
+        int n = (int)yshape.col();
 
         for (int b = 0; b < batch; ++b) {
             auto  xptr =  x + (b % xshape.batch) * xshape.batchSize();
@@ -508,7 +508,7 @@ void MatrixMultiplyGradYGPUImpl<half>( GPUDevice *device,
 void MatrixMultiplyGradYGPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {
     auto device = (GPUDevice*)x.device();
 
-    switch (x.type.id) {
+    switch (x.elementType.id) {
     case DType::Float32:
         MatrixMultiplyGradYGPUImpl<float>(device, 
                                             x.data<float>(), 
@@ -545,7 +545,7 @@ void MatrixMultiplyGradYGPU(const Tensor &x, const Tensor &y, Tensor &dy, const 
         break;
 #endif
     default:
-        DEEP8_RUNTIME_ERROR("type " << x.type.name << " is not support");
+        DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
 }
