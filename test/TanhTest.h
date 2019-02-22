@@ -72,23 +72,22 @@ TEST(Tanh, GPU_float) {
 	auto outputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 	auto outputGradPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 
-	auto input = createTensorGPU<real>(device, inputPtr, 10, 400, 200);
-	auto inputGrad = createTensorGPU<real>(device, inputGradPtr, 10, 400, 200);
-
-	auto output = createTensorGPU<real>(device, outputPtr, 10, 400, 200);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 10, 400, 200);
+    auto input      = createTensor(device, inputPtr,     ElementType::from<real>(), 10, {400, 200});
+    auto inputGrad  = createTensor(device, inputGradPtr, ElementType::from<real>(), 10, {400, 200});
+    auto output     = createTensor(device, outputPtr,    ElementType::from<real>(),  10,{ 400, 200});
+    auto outputGrad = createTensor(device, outputGradPtr,ElementType::from<real>(),  10,{ 400, 200});
 
 	zeroTensor(device, inputGrad);
 
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	Tanh<real> tanhFunc(inputs);
+	Tanh tanhFunc(inputs);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	tanhFunc.forwardGPU(inputTensor, &output);
-	tanhFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	tanhFunc.forward(inputTensor, &output);
+	tanhFunc.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 400 * 200);
 	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 400 * 200);
@@ -100,7 +99,7 @@ TEST(Tanh, GPU_float) {
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		auto temp = outputGradPtr[i] * (1.0 - std::tanh(inputPtr[i]) * std::tanh(inputPtr[i]));
 
-		ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) <= 1e-6);
+		ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) <= 1e-5);
 	}
 
 	free(inputPtr);
@@ -108,10 +107,6 @@ TEST(Tanh, GPU_float) {
 	free(outputPtr);
 	free(outputGradPtr);
 
-	freeTensor(device, input);
-	freeTensor(device, inputGrad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
 }
 
 #ifdef HAVE_HALF
@@ -121,21 +116,20 @@ TEST(Tanh, half_GPU) {
 
 	GPUDevice device;
 
-	auto input = createTensorGPU<real>(device, 10, 400, 200);
-	auto inputGrad = createTensorGPU<real>(device, 10, 400, 200);
+	auto input      = createTensor(device, ElementType::from<real>(), 10, {400, 200});
+	auto inputGrad  = createTensor(device, ElementType::from<real>(), 10, {400, 200});
+	auto output     = createTensor(device, ElementType::from<real>(), 10, {400, 200});
+	auto outputGrad = createTensor(device, ElementType::from<real>(), 10, {400, 200});
 
-	auto output = createTensorGPU<real>(device, 10, 400, 200);
-	auto outputGrad = createTensorGPU<real>(device, 10, 400, 200);
-
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	Tanh<real> tanhFunc(inputs);
+	Tanh tanhFunc(inputs);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	tanhFunc.forwardGPU(inputTensor, &output);
-	tanhFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	tanhFunc.forward(inputTensor, &output);
+	tanhFunc.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
 }
 

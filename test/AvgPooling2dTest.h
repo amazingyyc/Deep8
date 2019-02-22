@@ -92,17 +92,17 @@ TEST(AvgPooling2d, forwardGPU_float) {
     auto cpuInputPtr  = (float*)malloc(sizeof(float) * 1 * 32 * 32 * 64);
     auto cpuOutputPtr = (float*)malloc(sizeof(float) * 1 * 16 * 16 * 64);
 
-    auto input  = createTensorGPU<float>(device, cpuInputPtr, 1, 32, 32, 64);
-	auto output = createTensorGPU<float>(device, cpuOutputPtr, 1, 16, 16, 64);
+    auto input  = createTensor(device, cpuInputPtr, ElementType::from<float>(), 1, {32, 32, 64});
+    auto output = createTensor(device, cpuOutputPtr, ElementType::from<float>(), 1, {16, 16, 64});
 
-	auto inputVar1 = createFakeVariable<GPUDevice, float>(device, { 1, 32, 32, 64 });
+	auto inputVar1 = createFakeVariable(device, ElementType::from<float>(), 1, {32, 32, 64 });
 
 	std::vector<Node*> inputs = { &inputVar1 };
-    AvgPooling2d<float> vagPooling(inputs, true, 3, 3, 2, 2);
+    AvgPooling2d vagPooling(inputs, true, 3, 3, 2, 2);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    vagPooling.forwardGPU(inputTensor, &output);
+    vagPooling.forward(inputTensor, &output);
 
     device.copyFromGPUToCPU(output.raw(), cpuOutputPtr, sizeof(float) * 1 * 16 * 16 * 64);
 
@@ -127,14 +127,8 @@ TEST(AvgPooling2d, forwardGPU_float) {
         }
     }
 
-    freeTensor(device, input);
-	freeTensor(device, output);
-
-	freeFakeVariable(inputVar1);
-
 	free(cpuInputPtr);
 	free(cpuOutputPtr);
-
 }
 
 TEST(AvgPooling2d, backwardGPU_float) {
@@ -148,23 +142,23 @@ TEST(AvgPooling2d, backwardGPU_float) {
 	auto cpuOutputValuePtr = (real*)malloc(sizeof(real) * 1 * 16 * 16 * 64);
 	auto cpuOutputGradPtr  = (real*)malloc(sizeof(real) * 1 * 16 * 16 * 64);
 
-	auto inputValue = createTensorGPU<real>(device, cpuInputValuePtr, 1, 32, 32, 64);
-	auto inputGrad  = createTensorGPU<real>(device, cpuInputGradPtr, 1, 32, 32, 64);
+    auto inputValue = createTensor(device, cpuInputValuePtr, ElementType::from<real>(), 1, {32, 32, 64});
+    auto inputGrad  = createTensor(device, cpuInputGradPtr, ElementType::from<real>(), 1, {32, 32, 64});
 
-	auto outputValue = createTensorGPU<real>(device, cpuOutputValuePtr, 1, 16, 16, 64);
-	auto outputGrad = createTensorGPU<real>(device, cpuOutputGradPtr, 1, 16, 16, 64);
+    auto outputValue = createTensor(device, cpuOutputValuePtr, ElementType::from<real>(), 1, {16, 16, 64});
+    auto outputGrad = createTensor(device, cpuOutputGradPtr, ElementType::from<real>(), 1, {16, 16, 64});
 
     /**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device, { 1, 32, 32, 64 });
+	auto inputVar = createFakeVariable(device, ElementType::from<real>() , 1, {32, 32, 64 });
 
     std::vector<Node*> inputs = {&inputVar};
-	AvgPooling2d<float> vagPooling(inputs, true, 3, 3, 2, 2);
+	AvgPooling2d vagPooling(inputs, true, 3, 3, 2, 2);
 
 	zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<real>*> inputValues = {&inputValue};
+    std::vector<const Tensor*> inputValues = {&inputValue};
 
-	vagPooling.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+	vagPooling.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     device.copyFromGPUToCPU(inputGrad.raw(), cpuInputGradPtr, sizeof(float) * 1 * 32 * 32 * 64);
 
@@ -190,7 +184,7 @@ TEST(AvgPooling2d, backwardGPU_float) {
     }
 
 	for (int i = 0; i < 32 * 32 * 64; ++i) {
-		ASSERT_TRUE(std::abs(tempinputgradptr[i] - cpuInputGradPtr[i]) < 1e-6);
+		ASSERT_TRUE(std::abs(tempinputgradptr[i] - cpuInputGradPtr[i]) < 1e-5);
 	}
 
 	free(tempinputgradptr);
@@ -200,12 +194,6 @@ TEST(AvgPooling2d, backwardGPU_float) {
 	free(cpuOutputValuePtr);
 	free(cpuOutputGradPtr);
 
-	freeTensor(device, inputValue);
-	freeTensor(device, inputGrad);
-	freeTensor(device, outputValue);
-	freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar);
 
 }
 
@@ -216,22 +204,21 @@ TEST(AvgPooling2d, half_GPU) {
 
 	GPUDevice device;
 
-	auto inputValue = createTensorGPU<real>(device, 1, 32, 32, 64);
-	auto inputGrad = createTensorGPU<real>(device, 1, 32, 32, 64);
-
-	auto outputValue = createTensorGPU<real>(device, 1, 16, 16, 64);
-	auto outputGrad = createTensorGPU<real>(device, 1, 16, 16, 64);
+    auto inputValue  = createTensor(device, ElementType::from<real>(), 1, {32, 32, 64});
+    auto inputGrad   = createTensor(device, ElementType::from<real>(), 1, {32, 32, 64});
+    auto outputValue = createTensor(device, ElementType::from<real>(), 1, {16, 16, 64});
+    auto outputGrad  = createTensor(device, ElementType::from<real>(), 1, {16, 16, 64});
 
 	/**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device, { 1, 32, 32, 64 });
+	auto inputVar = createFakeVariable(device, ElementType::from<real>(), 1, {32, 32, 64 });
 
 	std::vector<Node*> inputs = { &inputVar };
-	AvgPooling2d<real> vagPooling(inputs, true, 3, 3, 2, 2);
+	AvgPooling2d vagPooling(inputs, true, 3, 3, 2, 2);
 
-	std::vector<const Tensor<real>*> inputValues = { &inputValue };
+	std::vector<const Tensor*> inputValues = { &inputValue };
 
-	vagPooling.forwardGPU(inputValues, &outputValue);
-	vagPooling.backwardGPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+	vagPooling.forward(inputValues, &outputValue);
+	vagPooling.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
 }
 

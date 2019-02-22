@@ -82,24 +82,23 @@ TEST(Exp, GPU_double) {
     auto outputPtr = (real*)malloc(sizeof(real) * dim0 * dim1 * dim2);
     auto outputGradPtr = (real*)malloc(sizeof(real) * dim0 * dim1 * dim2);
 
-    auto input = createTensorGPU<real>(device, inputPtr, dim0, dim1, dim2);
-	auto inputGrad  = createTensorGPU<real>(device, inputGradPtr, dim0, dim1, dim2);
-
-	auto output = createTensorGPU<real>(device, outputPtr, dim0, dim1, dim2);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, dim0, dim1, dim2);
+    auto input      = createTensor(device, inputPtr,     ElementType::from<double>(), (size_t)dim0, { (size_t)dim1, (size_t)dim2});
+    auto inputGrad  = createTensor(device, inputGradPtr, ElementType::from<double>(), (size_t)dim0, { (size_t)dim1, (size_t)dim2});
+    auto output     = createTensor(device, outputPtr,    ElementType::from<double>(), (size_t)dim0, { (size_t)dim1, (size_t)dim2});
+    auto outputGrad = createTensor(device, outputGradPtr,ElementType::from<double>(), (size_t)dim0, { (size_t)dim1, (size_t)dim2});
 
     /**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar = createFakeVariable(device, ElementType::from<double>());
 
     zeroTensor(device, inputGrad);
 
     std::vector<Node*> inputs = {&inputVar};
-    Exp<real> expFunc(inputs);
+    Exp expFunc(inputs);
 
-    std::vector<const Tensor<real>*> inputValues = {&input};
+    std::vector<const Tensor*> inputValues = {&input};
 
-	expFunc.forwardGPU(inputValues, &output);
-	expFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+	expFunc.forward(inputValues, &output);
+	expFunc.backward(inputValues, &output, &outputGrad, 0, &inputGrad);
 
     device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * dim0 * dim1 * dim2);
     device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * dim0 * dim1 * dim2);
@@ -119,13 +118,6 @@ TEST(Exp, GPU_double) {
     free(outputPtr);
     free(outputGradPtr);
 
-    freeTensor(device, input);
-	freeTensor(device, inputGrad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar);
-
 }
 
 #ifdef HAVE_HALF
@@ -137,24 +129,23 @@ TEST(Exp, half_GPU) {
 
 	int dim0 = 10, dim1 = 400, dim2 = 200;
 
-	auto input = createTensorGPU<real>(device, dim0, dim1, dim2);
-	auto inputGrad = createTensorGPU<real>(device, dim0, dim1, dim2);
-
-	auto output = createTensorGPU<real>(device, dim0, dim1, dim2);
-	auto outputGrad = createTensorGPU<real>(device, dim0, dim1, dim2);
+    auto input      = createTensor(device, ElementType::from<half>(), (size_t)dim0, {(size_t)dim1, (size_t)dim2});
+    auto inputGrad  = createTensor(device, ElementType::from<half>(), (size_t)dim0, {(size_t)dim1, (size_t)dim2});
+    auto output     = createTensor(device, ElementType::from<half>(), (size_t)dim0, {(size_t)dim1, (size_t)dim2});
+    auto outputGrad = createTensor(device, ElementType::from<half>(), (size_t)dim0, {(size_t)dim1, (size_t)dim2});
 
 	/**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar = createFakeVariable(device, ElementType::from<half>());
 
 	zeroTensor(device, inputGrad);
 
 	std::vector<Node*> inputs = { &inputVar };
-	Exp<real> expFunc(inputs);
+	Exp expFunc(inputs);
 
-	std::vector<const Tensor<real>*> inputValues = { &input };
+	std::vector<const Tensor*> inputValues = { &input };
 
-	expFunc.forwardGPU(inputValues, &output);
-	expFunc.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+	expFunc.forward(inputValues, &output);
+	expFunc.backward(inputValues, &output, &outputGrad, 0, &inputGrad);
 
 }
 

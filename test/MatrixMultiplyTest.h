@@ -244,10 +244,10 @@ TEST(MatrixMultiply, backwardCPU2) {
 TEST(MatrixMultiply, GPU1_float) {
 	typedef float real;
 
-	int batch = 10;
-	int m = 400;
-	int k = 200;
-	int n = 300;
+    size_t batch = 10;
+    size_t m = 400;
+    size_t k = 200;
+    size_t n = 300;
 
 	GPUDevice device;
 
@@ -259,29 +259,27 @@ TEST(MatrixMultiply, GPU1_float) {
 	auto outputPtr = (real*)malloc(sizeof(real) * batch * m * n);
 	auto outputGradPtr = (real*)malloc(sizeof(real) * batch * m * n);
 
-	auto input0 = createTensorGPU<real>(device, input0Ptr, batch, m, k);
-	auto input0Grad = createTensorGPU<real>(device, input0GradPtr, batch, m, k);
+    auto input0     = createTensor(device, input0Ptr,    ElementType::from<real>(), batch, {m, k});
+    auto input0Grad = createTensor(device, input0GradPtr,ElementType::from<real>(), batch, {m, k});
+    auto input1     = createTensor(device, input1Ptr,    ElementType::from<real>(), 1, {k, n});
+    auto input1Grad = createTensor(device, input1GradPtr,ElementType::from<real>(),   1, {k, n});
+    auto output     = createTensor(device, outputPtr,    ElementType::from<real>(),  batch, {m, n});
+    auto outputGrad = createTensor(device, outputGradPtr,ElementType::from<real>(),  batch, {m, n});
 
-	auto input1 = createTensorGPU<real>(device, input1Ptr, 1, k, n);
-	auto input1Grad = createTensorGPU<real>(device, input1GradPtr, 1, k, n);
-
-	auto output = createTensorGPU<real>(device, outputPtr, batch, m, n);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, batch, m, n);
-
-	auto inputVar0 = createFakeVariable<GPUDevice, real>(device);
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar0  = createFakeVariable(device, ElementType::from<real>());
+	auto inputVar1  = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar0, &inputVar1 };
-	MatrixMultiply<real> matrixMultiply(inputs);
+	MatrixMultiply matrixMultiply(inputs);
 
 	zeroTensor(device, input0Grad);
 	zeroTensor(device, input1Grad);
 
-	std::vector<const Tensor<float>*> inputValues = { &input0, &input1 };
+	std::vector<const Tensor*> inputValues = { &input0, &input1 };
 
-	matrixMultiply.forwardGPU(inputValues, &output);
-	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
-	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
+	matrixMultiply.forward(inputValues, &output);
+	matrixMultiply.backward(inputValues, &output, &outputGrad, 0, &input0Grad);
+	matrixMultiply.backward(inputValues, &output, &outputGrad, 1, &input1Grad);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * batch * m * n);
 	device.copyFromGPUToCPU(input0Grad.raw(), input0GradPtr, sizeof(real) * batch * m * k);
@@ -354,25 +352,15 @@ TEST(MatrixMultiply, GPU1_float) {
 	free(input1GradPtr);
 	free(outputPtr);
 	free(outputGradPtr);
-
-	freeTensor(device, input1);
-	freeTensor(device, input1Grad);
-	freeTensor(device, input0);
-	freeTensor(device, input0Grad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar0);
-	freeFakeVariable(inputVar1);
 }
 
 TEST(MatrixMultiply, GPU2_float) {
 	typedef float real;
 
-	int batch = 10;
-	int m = 300;
-	int k = 100;
-	int n = 1;
+	size_t batch = 10;
+	size_t m = 300;
+	size_t k = 100;
+	size_t n = 1;
 
 	GPUDevice device;
 
@@ -385,29 +373,27 @@ TEST(MatrixMultiply, GPU2_float) {
 	auto outputPtr = (real*)malloc(sizeof(real) * batch * m * n);
 	auto outputGradPtr = (real*)malloc(sizeof(real) * batch * m * n);
 
-	auto input0 = createTensorGPU<real>(device, input0Ptr, 1, m, k);
-	auto input0Grad = createTensorGPU<real>(device, input0GradPtr, 1, m, k);
+    auto input0     = createTensor(device, input0Ptr,    ElementType::from<real>(),  1, {m, k});
+    auto input0Grad = createTensor(device, input0GradPtr,ElementType::from<real>(),  1, {m, k});
+    auto input1     = createTensor(device, input1Ptr,    ElementType::from<real>(),  batch, {k, n});
+    auto input1Grad = createTensor(device, input1GradPtr,ElementType::from<real>(),  batch, {k, n});
+    auto output     = createTensor(device, outputPtr,    ElementType::from<real>(),  batch, {m, n});
+    auto outputGrad = createTensor(device, outputGradPtr,ElementType::from<real>(),  batch, {m, n});
 
-	auto input1 = createTensorGPU<real>(device, input1Ptr, batch, k, n);
-	auto input1Grad = createTensorGPU<real>(device, input1GradPtr, batch, k, n);
-
-	auto output = createTensorGPU<real>(device, outputPtr, batch, m, n);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, batch, m, n);
-
-	auto inputVar0 = createFakeVariable<GPUDevice, real>(device);
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar0 = createFakeVariable(device, ElementType::from<real>());
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar0, &inputVar1 };
-	MatrixMultiply<float> matrixMultiply(inputs);
+	MatrixMultiply matrixMultiply(inputs);
 
 	zeroTensor(device, input0Grad);
 	zeroTensor(device, input1Grad);
 
-	std::vector<const Tensor<float>*> inputValues = { &input0, &input1 };
+	std::vector<const Tensor*> inputValues = { &input0, &input1 };
 
-	matrixMultiply.forwardGPU(inputValues, &output);
-	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
-	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
+	matrixMultiply.forward(inputValues, &output);
+	matrixMultiply.backward(inputValues, &output, &outputGrad, 0, &input0Grad);
+	matrixMultiply.backward(inputValues, &output, &outputGrad, 1, &input1Grad);
 
 	device.copyFromGPUToCPU(input0Grad.raw(), input0GradPtr, sizeof(real) * 1 * m * k);
 	device.copyFromGPUToCPU(input1Grad.raw(), input1GradPtr, sizeof(real) * batch * k * n);
@@ -487,16 +473,6 @@ TEST(MatrixMultiply, GPU2_float) {
 	free(input1GradPtr);
 	free(outputPtr);
 	free(outputGradPtr);
-
-	freeTensor(device, input1);
-	freeTensor(device, input1Grad);
-	freeTensor(device, input0);
-	freeTensor(device, input0Grad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar0);
-	freeFakeVariable(inputVar1);
 }
 
 
@@ -505,36 +481,34 @@ TEST(MatrixMultiply, GPU2_float) {
 TEST(MatrixMultiply, half_GPU) {
 	typedef half real;
 
-	int batch = 10;
-	int m = 400;
-	int k = 200;
-	int n = 300;
+	size_t batch = 10;
+	size_t m = 400;
+	size_t k = 200;
+	size_t n = 300;
 
 	GPUDevice device;
 
-	auto input0 = createTensorGPU<real>(device, batch, m, k);
-	auto input0Grad = createTensorGPU<real>(device, batch, m, k);
+    auto input0     = createTensor(device, ElementType::from<real>(), batch, {m, k});
+    auto input0Grad = createTensor(device, ElementType::from<real>(), batch, {m, k});
+    auto input1     = createTensor(device, ElementType::from<real>(), 1, {k, n});
+    auto input1Grad = createTensor(device, ElementType::from<real>(), 1, {k, n});
+    auto output     = createTensor(device, ElementType::from<real>(), batch, {m, n});
+    auto outputGrad = createTensor(device, ElementType::from<real>(), batch, {m, n});
 
-	auto input1 = createTensorGPU<real>(device, 1, k, n);
-	auto input1Grad = createTensorGPU<real>(device, 1, k, n);
-
-	auto output = createTensorGPU<real>(device, batch, m, n);
-	auto outputGrad = createTensorGPU<real>(device, batch, m, n);
-
-	auto inputVar0 = createFakeVariable<GPUDevice, real>(device);
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar0 = createFakeVariable(device, ElementType::from<real>());
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar0, &inputVar1 };
-	MatrixMultiply<real> matrixMultiply(inputs);
+	MatrixMultiply matrixMultiply(inputs);
 
 	zeroTensor(device, input0Grad);
 	zeroTensor(device, input1Grad);
 
-	std::vector<const Tensor<real>*> inputValues = { &input0, &input1 };
+	std::vector<const Tensor*> inputValues = { &input0, &input1 };
 
-	matrixMultiply.forwardGPU(inputValues, &output);
-	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
-	matrixMultiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
+	matrixMultiply.forward(inputValues, &output);
+	matrixMultiply.backward(inputValues, &output, &outputGrad, 0, &input0Grad);
+	matrixMultiply.backward(inputValues, &output, &outputGrad, 1, &input1Grad);
 }
 
 #endif // HAVE_HALF

@@ -111,17 +111,15 @@ TEST(Divide, GPU_float) {
     auto outputPtr = (float*)malloc(sizeof(float)*10*100*200);
     auto outputGradPtr = (float*)malloc(sizeof(float)*10*100*200);
 
-    auto input1 = createTensorGPU<float>(device, input1Ptr, 10, 100, 200);
-    auto input1Grad = createTensorGPU<float>(device, input1GradPtr, 10, 100, 200);
+    auto input1     = createTensor(device, input1Ptr, ElementType::from<float>(), 10, {100, 200});
+    auto input1Grad = createTensor(device, input1GradPtr, ElementType::from<float>(), 10, {100, 200});
+    auto input2 = createTensor(device, input2Ptr, ElementType::from<float>(), 1, {200});
+    auto input2Grad = createTensor(device, input2GradPtr, ElementType::from<float>(), 1, {200});
+    auto output = createTensor(device, outputPtr, ElementType::from<float>(), 10, {100, 200});
+    auto outputGrad = createTensor(device, outputGradPtr, ElementType::from<float>(), 10, {100, 200});
 
-    auto input2 = createTensorGPU<float>(device, input2Ptr, 1, 200);
-    auto input2Grad = createTensorGPU<float>(device, input2GradPtr, 1, 200);
-
-    auto output = createTensorGPU<float>(device, outputPtr, 10, 100, 200);
-    auto outputGrad = createTensorGPU<float>(device, outputGradPtr, 10, 100, 200);
-
-    auto inputVar1 = createFakeVariable<GPUDevice, float>(device);
-	auto inputVar2 = createFakeVariable<GPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
+	auto inputVar2 = createFakeVariable(device, ElementType::from<float>());
 
 	for (int i = 0; i < 200; ++i) {
 		if (input2Ptr[i] == 0) {
@@ -132,16 +130,16 @@ TEST(Divide, GPU_float) {
 	device.copyFromCPUToGPU(input2Ptr, input2.raw(), sizeof(float) * 200);
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    Divide<float> divide(inputs);
+    Divide divide(inputs);
 
     zeroTensor(device, input1Grad);
     zeroTensor(device, input2Grad);
 
-    std::vector<const Tensor<float>*> inputValues = {&input1, &input2};
+    std::vector<const Tensor*> inputValues = {&input1, &input2};
 
-    divide.forwardGPU(inputValues, &output);
-    divide.backwardGPU(inputValues, &output, &outputGrad, 0, &input1Grad);
-    divide.backwardGPU(inputValues, &output, &outputGrad, 1, &input2Grad);
+    divide.forward(inputValues, &output);
+    divide.backward(inputValues, &output, &outputGrad, 0, &input1Grad);
+    divide.backward(inputValues, &output, &outputGrad, 1, &input2Grad);
 
     device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(float) * 10 * 100 * 200);
     device.copyFromGPUToCPU(input1Grad.raw(), input1GradPtr, sizeof(float) * 10 * 100 * 200);
@@ -185,16 +183,6 @@ TEST(Divide, GPU_float) {
     free(outputPtr);
     free(outputGradPtr);
 
-    freeTensor(device, input1);
-	freeTensor(device, input2);
-	freeTensor(device, input1Grad);
-	freeTensor(device, input2Grad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar1);
-	freeFakeVariable(inputVar2);
-
 }
 
 #ifdef HAVE_HALF
@@ -202,29 +190,27 @@ TEST(Divide, GPU_float) {
 TEST(Divide, half_GPU) {
 	GPUDevice device;
 
-	auto input1 = createTensorGPU<half>(device, 10, 100, 200);
-	auto input1Grad = createTensorGPU<half>(device, 10, 100, 200);
+    auto input1     = createTensor(device, ElementType::from<half>(), 10, {100, 200});
+    auto input1Grad = createTensor(device, ElementType::from<half>(), 10, {100, 200});
+    auto input2     = createTensor(device, ElementType::from<half>(), 1, {200});
+    auto input2Grad = createTensor(device, ElementType::from<half>(), 1, {200});
+    auto output     = createTensor(device, ElementType::from<half>(), 10, {100, 200});
+    auto outputGrad = createTensor(device, ElementType::from<half>(), 10, {100, 200});
 
-	auto input2 = createTensorGPU<half>(device, 1, 200);
-	auto input2Grad = createTensorGPU<half>(device, 1, 200);
-
-	auto output = createTensorGPU<half>(device, 10, 100, 200);
-	auto outputGrad = createTensorGPU<half>(device, 10, 100, 200);
-
-	auto inputVar1 = createFakeVariable<GPUDevice, half>(device);
-	auto inputVar2 = createFakeVariable<GPUDevice, half>(device);
+	auto inputVar1 = createFakeVariable(device, ElementType::from<half>());
+	auto inputVar2 = createFakeVariable(device, ElementType::from<half>());
 
 	std::vector<Node*> inputs = { &inputVar1, &inputVar2 };
-	Divide<half> divide(inputs);
+	Divide divide(inputs);
 
 	zeroTensor(device, input1Grad);
 	zeroTensor(device, input2Grad);
 
-	std::vector<const Tensor<half>*> inputValues = { &input1, &input2 };
+	std::vector<const Tensor*> inputValues = { &input1, &input2 };
 
-	divide.forwardGPU(inputValues, &output);
-	divide.backwardGPU(inputValues, &output, &outputGrad, 0, &input1Grad);
-	divide.backwardGPU(inputValues, &output, &outputGrad, 1, &input2Grad);
+	divide.forward(inputValues, &output);
+	divide.backward(inputValues, &output, &outputGrad, 0, &input1Grad);
+	divide.backward(inputValues, &output, &outputGrad, 1, &input2Grad);
 
 }
 

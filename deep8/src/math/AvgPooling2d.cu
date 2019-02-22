@@ -136,7 +136,8 @@ void AvgPooling2dGPU(const Tensor &x, Tensor &y,
 }
 
 template <typename T>
-__global__ void AvgPooling2dGradKernel(T *dx, T *dy,
+__global__ void AvgPooling2dGradKernel(T *dx, 
+                                       const T *dy,
                                        const int batch, 
                                        const int inputHeight, 
                                        const int inputWidth,
@@ -195,7 +196,7 @@ void AvgPooling2dGradGPU(const Tensor &x, Tensor &dx,
     auto outputWidth  = (int)y.dim(1);
 
     int padY = std::max<int>(0, (outputHeight - 1) * strideY + filterHeight - inputHeight);
-    int padX = std::max<int>(0, (outputWidth - 1)  * strideX + filterWidth  - inputWidth);
+    int padX = std::max<int>(0, (outputWidth  - 1) * strideX + filterWidth  - inputWidth);
 
     int padTop  = -(padY / 2);
     int padLeft = -(padX / 2);

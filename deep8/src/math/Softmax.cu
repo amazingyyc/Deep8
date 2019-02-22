@@ -232,7 +232,7 @@ __global__ void SoftmaxGradDotKernel(const T *y, const T *dy, T *dotptr, const i
     shared[threaId] = 0;
 
     while (i < dim1) {
-        shared[threaId] = y[j] * dy[j];
+        shared[threaId] += y[j] * dy[j];
 
         i += blockSize;
         j += blockSize * dim2;

@@ -113,23 +113,22 @@ TEST(MaxPooling2d, GPU_float) {
 	auto outputPtr = (real*)malloc(sizeof(real) * 1 * 15 * 15 * 64);
 	auto outputGradPtr = (real*)malloc(sizeof(real) * 1 * 15 * 15 * 64);
 
-	auto input = createTensorGPU<real>(device, inputPtr, 1, 32, 32, 64);
-	auto inputGrad = createTensorGPU<real>(device, inputGradPtr, 1, 32, 32, 64);
+	auto input      = createTensor(device, inputPtr,     ElementType::from<float>(), 1, {32, 32, 64});
+	auto inputGrad  = createTensor(device, inputGradPtr, ElementType::from<float>(), 1, {32, 32, 64});
+	auto output     = createTensor(device, outputPtr,    ElementType::from<float>(), 1, {15, 15, 64});
+	auto outputGrad = createTensor(device, outputGradPtr,ElementType::from<float>(), 1, {15, 15, 64});
 
-	auto output = createTensorGPU<real>(device, outputPtr, 1, 15, 15, 64);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 1, 15, 15, 64);
-
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device, { 1, 32, 32, 64 });
+	auto inputVar1 = createFakeVariable(device, ElementType::from<float>() , 1, {32, 32, 64 });
 
 	zeroTensor(device, inputGrad);
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	MaxPooling2d<real> maxPooling2d(inputs, false, 3, 3, 2, 2);
+	MaxPooling2d maxPooling2d(inputs, false, 3, 3, 2, 2);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	maxPooling2d.forwardGPU(inputTensor, &output);
-	maxPooling2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	maxPooling2d.forward(inputTensor, &output);
+	maxPooling2d.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 1 * 15 * 15 * 64);
 	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 1 * 32 * 32 * 64);
@@ -197,10 +196,6 @@ TEST(MaxPooling2d, GPU_float) {
 	free(outputPtr);
 	free(outputGradPtr);
 
-	freeTensor(device, input);
-	freeTensor(device, inputGrad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
 }
 
 
@@ -211,23 +206,22 @@ TEST(MaxPooling2d, half_GPU) {
 
 	GPUDevice device;
 
-	auto input = createTensorGPU<real>(device, 1, 32, 32, 64);
-	auto inputGrad = createTensorGPU<real>(device, 1, 32, 32, 64);
+	auto input      = createTensor(device, ElementType::from<real>(), 1, {32, 32, 64});
+	auto inputGrad  = createTensor(device, ElementType::from<real>(), 1, {32, 32, 64});
+	auto output     = createTensor(device, ElementType::from<real>(), 1, {15, 15, 64});
+	auto outputGrad = createTensor(device, ElementType::from<real>(), 1, {15, 15, 64});
 
-	auto output = createTensorGPU<real>(device, 1, 15, 15, 64);
-	auto outputGrad = createTensorGPU<real>(device, 1, 15, 15, 64);
-
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device, { 1, 32, 32, 64 });
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>(), 1, {32, 32, 64 });
 
 	zeroTensor(device, inputGrad);
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	MaxPooling2d<real> maxPooling2d(inputs, false, 3, 3, 2, 2);
+	MaxPooling2d maxPooling2d(inputs, false, 3, 3, 2, 2);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	maxPooling2d.forwardGPU(inputTensor, &output);
-	maxPooling2d.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	maxPooling2d.forward(inputTensor, &output);
+	maxPooling2d.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 }
 
 #endif // HAVE_HALF

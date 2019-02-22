@@ -177,12 +177,12 @@ void Conv2dGPUImpl<float>(GPUDevice* device,
                                                              outputWidth,
                                                              filterHeight, 
                                                              filterWidth, 
-                                                             padTop, 
-                                                             padLeft,
                                                              strideY, 
                                                              strideX, 
                                                              dilationY,
                                                              dilationX,
+                                                             padTop,
+                                                             padLeft,
                                                              size);
 
     int m = batch * outputHeight * outputWidth;
@@ -231,12 +231,12 @@ void Conv2dGPUImpl<double>(GPUDevice* device,
                                                               outputWidth,
                                                               filterHeight,
                                                               filterWidth,
-                                                              padTop,
-                                                              padLeft,
                                                               strideY,
                                                               strideX,
                                                               dilationY,
                                                               dilationX,
+                                                              padTop,
+                                                              padLeft,
                                                               size);
 
     int m = batch * outputHeight * outputWidth;
@@ -286,12 +286,12 @@ void Conv2dGPUImpl<half>(GPUDevice* device,
                                                             outputWidth,
                                                             filterHeight,
                                                             filterWidth,
-                                                            padTop,
-                                                            padLeft,
                                                             strideY,
                                                             strideX,
                                                             dilationY,
                                                             dilationX,
+                                                            padTop,
+                                                            padLeft,
                                                             size);
 
     int m = batch * outputHeight * outputWidth;

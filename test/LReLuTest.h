@@ -77,26 +77,25 @@ TEST(LReLu, GPU_float) {
 	auto outputPtr = (float*)malloc(sizeof(float) * 400 * 200);
 	auto outputGradPtr = (float*)malloc(sizeof(float) * 400 * 200);
 
-	auto input = createTensorGPU<real>(device, inputPtr, 400, 200);
-	auto inputGrad = createTensorGPU<real>(device, inputGradPtr, 400, 200);
-
-	auto output = createTensorGPU<real>(device, outputPtr, 400, 200);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 400, 200);
+    auto input      = createTensor(device, inputPtr,      ElementType::from<real>(), 400, {200});
+    auto inputGrad  = createTensor(device, inputGradPtr,  ElementType::from<real>(), 400, {200});
+    auto output     = createTensor(device, outputPtr,     ElementType::from<real>(), 400, {200});
+    auto outputGrad = createTensor(device, outputGradPtr, ElementType::from<real>(), 400, {200});
 
 	/**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar = createFakeVariable(device, ElementType::from<real>());
 
 	zeroTensor(device, inputGrad);
 
 	real a = 2.3;
 
 	std::vector<Node*> inputs = { &inputVar };
-	LReLu<real> lrelu(inputs, a);
+	LReLu lrelu(inputs, a);
 
-	std::vector<const Tensor<real>*> inputValues = { &input };
+	std::vector<const Tensor*> inputValues = { &input };
 
-	lrelu.forwardGPU(inputValues, &output);
-	lrelu.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+	lrelu.forward(inputValues, &output);
+	lrelu.backward(inputValues, &output, &outputGrad, 0, &inputGrad);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) *  400 * 200);
 	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
@@ -121,13 +120,6 @@ TEST(LReLu, GPU_float) {
 	free(inputGradPtr);
 	free(outputPtr);
 	free(outputGradPtr);
-
-	freeTensor(device, input);
-	freeTensor(device, inputGrad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar);
 }
 
 #ifdef HAVE_HALF
@@ -137,26 +129,25 @@ TEST(LReLu, half_GPU) {
 
 	GPUDevice device;
 
-	auto input = createTensorGPU<real>(device, 400, 200);
-	auto inputGrad = createTensorGPU<real>(device, 400, 200);
-
-	auto output = createTensorGPU<real>(device, 400, 200);
-	auto outputGrad = createTensorGPU<real>(device, 400, 200);
+	auto input      = createTensor(device, ElementType::from<real>(), 400, {200});
+	auto inputGrad  = createTensor(device, ElementType::from<real>(), 400, {200});
+	auto output     = createTensor(device, ElementType::from<real>(), 400, {200});
+	auto outputGrad = createTensor(device, ElementType::from<real>(), 400, {200});
 
 	/**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar = createFakeVariable(device, ElementType::from<real>());
 
 	zeroTensor(device, inputGrad);
 
-	real a = 2.3;
+	float a = 2.3;
 
 	std::vector<Node*> inputs = { &inputVar };
-	LReLu<real> lrelu(inputs, a);
+	LReLu lrelu(inputs, a);
 
-	std::vector<const Tensor<real>*> inputValues = { &input };
+	std::vector<const Tensor*> inputValues = { &input };
 
-	lrelu.forwardGPU(inputValues, &output);
-	lrelu.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+	lrelu.forward(inputValues, &output);
+	lrelu.backward(inputValues, &output, &outputGrad, 0, &inputGrad);
 }
 
 #endif // HAVE_HALF
