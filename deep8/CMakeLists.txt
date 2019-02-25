@@ -24,11 +24,13 @@ set(DEEP8_SRC_FILES
 		src/math/Abs.cpp
 		src/math/Add.cpp
 		src/math/AvgPooling2d.cpp
+		src/math/Constant.cpp
 		src/math/Conv2d.cpp
 		src/math/CrossEntropy.cpp
 		src/math/DeConv2d.cpp
 		src/math/Divide.cpp
 		src/math/Exp.cpp
+		src/math/Gaussian.cpp
 		src/math/L1Norm.cpp
 		src/math/L2Norm.cpp
 		src/math/Linear.cpp
@@ -39,6 +41,8 @@ set(DEEP8_SRC_FILES
 		src/math/MaxPooling2d.cpp
 		src/math/Minus.cpp
 		src/math/Multiply.cpp
+		src/math/PositiveUnitball.cpp
+		src/math/Random.cpp
 		src/math/ReduceMean.cpp
 		src/math/ReduceSum.cpp
 		src/math/ReLu.cpp
@@ -46,6 +50,7 @@ set(DEEP8_SRC_FILES
 		src/math/Softmax.cpp
 		src/math/Square.cpp
 		src/math/Tanh.cpp
+		src/math/Uniform.cpp
 
 		src/model/AutoBatchCodeHelper.cpp
 		src/model/Device.cpp
@@ -102,11 +107,13 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Abs.cu
 		src/math/Add.cu
 		src/math/AvgPooling2d.cu
+		src/math/Constant.cu
 		src/math/Conv2d.cu
 		src/math/CrossEntropy.cu
 		src/math/DeConv2d.cu
 		src/math/Divide.cu
 		src/math/Exp.cu
+		src/math/Gaussian.cu
 		src/math/L1Norm.cu
 	    src/math/L2Norm.cu
 	    src/math/Linear.cu
@@ -117,6 +124,8 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/MaxPooling2d.cu
 		src/math/Minus.cu
 		src/math/Multiply.cu
+		src/math/PositiveUnitball.cu
+		src/math/Random.cu
 		src/math/ReduceMean.cu
 		src/math/ReduceSum.cu
 		src/math/ReLu.cu
@@ -124,6 +133,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Softmax.cu
 		src/math/Square.cu
 		src/math/Tanh.cu
+		src/math/Uniform.cu
 
 		src/model/Executor.cu
 		src/model/GPUDevice.cu

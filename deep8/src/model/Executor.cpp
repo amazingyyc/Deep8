@@ -1,6 +1,5 @@
 #include "model/Device.h"
 #include "model/Executor.h"
-#include "model/TensorInit.h"
 #include "model/Expression.h"
 
 namespace Deep8 {
