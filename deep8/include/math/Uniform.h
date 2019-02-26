@@ -13,7 +13,7 @@ void Uniform(Tensor &x, float left = 0.0, float right = 1.0);
 void UniformCPU(Tensor &x, float left = 0.0, float right = 1.0);
 
 #ifdef HAVE_CUDA
-void UniformGPU(Tensor &x);
+void UniformGPU(Tensor &x, float left = 0.0, float right = 1.0);
 #endif
 
 }
