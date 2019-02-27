@@ -9,7 +9,6 @@
 #include "model/Expression.h"
 #include "nodes/Function.h"
 #include "nodes/Variable.h"
-#include "trainer/Trainer.h"
 
 namespace Deep8 {
 

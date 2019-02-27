@@ -99,7 +99,9 @@ set(DEEP8_SRC_FILES
 		src/nodes/UnBatch.cpp
 		src/nodes/Variable.cpp
 
-		#src/trainer/Trainer.cpp
+		src/trainer/ConstantLearningRateIterator.cpp
+		src/trainer/LinearDecayLearningRateIterator.cpp
+		src/trainer/Trainer.cpp
 		)
 
 set(DEEP8_CUDA_SRC_FILES

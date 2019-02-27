@@ -1,55 +1,32 @@
-// #ifndef DEEP8_TRAINER_H
-// #define DEEP8_TRAINER_H
+#ifndef DEEP8_TRAINER_H
+#define DEEP8_TRAINER_H
 
-// #include "Tensor.h"
-// #include "Parameter.h"
-// #include "LearningRateIterator.h"
-// #include "Executor.h"
+#include "model/Tensor.h"
+#include "model/Executor.h"
+#include "nodes/Variable.h"
+#include "trainer/LearningRateIterator.h"
 
-// namespace Deep8 {
+namespace Deep8 {
 
-// template <typename T>
-// class Trainer {
-// protected:
-//     /**clip the Gradient to void exploding gradient problem*/
-//     bool clipGradient;
+class Trainer {
+protected:
+    int64_t steps;
 
-//     /**the clip threshold*/
-//     T clipThreshold;
+    /**the learning rate*/
+    LearningRateIterator *learningRate;
 
-//     /**the learning rate iterator*/
-//     LearningRateIterator *learningRateIterator;
+    /**for l2 penalty*/
+    float weightDecay;
 
-//     explicit Trainer(LearningRateIterator *learningRate, bool clipGradient = false, T clipThreshold = 5.0);
+    explicit Trainer(LearningRateIterator *lr, float deacy = 0);
 
-// protected:
-// 	/**calculate the L2Norm of Parameter to void the exploding gradient problem*/
-// 	T clipGradientScale(Executor *executor, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
-// 	T clipGradientScaleCPU(Executor *executor,  Eigen::ThreadPoolDevice *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
+public:
+    virtual ~Trainer() = default;
 
-// #ifdef HAVE_CUDA
-// 	T clipGradientScaleGPU(Executor *executor, Device *device, std::unordered_set<Parameter<T>*> &parameters, T clipThreshold);
-// #endif
+    virtual void update(Executor *executor, Variable *parameter, float learningRate, float weightDecay);
 
-// 	/**create a Tensor by shape*/
-// 	Tensor<T> createTensorCPU(Device* device, Shape &shape);
-
-// #ifdef HAVE_CUDA
-// 	Tensor<T> createTensorGPU(Device* device, Shape &shape);
-// #endif
-
-//     /**update the parameter*/
-// 	virtual void updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale);
-
-// #ifdef HAVE_CUDA
-// 	virtual void updateGPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale);
-// #endif
-
-// public:
-//     virtual ~Trainer() = default;
-
-//     void update(Executor *executor, std::unordered_set<Parameter<T>*> &parameters, int64_t steps);
-// };
+    void update(Executor *executor, std::unordered_set<Variable*> &parameters);
+};
 
 // template <typename T>
 // class SGDTrainer: public Trainer<T> {
@@ -150,6 +127,6 @@
 // #endif
 // };
 
-// }
+}
 
-// #endif //DEEP8_TRAINER_H
+#endif //DEEP8_TRAINER_H
