@@ -1,5 +1,5 @@
-#ifndef DEEP8_MOMENTUMTRAINER_H
-#define DEEP8_MOMENTUMTRAINER_H
+#ifndef DEEP8_ADAGRADTRAINER_H
+#define DEEP8_ADAGRADTRAINER_H
 
 #include "model/Tensor.h"
 #include "model/Executor.h"
@@ -8,13 +8,13 @@
 
 namespace Deep8 {
 
-class MomentumTrainer : public Trainer {
+class AdagradTrainer : public Trainer {
 public:
-    float alpha;
+    float epsilon;
 
-    std::unordered_map<Variable*, Variable*> momentums;
+    std::unordered_map<Variable*, Variable*> accumulates;
 
-    explicit MomentumTrainer(LearningRateIterator* lr, float alpha = 0.9, float deacy = 0);
+    explicit AdagradTrainer(LearningRateIterator* lr, float epsilon = 0.9, float decay = 0);
 
     void update(Executor* executor, Variable* parameter, float learningRate, float weightDecay, int64_t steps) override;
 

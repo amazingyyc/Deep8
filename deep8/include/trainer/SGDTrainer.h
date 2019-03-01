@@ -12,7 +12,7 @@ class SGDTrainer : public Trainer {
 public:
     explicit SGDTrainer(LearningRateIterator* lr, float decay = 0);
 
-    void update(Executor* executor, Variable* parameter, float learningRate, float weightDecay) override;
+    void update(Executor* executor, Variable* parameter, float learningRate, float weightDecay, int64_t steps) override;
 };
 
 }

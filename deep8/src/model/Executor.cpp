@@ -122,6 +122,18 @@ Variable* Executor::addVariable(Shape &shape, DType type, bool updateGradient) {
 	return variable;
 }
 
+Variable* Executor::addVariable(std::vector<size_t> list, ElementType type, bool updateGradient) {
+    return this->addVariable(list, type.id, updateGradient);
+}
+
+Variable* Executor::addVariable(size_t batch, std::vector<size_t> list, ElementType type, bool updateGradient) {
+    return this->addVariable(batch, list, type.id, updateGradient);
+}
+
+Variable* Executor::addVariable(Shape& shape, ElementType type, bool updateGradient) {
+    return this->addVariable(shape, type.id, updateGradient);
+}
+
 /**get a Node/Variable/Function by Id*/
 Node* Executor::getNodeById(int64_t id) {
 	if (allNodes.find(id) != allNodes.end()) {

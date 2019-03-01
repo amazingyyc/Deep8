@@ -1,12 +1,13 @@
-#include "math/AXPBYPCZ.h.h"
+#include "math/AXPBYPCZ.h"
+#include "math/AXPBY.h"
 #include "trainer/MomentumTrainer.h"
 
 namespace Deep8 {
 
-MomentumTrainer::MomentumTrainer(LearningRateIterator* lr, float a, float deacy) : Trainer(lr, decay), apha(a) {
+MomentumTrainer::MomentumTrainer(LearningRateIterator* lr, float a, float decay) : Trainer(lr, decay), alpha(a) {
 }
 
-void MomentumTrainer::update(Executor* executor, Variable* parameter, float learningRate, float weightDecay) {
+void MomentumTrainer::update(Executor* executor, Variable* parameter, float learningRate, float weightDecay, int64_t steps) {
     auto value    = parameter->value;
     auto gradient = parameter->gradient;
 

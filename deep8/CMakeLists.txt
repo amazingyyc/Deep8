@@ -22,6 +22,8 @@ include_directories(include/utils)
 
 set(DEEP8_SRC_FILES
 		src/math/Abs.cpp
+		src/math/AdagradUpdate.cpp
+		src/math/AdamUpdate.cpp
 		src/math/Add.cpp
 		src/math/AvgPooling2d.cpp
 		src/math/AXPBY.cpp
@@ -47,6 +49,7 @@ set(DEEP8_SRC_FILES
 		src/math/ReduceMean.cpp
 		src/math/ReduceSum.cpp
 		src/math/ReLu.cpp
+		src/math/RMSPropUpdate.cpp
 		src/math/Sigmoid.cpp
 		src/math/Softmax.cpp
 		src/math/Square.cpp
@@ -102,11 +105,17 @@ set(DEEP8_SRC_FILES
 		src/trainer/LinearDecayLearningRateIterator.cpp
 		src/trainer/Trainer.cpp
 		src/trainer/SGDTrainer.cpp
+		src/trainer/AdagradTrainer.cpp
+		src/trainer/MomentumTrainer.cpp
+		src/trainer/RMSPropTrainer.cpp
+		src/trainer/AdamTrainer.cpp
 		)
 
 set(DEEP8_CUDA_SRC_FILES
 
 		src/math/Abs.cu
+		src/math/AdagradUpdate.cu
+		src/math/AdamUpdate.cu
 		src/math/Add.cu
 		src/math/AvgPooling2d.cu
 		src/math/AXPBY.cu
@@ -131,6 +140,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/ReduceMean.cu
 		src/math/ReduceSum.cu
 		src/math/ReLu.cu
+		src/math/RMSPropUpdate.cu
 		src/math/Sigmoid.cu
 		src/math/Softmax.cu
 		src/math/Square.cu
@@ -141,9 +151,6 @@ set(DEEP8_CUDA_SRC_FILES
 		src/model/GPUDevice.cu
 		src/model/GPUMemoryAllocator.cu
 		src/model/GPUMemoryPool.cu
-		# src/model/TensorInit.cu
-
-		# src/trainer/Trainer.cu
 		)
 
 if (HAVE_GPU AND HAVE_CUDA)

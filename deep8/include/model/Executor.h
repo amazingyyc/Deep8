@@ -64,6 +64,10 @@ public:
 	Variable* addVariable(size_t batch, std::vector<size_t>, DType type, bool updateGradient = true);
 	Variable* addVariable(Shape &shape,                      DType type, bool updateGradient = true);
 
+    Variable* addVariable(std::vector<size_t>,               ElementType type, bool updateGradient = true);
+    Variable* addVariable(size_t batch, std::vector<size_t>, ElementType type, bool updateGradient = true);
+    Variable* addVariable(Shape& shape,                      ElementType type, bool updateGradient = true);
+
 	/**get a Node/Variable/Function by Id*/
 	Node*     getNodeById(int64_t id);
 	Variable* getVariableById(int64_t id);

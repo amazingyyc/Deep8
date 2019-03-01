@@ -23,7 +23,7 @@ protected:
 public:
     virtual ~Trainer() = default;
 
-    virtual void update(Executor *executor, Variable *parameter, float learningRate, float weightDecay);
+    virtual void update(Executor *executor, Variable *parameter, float learningRate, float weightDecay, int64_t steps);
 
     void update(Executor *executor, std::unordered_set<Variable*> &parameters);
 };

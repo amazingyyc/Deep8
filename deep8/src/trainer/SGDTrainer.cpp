@@ -6,7 +6,7 @@ namespace Deep8 {
 SGDTrainer::SGDTrainer(LearningRateIterator* lr, float decay) : Trainer(lr, decay) {
 }
 
-void SGDTrainer::update(Executor* executor, Variable* parameter, float learningRate, float weightDecay) {
+void SGDTrainer::update(Executor* executor, Variable* parameter, float learningRate, float weightDecay, int64_t steps) {
     auto value    = parameter->value;
     auto gradient = parameter->gradient;
 
