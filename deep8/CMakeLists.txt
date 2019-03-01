@@ -24,6 +24,7 @@ set(DEEP8_SRC_FILES
 		src/math/Abs.cpp
 		src/math/Add.cpp
 		src/math/AvgPooling2d.cpp
+		src/math/AXPBY.cpp
 		src/math/Constant.cpp
 		src/math/Conv2d.cpp
 		src/math/CrossEntropy.cpp
@@ -57,13 +58,11 @@ set(DEEP8_SRC_FILES
 		src/model/EagerExecutor.cpp
 		src/model/Executor.cpp
 		src/model/LazyExecutor.cpp
-		# src/model/LearningRateIterator.cpp
 		src/model/MemoryAllocator.cpp
 		src/model/MemoryPool.cpp
 		src/model/OutputEntry.cpp
 		src/model/Shape.cpp
 		src/model/Tensor.cpp
-		#src/model/TensorInit.cpp
 		src/model/TensorStorage.cpp
 		
 		src/nodes/Abs.cpp
@@ -102,6 +101,7 @@ set(DEEP8_SRC_FILES
 		src/trainer/ConstantLearningRateIterator.cpp
 		src/trainer/LinearDecayLearningRateIterator.cpp
 		src/trainer/Trainer.cpp
+		src/trainer/SGDTrainer.cpp
 		)
 
 set(DEEP8_CUDA_SRC_FILES
@@ -109,6 +109,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Abs.cu
 		src/math/Add.cu
 		src/math/AvgPooling2d.cu
+		src/math/AXPBY.cu
 		src/math/Constant.cu
 		src/math/Conv2d.cu
 		src/math/CrossEntropy.cu
@@ -127,7 +128,6 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Minus.cu
 		src/math/Multiply.cu
 		src/math/PositiveUnitball.cu
-		src/math/Random.cu
 		src/math/ReduceMean.cu
 		src/math/ReduceSum.cu
 		src/math/ReLu.cu

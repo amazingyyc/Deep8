@@ -28,36 +28,8 @@ public:
     void update(Executor *executor, std::unordered_set<Variable*> &parameters);
 };
 
-// template <typename T>
-// class SGDTrainer: public Trainer<T> {
-// public:
-//     explicit SGDTrainer(LearningRateIterator *learningRate, bool clipGradient = false, T clipThreshold = 5.0);
 
-// protected:
-// 	void updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) override;
 
-// #ifdef HAVE_CUDA
-// 	void updateGPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) override;
-// #endif
-// };
-
-// template <typename T>
-// class AdagradTrainer: public Trainer<T> {
-// public:
-//     T epsilon;
-//     // std::unordered_map<Parameter<T>*, Tensor<T>> accumulate;
-
-//     explicit AdagradTrainer(LearningRateIterator *learningRate, T epsilon = 1e-7, bool clipGradient = false, T clipThreshold = 5.0);
-
-// 	void check(T epsilon);
-
-// protected:
-// 	void updateCPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) override;
-
-// #ifdef HAVE_CUDA
-// 	void updateGPU(Executor *executor, Parameter<T> *parameter, int64_t steps, T learningRate, T scale) override;
-// #endif
-// };
 
 // template <typename T>
 // class AdamTrainer: public Trainer<T> {
@@ -107,25 +79,7 @@ public:
 // #endif
 // };
 
-// template <typename T>
-// class MomentumTrainer: public Trainer<T> {
-// public:
-//    T alpha;
 
-//    std::unordered_map<Parameter<T>*, Tensor<T>> momentum;
-
-//    explicit MomentumTrainer(T learningRate = 0.1, T alpha = 0.9, bool clipGradient = false, T clipThreshold = 5.0);
-
-//    ~MomentumTrainer();
-
-// protected:
-
-// 	void trainingCPU(Parameter<T> *parameter, T scale) override;
-
-// #ifdef HAVE_CUDA
-// 	void trainingGPU(Parameter<T> *parameter, T scale) override;
-// #endif
-// };
 
 }
 

@@ -2,27 +2,27 @@
 #include "model/GPUDevice.h"
 #include "math/GPUUnaryElementWise.h"
 #include "math/GPUMath.h"
-#include "math/Uniform.h"
+#include "math/Gaussian.h"
 
 namespace Deep8 {
 namespace Math {
 
 template <typename T>
-void GaussianGPUImpl(GPUDevice *device, int size, T *x, T mean, T stddev) {
+void GaussianGPUImpl(GPUDevice *device, T *x, int size, T mean, T stddev) {
     DEEP8_RUNTIME_ERROR("the type is not suppport");
 }
 
 template <>
 void GaussianGPUImpl<float>(GPUDevice *device, float *x, int size, float mean, float stddev) {
-    CURAND_CHECK(curandGenerateNormal(device->curandGenerator, x.data<float>(), size, mean, stddev));
+    CURAND_CHECK(curandGenerateNormal(device->curandGenerator, x, size, mean, stddev));
 }
 
 template <>
 void GaussianGPUImpl<double>(GPUDevice *device, double *x, int size, double mean, double stddev) {
-    CURAND_CHECK(curandGenerateNormalDouble(device->curandGenerator, x.data<double>(), size, mean, stddev));
+    CURAND_CHECK(curandGenerateNormalDouble(device->curandGenerator, x, size, mean, stddev));
 }
 
-void GaussianGPU(Tensor &x, float mean = 0.0, float stddev = 0.1) {
+void GaussianGPU(Tensor &x, float mean, float stddev) {
     auto device = (GPUDevice*)x.device();
 
     switch (x.elementType.id) {

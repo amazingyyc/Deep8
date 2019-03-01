@@ -18,21 +18,21 @@ __global__ void ConstantKernel(T *value, T scalar, int N) {
 }
 
 void ConstantGPU(Tensor &x, float scalar) {
-    int N = (int)tensor.size();
+    int N = (int)x.size();
 
 	int blockSize = DEEP8_GPU_BLOCK_SIZE;
 	int grideSize = (N + blockSize - 1) / blockSize;
 
     switch (x.elementType.id) {
     case DType::Float32:
-        ConstantKernel<float> << <grideSize, blockSize >> > (tensor.data<float>(), scalar, N);
+        ConstantKernel<float> << <grideSize, blockSize >> > (x.data<float>(), scalar, N);
         break;
     case DType::Float64:
-        ConstantKernel<float> << <grideSize, blockSize >> > (tensor.data<double>(), double(scalar), N);
+        ConstantKernel<double> << <grideSize, blockSize >> > (x.data<double>(), double(scalar), N);
         break;
 #ifdef HAVE_HALF
     case DType::Float16:
-        ConstantKernel<float> << <grideSize, blockSize >> > (tensor.data<half>(), __float2half(scalar), N); 
+        ConstantKernel<half> << <grideSize, blockSize >> > (x.data<half>(), __float2half(scalar), N);
         break;
 #endif
 

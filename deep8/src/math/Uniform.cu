@@ -36,10 +36,13 @@ template <>
 void UniformGPUImpl<double>(GPUDevice *device, double *x, double left, double right, int size) {
 	CURAND_CHECK(curandGenerateUniformDouble(device->curandGenerator, x, size));
 
+    int blockSize = DEEP8_GPU_BLOCK_SIZE;
+    int grideSize = (size + blockSize - 1) / blockSize;
+
     UniformKernel<double> << <grideSize, blockSize >> > (x, (right - left), left, size);
 }
 
-void UniformGPU(Tensor &x, float left = 0.0, float right = 1.0) {
+void UniformGPU(Tensor &x, float left, float right) {
     auto device = (GPUDevice*)x.device();
 
     switch (x.elementType.id) {
