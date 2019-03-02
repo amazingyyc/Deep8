@@ -27,6 +27,7 @@ set(DEEP8_SRC_FILES
 		src/math/Add.cpp
 		src/math/AvgPooling2d.cpp
 		src/math/AXPBY.cpp
+		src/math/AXPBYPCZ.cpp
 		src/math/Constant.cpp
 		src/math/Conv2d.cpp
 		src/math/CrossEntropy.cpp
@@ -60,6 +61,7 @@ set(DEEP8_SRC_FILES
 		src/model/Device.cpp
 		src/model/EagerExecutor.cpp
 		src/model/Executor.cpp
+		src/model/Expression.cpp
 		src/model/LazyExecutor.cpp
 		src/model/MemoryAllocator.cpp
 		src/model/MemoryPool.cpp
@@ -119,6 +121,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Add.cu
 		src/math/AvgPooling2d.cu
 		src/math/AXPBY.cu
+		src/math/AXPBYPCZ.cu
 		src/math/Constant.cu
 		src/math/Conv2d.cu
 		src/math/CrossEntropy.cu

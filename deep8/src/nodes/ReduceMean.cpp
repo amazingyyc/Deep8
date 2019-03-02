@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 ReduceMean::ReduceMean(std::vector<Node*> &inputs, int a, bool keep) : Function(inputs), axis(a), keepDims(keep) {
+    check();
 }
 
 void ReduceMean::check() {

@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 Add::Add(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
 void Add::check() {

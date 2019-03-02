@@ -1,6 +1,5 @@
 #include "model/Device.h"
 #include "model/Executor.h"
-#include "model/Expression.h"
 
 namespace Deep8 {
 
@@ -159,15 +158,20 @@ Function* Executor::getFunctionById(int64_t id) {
 	return nullptr;
 }
 
+/**get all trainabel parameters*/
+std::unordered_set<Variable*> Executor::trainableParameters() {
+	std::unordered_set<Variable*> parameters;
+
+	for (auto item : this->allVariables) {
+		if (item.second->updateGradient) {
+			parameters.insert(item.second);
+		}
+	}
+
+	return parameters;
+}
+
 Node* Executor::addFunction(Function *function) {
-	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
-}
-
-void Executor::forward(Expression &e) {
-	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
-}
-
-void Executor::backward(Expression &e) {
 	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
 }
 

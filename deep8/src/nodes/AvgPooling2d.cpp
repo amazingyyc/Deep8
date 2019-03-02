@@ -5,6 +5,7 @@ namespace Deep8 {
 
 AvgPooling2d::AvgPooling2d(std::vector<Node *> &inputs, bool covered , int fh, int fw, int sy, int sx): 
     Function(inputs), covered(covered), filterHeight(fh), filterWidth(fw), strideY(sy), strideX(sx) {
+        check();
 }
 
 void AvgPooling2d::check() {

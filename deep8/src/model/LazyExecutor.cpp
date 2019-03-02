@@ -264,14 +264,6 @@ Node* LazyExecutor::addFunction(Function *function) {
 	return function;
 }
 
-void LazyExecutor::forward(Expression &e) {
-	this->forward(e.node);
-}
-
-void LazyExecutor::backward(Expression &e) {
-	this->backward(e.node);
-}
-
 void LazyExecutor::forward(Node *last) {
 	DEEP8_ARGUMENT_CHECK(nullptr != last, "the last can not be nullptr");
 

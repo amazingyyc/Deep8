@@ -5,6 +5,7 @@
 namespace Deep8 {
 
 Linear::Linear(std::vector<Node*> &inputs, float a, float b):Function(inputs), a(a), b(b) {
+	check();
 }
 
 void Linear::check() {

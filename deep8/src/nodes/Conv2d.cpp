@@ -5,6 +5,7 @@ namespace Deep8 {
 
 Conv2d::Conv2d(std::vector<Node *> &inputs, bool covered, int sy, int sx, int dy , int dx)
         :Function(inputs), covered(covered), strideY(sy), strideX(sx), dilationY(dy), dilationX(dx) {
+    check();
 }
 
 void Conv2d::check() {

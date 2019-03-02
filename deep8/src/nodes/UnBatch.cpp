@@ -3,18 +3,15 @@
 namespace Deep8 {
 
 UnBatch::UnBatch(std::vector<Node*> &inputs, size_t o, Shape &shape) : Function(inputs), offset(o) {
-	this->shape = shape;
-    this->isShared = true;
-
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.size() >= offset + this->shape.size(), "the shape is error");
-}
-
-void UnBatch::check() {
 	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the input size must be 1");
 	
     this->elementType = this->inputs[0]->elementType;
+	this->shape    = shape;
+    this->isShared = true;
+
+    DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.size() >= offset + this->shape.size(), "the shape is error");
 }
 
 void UnBatch::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

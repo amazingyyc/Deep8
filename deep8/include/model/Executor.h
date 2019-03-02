@@ -6,7 +6,6 @@
 #include "model/Device.h"
 #include "model/ElementType.h"
 #include "model/Tensor.h"
-#include "model/Expression.h"
 #include "nodes/Function.h"
 #include "nodes/Variable.h"
 
@@ -73,11 +72,12 @@ public:
 	Variable* getVariableById(int64_t id);
 	Function* getFunctionById(int64_t id);
 
+	/**get all trainabel parameters*/
+	std::unordered_set<Variable*> trainableParameters();
+
 	/**give a function and create the output Variable*/
 	virtual Node *addFunction(Function *func);
 
-	virtual void forward(Expression &e);
-	virtual void backward(Expression &e);
 	virtual void forward(Node *last);
 	virtual void backward(Node *last);
 };

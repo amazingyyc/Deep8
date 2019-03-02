@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 L2Norm::L2Norm(std::vector<Node *> &inputs): Function(inputs) {
+	check();
 }
 
 void L2Norm::check() {

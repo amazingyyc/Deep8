@@ -5,6 +5,7 @@
 namespace Deep8 {
 
 MatrixMultiply::MatrixMultiply(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
 void MatrixMultiply::check() {

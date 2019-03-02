@@ -33,10 +33,7 @@ public:
 
 	Node *addFunction(Function *func) override;
 
-	void forward(Expression &e) override;
 	void forward(Node *) override;
-
-	void backward(Expression &e) override;
 	void backward(Node *last) override;
 };
 

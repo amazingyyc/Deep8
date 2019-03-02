@@ -5,6 +5,7 @@ namespace Deep8 {
 
 
 Log::Log(std::vector<Node *> &inputs): Function(inputs) {
+	check();
 }
 
 void Log::check() {

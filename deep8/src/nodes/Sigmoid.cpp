@@ -5,6 +5,7 @@
 namespace Deep8 {
 
 Sigmoid::Sigmoid(std::vector<Node*> &inputs): Function(inputs) {
+    check();
 }
 
 void Sigmoid::check() {

@@ -4,12 +4,10 @@ namespace Deep8 {
 
 Function::Function(): Node(), isShared(false) {
 	this->type = NodeType::Function;
-    this->check();
 }
 
 Function::Function(std::vector<Node*> &inputs): Node(inputs), isShared(false) {
 	this->type = NodeType::Function;
-    this->check();
 }
 
 void Function::check() {

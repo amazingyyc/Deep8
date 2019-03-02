@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 Minus::Minus(std::vector<Node *> &inputs): Function(inputs) {
+    check();
 }
 
 void Minus::check() {

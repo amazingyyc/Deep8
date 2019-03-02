@@ -40,7 +40,7 @@ void AXPBYPCZCPU(const Tensor& x, float a, const Tensor& y, float b, const Tenso
         AXPBYPCZCPUImpl<float>(device, x.data<float>(), a, y.data<float>(), b, z.data<float>(), c, w.data<float>(), size);
         break;
     case DType::Float64:
-        AXPBYPCZCPUImpl<double>(device, x.data<double>(), (double)alpha, y.data<double>(), (double)beta, z.data<double>(), (double)c, w.data<double>(), size);
+        AXPBYPCZCPUImpl<double>(device, x.data<double>(), (double)a, y.data<double>(), (double)b, z.data<double>(), (double)c, w.data<double>(), size);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");

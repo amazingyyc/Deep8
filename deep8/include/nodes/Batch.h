@@ -16,8 +16,6 @@ private:
 public:
 	explicit Batch(std::vector<Node *> &inputs, Shape &outShape);
 
-	void check() override;
-
 protected:
 	void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
 	void backward(const std::vector<const Tensor*> &inputs, 

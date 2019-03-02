@@ -67,6 +67,9 @@ public:
     /**release the storage*/
     void release();
 
+    /**convert the Tensor to a string to print*/
+    std::string valueStr();
+
     template <typename T>
     T* data() {
         DEEP8_ARGUMENT_CHECK(elementType.is<T>(), "Tensor type is error, type is: " << elementType.name);

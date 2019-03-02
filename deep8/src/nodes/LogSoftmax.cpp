@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 LogSoftmax::LogSoftmax(std::vector<Node *> &inputs, int a): Function(inputs), axis(a) {
+    check();
 }
 
 void LogSoftmax::check() {

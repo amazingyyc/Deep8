@@ -28,10 +28,7 @@ public:
 	/**give a function and create the output Variable*/
 	Node *addFunction(Function *func) override;
 
-	void forward(Expression &e) override;
 	void forward(Node *last) override;
-
-	void backward(Expression &e) override;
 	void backward(Node *last) override;
 };
 

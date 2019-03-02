@@ -3,7 +3,8 @@
 
 namespace Deep8 {
 
-Multiply::Multiply(std::vector<Node *> &inputs) : Function(inputs) {
+Multiply::Multiply(std::vector<Node*> &inputs) : Function(inputs) {
+    check();
 }
 
 void Multiply::check() {

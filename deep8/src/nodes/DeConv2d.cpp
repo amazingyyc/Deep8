@@ -5,6 +5,7 @@ namespace Deep8 {
 
 DeConv2d::DeConv2d(std::vector<Node *> &inputs, bool covered, int strideY, int strideX)
         :Function(inputs), forwardCovered(covered), forwardStrideY(strideY), forwardStrideX(strideX) {
+    check();
 }
 
 void DeConv2d::check() {

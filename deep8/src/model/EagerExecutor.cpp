@@ -47,16 +47,8 @@ void EagerExecutor::clearInterimNodes() {
 	this->interimNodes.clear();
 }
 
-void EagerExecutor::forward(Expression &e) {
-	DEEP8_RUNTIME_ERROR("the EagerExecutor can not call the forward");
-}
-
 void EagerExecutor::forward(Node *) {
 	DEEP8_RUNTIME_ERROR("the EagerExecutor can not call the forward");
-}
-
-void EagerExecutor::backward(Expression &e) {
-	backward(e.node);
 }
 
 void EagerExecutor::backward(Node *last) {
@@ -79,7 +71,7 @@ void EagerExecutor::backward(Node *last) {
 		auto node = que.front();
 		que.pop();
 
-		if (NodeType::Variable == node->type) {
+		if (NodeType::Variable == node->type && ((Variable*)node)->updateGradient) {
 			((Variable*)node)->zeroGradient();
 		}
 

@@ -5,6 +5,7 @@
 namespace Deep8 {
 
 LReLu::LReLu(std::vector<Node*> &inputs, float a): Function(inputs), a(a) {
+    check();
 }
 
 void LReLu::check() {

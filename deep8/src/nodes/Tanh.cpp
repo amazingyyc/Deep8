@@ -5,6 +5,7 @@
 namespace Deep8 {
 
 Tanh::Tanh(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
 void Tanh::check() {

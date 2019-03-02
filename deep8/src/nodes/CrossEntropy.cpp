@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 CrossEntropy::CrossEntropy(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
 void CrossEntropy::check() {

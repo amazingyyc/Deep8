@@ -5,6 +5,7 @@
 namespace Deep8 {
 
 Abs::Abs(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
 void Abs::check() {

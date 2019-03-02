@@ -5,6 +5,7 @@
 namespace Deep8 {
 
 ReLu::ReLu(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
 void ReLu::check() {

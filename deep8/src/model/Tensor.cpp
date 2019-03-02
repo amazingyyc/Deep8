@@ -140,63 +140,67 @@ void Tensor::release() {
 	storage.release();
 }
 
-//template<typename T>
-//T Tensor<T>::scalar() {
-//	DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor must be a scalar");
-//
-//	if (DeviceType::CPU == device()->type) {
-//		return data()[0];
-//	} else {
-//#ifdef HAVE_CUDA
-//		T scalar;
-//
-//		device()->copyFromGPUToCPU(raw(), &scalar, sizeof(T));
-//
-//		return scalar;
-//#else
-//		DEEP8_RUNTIME_ERROR("can not call GPU function without a GPU");
-//#endif
-//	}
-//}
+std::string Tensor::valueStr() {
+	std::stringstream ss;
+	ss << "[";
 
-//template <typename T>
-//std::string Tensor<T>::toString() {
-//	std::stringstream ss;
-//	ss << "Device Type:" << (DeviceType::CPU == deviceType() ? "CPU" : "GPU");
-//	ss << ", Data Type:" << typeStr<T>();
-//	ss << ", Data Shape:" << shape.toString();
-//	ss << ", ptr:" << raw();
-//
-//    return ss.str();
-//}
+	auto size = shape.size();
 
-///**convert the value to string to print*/
-//template <typename T>
-//std::string Tensor<T>::valueString() {
-//	std::stringstream ss;
-//	ss << "[";
-//
-//	if (DeviceType::CPU == deviceType()) {
-//		for (size_t i = 0; i < shape.size(); ++i) {
-//			ss << data()[i] << ", ";
-//		}
-//	} else {
-//#ifdef HAVE_CUDA
-//		std::vector<T> vec(shape.size());
-//
-//		device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(T) * shape.size());
-//
-//		for (size_t i = 0; i < shape.size(); ++i) {
-//			ss << vec[i] << ", ";
-//		}
-//#else
-//		DEEP8_RUNTIME_ERROR("Can not call GPU function without a GPU");
-//#endif
-//	}
-//
-//	ss << "]";
-//
-//	return ss.str();
-//}
+	if (DeviceType::CPU == deviceType()) {
+		if (DType::Float32 == elementType.id) {
+			for (size_t i = 0; i < size; ++i) {
+				ss << data<float>()[i] << ", ";
+			}
+		} else if (DType::Float64 == elementType.id) {
+			for (size_t i = 0; i < size; ++i) {
+				ss << data<double>()[i] << ", ";
+			}
+		} else {
+			DEEP8_RUNTIME_ERROR("the type is error");
+		}
+	} else {
+#ifdef HAVE_CUDA
+		if (DType::Float32 == elementType.id) {
+			
+
+			std::vector<float> vec(size);
+
+			device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(float) * size);
+
+			for (size_t i = 0; i < size; ++i) {
+				ss << vec[i] << ", ";
+			}
+		} else if (DType::Float64 == elementType.id) {
+			std::vector<double> vec(size);
+
+			device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(double) * size);
+
+			for (size_t i = 0; i < size; ++i) {
+				ss << vec[i] << ", ";
+			}
+#ifdef HAVE_HALF
+		} else if (DType::Float16 == elementType.id) {
+			std::vector<half> vec(size);
+
+			device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(half) * size);
+
+			for (size_t i = 0; i < size; ++i) {
+				ss << vec[i] << ", ";
+			}
+		}
+#endif
+		} else {
+			DEEP8_RUNTIME_ERROR("the type is error");
+		}
+#else
+		DEEP8_RUNTIME_ERROR("do not have a GPU");
+#endif
+	}
+
+	ss << "]";
+
+	return ss.str();
+}
+
 
 }

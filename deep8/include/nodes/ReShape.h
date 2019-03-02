@@ -10,8 +10,6 @@ public:
     explicit ReShape(std::vector<Node *> &inputs, Shape &shape);
     explicit ReShape(std::vector<Node *> &inputs, std::vector<size_t> &shape);
     
-    virtual void check() override;
-
 protected:
 	void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
 	void backward(const std::vector<const Tensor*> &inputs, 

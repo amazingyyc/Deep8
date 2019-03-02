@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 Exp::Exp(std::vector<Node *> &inputs): Function(inputs) {
+    check();
 }
 
 void Exp::check() {

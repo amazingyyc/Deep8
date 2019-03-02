@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 Square::Square(std::vector<Node*> &inputs): Function(inputs) {
+	check();
 }
 
 void Square::check() {

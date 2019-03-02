@@ -3,6 +3,12 @@
 namespace Deep8 {
 
 ReShape::ReShape(std::vector<Node *> &inputs, Shape &shape): Function(inputs) {
+	Function::check();
+
+    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReShape Function needs only 1 input");
+
+    this->elementType = this->inputs[0]->elementType;
+
 	/**the outputShape's batch equal to inputs[0]'s*/
 	DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.batchSize() == shape.batchSize(), "the shape is error");
 
@@ -11,18 +17,16 @@ ReShape::ReShape(std::vector<Node *> &inputs, Shape &shape): Function(inputs) {
 }
 
 ReShape::ReShape(std::vector<Node *> &inputs, std::vector<size_t> &list): Function(inputs) {
-	this->shape    = Shape(this->inputs[0]->shape.batch, list);
-    this->isShared = true;
-
-	DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.batchSize() == this->shape.batchSize(), "the shape is error");
-}
-
-void ReShape::check() {
-    Function::check();
+	Function::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReShape Function needs only 1 input");
 
     this->elementType = this->inputs[0]->elementType;
+
+	this->shape    = Shape(this->inputs[0]->shape.batch, list);
+    this->isShared = true;
+
+	DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.batchSize() == this->shape.batchSize(), "the shape is error");
 }
 
 void ReShape::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 Divide::Divide(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
 void Divide::check() {

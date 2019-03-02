@@ -4,6 +4,7 @@
 namespace Deep8 {
 
 Softmax::Softmax(std::vector<Node *> &inputs, int a): Function(inputs), axis(a) {
+    check();
 }
 
 void Softmax::check() {

@@ -4,17 +4,6 @@
 namespace Deep8 {
 
 Batch::Batch(std::vector<Node *> &inputs, Shape &shape) : Function(inputs), continuous(false) {
-	this->shape = shape;
-
-    size_t totalSize = 0;
-    for (auto item : this->inputs) {
-        totalSize += item->shape.size();
-    }
-
-    DEEP8_ARGUMENT_CHECK(totalSize == this->shape.size(), "the inputs's shape is error");
-}
-
-void Batch::check() {
 	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(!this->inputs.empty(), "the input can not be empty");
@@ -26,6 +15,15 @@ void Batch::check() {
     }
 
     this->elementType = sameElementType;
+	
+    size_t totalSize = 0;
+    for (auto item : this->inputs) {
+        totalSize += item->shape.size();
+    }
+
+    DEEP8_ARGUMENT_CHECK(totalSize == shape.size(), "the inputs's shape is error");
+
+	this->shape = shape;
 }
 
 void Batch::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
