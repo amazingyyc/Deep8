@@ -24,11 +24,12 @@ testX [10000, 784]
 testY [10000, ]
 '''
 
-trainer  = AdagradTrainer(learningRate = 0.01)
-executor = EagerExecutor(tr=trainer)
+executor     = EagerExecutor()
+learningRate = ConstantLearningRateIterator(0.01)
+trainer      = AdagradTrainer(learningRate = learningRate)
 
-x = inputParameter(executor, [784])
-y = inputParameter(executor, [10])
+x = parameter(executor, [784], False)
+y = parameter(executor, [10], False)
 
 w = parameter(executor, [10, 784])
 b = parameter(executor, [10])
@@ -42,9 +43,11 @@ for i in range(len(trainX)):
 
     loss = (w * x + b).softmax().crossEntropy(y)
 
-    print i, ", loss => ", loss.valueString()
+    print i + 1, ", loss => ", loss.valueStr()
 
     loss.backward()
+
+    trainer.train(executor)
 
 pred = np.zeros([10], dtype=np.float32)
 
@@ -54,11 +57,11 @@ wrong = 0
 for i in range(len(testX)):
     x.feed(testX[i])
 
-    ret = (w * x + b).softmax()
+    ret = (w * x + b).relu().softmax()
 
     ret.fetch(pred)
 
-    executor.clearIntermediaryNodes()
+    executor.clearInterimNodes()
 
     if np.argmax(pred) == testY[i]:
         correct += 1
@@ -66,9 +69,5 @@ for i in range(len(testX)):
         wrong += 1
 
 print "Total:", correct + wrong, ", Correct:", correct, ", Wrong:", wrong, "Accuracy:", (1.0 * correct) / (correct + wrong)
-
-
-
-
 
 

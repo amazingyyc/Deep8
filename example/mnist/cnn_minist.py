@@ -24,11 +24,14 @@ testX [10000, 784]
 testY [10000, ]
 '''
 
-trainer  = AdagradTrainer(learningRate = 0.0001)
-executor = EagerExecutor(tr=trainer)
+epoch = 1
 
-x = inputParameter(executor, [28, 28, 1])
-y = inputParameter(executor, [10])
+executor     = EagerExecutor()
+learningRate = LinearDecayLearningRateIterator(totalStep = epoch * len(trainX), start=0.001, end=0.0)
+trainer      = AdamTrainer(learningRate = learningRate)
+
+x = parameter(executor, [28, 28, 1], False)
+y = parameter(executor, [10], False)
 
 # first convolution
 w_conv1 = parameter(executor, [32, 5, 5, 1])
@@ -46,7 +49,15 @@ b_fc1 = parameter(executor, [1024])
 w_fc2 = parameter(executor, [10, 1024])
 b_fc2 = parameter(executor, [10])
 
-epoch = 10
+w_conv1.gaussian()
+b_conv1.gaussian()
+w_conv2.gaussian()
+b_conv2.gaussian()
+w_fc1.gaussian()
+b_fc1.gaussian()
+w_fc2.gaussian()
+b_fc2.gaussian()
+
 
 for e in range(epoch):
     for i in range(len(trainX)):
@@ -63,9 +74,11 @@ for e in range(epoch):
 
         loss = layer4.softmax().crossEntropy(y)
 
-        print "epoch:", e, ", step:", i, ", loss => ", loss.valueString()
+        print "epoch:", e, ", step:", i, ", loss => ", loss.valueStr()
 
         loss.backward()
+
+        trainer.train(executor)
 
 pred = np.zeros([10], dtype=np.float32)
 
@@ -83,7 +96,7 @@ for i in range(len(testX)):
 
     ret.fetch(pred)
 
-    executor.clearIntermediaryNodes()
+    executor.clearInterimNodes()
 
     if np.argmax(pred) == testY[i]:
         correct += 1
@@ -93,18 +106,6 @@ for i in range(len(testX)):
         print "test ", i, " => wrong"
 
 print "Total:", correct + wrong, ", Correct:", correct, ", Wrong:", wrong, "Accuracy:", (1.0 * correct) / (correct + wrong)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
