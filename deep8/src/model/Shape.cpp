@@ -169,7 +169,7 @@ void Shape::reShape(Shape &other) {
 	}
 }
 
-std::string Shape::toString() {
+std::string Shape::toStr() {
 	std::stringstream ss;
 	ss << "nDims: " << nDims;
 	ss << ", Dimension: [";

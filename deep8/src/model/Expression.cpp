@@ -86,22 +86,22 @@ void Expression::uniform(float left, float right) {
     Math::Uniform(variable->value, left, right);
 }
 
-Expression Expression::operator + (const Expression &y) {
+Expression Expression::operator + (const Expression &y) const {
     std::vector<Node*> inputs = {node, y.node};
     return Expression(executor, executor->addFunction(new Add(inputs)));
 }
 
-Expression Expression::operator - (const Expression &y) {
+Expression Expression::operator - (const Expression &y) const {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new Minus(inputs)));
 }
 
-Expression Expression::operator * (const Expression &y) {
+Expression Expression::operator * (const Expression &y) const {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new MatrixMultiply(inputs)));
 }
 
-Expression Expression::operator / (const Expression &y) {
+Expression Expression::operator / (const Expression &y) const {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new Divide(inputs)));
 }

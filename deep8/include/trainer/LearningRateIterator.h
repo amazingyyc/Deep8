@@ -2,12 +2,13 @@
 #define PROJECT_LEARNINGRATEITERATOR_H
 
 #include "basic/Basic.h"
+#include "basic/Exception.h"
 
 namespace Deep8 {
 
 class LearningRateIterator {
 public:
-   virtual float nextLearningRate(int64_t steps) = 0;
+   virtual float nextLearningRate(int64_t steps);
 };
 
 }

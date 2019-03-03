@@ -159,12 +159,12 @@ Function* Executor::getFunctionById(int64_t id) {
 }
 
 /**get all trainabel parameters*/
-std::unordered_set<Variable*> Executor::trainableParameters() {
-	std::unordered_set<Variable*> parameters;
+std::vector<Variable*> Executor::trainableParameters() {
+	std::vector<Variable*> parameters;
 
 	for (auto item : this->allVariables) {
 		if (item.second->updateGradient) {
-			parameters.insert(item.second);
+			parameters.emplace_back(item.second);
 		}
 	}
 

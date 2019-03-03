@@ -9,7 +9,7 @@ void Trainer::update(Executor *executor, Variable *parameter, float learningRate
     DEEP8_RUNTIME_ERROR("can not call this function in trainer");
 }
 
-void Trainer::train(Executor *executor, std::unordered_set<Variable*> parameters) {
+void Trainer::train(Executor *executor, std::vector<Variable*> parameters) {
     if (parameters.empty()) {
 		return;
 	}

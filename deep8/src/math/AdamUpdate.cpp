@@ -8,6 +8,11 @@ void AdamUpdate(Tensor& value, Tensor& gradient, Tensor& m, Tensor& v, float bet
     DEEP8_ARGUMENT_CHECK(value.elementType == gradient.elementType && value.elementType == m.elementType && value.elementType == v.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(value.shape.size() == gradient.shape.size() && value.shape.size() == m.shape.size() && value.shape.size() == v.shape.size(), "the param shape size must be same");
 
+    /**avoid divide by 0*/
+    if (steps <= 0) {
+        steps = 1;
+    }
+
     if (DeviceType::CPU == value.deviceType()) {
         AdamUpdateCPU(value, gradient, m, v, beta1, beta2, epsilon, learningRate, weightDecay, steps);
     } else {

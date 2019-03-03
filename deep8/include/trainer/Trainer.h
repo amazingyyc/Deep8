@@ -25,7 +25,7 @@ public:
 
     virtual void update(Executor *executor, Variable *parameter, float learningRate, float weightDecay, int64_t steps);
 
-    void train(Executor *executor, std::unordered_set<Variable*> parameters);
+    void train(Executor *executor, std::vector<Variable*> parameters);
 };
 
 

@@ -2,14 +2,20 @@
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
 
-#include "Shape.h"
-#include "Device.h"
-#include "Trainer.h"
-#include "Executor.h"
-#include "EagerExecutor.h"
-#include "Expression.h"
-#include "Tensor.h"
-#include "Parameter.h"
+#include "model/Shape.h"
+#include "model/Device.h"
+#include "model/Executor.h"
+#include "model/EagerExecutor.h"
+#include "model/Expression.h"
+#include "model/Tensor.h"
+#include "trainer/ConstantLearningRateIterator.h"
+#include "trainer/LinearDecayLearningRateIterator.h"
+#include "trainer/Trainer.h"
+#include "trainer/SGDTrainer.h"
+#include "trainer/AdamTrainer.h"
+#include "trainer/AdagradTrainer.h"
+#include "trainer/MomentumTrainer.h"
+#include "trainer/RMSPropTrainer.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -18,14 +24,45 @@ namespace Deep8 {
 namespace Python {
 
 /**
- * Device
+ * DeviceType
  */
-void declareDevice(py::module &m) {
-    /**DeviceType*/
-    py::enum_<DeviceType>(m, "deviceType")
-            .value("CPU", DeviceType::CPU)
-            .value("GPU", DeviceType::GPU)
-            .export_values();
+void declareDeviceType(py::module &m) {
+    py::enum_<DeviceType>(m, "DeviceType")
+                        .value("CPU", DeviceType::CPU)
+                        .value("GPU", DeviceType::GPU)
+                        .export_values();
+}
+
+/**
+ * DType
+ */
+void declareDType(py::module &m) {
+    py::enum_<DType>(m, "DType")
+                        .value("UnKnown",   DType::UnKnown)
+                        .value("Bool",      DType::Bool)
+                        .value("Uint8",     DType::Uint8)
+                        .value("Int8",      DType::Int8)
+                        .value("Uint16",    DType::Uint16)
+                        .value("Int16",     DType::Int16)
+                        .value("Uint32",    DType::Uint32)
+                        .value("Int32",     DType::Int32)
+                        .value("Uint64",    DType::Uint64)
+                        .value("Int64",     DType::Int64)
+                        .value("Float16",   DType::Float16)
+                        .value("Float32",   DType::Float32)
+                        .value("Float64",   DType::Float64)
+                        .export_values();
+}
+
+/**
+ * ElementType
+ */
+void declareElementType(py::module &m) {
+    py::class_<ElementType>(m, "ElementType")
+            .def_readwrite("id", &ElementType::id)
+            .def_readwrite("byteWidth", &ElementType::byteWidth)
+            .def_readwrite("name", &ElementType::name)
+            .def_static("from", (ElementType (*)(DType)) &ElementType::from);
 }
 
 /**
@@ -41,7 +78,6 @@ void declareNode(py::module &m) {
 void declareShape(py::module &m) {
     py::class_<Shape>(m, "Shape")
             .def(py::init())
-            .def(py::init<std::vector<size_t>&>())
             .def(py::init<std::vector<size_t>>())
             .def(py::init<size_t, std::vector<size_t>>())
             .def_readwrite("batch", &Shape::batch)
@@ -54,194 +90,118 @@ void declareShape(py::module &m) {
             .def("stride", &Shape::stride)
             .def("row", &Shape::row)
             .def("col", &Shape::col)
-            .def("toString", &Shape::toString);
-}
-
-/**
- * declare the Trainer
- */
-template <typename T>
-void declareTrainer(py::module &m, const std::string &suffix = "") {
-    /**Trainer*/
-    std::string className = std::string("Trainer") + suffix;
-    py::class_<Trainer<T>>(m, className.c_str());
-
-    /**SGDTrainer*/
-    className = std::string("SGDTrainer") + suffix;
-    py::class_<SGDTrainer<T>, Trainer<T>>(m, className.c_str())
-            .def(py::init<T, bool, T>(), py::arg("lr") = 1e-3, py::arg("cg") = false, py::arg("ct") = 5.0);
-
-    /**AdagradTrainer*/
-    className = std::string("AdagradTrainer") + suffix;
-    py::class_<AdagradTrainer<T>, Trainer<T>>(m, className.c_str())
-            .def(py::init<T, T, bool, T>(),
-                    py::arg("learningRate") = 1e-3, py::arg("epsilon") = 1e-7, py::arg("clipGradient") = false, py::arg("clipThreshold") = 5.0);
-
-    /**AdamTrainer*/
-    className = std::string("AdamTrainer") + suffix;
-    py::class_<AdamTrainer<T>, Trainer<T>>(m, className.c_str())
-            .def(py::init<T, T, T, T, bool, T>(),
-                    py::arg("learningRate") = 1e-3,
-                    py::arg("beta1") = 0.9,
-                    py::arg("beta2") = 0.999,
-                    py::arg("epsilon") = 1e-7,
-                    py::arg("clipGradient") = false,
-                    py::arg("clipThreshold") = 5.0);
-
-    /**RMSPropTrainer*/
-    className = std::string("RMSPropTrainer") + suffix;
-    py::class_<RMSPropTrainer<T>, Trainer<T>>(m, className.c_str())
-        .def(py::init<T, T, T, bool, T>(),
-                py::arg("learningRate") = 1e-3,
-                py::arg("decay") = 0.9,
-                py::arg("epsilon") = 1e-7,
-                py::arg("clipGradient") = false,
-                py::arg("clipThreshold") = 5.0);
-
-    /**MomentumTrainer*/
-    className = std::string("MomentumTrainer") + suffix;
-    py::class_<MomentumTrainer<T>, Trainer<T>>(m, className.c_str())
-            .def(py::init<T, T, bool, T>(),
-                    py::arg("learningRate") = 1e-3,
-                    py::arg("alpha") = 0.9,
-                    py::arg("clipGradient") = false,
-                    py::arg("clipThreshold") = 5.0);
+            .def("toStr", &Shape::toStr);
 }
 
 /**
  * declare Tensor
  */
-template <typename T>
-void declareTensor(py::module &m, const std::string &suffix = "") {
-    using Class = Tensor<T>;
-    std::string className = std::string("Tensor") + suffix;
-
-    py::class_<Class>(m, className.c_str())
-            .def_readwrite("shape", &Class::shape)
-            .def("__str__", &Class::toString)
-            .def("valueStr", &Class::valueString);
+void declareTensor(py::module &m) {
+    py::class_<Tensor>(m, "Tensor")
+            .def_readonly("shape", &Tensor::shape)
+            .def_readonly("elementType", &Tensor::elementType)
+            .def("valueStr", &Tensor::valueStr);
 }
 
 /**
  * Variable
  */
-template <typename T>
-void declareVariable(py::module &m, const std::string &suffix = "") {
-    using Class = Variable<T>;
-    std::string className = std::string("Variable") + suffix;
-
-    py::class_<Class, Node>(m, className.c_str())
-            .def_readonly("updateGradient", &Class::updateGradient)
-            .def_readonly("value", &Class::value)
-            .def_readonly("gradient", &Class::gradient);
-}
-
-/**
- * declare Parameter
- */
-template <typename T>
-void declareParameter(py::module &m, const std::string &suffix = "") {
-    using Class = Parameter<T>;
-    std::string className = std::string("Parameter") + suffix;
-
-    py::class_<Class, Variable<T>>(m, className.c_str())
-            .def_readonly("updateGradient", &Class::updateGradient)
-            .def_readonly("value", &Class::value)
-            .def_readonly("gradient", &Class::gradient);
+void declareVariable(py::module &m) {
+    py::class_<Variable, Node>(m, "Variable")
+            .def_readonly("updateGradient", &Variable::updateGradient)
+            .def_readonly("value", &Variable::value)
+            .def_readonly("gradient", &Variable::gradient);
 }
 
 /**
  * Expression
  */
-template <typename T>
-void declareExpression(py::module &m, const std::string &suffix = "") {
-    using Class = Expression<T>;
-    std::string className = std::string("Expression") + suffix;
-
-    py::class_<Class>(m, className.c_str())
+void declareExpression(py::module &m) {
+    py::class_<Expression>(m, "Expression")
             .def(py::init())
-            .def(py::init<Executor<T>*, Node*>())
-            .def("forward", &Class::forward)
-            .def("backward", &Class::backward)
-            .def("valueString", &Class::valueString)
-            .def("add", (Class (Class::*)(const Class&)) &Class::add)
-            .def("add", (Class (Class::*)(T)) &Class::add)
-            .def("minus", (Class (Class::*)(const Class&)) &Class::minus)
-            .def("minus", (Class (Class::*)(T)) &Class::minus)
-            .def("multiply", (Class (Class::*)(const Class&)) &Class::multiply)
-            .def("multiply", (Class (Class::*)(T)) &Class::multiply)
-            .def("divide", (Class (Class::*)(const Class&)) &Class::divide)
-            .def("divide", (Class (Class::*)(T)) &Class::divide)
-            .def("abs", &Class::abs)
-            .def("avgPooling2d", &Class::avgPooling2d,
+            .def(py::init<Executor*, Node*>())
+            .def("forward",     &Expression::forward)
+            .def("backward",    &Expression::backward)
+            .def("valueStr",    &Expression::valueStr)
+            .def("constant",    &Expression::constant,
+                                py::arg("scalar") = 0)
+            .def("zero", &Expression::zero)
+            .def("one", &Expression::one)
+            .def("gaussian", &Expression::gaussian, 
+                                py::arg("mean") = 0.0,
+                                py::arg("stddev") = 0.01)
+            .def("positiveUnitball", &Expression::positiveUnitball)
+            .def("random", &Expression::random, 
+                                py::arg("lower") = 0.0, 
+                                py::arg("upper") = 1.0)
+            .def("uniform", &Expression::uniform, 
+                                py::arg("left") = 0.0, 
+                                py::arg("right") = 1.0)
+            .def(py::self + py::self)
+            .def(py::self - py::self)
+            .def(py::self * py::self)
+            .def(py::self / py::self)
+            .def("add",         &Expression::add)
+            .def("minus",       &Expression::minus)
+            .def("multiply",    &Expression::multiply)
+            .def("divide",      &Expression::divide)
+            .def("abs",         &Expression::abs)
+            .def("avgPooling2d", &Expression::avgPooling2d,
                             py::arg("covered") = false, 
                             py::arg("filterHeight") = 1, 
                             py::arg("filterWidth") = 1, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
-            .def("conv2d", &Class::conv2d, 
+            .def("conv2d", &Expression::conv2d, 
                             py::arg("filter"),
                             py::arg("covered") = false, 
-                            py::arg("strideH") = 1, 
-                            py::arg("strideW") = 1, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideX") = 1, 
                             py::arg("dilationY") = 1, 
                             py::arg("dilationX") = 1)
-            .def("crossEntropy", &Class::crossEntropy)
-            .def("deConv2d", &Class::deConv2d, 
+            .def("crossEntropy", &Expression::crossEntropy)
+            .def("deConv2d", &Expression::deConv2d, 
                             py::arg("filter"),
                             py::arg("covered") = false, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
-            .def("exp", &Class::exp)
-            .def("l1Norm", &Class::l1Norm)
-            .def("l2Norm", &Class::l2Norm)
-            .def("linear", &Class::linear)
-            .def("log", &Class::log)
-            .def("logSoftmax", &Class::logSoftmax, py::arg("axis") = -1)
-            .def("lRelu", &Class::lRelu)
-            .def("matrixMultiply", &Class::matrixMultiply)
-            .def("maxPooling2d", &Class::maxPooling2d, 
+            .def("exp",     &Expression::exp)
+            .def("l1Norm",  &Expression::l1Norm)
+            .def("l2Norm",  &Expression::l2Norm)
+            .def("linear",  &Expression::linear)
+            .def("log",     &Expression::log)
+            .def("logSoftmax", &Expression::logSoftmax, 
+                                py::arg("axis") = -1)
+            .def("lRelu", &Expression::lRelu)
+            .def("matrixMultiply",  &Expression::matrixMultiply)
+            .def("maxPooling2d",    &Expression::maxPooling2d, 
                             py::arg("covered") = false, 
                             py::arg("filterHeight") = 1, 
                             py::arg("filterWidth") = 1, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
-            .def("relu", &Class::relu)
-            .def("reShape", (Expression<T> (Class::*)(Shape&)) &Class::reShape)
-            .def("reShape", (Expression<T> (Class::*)(std::vector<size_t>)) &Class::reShape)
-            .def("sigmoid", &Class::sigmoid)
-            .def("softmax", &Class::softmax, py::arg("axis") = -1)
-            .def("square", &Class::square)
-            .def("tanh", &Class::tanh)
-            .def(py::self + py::self)
-            .def(py::self + T())
-            .def(T() + py::self)
-            .def(py::self - py::self)
-            .def(py::self - T())
-            .def(T() - py::self)
-            .def(py::self * py::self)
-            .def(py::self * T())
-            .def(T() * py::self)
-            .def(py::self / py::self)
-            .def(py::self / T())
-            .def(T() / py::self)
-            .def("feed", [](Class* express, py::buffer buffer) {
+            .def("reduceMean", &Expression::reduceMean,
+                            py::arg("axis") =  -1,
+                            py::arg("keep") =  false)
+            .def("reduceSum", &Expression::reduceSum,
+                            py::arg("axis") =  -1,
+                            py::arg("keep") =  false)
+            .def("relu", &Expression::relu)
+            .def("reShape", (Expression (Expression::*)(Shape&)) &Expression::reShape)
+            .def("reShape", (Expression (Expression::*)(std::vector<size_t>)) &Expression::reShape)
+            .def("sigmoid", &Expression::sigmoid)
+            .def("softmax", &Expression::softmax, py::arg("axis") = -1)
+            .def("square",  &Expression::square)
+            .def("tanh",    &Expression::tanh)
+            .def("feed", [](Expression* express, py::buffer buffer) {
                 /**Request a buffer descriptor from Python*/
                 py::buffer_info info = buffer.request();
-
-                if (info.format != py::format_descriptor<T>::format()) {
-                    DEEP8_RUNTIME_ERROR("The input format is not correct");
-                }
 
                 express->feed(info.ptr);
             })
-            .def("fetch", [](Class* express, py::buffer buffer) {
+            .def("fetch", [](Expression* express, py::buffer buffer) {
                 /**Request a buffer descriptor from Python*/
                 py::buffer_info info = buffer.request();
-
-                if (info.format != py::format_descriptor<T>::format()) {
-                    DEEP8_RUNTIME_ERROR("The input format is not correct");
-                }
 
                 express->fetch(info.ptr);
             });
@@ -250,143 +210,119 @@ void declareExpression(py::module &m, const std::string &suffix = "") {
 /**
  * declare Expression Function
  */
-template <typename T>
-void declareExpressionFunction(py::module &m, const std::string &suffix = "") {
+void declareExpressionFunction(py::module &m) {
     /**parameter*/
-    m.def(("parameter" + suffix).c_str(), [](Executor<T> *executor, size_t batch, std::vector<size_t> list) -> Expression<T> {
-        return parameter<T>(executor, batch, list, true, nullptr);
-    });
+    m.def("parameter", (Expression (*)(Executor*, std::vector<size_t>, bool, DType)) &parameter,
+                        py::arg("executor"),
+                        py::arg("list"),
+                        py::arg("updateGradient") = true, 
+                        py::arg("type") = DType::Float32);
 
-    m.def(("parameter" + suffix).c_str(), [](Executor<T> *executor, std::vector<size_t> list) -> Expression<T> {
-        return parameter<T>(executor, 1, list, true, nullptr);
-    });
+    m.def("parameter", (Expression (*)(Executor*, size_t, std::vector<size_t>, bool, DType)) &parameter, 
+                    py::arg("executor"),
+                    py::arg("batch"),
+                    py::arg("list"),
+                    py::arg("updateGradient") = true, 
+                    py::arg("type") = DType::Float32);
 
-    /**input parameter*/
-    m.def(("inputParameter" + suffix).c_str(), [](Executor<T> *executor, size_t batch, std::vector<size_t> list) -> Expression<T> {
-        return parameter<T>(executor, batch, list, false, nullptr);
-    });
+    m.def("parameter", (Expression (*)(Executor*, Shape&, bool, DType)) &parameter, 
+                    py::arg("executor"),
+                    py::arg("shape"),
+                    py::arg("updateGradient") = true, 
+                    py::arg("type") = DType::Float32);
+}
 
-    m.def(("inputParameter" + suffix).c_str(), [](Executor<T> *executor, std::vector<size_t> list) -> Expression<T> {
-        return parameter<T>(executor, 1, list, false, nullptr);
-    });
+/**
+ * LearningRateIterator 
+ */
+void declareLearningRateIterator(py::module &m) {
+    py::class_<LearningRateIterator>(m, "LearningRateIterator");
 
-    /**input parameter with buffer*/
-    m.def(("inputParameter" + suffix).c_str(), [](Executor<T> *executor, size_t batch, std::vector<size_t> list, py::buffer buffer) -> Expression<T> {
-        /**Request a buffer descriptor from Python*/
-        py::buffer_info info = buffer.request();
+    py::class_<ConstantLearningRateIterator, LearningRateIterator>(m, "ConstantLearningRateIterator")
+        .def(py::init<float>(), py::arg("lr") = 0.01);
 
-        if (info.format != py::format_descriptor<T>::format()) {
-            DEEP8_RUNTIME_ERROR("The input format is not correct");
-        }
+    py::class_<LinearDecayLearningRateIterator, LearningRateIterator>(m, "LinearDecayLearningRateIterator")
+        .def(py::init<int64_t, float, float>(),
+                py::arg("totalStep"),
+                py::arg("start") = 0.01,
+                py::arg("end") = 0.0);
+}
 
-        auto size = Shape(batch, list).size();
+/**
+ * declare the Trainer
+ */
+void declareTrainer(py::module &m) {
+    /**Trainer*/
+    py::class_<Trainer>(m, "Trainer")
+        .def("train", &Trainer::train);
 
-        if (info.size < size) {
-            DEEP8_RUNTIME_ERROR("The input size must be > " << size);
-        }
+    /**SGDTrainer*/
+    py::class_<SGDTrainer, Trainer>(m, "SGDTrainer")
+            .def(py::init<LearningRateIterator*, float>(), 
+                py::arg("learningRate"), 
+                py::arg("weightDecay") = 0);
 
-        return parameter<T>(executor, batch, list, false, info.ptr);
-    });
+    /**AdagradTrainer*/
+    py::class_<AdagradTrainer, Trainer>(m, "AdagradTrainer")
+            .def(py::init<LearningRateIterator*, float, float>(),
+                    py::arg("learningRate"), 
+                    py::arg("epsilon") = 1e-7, 
+                    py::arg("weightDecay") = 0);
 
-    m.def(("inputParameter" + suffix).c_str(), [](Executor<T> *executor, std::vector<size_t> list, py::buffer buffer) -> Expression<T> {
-        /**Request a buffer descriptor from Python*/
-        py::buffer_info info = buffer.request();
+    /**AdamTrainer*/
+    py::class_<AdamTrainer, Trainer>(m, "AdamTrainer")
+            .def(py::init<LearningRateIterator*, float, float, float, float>(),
+                    py::arg("learningRate"),
+                    py::arg("beta1") = 0.9,
+                    py::arg("beta2") = 0.999,
+                    py::arg("epsilon") = 1e-7,
+                    py::arg("weightDecay") = 0);
 
-        if (info.format != py::format_descriptor<T>::format()) {
-            DEEP8_RUNTIME_ERROR("The input format is not correct");
-        }
+    /**RMSPropTrainer*/
+    py::class_<RMSPropTrainer, Trainer>(m, "RMSPropTrainer")
+        .def(py::init<LearningRateIterator*, float, float, float>(),
+                py::arg("learningRate"),
+                py::arg("rho") = 0.9,
+                py::arg("epsilon") = 1e-7,
+                py::arg("weightDecay") = 0);
 
-        auto size = Shape(1, list).size();
-
-        if (info.size < size) {
-            DEEP8_RUNTIME_ERROR("The input size must be > " << size);
-        }
-
-        return parameter<T>(executor, 1, list, false, info.ptr);
-    });
-
-    m.def(("add"      + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &add<T>);
-    m.def(("minus"    + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &minus<T>);
-    m.def(("multiply" + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &multiply<T>);
-    m.def(("divide"   + suffix).c_str(), (Expression<T> (*)(T, const Expression<T>&)) &divide<T>);
+    /**MomentumTrainer*/
+    py::class_<MomentumTrainer, Trainer>(m, "MomentumTrainer")
+            .def(py::init<LearningRateIterator*, float, float>(),
+                    py::arg("learningRate"),
+                    py::arg("alpha") = 0.9,
+                    py::arg("weightDecay") = 0);
 }
 
 /**
  * Executor
  */
-template <typename T>
-void declareExecutor(py::module &m, const std::string &suffix = "") {
-    using Class = Executor<T>;
-    std::string className = std::string("Executor") + suffix;
+void declareExecutor(py::module &m) {
+    py::class_<Executor>(m, "Executor")
+        .def("trainableParameters", &Executor::trainableParameters, pybind11::return_value_policy::reference);
 
-    py::class_<Class>(m, className.c_str());
-}
-
-/**
- * declare the Eager Executor
- */
-template <typename T>
-void declareEagerExecutor(py::module &m, const std::string &suffix = "") {
-    using Class = EagerExecutor<T>;
-    std::string className = std::string("EagerExecutor") + suffix;
-
-    py::class_<Class, Executor<T>>(m, className.c_str())
-            .def(py::init<Trainer<T>*, DeviceType, bool>(), py::arg("tr") = nullptr, py::arg("deviceType") = DeviceType::CPU, py::arg("flag") = true)
-            .def("clearIntermediaryNodes", &Class::clearIntermediaryNodes);
+    py::class_<EagerExecutor, Executor>(m, "EagerExecutor")
+        .def(py::init<DeviceType, bool>(), 
+            py::arg("deviceType") = DeviceType::CPU, 
+            py::arg("flag") = true)
+        .def("clearInterimNodes", &EagerExecutor::clearInterimNodes);
 }
 
 PYBIND11_MODULE(deep8, m) {
-    declareDevice(m);
+    declareDeviceType(m);
+    declareDType(m);
+    declareElementType(m);
     declareNode(m);
     declareShape(m);
 
-    declareTrainer<float>(m);
-    declareTrainer<double>(m, "D");
-#ifdef HAVE_HALF
-    declareTrainer<half>(m, "H");
-#endif
+    declareTensor(m);
+    declareVariable(m);
+    declareExpression(m);
+    declareExpressionFunction(m);
+    declareLearningRateIterator(m);
 
-    declareTensor<float>(m);
-    declareTensor<double>(m, "D");
-#ifdef HAVE_HALF
-    declareTensor<half>(m, "H");
-#endif
-
-    declareVariable<float>(m);
-    declareVariable<double>(m, "D");
-#ifdef HAVE_HALF
-    declareVariable<half>(m, "H");
-#endif
-
-    declareParameter<float>(m);
-    declareParameter<double>(m, "D");
-#ifdef HAVE_HALF
-    declareParameter<half>(m, "H");
-#endif
-
-    declareExpression<float>(m);
-    declareExpression<double>(m, "D");
-#ifdef HAVE_HALF
-    declareExpression<half>(m, "H");
-#endif
-
-    declareExpressionFunction<float>(m);
-    declareExpressionFunction<double>(m, "D");
-#ifdef HAVE_HALF
-    declareExpressionFunction<half>(m, "H");
-#endif
-
-    declareExecutor<float>(m);
-    declareExecutor<double>(m, "D");
-#ifdef HAVE_HALF
-    declareExecutor<half>(m, "H");
-#endif
-
-    declareEagerExecutor<float>(m);
-    declareEagerExecutor<double>(m, "D");
-#ifdef HAVE_HALF
-    declareEagerExecutor<half>(m, "H");
-#endif
+    declareTrainer(m);
+    declareExecutor(m);
  }
 
 }

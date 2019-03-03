@@ -73,7 +73,7 @@ public:
 	Function* getFunctionById(int64_t id);
 
 	/**get all trainabel parameters*/
-	std::unordered_set<Variable*> trainableParameters();
+	std::vector<Variable*> trainableParameters();
 
 	/**give a function and create the output Variable*/
 	virtual Node *addFunction(Function *func);

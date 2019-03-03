@@ -14,7 +14,7 @@ public:
 
     std::unordered_map<Variable*, Variable*> accumulates;
 
-    explicit AdagradTrainer(LearningRateIterator* lr, float epsilon = 0.9, float decay = 0);
+    explicit AdagradTrainer(LearningRateIterator* lr, float epsilon = 1e-7, float decay = 0);
 
     void update(Executor* executor, Variable* parameter, float learningRate, float weightDecay, int64_t steps) override;
 

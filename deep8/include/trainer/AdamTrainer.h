@@ -17,7 +17,7 @@ public:
     std::unordered_map<Variable*, Variable*> m;
     std::unordered_map<Variable*, Variable*> v;
 
-    explicit AdamTrainer(LearningRateIterator* lr, float beta1 = 0.9, float beta2 = 0.999, float epsilon = 0.9, float decay = 0);
+    explicit AdamTrainer(LearningRateIterator* lr, float beta1 = 0.9, float beta2 = 0.999, float epsilon = 1e-7, float decay = 0);
 
     void update(Executor* executor, Variable* parameter, float learningRate, float weightDecay, int64_t steps) override;
 

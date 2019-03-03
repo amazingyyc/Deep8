@@ -79,7 +79,7 @@ public:
 	size_t row() const;
 	size_t col() const;
 
-	std::string toString();
+	std::string toStr();
 };
 
 }

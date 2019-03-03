@@ -14,7 +14,7 @@ TEST(LinearRegression, test) {
 
 	EagerExecutor executor;
 	LinearDecayLearningRateIterator learningRate(1000);
-	MomentumTrainer trainer(&learningRate);
+	AdamTrainer trainer(&learningRate);
 
 	auto w = parameter(&executor, { 2 });
 	w.gaussian();

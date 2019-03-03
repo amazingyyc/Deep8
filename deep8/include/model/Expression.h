@@ -64,10 +64,10 @@ public:
 	void random(float lower = 0.0, float upper = 1.0);
 	void uniform(float left = 0.0, float right = 1.0);
 
-	Expression operator + (const Expression &y);
-	Expression operator - (const Expression &y);
-	Expression operator * (const Expression &y);
-	Expression operator / (const Expression &y);
+	Expression operator + (const Expression &y) const;
+	Expression operator - (const Expression &y) const;
+	Expression operator * (const Expression &y) const;
+	Expression operator / (const Expression &y) const;
 
     Expression add(const Expression &y);
 	Expression minus(const Expression &y);

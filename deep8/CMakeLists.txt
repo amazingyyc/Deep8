@@ -17,8 +17,7 @@ include_directories(include/nodes)
 include_directories(include/trainer)
 include_directories(include/utils)
 
-# file(GLOB DEEP8_HEAD_FILES "include/*.h")
-# file(GLOB DEEP8_CUDA_HEAD_FILES "include/*.cuh")
+file(GLOB_RECURSE DEEP8_HEAD_FILES "include/*.h")
 
 set(DEEP8_SRC_FILES
 		src/math/Abs.cpp
@@ -103,6 +102,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/UnBatch.cpp
 		src/nodes/Variable.cpp
 
+		src/trainer/LearningRateIterator.cpp
 		src/trainer/ConstantLearningRateIterator.cpp
 		src/trainer/LinearDecayLearningRateIterator.cpp
 		src/trainer/Trainer.cpp
@@ -171,18 +171,17 @@ if (HAVE_GPU AND HAVE_CUDA)
 		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_HALF")
 	endif()
 
-	# add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES} ${DEEP8_CUDA_HEAD_FILES})
-	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES})
+	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES})
 
 	# link the gtest and CUDA library
 	target_link_libraries(deep8_native ${CUDA_LIBRARIES})
 else()
-	#add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_HEAD_FILES})
-	add_library(deep8_native ${DEEP8_SRC_FILES} )
+	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_HEAD_FILES})
 endif()
 
-#install(TARGETS deep8_native DESTINATION lib)
-#install(FILES ${DEEP8_HEAD_FILES} DESTINATION include/deep8)
+install(TARGETS deep8_native DESTINATION lib)
+# install(FILES ${DEEP8_HEAD_FILES} DESTINATION include/deep8)
+install(DIRECTORY deep8/include/ DESTINATION include/deep8)
 
 message(STATUS "========================================================================================================")
 message(STATUS "end compile deep8_native")
