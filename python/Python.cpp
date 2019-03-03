@@ -254,7 +254,7 @@ void declareLearningRateIterator(py::module &m) {
 void declareTrainer(py::module &m) {
     /**Trainer*/
     py::class_<Trainer>(m, "Trainer")
-        .def("train", &Trainer::train);
+        .def("train", (void (Trainer::*)(Executor*)) &Trainer::train);
 
     /**SGDTrainer*/
     py::class_<SGDTrainer, Trainer>(m, "SGDTrainer")
@@ -298,8 +298,8 @@ void declareTrainer(py::module &m) {
  * Executor
  */
 void declareExecutor(py::module &m) {
-    py::class_<Executor>(m, "Executor")
-        .def("trainableParameters", &Executor::trainableParameters, pybind11::return_value_policy::reference);
+    py::class_<Executor>(m, "Executor");
+        //.def("trainableParameters", &Executor::trainableParameters, pybind11::return_value_policy::reference);
 
     py::class_<EagerExecutor, Executor>(m, "EagerExecutor")
         .def(py::init<DeviceType, bool>(), 

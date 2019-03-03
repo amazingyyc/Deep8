@@ -27,6 +27,9 @@ void Trainer::train(Executor *executor, std::vector<Variable*> parameters) {
     steps++;
 }
 
+void Trainer::train(Executor *executor) {
+    train(executor, executor->trainableParameters());
+}
 
 
 
