@@ -1,52 +1,34 @@
-#include "L2Norm.h"
+#include "math/L2Norm.h"
+#include "nodes/L2Norm.h"
 
 namespace Deep8 {
 
-template <typename T>
-L2Norm<T>::L2Norm(std::vector<Node *> &inputs): Function<T>(inputs) {
-    check();
+L2Norm::L2Norm(std::vector<Node *> &inputs): Function(inputs) {
+	check();
 }
 
-template<typename T>
-void L2Norm<T>::check() {
-    Function<T>::check();
+void L2Norm::check() {
+    Function::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L2Norm Function needs only 1 input");
 
-	this->outputShape = Shape(1, { 1 });
+	this->shape       = Shape(1, { 1 });
+    this->elementType = this->inputs[0]->elementType;
 }
 
-template<typename T>
-void L2Norm<T>::forwardCPU(const std::vector<const Tensor <T> *> &inputs, Tensor <T> *output) {
-	auto eigenDevice = static_cast<CPUDevice *>(output->device())->eigenDevice;
-
-	auto x = inputs[0];
-	auto y = output;
-
-	Eigen::array<int, 1> reshapeDims = { 1 };
-	Eigen::array<int, 1> sumDims = { 0 };
-
-	eTVec(y).device(*eigenDevice) = eTVec(x).square().sum(sumDims).sqrt().reshape(reshapeDims);
+void L2Norm::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+	Math::L2Norm(*(inputs[0]), *output);
 }
 
-template<typename T>
-void L2Norm<T>::backwardCPU(const std::vector<const Tensor <T> *> &inputs,
-                            const Tensor <T> *output,
-                            const Tensor <T> *outputGradient,
-                            size_t index,
-                            Tensor <T> *iGradient) {
-	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L2Norm backwardCPU is error");
+void L2Norm::backward(const std::vector<const Tensor*> &inputs, 
+					const Tensor *output, 
+					const Tensor *outputGradient, 
+					size_t index, 
+					Tensor *iGradient) {
+	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backward is error");
 
-	auto eigenDevice = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
-
-	int size = (int)iGradient->size();
-
-	Eigen::array<int, 1> outputBroad = { size };
-
-	eTVec(iGradient).device(*eigenDevice) += (eTVec(outputGradient) / eTVec(output)).broadcast(outputBroad) * eTVec(inputs[0]);
+    Math::L2NormGrad(*(inputs[0]), *iGradient, *output, *outputGradient);
 }
 
-DEEP8_RE_DECLARATION_HALF_FUNC(L2Norm);
-DEEP8_DECLARATION_INSTANCE(L2Norm)
 
 }

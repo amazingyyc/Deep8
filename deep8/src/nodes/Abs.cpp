@@ -1,44 +1,32 @@
-#include "Abs.h"
-#include "AutoBatchCodeHelper.h"
+#include "model/AutoBatchCodeHelper.h"
+#include "math/Abs.h"
+#include "nodes/Abs.h"
 
 namespace Deep8 {
 
-template <typename T>
-struct AbsBackwardExpr {
-    inline T operator()(T dy, T x) const {
-        if (x >= T(0)) {
-            return dy;
-        } else {
-            return -dy;
-        }
-    }
-};
-
-template <typename T>
-Abs<T>::Abs(std::vector<Node *> &inputs) : Function<T>(inputs) {
-	check();
+Abs::Abs(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
-template <typename T>
-void Abs<T>::check() {
-    Function<T>::check();
+void Abs::check() {
+    Function::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Abs Function needs only 1 input");
 
-    this->outputShape = this->inputs[0]->outputShape;
+    /**check shape and ElementType*/
+    this->shape       = this->inputs[0]->shape;
+    this->elementType = this->inputs[0]->elementType;
 }
 
 /**
  * for Unary Function it can be auto bateched but default set it to not support auto-batch
  */
-template <typename T>
-int Abs<T>::supportAutoBatch() {
+int Abs::supportAutoBatch() {
     return -1;
 }
 
 /**auto batch code*/
-template <typename T>
-size_t Abs<T>::autoBatchCode() {
+size_t Abs::autoBatchCode() {
     AutoBatchCodeHelper helper;
 
     helper.functionType(FunctionType::Abs);
@@ -50,8 +38,7 @@ size_t Abs<T>::autoBatchCode() {
  * return the inputs[index]'s shape if it is be batched together.
  * the shapes is the inputs[index]'s shape that will be batched.
  */
-template <typename T>
-Shape Abs<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+Shape Abs::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
 
     /**simple set it to a 1 batch shape*/
@@ -67,36 +54,30 @@ Shape Abs<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
 /**
  * return the inputs's index that can be auto batched
  */
-template <typename T>
-std::vector<size_t> Abs<T>::autoBatchIndexes() {
+std::vector<size_t> Abs::autoBatchIndexes() {
     return std::vector<size_t>({ 0 });
 }
 
 /**
  * clone current node for auto batch
  */
-template <typename T>
-Node* Abs<T>::autoBatchClone(std::vector<Node*> &inputs) {
-    return new Abs<T>(inputs);
+Node* Abs::autoBatchClone(std::vector<Node*> &inputs) {
+    return new Abs(inputs);
 } 
 
-template <typename T>
-void Abs<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output)  {
-    auto eigenDevice = static_cast<CPUDevice *>(output->device())->eigenDevice;
-
-    eTVec(output).device(*eigenDevice) = eTVec(inputs[0]).abs();
+void Abs::forward(const std::vector<const Tensor*> &inputs, Tensor *output)  {
+    Math::Abs(*(inputs[0]), *output);
 }
 
-template <typename T>
-void Abs<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
+void Abs::backward( const std::vector<const Tensor*> &inputs, 
+                    const Tensor *output, 
+                    const Tensor *outputGradient, 
+                    size_t index, 
+                    Tensor *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of Abs backwardCPU is error");
 
-    auto eigenDevice = static_cast<CPUDevice *>(output->device())->eigenDevice;
-
-    eTVec(iGradient).device(*eigenDevice) += eTVec(outputGradient).binaryExpr(eTVec(inputs[0]), AbsBackwardExpr<T>());
+    Math::AbsGrad(*(inputs[0]), *iGradient, *output, *outputGradient);
 }
 
-DEEP8_RE_DECLARATION_HALF_FUNC(Abs);
-DEEP8_DECLARATION_INSTANCE(Abs);
 
 }

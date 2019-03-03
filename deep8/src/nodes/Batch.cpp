@@ -1,36 +1,77 @@
-#include "Batch.h"
+#include "math/Add.h"
+#include "nodes/Batch.h"
 
 namespace Deep8 {
 
-template <typename T>
-Batch<T>::Batch(std::vector<Node *> &inputs, Shape &shape) : Function<T>(inputs), continuous(false) {
-	this->outputShape = shape;
-	check();
-}
-
-template <typename T>
-void Batch<T>::check() {
-	Function<T>::check();
+Batch::Batch(std::vector<Node *> &inputs, Shape &shape) : Function(inputs), continuous(false) {
+	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(!this->inputs.empty(), "the input can not be empty");
 
-	size_t totalSize = 0;
-	for (auto item : this->inputs) {
-		totalSize += item->outputShape.size();
-	}
+	auto sameElementType = this->inputs[0]->elementType;
 
-	DEEP8_ARGUMENT_CHECK(totalSize == this->outputShape.size(), "the inputs's output shape is error");
+    for (auto item : this->inputs) {
+        DEEP8_ARGUMENT_CHECK(sameElementType == item->elementType, "the inputs element type must be same");
+    }
+
+    this->elementType = sameElementType;
+	
+    size_t totalSize = 0;
+    for (auto item : this->inputs) {
+        totalSize += item->shape.size();
+    }
+
+    DEEP8_ARGUMENT_CHECK(totalSize == shape.size(), "the inputs's shape is error");
+
+	this->shape = shape;
 }
 
-template <typename T>
-void Batch<T>::forward() {
+void Batch::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+	auto device = output->device();
+
+	size_t offset = 0;
+
+	for (auto item : inputs) {
+		device->copy(item->raw(), (byte*)(output->raw()) + offset, item->byteCount());
+
+		offset += item->byteCount();
+	}
+}
+
+void Batch::backward(const std::vector<const Tensor*> &inputs, const Tensor *output, const Tensor *outputGradient, size_t index, Tensor *iGradient) {
+	DEEP8_ARGUMENT_CHECK(0 <= index && index < inputs.size(), "the index is error");
+	
+	size_t size   = iGradient->size();
+	size_t offset = 0;
+
+	for (size_t i = 0; i < index; ++i) {
+		offset += inputs[i]->byteCount();
+	}
+
+	Tensor dx;
+	Tensor dy;
+
+	dx.storage     = iGradient->storage;
+	dx.offset      = iGradient->offset;
+	dx.shape       = Shape(1, {size});
+	dx.elementType = iGradient->elementType;
+
+	dy.storage     = outputGradient->storage;
+	dy.offset      = outputGradient->offset + offset;
+	dy.shape       = Shape(1, {size});
+	dy.elementType = outputGradient->elementType;
+
+	Math::Add(dy, dx, dx);
+}
+
+void Batch::forward() {
 	for (auto item : this->inputs) {
 		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be Variable type");
 	}
 
 	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the outputs size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
-	DEEP8_ARGUMENT_CHECK(this->outputShape == this->outputs.first()->outputShape, "the output shape is error");
+	DEEP8_ARGUMENT_CHECK(this->shape == this->outputs.first()->shape, "the output shape is error");
 
 	/**
 	 * 2 condition the continuous is true
@@ -39,7 +80,7 @@ void Batch<T>::forward() {
 	 */
 	bool allUpdateGradient = true;
 	for (auto item : this->inputs) {
-		if (false == ((Variable<T>*)item)->updateGradient) {
+		if (false == ((Variable*)item)->updateGradient) {
 			allUpdateGradient = false;
 			break;
 		}
@@ -47,7 +88,7 @@ void Batch<T>::forward() {
 
 	bool anyUpdateGradient = false;
 	for (auto item : this->inputs) {
-		if (((Variable<T>*)item)->updateGradient) {
+		if (((Variable*)item)->updateGradient) {
 			anyUpdateGradient = true;
 			break;
 		}
@@ -58,16 +99,16 @@ void Batch<T>::forward() {
 	if (allUpdateGradient || !anyUpdateGradient) {
 		this->continuous = true;
 
-		/**this place have a bug: the GPU memory may be continuous in different storage*/
+		/**check if value is continuous*/
 		for (size_t i = 1; i < this->inputs.size(); ++i) {
-			auto preVar  = (Variable<T>*) this->inputs[i - 1];
-			auto curVar  = (Variable<T>*) this->inputs[i];
+			auto preVar  = (Variable*) this->inputs[i - 1];
+			auto curVar  = (Variable*) this->inputs[i];
 
-			void *prePtr = (byte*)(preVar->value.raw()) + preVar->value.size() * sizeof(T);
+			void *prePtr = (byte*)(preVar->value.raw()) + preVar->value.byteCount();
 
 			/**the memory must be in same storage and continuous*/
-			if (curVar->value.storage.ptr != preVar->value.storage.ptr ||
-				prePtr != ((Variable<T>*) this->inputs[i])->value.raw()) {
+			if (preVar->value.storage.ptr != curVar->value.storage.ptr ||
+				prePtr != curVar->value.raw()) {
 				this->continuous = false;
 				break;
 			}
@@ -76,13 +117,13 @@ void Batch<T>::forward() {
 		if (continuous && allUpdateGradient) {
 			/**check if gradient memory is continuous*/
 			for (size_t i = 1; i < this->inputs.size(); ++i) {
-				auto preVar = (Variable<T>*) this->inputs[i - 1];
-				auto curVar = (Variable<T>*) this->inputs[i];
+				auto preVar = (Variable*) this->inputs[i - 1];
+				auto curVar = (Variable*) this->inputs[i];
 
-				void *prePtr = (byte*)(preVar->gradient.raw()) + preVar->gradient.size() * sizeof(T);
+				void *prePtr = (byte*)(preVar->gradient.raw()) + preVar->gradient.byteCount();
 
-				if (curVar->gradient.storage.ptr != preVar->gradient.storage.ptr ||
-					prePtr != ((Variable<T>*) this->inputs[i])->gradient.raw()) {
+				if (preVar->gradient.storage.ptr != curVar->gradient.storage.ptr ||
+					prePtr != curVar->gradient.raw()) {
 					this->continuous = false;
 					break;
 				}
@@ -92,55 +133,50 @@ void Batch<T>::forward() {
 
 	if (this->continuous) {
 		/**if continuous is true just set the output and inputs point to same memory*/
-		auto x = (Variable<T>*)this->inputs[0];
-		auto y = (Variable<T>*)this->outputs.first();
+		auto x = (Variable*)this->inputs[0];
+		auto y = (Variable*)this->outputs.first();
 
-		y->outputShape    = this->outputShape;
-		y->updateGradient = allUpdateGradient;
+		y->shape          = this->shape;
+		y->updateGradient = this->updateGradient;
+        y->elementType    = this->elementType;
 
-		y->value.storage = x->value.storage;
-		y->value.offset  = x->value.offset;
-		y->value.shape   = this->outputShape;
+		y->value.storage     = x->value.storage;
+		y->value.offset      = x->value.offset;
+		y->value.elementType = x->value.elementType;
+		y->value.shape       = this->shape;
 
 		if (allUpdateGradient) {
-			y->gradient.storage = x->gradient.storage;
-			y->gradient.offset  = x->gradient.offset;
-			y->gradient.shape   = this->outputShape;
+			y->gradient.storage     = x->gradient.storage;
+			y->gradient.offset      = x->gradient.offset;
+			y->gradient.elementType = x->gradient.elementType;
+			y->gradient.shape       = this->shape;
 		} else {
 			/**release the gradient memory*/
 			y->releaseGradient();
 		}
 	} else {
 		/**copy the inputs memory to output*/
-		auto outputVar = static_cast<Variable<T>*>(this->outputs.first());
+		auto outputVariable = (Variable*)(this->outputs.first());
 
-		auto outputValue = &(outputVar->value);
-		auto deviceType  = outputVar->deviceType();
+		auto outputValue = &(outputVariable->value);
+		auto deviceType  = outputVariable->deviceType();
 
-		std::vector<const Tensor<T>*> inputValues;
+		std::vector<const Tensor*> inputValues;
 
 		for (auto item : this->inputs) {
-			auto inputVar = static_cast<Variable<T>*>(item);
+			auto inputVariable = (Variable*)(item);
 
-			DEEP8_ARGUMENT_CHECK(deviceType == inputVar->deviceType(), "the device of input must be same with output");
+			DEEP8_ARGUMENT_CHECK(deviceType == inputVariable->deviceType(), "the device of input must be same with output");
 
-			inputValues.emplace_back(&(inputVar->value));
+			inputValues.emplace_back(&(inputVariable->value));
 		}
 
-		if (DeviceType::CPU == deviceType) {
-			this->forwardCPU(inputValues, outputValue);
-		} else {
-#ifdef HAVE_CUDA
-			this->forwardGPU(inputValues, outputValue);
-#else
-			DEEP8_RUNTIME_ERROR("do not have a GPU");
-#endif
-		}
+		/**copy memory*/
+		this->forward(inputValues, outputValue);
 	}
 }
 
-template <typename T>
-void Batch<T>::backward() {
+void Batch::backward() {
 	if (this->continuous) {
 		/**do nothing*/
 		return;
@@ -153,79 +189,35 @@ void Batch<T>::backward() {
 
 	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the output size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
+    DEEP8_ARGUMENT_CHECK(this->shape == this->outputs.first()->shape, "the output shape is error");
 
-	auto outputVar = static_cast<Variable<T>*>(this->outputs.first());
+	auto outputVariable = (Variable*)(this->outputs.first());
 
-	auto outputValue    = &(outputVar->value);
-	auto outputGradient = &(outputVar->gradient);
+	auto outputValue    = &(outputVariable->value);
+	auto outputGradient = &(outputVariable->gradient);
 
-	auto deviceType = outputVar->deviceType();
+	auto deviceType = outputVariable->deviceType();
 
-	std::vector<const Tensor<T>*> inputValues;
+	std::vector<const Tensor*> inputValues;
 
 	for (auto item : this->inputs) {
-		auto inputVar = static_cast<Variable<T>*>(item);
+		auto inputVariable = (Variable*)(item);
 
-		DEEP8_ARGUMENT_CHECK(deviceType == inputVar->deviceType(), "the device of the input and output must have same device type");
+		DEEP8_ARGUMENT_CHECK(deviceType == inputVariable->deviceType(), "the device of the input and output must have same device type");
 
-		inputValues.emplace_back(&(inputVar->value));
+		inputValues.emplace_back(&(inputVariable->value));
 	}
 
-	if (DeviceType::CPU == deviceType) {
-		for (size_t i = 0; i < this->inputs.size(); ++i) {
-			auto inputVar = static_cast<Variable<T>*>(this->inputs[i]);
+	for (size_t i = 0; i < this->inputs.size(); ++i) {
+		auto inputVariable = (Variable*)(this->inputs[i]);
 
-			if (inputVar->updateGradient) {
-				this->backwardCPU(inputValues, outputValue, outputGradient, i, &(inputVar->gradient));
-			}
-		}
-	} else {
-		for (size_t i = 0; i < this->inputs.size(); ++i) {
-			auto inputVar = static_cast<Variable<T>*>(this->inputs[i]);
-
-			if (inputVar->updateGradient) {
-#ifdef HAVE_CUDA
-				this->backwardGPU(inputValues, outputValue, outputGradient, i, &(inputVar->gradient));
-#else
-				DEEP8_RUNTIME_ERROR("not have a GPU");
-#endif
-			}
+		if (inputVariable->updateGradient) {
+			this->backward(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
 		}
 	}
 }
 
-template <typename T>
-void Batch<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-	auto device = static_cast<CPUDevice *>(output->device());
 
-	size_t offset = 0;
 
-	for (auto item : inputs) {
-		device->copy(item->raw(), (byte*)(output->raw()) + offset, sizeof(T) * item->size());
-
-		offset += sizeof(T) * item->size();
-	}
-}
-
-template <typename T>
-void Batch<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
-	DEEP8_ARGUMENT_CHECK(0 <= index && index < inputs.size(), "the index is error");
-
-	auto device = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
-
-	size_t offset = 0;
-
-	for (size_t i = 0; i < index; ++i) {
-		offset += sizeof(T) * inputs[i]->size();
-	}
-
-	Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dx( (T*)(iGradient->raw()), iGradient->size() );
-	Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dy( (T*)((byte*)(outputGradient->raw()) + offset), iGradient->size() );
-
-	dx.device(*device) += dy;
-}
-
-DEEP8_RE_DECLARATION_HALF_FUNC(Batch);
-DEEP8_DECLARATION_INSTANCE(Batch)
 
 }

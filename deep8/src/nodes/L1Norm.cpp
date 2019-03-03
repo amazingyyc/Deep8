@@ -1,60 +1,35 @@
-#include "L1Norm.h"
+#include "math/L1Norm.h"
+#include "nodes/L1Norm.h"
 
 namespace Deep8 {
 
-template <typename T>
-struct L1NormBackwardExpr {
-    inline T operator()(T dy, T x) const {
-        if (x >= T(0)) {
-            return dy;
-        } else {
-            return -dy;
-        }
-    }
-};
-
-template <typename T>
-L1Norm<T>::L1Norm(std::vector<Node *> &inputs): Function<T>(inputs) {
-    check();
+L1Norm::L1Norm(std::vector<Node *> &inputs): Function(inputs) {
+	check();
 }
 
-template <typename T>
-void L1Norm<T>::check() {
-    Function<T>::check();
+void L1Norm::check() {
+    Function::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L1Norm Function needs only 1 input");
 
-	this->outputShape = Shape(1, { 1 });
+	this->shape       = Shape(1, { 1 });
+    this->elementType = this->inputs[0]->elementType;
 }
 
-template <typename T>
-void L1Norm<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-	auto eigenDevice = static_cast<CPUDevice *>(output->device())->eigenDevice;
-
-	auto x = inputs[0];
-	auto y = output;
-
-	Eigen::array<int, 1> reshapeDims = { 1 };
-	Eigen::array<int, 1> sumDims = { 0 };
-
-	eTVec(y).device(*eigenDevice) = eTVec(x).abs().sum(sumDims).reshape(reshapeDims);
+void L1Norm::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+	Math::L1Norm(*(inputs[0]), *output);
 }
 
-template <typename T>
-void L1Norm<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs, const Tensor<T> *output, const Tensor<T> *outputGradient, size_t index, Tensor<T> *iGradient) {
-	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backwardCPU is error");
+void L1Norm::backward(const std::vector<const Tensor*> &inputs, 
+					const Tensor *output, 
+					const Tensor *outputGradient, 
+					size_t index, 
+					Tensor *iGradient) {
+	DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1Norm backward is error");
 
-	auto eigenDevice = static_cast<CPUDevice *>(iGradient->device())->eigenDevice;
-
-	int size = (int) iGradient->size();
-
-	Eigen::array<int, 1> broadDims = { size };
-
-	eTVec(iGradient).device(*eigenDevice) += eTVec(outputGradient).broadcast(broadDims).binaryExpr(eTVec(inputs[0]), L1NormBackwardExpr<T>());
+    Math::L1NormGrad(*(inputs[0]), *iGradient, *output, *outputGradient);
 }
 
-DEEP8_RE_DECLARATION_HALF_FUNC(L1Norm)
-DEEP8_DECLARATION_INSTANCE(L1Norm)
 
 }
 

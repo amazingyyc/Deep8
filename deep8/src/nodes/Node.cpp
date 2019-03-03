@@ -1,16 +1,16 @@
-#include "Node.h"
+#include "nodes/Node.h"
 
 namespace Deep8 {
 
-Node::Node(): type(NodeType::Unknow), id(-1) {
+Node::Node(): type(NodeType::Unknow), id(-1), shape(), elementType(ElementType::unknown()), updateGradient(false) {
 }
 
-Node::Node(Node *input): type(NodeType::Unknow), id(-1) {
+Node::Node(Node *input): type(NodeType::Unknow), id(-1), shape(), elementType(ElementType::unknown()), updateGradient(false) {
 	this->inputs.emplace_back(input);
 	input->outputs.add(this, 0);
 }
 
-Node::Node(std::vector<Node*> &in): inputs(in), type(NodeType::Unknow), id(-1) {
+Node::Node(std::vector<Node*> &in): inputs(in), type(NodeType::Unknow), id(-1), shape(), elementType(ElementType::unknown()), updateGradient(false) {
 	for (size_t i = 0; i < inputs.size(); ++i) {
 		inputs[i]->outputs.add(this, i);
 	}

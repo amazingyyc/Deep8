@@ -1,12 +1,17 @@
 #ifndef DEEP8_DEEP8_H
 #define DEEP8_DEEP8_H
 
-#include "Device.h"
-#include "Trainer.h"
-#include "Executor.h"
-#include "EagerExecutor.h"
-#include "LazyExecutor.h"
-#include "Expression.h"
-#include "PreDefinition.h"
+#include "model/Device.h"
+#include "model/EagerExecutor.h"
+#include "model/LazyExecutor.h"
+#include "model/Expression.h"
+#include "trainer/ConstantLearningRateIterator.h"
+#include "trainer/LinearDecayLearningRateIterator.h"
+#include "trainer/Trainer.h"
+#include "trainer/SGDTrainer.h"
+#include "trainer/AdagradTrainer.h"
+#include "trainer/AdamTrainer.h"
+#include "trainer/MomentumTrainer.h"
+#include "trainer/RMSPropTrainer.h"
 
 #endif

@@ -1,36 +1,32 @@
 #ifndef DEEP8_LINEARTEST_H
 #define DEEP8_LINEARTEST_H
 
-#include "Linear.h"
+#include "nodes/Linear.h"
 
 namespace Deep8 {
 
 TEST(Linear, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, 10, 400, 200);
-    auto output = createTensor<CPUDevice, float>(device, 10, 400, 200);
+    auto input  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto output = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     float a = 2.0;
     float b = 3.5;
 
     std::vector<Node*> inputs = {&inputVar1};
-    Linear<float> linear(inputs, a, b);
+    Linear linear(inputs, a, b);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    linear.forwardCPU(inputTensor, &output);
+    linear.forward(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        ASSERT_EQ(input.data()[i] * a + b, output.data()[i]);
+        ASSERT_EQ(input.data<float>()[i] * a + b, output.data<float>()[i]);
     }
 
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-    freeFakeVariable(inputVar1);
 
 }
 
@@ -44,21 +40,21 @@ TEST(Linear, GPU_float) {
 	auto inputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 	auto outputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 
-	auto input = createTensorGPU<real>(device, inputPtr, 10, 400, 200);
-	auto output = createTensorGPU<real>(device, outputPtr, 10, 400, 200);
+    auto input  = createTensor(device, inputPtr, ElementType::from<real>(), 10, {400, 200});
+    auto output = createTensor(device, outputPtr,ElementType::from<real>(),  10, {400, 200});
 
 	/**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar = createFakeVariable(device, ElementType::from<real>());
 
-	real a = 2.0;
-	real b = 3.5;
+	float a = 2.0;
+    float b = 3.5;
 
 	std::vector<Node*> inputs = { &inputVar };
-	Linear<real> linear(inputs, a, b);
+	Linear linear(inputs, a, b);
 
-	std::vector<const Tensor<float>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	linear.forwardGPU(inputTensor, &output);
+	linear.forward(inputTensor, &output);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 400 * 200);
 
@@ -69,11 +65,6 @@ TEST(Linear, GPU_float) {
 	free(inputPtr);
 	free(outputPtr);
 
-	freeTensor(device, input);
-	freeTensor(device, output);
-
-	freeFakeVariable(inputVar);
-
 }
 
 #ifdef HAVE_HALF
@@ -83,21 +74,21 @@ TEST(Linear, half_GPU) {
 
 	GPUDevice device;
 
-	auto input = createTensorGPU<real>(device, 10, 400, 200);
-	auto output = createTensorGPU<real>(device, 10, 400, 200);
+    auto input  = createTensor(device, ElementType::from<real>(), 10, {400, 200});
+    auto output = createTensor(device, ElementType::from<real>(), 10, {400, 200});
 
 	/**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar = createFakeVariable(device, ElementType::from<real>());
 
-	real a = 2.0;
-	real b = 3.5;
+	float a = 2.0;
+    float b = 3.5;
 
 	std::vector<Node*> inputs = { &inputVar };
-	Linear<real> linear(inputs, a, b);
+	Linear linear(inputs, a, b);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	linear.forwardGPU(inputTensor, &output);
+	linear.forward(inputTensor, &output);
 
 }
 

@@ -1,72 +1,60 @@
 #ifndef DEEP8_SQUARETEST_H
 #define DEEP8_SQUARETEST_H
 
-#include "Square.h"
+#include "nodes/Square.h"
 
 namespace Deep8 {
 
 TEST(Square, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, float>(device, 10, 500, 200);
-    auto output = createTensor<CPUDevice, float>(device, 10, 500, 200);
+    auto input  = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto output = createTensor(device, ElementType::from<float>(), 10, {500, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    Square<float> add(inputs);
+    Square add(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    add.forwardCPU(inputTensor, &output);
+    add.forward(inputTensor, &output);
 
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {
             for (int k = 0; k < 200; ++k) {
-                auto temp = input.data()[i * 500 * 200 + j * 200 + k];
-                ASSERT_TRUE(std::abs(temp * temp - output.data()[i * 500 * 200 + j * 200 + k]) < 1e-6);
+                auto temp = input.data<float>()[i * 500 * 200 + j * 200 + k];
+                ASSERT_TRUE(std::abs(temp * temp - output.data<float>()[i * 500 * 200 + j * 200 + k]) < 1e-6);
             }
         }
     }
 
-    freeTensor<CPUDevice, float>(device, input);
-    freeTensor<CPUDevice, float>(device, output);
-
-    freeFakeVariable(inputVar1);
 
 }
 
 TEST(Square, backwardCPU) {
 	CPUDevice device;
 
-    auto inputValue1 = createTensor<CPUDevice, float>(device, 10, 500, 200);
-    auto inputGrad1  = createTensor<CPUDevice, float>(device, 10, 500, 200);
-
-    auto outputValue = createTensor<CPUDevice, float>(device, 10, 500, 200);
-    auto outputGrad  = createTensor<CPUDevice, float>(device, 10, 500, 200);
+    auto inputValue1 = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto inputGrad1  = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto outputValue = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), 10, {500, 200});
 
     /**create fake Add Function*/
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    Square<float> add(inputs);
+    Square add(inputs);
 
     zeroTensor(device, inputGrad1);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue1};
+    std::vector<const Tensor*> inputValues = {&inputValue1};
 
-    add.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
+    add.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad1);
 
     for (int i = 0; i < 10 * 500 * 200; ++i) {
-        ASSERT_TRUE(std::abs(inputGrad1.data()[i] - outputGrad.data()[i] * 2 * inputValue1.data()[i]) < 1e-6);
+        ASSERT_TRUE(std::abs(inputGrad1.data<float>()[i] - outputGrad.data<float>()[i] * 2 * inputValue1.data<float>()[i]) < 1e-6);
     }
-
-    freeTensor<CPUDevice, float>(device, inputValue1);
-    freeTensor<CPUDevice, float>(device, inputGrad1);
-    freeTensor<CPUDevice, float>(device, outputValue);
-    freeTensor<CPUDevice, float>(device, outputGrad);
-
-    freeFakeVariable(inputVar1);
 }
 
 
@@ -83,23 +71,22 @@ TEST(Square, GPU_float) {
 	auto outputPtr = (real*)malloc(sizeof(real) * 10 * 500 * 200);
 	auto outputGradPtr = (real*)malloc(sizeof(real) * 10 * 500 * 200);
 
-	auto input = createTensorGPU<real>(device, inputPtr, 10, 500, 200);
-	auto inputGrad = createTensorGPU<real>(device, inputGradPtr, 10, 500, 200);
-
-	auto output = createTensorGPU<real>(device, outputPtr, 10, 500, 200);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 10, 500, 200);
+    auto input      = createTensor(device, inputPtr,     ElementType::from<real>(), 10, {500, 200});
+    auto inputGrad  = createTensor(device, inputGradPtr, ElementType::from<real>(), 10, {500, 200});
+    auto output     = createTensor(device, outputPtr,    ElementType::from<real>(),  10,{ 500, 200});
+    auto outputGrad = createTensor(device, outputGradPtr,ElementType::from<real>(),  10,{ 500, 200});
 
 	zeroTensor(device, inputGrad);
 
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	Square<real> square(inputs);
+	Square square(inputs);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	square.forwardGPU(inputTensor, &output);
-	square.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	square.forward(inputTensor, &output);
+	square.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 500 * 200);
 	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 500 * 200);
@@ -122,10 +109,6 @@ TEST(Square, GPU_float) {
 	free(outputPtr);
 	free(outputGradPtr);
 
-	freeTensor(device, input);
-	freeTensor(device, inputGrad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
 
 }
 
@@ -136,21 +119,20 @@ TEST(Square, half_GPU) {
 
 	GPUDevice device;
 
-	auto input = createTensorGPU<real>(device, 10, 500, 200);
-	auto inputGrad = createTensorGPU<real>(device, 10, 500, 200);
+	auto input      = createTensor(device, ElementType::from<real>(), 10, {500, 200});
+	auto inputGrad  = createTensor(device, ElementType::from<real>(), 10, {500, 200});
+	auto output     = createTensor(device, ElementType::from<real>(), 10, {500, 200});
+	auto outputGrad = createTensor(device, ElementType::from<real>(), 10, {500, 200});
 
-	auto output = createTensorGPU<real>(device, 10, 500, 200);
-	auto outputGrad = createTensorGPU<real>(device, 10, 500, 200);
-
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	Square<real> square(inputs);
+	Square square(inputs);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	square.forwardGPU(inputTensor, &output);
-	square.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	square.forward(inputTensor, &output);
+	square.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
 }
 

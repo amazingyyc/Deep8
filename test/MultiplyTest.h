@@ -1,70 +1,61 @@
 #ifndef DEEP8_CWISEMULTIPLYTEST_H
 #define DEEP8_CWISEMULTIPLYTEST_H
 
-#include "Multiply.h"
+#include "nodes/Multiply.h"
 
 namespace Deep8 {
 
 TEST(Multiply, forwardCPU) {
 	CPUDevice device;
 
-    auto t1 = createTensor<CPUDevice, float>(device, 10, 500, 200);
-    auto t2 = createTensor<CPUDevice, float>(device, 1, 200);
-    auto t3 = createTensor<CPUDevice, float>(device, 10, 500, 200);
+    auto t1 = createTensor(device, ElementType::from<float>(), 10, {500, 200});
+    auto t2 = createTensor(device, ElementType::from<float>(), 1, {200});
+    auto t3 = createTensor(device, ElementType::from<float>(), 10, {500, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
-    auto inputVar2 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar2 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1, &inputVar2};
-    Multiply<float> cwiseMultiply(inputs);
+    Multiply cwiseMultiply(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&t1, &t2};
+    std::vector<const Tensor*> inputTensor = {&t1, &t2};
 
-    cwiseMultiply.forwardCPU(inputTensor, &t3);
+    cwiseMultiply.forward(inputTensor, &t3);
 
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 500; ++j) {
             for (int k = 0; k < 200; ++k) {
-                ASSERT_EQ(t1.data()[i * 500 * 200 + j * 200 + k] * t2.data()[k], t3.data()[i * 500 * 200 + j * 200 + k]);
+                ASSERT_EQ(t1.data<float>()[i * 500 * 200 + j * 200 + k] * t2.data<float>()[k], t3.data<float>()[i * 500 * 200 + j * 200 + k]);
             }
         }
     }
-
-    freeTensor<CPUDevice, float>(device, t1);
-    freeTensor<CPUDevice, float>(device, t2);
-    freeTensor<CPUDevice, float>(device, t3);
-
-    freeFakeVariable(inputVar1);
-    freeFakeVariable(inputVar2);
 
 }
 
 TEST(Multiply, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue0 = createTensor<CPUDevice, double>(device, 10, 100, 200);
-	auto inputValue1 = createTensor<CPUDevice, double>(device, 1, 200);
-
-	auto inputGrad0 = createTensor<CPUDevice, double>(device, 10, 100, 200);
-	auto inputGrad1 = createTensor<CPUDevice, double>(device, 1, 200);
-
-    auto outputValue = createTensor<CPUDevice, double>(device, 10, 100, 200);
-    auto outputGrad  = createTensor<CPUDevice, double>(device, 10, 100, 200);
+	auto inputValue0 = createTensor(device, ElementType::from<float>(), 10, {100, 200});
+	auto inputValue1 = createTensor(device, ElementType::from<float>(), 1, {200});
+	auto inputGrad0  = createTensor(device, ElementType::from<float>(), 10, {100, 200});
+	auto inputGrad1  = createTensor(device, ElementType::from<float>(), 1, {200});
+    auto outputValue = createTensor(device, ElementType::from<float>(), 10, {100, 200});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), 10, {100, 200});
 
     /**create fake Add Function*/
-    auto inputVar0 = createFakeVariable<CPUDevice, double>(device);
-    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
+    auto inputVar0 = createFakeVariable(device, ElementType::from<float>());
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar0, &inputVar1};
-    Multiply<double> cwiseMultiply(inputs);
+    Multiply cwiseMultiply(inputs);
 
     zeroTensor(device, inputGrad0);
     zeroTensor(device, inputGrad1);
 
-    std::vector<const Tensor<double>*> inputValues = {&inputValue0, &inputValue1};
+    std::vector<const Tensor*> inputValues = {&inputValue0, &inputValue1};
 
-    cwiseMultiply.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
-    cwiseMultiply.backwardCPU(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
+    cwiseMultiply.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad0);
+    cwiseMultiply.backward(inputValues, &outputValue, &outputGrad, 1, &inputGrad1);
 
     /**
      * test inputGrad0
@@ -72,7 +63,7 @@ TEST(Multiply, backwardCPU) {
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 100; ++j) {
             for (int k = 0; k < 200; ++k) {
-                ASSERT_EQ(inputGrad0.data()[i * 100 * 200 + j * 200 + k], outputGrad.data()[i * 100 * 200 + j * 200 + k] * inputValue1.data()[k]);
+                ASSERT_EQ(inputGrad0.data<float>()[i * 100 * 200 + j * 200 + k], outputGrad.data<float>()[i * 100 * 200 + j * 200 + k] * inputValue1.data<float>()[k]);
             }
         }
     }
@@ -85,22 +76,12 @@ TEST(Multiply, backwardCPU) {
 
         for (int m = 0; m < 10; ++m) {
             for (int n = 0; n < 100; ++n) {
-                temp += (inputValue0.data()[m * 100 * 200 + n * 200 + i]  * outputGrad.data()[m * 100 * 200 + n * 200 + i]);
+                temp += (inputValue0.data<float>()[m * 100 * 200 + n * 200 + i]  * outputGrad.data<float>()[m * 100 * 200 + n * 200 + i]);
             }
         }
 
-        ASSERT_EQ(inputGrad1.data()[i], temp);
+        ASSERT_EQ(inputGrad1.data<float>()[i], temp);
     }
-
-    freeTensor<CPUDevice, double>(device, inputValue0);
-    freeTensor<CPUDevice, double>(device, inputValue1);
-    freeTensor<CPUDevice, double>(device, inputGrad0);
-    freeTensor<CPUDevice, double>(device, inputGrad1);
-    freeTensor<CPUDevice, double>(device, outputValue);
-    freeTensor<CPUDevice, double>(device, outputGrad);
-
-    freeFakeVariable(inputVar0);
-    freeFakeVariable(inputVar1);
 
 }
 
@@ -120,30 +101,28 @@ TEST(Multiply, GPU_float) {
     auto outputPtr = (real*)malloc(sizeof(real) * 10 * 100 * 200);
     auto outputGradPtr = (real*)malloc(sizeof(real) * 10 * 100 * 200);
 
-    auto input0 = createTensorGPU<real>(device, input0Ptr, 10, 100, 200);
-    auto input0Grad = createTensorGPU<real>(device, input0GradPtr, 10, 100, 200);
-
-    auto input1 = createTensorGPU<real>(device, input1Ptr, 1, 200);
-    auto input1Grad = createTensorGPU<real>(device, input1GradPtr, 1, 200);
-
-    auto output = createTensorGPU<real>(device, outputPtr, 10, 100, 200);
-    auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 10, 100, 200);
+    auto input0     = createTensor(device, input0Ptr,     ElementType::from<real>(), 10, {100, 200});
+    auto input0Grad = createTensor(device, input0GradPtr, ElementType::from<real>(), 10, {100, 200});
+    auto input1     = createTensor(device, input1Ptr,     ElementType::from<real>(), 1,  {200});
+    auto input1Grad = createTensor(device, input1GradPtr, ElementType::from<real>(), 1, {200});
+    auto output     = createTensor(device, outputPtr,     ElementType::from<real>(), 10, {100, 200});
+    auto outputGrad = createTensor(device, outputGradPtr, ElementType::from<real>(), 10, {100, 200});
 
     zeroTensor(device, input0Grad);
 	zeroTensor(device, input1Grad);
 
 	/**create fake Add Function*/
-	auto inputVar0 = createFakeVariable<GPUDevice, real>(device);
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar0 = createFakeVariable(device, ElementType::from<real>());
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar0, &inputVar1 };
-	Multiply<float> multiply(inputs);
+	Multiply multiply(inputs);
 
-	std::vector<const Tensor<float>*> inputValues = { &input0, &input1 };
+	std::vector<const Tensor*> inputValues = { &input0, &input1 };
 
-	multiply.forwardGPU(inputValues, &output);
-	multiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
-	multiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
+	multiply.forward(inputValues, &output);
+	multiply.backward(inputValues, &output, &outputGrad, 0, &input0Grad);
+	multiply.backward(inputValues, &output, &outputGrad, 1, &input1Grad);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 100 * 200);
 	device.copyFromGPUToCPU(input0Grad.raw(), input0GradPtr, sizeof(real) * 10 * 100 * 200);
@@ -189,16 +168,6 @@ TEST(Multiply, GPU_float) {
 	free(input1GradPtr);
 	free(outputPtr);
 	free(outputGradPtr);
-
-	freeTensor(device, input0);
-	freeTensor(device, input0Grad);
-	freeTensor(device, input1);
-	freeTensor(device, input1Grad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar0);
-	freeFakeVariable(inputVar1);
 }
 
 #ifdef HAVE_HALF
@@ -208,27 +177,25 @@ TEST(Multiply, half_GPU) {
 
 	GPUDevice device;
 
-	auto input0 = createTensorGPU<real>(device, 10, 100, 200);
-	auto input0Grad = createTensorGPU<real>(device, 10, 100, 200);
-
-	auto input1 = createTensorGPU<real>(device, 1, 200);
-	auto input1Grad = createTensorGPU<real>(device, 1, 200);
-
-	auto output = createTensorGPU<real>(device, 10, 100, 200);
-	auto outputGrad = createTensorGPU<real>(device, 10, 100, 200);
+    auto input0     = createTensor(device, ElementType::from<real>(), 10, {100, 200});
+    auto input0Grad = createTensor(device, ElementType::from<real>(), 10, {100, 200});
+    auto input1     = createTensor(device, ElementType::from<real>(), 1,  {200});
+    auto input1Grad = createTensor(device, ElementType::from<real>(), 1,  {200});
+    auto output     = createTensor(device, ElementType::from<real>(), 10, {100, 200});
+    auto outputGrad = createTensor(device, ElementType::from<real>(), 10, {100, 200});
 
 	/**create fake Add Function*/
-	auto inputVar0 = createFakeVariable<GPUDevice, real>(device);
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar0 = createFakeVariable(device, ElementType::from<real>());
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar0, &inputVar1 };
-	Multiply<real> multiply(inputs);
+	Multiply multiply(inputs);
 
-	std::vector<const Tensor<real>*> inputValues = { &input0, &input1 };
+	std::vector<const Tensor*> inputValues = { &input0, &input1 };
 
-	multiply.forwardGPU(inputValues, &output);
-	multiply.backwardGPU(inputValues, &output, &outputGrad, 0, &input0Grad);
-	multiply.backwardGPU(inputValues, &output, &outputGrad, 1, &input1Grad);
+	multiply.forward(inputValues, &output);
+	multiply.backward(inputValues, &output, &outputGrad, 0, &input0Grad);
+	multiply.backward(inputValues, &output, &outputGrad, 1, &input1Grad);
 
 }
 

@@ -34,11 +34,13 @@ python setup.py install
 ## Python Demo
 ```python
 # coding=utf-8
+
 import numpy as np
 from deep8 import *
 
-trainer = AdagradTrainer()
-executor = EagerExecutor(tr=trainer)
+executor     = EagerExecutor()
+learningRate = ConstantLearningRateIterator(0.01)
+trainer      = SGDTrainer(learningRate = learningRate)
 
 '''
 |4,  -1|   |a|   |10|
@@ -49,12 +51,18 @@ x = np.array([4, -1, 2, 1], dtype=np.float32)
 y = np.array([10, 8], dtype=np.float32)
 
 w = parameter(executor, [2])
+w.gaussian()
 
-input  = inputParameter(executor, [2, 2], x)
-output = inputParameter(executor, [2], y)
+input  = parameter(executor, [2, 2], False)
+output = parameter(executor, [2], False)
 
-for i in range(2000):
+input.feed(x)
+output.feed(y)
+
+for i in range(1000):
     (input * w - output).l1Norm().backward()
+
+    trainer.train(executor)
 
     print i + 1, "=>", w.valueStr()
 
@@ -71,18 +79,26 @@ print "The w should be around [3, 2]: ", w.valueStr()
 float x[4] = { 4, -1, 2, 1 };
 float y[2] = { 10, 8 };
 
-EagerExecutorF executor(new AdagradTrainerF(), DeviceType::CPU);
+EagerExecutor executor;
+LinearDecayLearningRateIterator learningRate(1000);
+AdamTrainer trainer(&learningRate);
 
 auto w = parameter(&executor, { 2 });
+w.gaussian();
 
-auto input  = inputParameter(&executor, { 2, 2 }, x);
-auto output = inputParameter(&executor, { 2 }, y);
+auto input  = parameter(&executor, { 2, 2 }, false);
+auto output = parameter(&executor, { 2 }, false);
+
+input.feed(x);
+output.feed(y);
 
 for (int i = 0; i < 1000; ++i) {
     (input * w - output).l1Norm().backward();
 
+    trainer.train(&executor, executor.trainableParameters());
+
     /**print the w*/
-    std::cout << i + 1 << " => " << w.valueString() << std::endl;
+    std::cout << i + 1 << " => " << w.valueStr() << std::endl;
 }
 
 std::cout << "the result should be around: [3, 2]" << std::endl;

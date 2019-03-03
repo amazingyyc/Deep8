@@ -93,6 +93,12 @@ endif()
 include_directories(third_party)
 include_directories(third_party/eigen)
 include_directories(deep8/include)
+include_directories(deep8/include/basic)
+include_directories(deep8/include/math)
+include_directories(deep8/include/model)
+include_directories(deep8/include/nodes)
+include_directories(deep8/include/trainer)
+include_directories(deep8/include/utils)
 
 # add deep8
 add_subdirectory(deep8)

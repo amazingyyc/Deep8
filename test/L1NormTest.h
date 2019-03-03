@@ -1,31 +1,31 @@
 #ifndef DEEP8_L1NORMTEST_H
 #define DEEP8_L1NORMTEST_H
 
-#include "L1Norm.h"
+#include "nodes/L1Norm.h"
 
 namespace Deep8 {
 
 TEST(L1Norm, forwardCPU) {
 	CPUDevice device;
 
-    auto input  = createTensor<CPUDevice, double>(device, size_t(10), size_t(200));
-    auto output = createTensor<CPUDevice, double>(device, size_t(1), size_t(1));
+    auto input  = createTensor(device, ElementType::from<double>(), size_t(10), {size_t(200)});
+    auto output = createTensor(device, ElementType::from<double>(), size_t(1), {size_t(1)});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, double>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<double>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    L1Norm<double> l1Norm(inputs);
+    L1Norm l1Norm(inputs);
 
-    std::vector<const Tensor<double>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    l1Norm.forwardCPU(inputTensor, &output);
+    l1Norm.forward(inputTensor, &output);
 
 	long double temp = 0;
 	for (int i = 0; i < 10 * 200; ++i) {
-		temp += std::abs(input.data()[i]);
+		temp += std::abs(input.data<double>()[i]);
 	}
 
-	ASSERT_EQ(temp, output.data()[0]);
+	ASSERT_EQ(temp, output.data<double>()[0]);
 
 	/*
     for (int i = 0; i < 10; ++i) {
@@ -41,40 +41,35 @@ TEST(L1Norm, forwardCPU) {
     }
 	*/
 
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-	freeFakeVariable(inputVar1);
-
 }
 
 TEST(L1Norm, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, float>(device, size_t(400), size_t(200));
-	auto inputGrad = createTensor<CPUDevice, float>(device, size_t(400), size_t(200));
+	auto inputValue = createTensor(device, ElementType::from<float>(), size_t(400), {size_t(200)});
+	auto inputGrad = createTensor(device, ElementType::from<float>(), size_t(400), {size_t(200)});
 
-    auto outputValue = createTensor<CPUDevice, float>(device, size_t(1), size_t(1));
-    auto outputGrad  = createTensor<CPUDevice, float>(device, size_t(1), size_t(1));
+    auto outputValue = createTensor(device, ElementType::from<float>(), size_t(1), {size_t(1)});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), size_t(1), {size_t(1)});
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar};
-    L1Norm<float> l1Norm(inputs);
+    L1Norm l1Norm(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue};
+    std::vector<const Tensor*> inputValues = {&inputValue};
 
-    l1Norm.forwardCPU(inputValues, &outputValue);
-    l1Norm.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+    l1Norm.forward(inputValues, &outputValue);
+    l1Norm.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
 	for (int i = 0; i < 400 * 200; ++i) {
-		if (inputValue.data()[i] >= 0) {
-			ASSERT_EQ(inputGrad.data()[i], outputGrad.data()[0]);
+		if (inputValue.data<float>()[i] >= 0) {
+			ASSERT_EQ(inputGrad.data<float>()[i], outputGrad.data<float>()[0]);
 		} else {
-			ASSERT_EQ(inputGrad.data()[i], -outputGrad.data()[0]);
+			ASSERT_EQ(inputGrad.data<float>()[i], -outputGrad.data<float>()[0]);
 		}
 	}
 
@@ -95,12 +90,6 @@ TEST(L1Norm, backwardCPU) {
     }
 	*/
 
-    freeTensor(device, inputValue);
-    freeTensor(device, inputGrad);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar);
 
 }
 
@@ -118,24 +107,23 @@ TEST(L1Norm, GPU_float) {
     auto outputPtr = (float*)malloc(sizeof(float) * 1 * 1);
     auto outputGradPtr = (float*)malloc(sizeof(float) * 1 * 1);
 
-    auto input = createTensorGPU<real>(device, inputPtr, 400, 200);
-	auto inputGrad  = createTensorGPU<real>(device, inputGradPtr, 400, 200);
-
-	auto output = createTensorGPU<real>(device, outputPtr, 1, 1);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 1, 1);
+    auto input      = createTensor(device, inputPtr,     ElementType::from<real>(), 400, {200});
+    auto inputGrad  = createTensor(device, inputGradPtr, ElementType::from<real>(), 400, {200});
+    auto output     = createTensor(device, outputPtr,    ElementType::from<real>(), 1, {1});
+    auto outputGrad = createTensor(device, outputGradPtr,ElementType::from<real>(),  1, {1});
 
     /**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar = createFakeVariable(device, ElementType::from<real>());
 
     zeroTensor(device, inputGrad);
 
 	std::vector<Node*> inputs = {&inputVar};
-	L1Norm<real> l1norm(inputs);
+	L1Norm l1norm(inputs);
 
-    std::vector<const Tensor<real>*> inputValues = {&input};
+    std::vector<const Tensor*> inputValues = {&input};
 
-	l1norm.forwardGPU(inputValues, &output);
-	l1norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
+	l1norm.forward(inputValues, &output);
+	l1norm.backward(inputValues, &output, &outputGrad, 0, &inputGrad);
 
     device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 1);
     device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
@@ -190,12 +178,6 @@ TEST(L1Norm, GPU_float) {
 	free(outputPtr);
 	free(outputGradPtr);
 
-	freeTensor(device, input);
-	freeTensor(device, inputGrad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar);
 
 }
 
@@ -206,28 +188,21 @@ TEST(L1Norm, half_GPU) {
 
 	GPUDevice device;
 
-	auto input = createTensorGPU<real>(device, 400, 200);
-	auto inputGrad = createTensorGPU<real>(device, 400, 200);
-
-	auto output = createTensorGPU<real>(device, 1, 1);
-	auto outputGrad = createTensorGPU<real>(device, 1, 1);
+    auto input      = createTensor(device, ElementType::from<real>(), 400, {200});
+    auto inputGrad  = createTensor(device, ElementType::from<real>(), 400, {200});
+    auto output     = createTensor(device, ElementType::from<real>(), 1, {1});
+    auto outputGrad = createTensor(device, ElementType::from<real>(), 1, {1});
 
 	/**create fake Add Function*/
-	auto inputVar = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar };
-	L1Norm<real> l1norm(inputs);
+	L1Norm l1norm(inputs);
 
-	std::vector<const Tensor<real>*> inputValues = { &input };
+	std::vector<const Tensor*> inputValues = { &input };
 
-	l1norm.forwardGPU(inputValues, &output);
-	l1norm.backwardGPU(inputValues, &output, &outputGrad, 0, &inputGrad);
-
-	freeTensor(device, input);
-	freeTensor(device, inputGrad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
-
+	l1norm.forward(inputValues, &output);
+	l1norm.backward(inputValues, &output, &outputGrad, 0, &inputGrad);
 }
 
 #endif // HAVE_HALF

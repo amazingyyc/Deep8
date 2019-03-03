@@ -1,36 +1,21 @@
-#include "GPUDevice.h"
-#include "Executor.h"
+#include "model/GPUDevice.h"
+#include "model/Executor.h"
 
 namespace Deep8 {
 
-#ifdef HAVE_CUDA
-
-template <typename T>
-void Executor<T>::initDeviceGPU() {
+void Executor::initDeviceGPU() {
 	device = new GPUDevice();
 }
 
-template <typename T>
-Tensor<T> Executor<T>::createTensorGPU(Shape &shape) {
-	size_t size = sizeof(T) * shape.size();
+Tensor Executor::createTensorGPU(Shape &shape, ElementType type) {
+	size_t size = type.byteWidth * shape.size();
 
 	auto ptr = device->malloc(size);
 	auto refPtr = (size_t*)device->mallocCPU(sizeof(size_t));
 
 	TensorStorage storage(ptr, refPtr, size, device);
 
-	return Tensor<T>(storage, 0, shape);
+	return Tensor(storage, 0, shape, type);
 }
 
-template void Executor<float>::initDeviceGPU();
-template void Executor<double>::initDeviceGPU();
-template Tensor<float> Executor<float>::createTensorGPU(Shape&);
-template Tensor<double> Executor<double>::createTensorGPU(Shape&);
-
-#ifdef HAVE_HALF
-template void Executor<half>::initDeviceGPU();
-template Tensor<half> Executor<half>::createTensorGPU(Shape&);
-#endif
-
-#endif
 }

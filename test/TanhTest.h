@@ -1,70 +1,59 @@
 #ifndef DEEP8_TANHTEST_H
 #define DEEP8_TANHTEST_H
 
-#include "Tanh.h"
+#include "nodes/Tanh.h"
 
 namespace Deep8 {
 
 TEST(Tanh, forwardCPU) {
 	CPUDevice device;
 
-	auto input = createTensor<CPUDevice, float>(device, 10, 400, 200);
-	auto output = createTensor<CPUDevice, float>(device, 10, 400, 200);
+	auto input  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto output = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
-    auto inputVar1 = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar1 = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    Tanh<float> tanH(inputs);
+    Tanh tanH(inputs);
 
-    std::vector<const Tensor<float>*> inputTensor = {&input};
+    std::vector<const Tensor*> inputTensor = {&input};
 
-    tanH.forwardCPU(inputTensor, &output);
+    tanH.forward(inputTensor, &output);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        ASSERT_EQ(std::tanh(input.data()[i]), output.data()[i]);
+        ASSERT_EQ(std::tanh(input.data<float>()[i]), output.data<float>()[i]);
     }
 
-    freeTensor(device, input);
-    freeTensor(device, output);
-
-	freeFakeVariable(inputVar1);
 
 }
 
 TEST(Tanh, backwardCPU) {
 	CPUDevice device;
 
-	auto inputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
-	auto inputGrad = createTensor<CPUDevice, float>(device, 10, 400, 200);
-
-    auto outputValue = createTensor<CPUDevice, float>(device, 10, 400, 200);
-    auto outputGrad  = createTensor<CPUDevice, float>(device, 10, 400, 200);
+	auto inputValue  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+	auto inputGrad   = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto outputValue = createTensor(device, ElementType::from<float>(), 10, {400, 200});
+    auto outputGrad  = createTensor(device, ElementType::from<float>(), 10, {400, 200});
 
     /**create fake Add Function*/
-    auto inputVar = createFakeVariable<CPUDevice, float>(device);
+    auto inputVar = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar};
-    Tanh<float> tt(inputs);
+    Tanh tt(inputs);
 
     zeroTensor(device, inputGrad);
 
-    std::vector<const Tensor<float>*> inputValues = {&inputValue};
+    std::vector<const Tensor*> inputValues = {&inputValue};
 
-    tt.forwardCPU(inputValues, &outputValue);
-    tt.backwardCPU(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
+    tt.forward(inputValues, &outputValue);
+    tt.backward(inputValues, &outputValue, &outputGrad, 0, &inputGrad);
 
     for (int i = 0; i < 10 * 400 * 200; ++i) {
-        auto temp = outputGrad.data()[i] * (1.0 - std::tanh(inputValue.data()[i]) * std::tanh(inputValue.data()[i]));
+        auto temp = outputGrad.data<float>()[i] * (1.0 - std::tanh(inputValue.data<float>()[i]) * std::tanh(inputValue.data<float>()[i]));
 
-        ASSERT_TRUE(std::abs(temp - inputGrad.data()[i]) <=  1e-6);
+        ASSERT_TRUE(std::abs(temp - inputGrad.data<float>()[i]) <=  1e-6);
     }
 
-    freeTensor(device, inputValue);
-    freeTensor(device, inputGrad);
-    freeTensor(device, outputValue);
-    freeTensor(device, outputGrad);
-
-	freeFakeVariable(inputVar);
 
 }
 
@@ -83,23 +72,22 @@ TEST(Tanh, GPU_float) {
 	auto outputPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 	auto outputGradPtr = (real*)malloc(sizeof(real) * 10 * 400 * 200);
 
-	auto input = createTensorGPU<real>(device, inputPtr, 10, 400, 200);
-	auto inputGrad = createTensorGPU<real>(device, inputGradPtr, 10, 400, 200);
-
-	auto output = createTensorGPU<real>(device, outputPtr, 10, 400, 200);
-	auto outputGrad = createTensorGPU<real>(device, outputGradPtr, 10, 400, 200);
+    auto input      = createTensor(device, inputPtr,     ElementType::from<real>(), 10, {400, 200});
+    auto inputGrad  = createTensor(device, inputGradPtr, ElementType::from<real>(), 10, {400, 200});
+    auto output     = createTensor(device, outputPtr,    ElementType::from<real>(),  10,{ 400, 200});
+    auto outputGrad = createTensor(device, outputGradPtr,ElementType::from<real>(),  10,{ 400, 200});
 
 	zeroTensor(device, inputGrad);
 
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	Tanh<real> tanhFunc(inputs);
+	Tanh tanhFunc(inputs);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	tanhFunc.forwardGPU(inputTensor, &output);
-	tanhFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	tanhFunc.forward(inputTensor, &output);
+	tanhFunc.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 10 * 400 * 200);
 	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 10 * 400 * 200);
@@ -111,7 +99,7 @@ TEST(Tanh, GPU_float) {
 	for (int i = 0; i < 10 * 400 * 200; ++i) {
 		auto temp = outputGradPtr[i] * (1.0 - std::tanh(inputPtr[i]) * std::tanh(inputPtr[i]));
 
-		ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) <= 1e-6);
+		ASSERT_TRUE(std::abs(temp - inputGradPtr[i]) <= 1e-5);
 	}
 
 	free(inputPtr);
@@ -119,10 +107,6 @@ TEST(Tanh, GPU_float) {
 	free(outputPtr);
 	free(outputGradPtr);
 
-	freeTensor(device, input);
-	freeTensor(device, inputGrad);
-	freeTensor(device, output);
-	freeTensor(device, outputGrad);
 }
 
 #ifdef HAVE_HALF
@@ -132,21 +116,20 @@ TEST(Tanh, half_GPU) {
 
 	GPUDevice device;
 
-	auto input = createTensorGPU<real>(device, 10, 400, 200);
-	auto inputGrad = createTensorGPU<real>(device, 10, 400, 200);
+	auto input      = createTensor(device, ElementType::from<real>(), 10, {400, 200});
+	auto inputGrad  = createTensor(device, ElementType::from<real>(), 10, {400, 200});
+	auto output     = createTensor(device, ElementType::from<real>(), 10, {400, 200});
+	auto outputGrad = createTensor(device, ElementType::from<real>(), 10, {400, 200});
 
-	auto output = createTensorGPU<real>(device, 10, 400, 200);
-	auto outputGrad = createTensorGPU<real>(device, 10, 400, 200);
-
-	auto inputVar1 = createFakeVariable<GPUDevice, real>(device);
+	auto inputVar1 = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar1 };
-	Tanh<real> tanhFunc(inputs);
+	Tanh tanhFunc(inputs);
 
-	std::vector<const Tensor<real>*> inputTensor = { &input };
+	std::vector<const Tensor*> inputTensor = { &input };
 
-	tanhFunc.forwardGPU(inputTensor, &output);
-	tanhFunc.backwardGPU(inputTensor, &output, &outputGrad, 0, &inputGrad);
+	tanhFunc.forward(inputTensor, &output);
+	tanhFunc.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
 }
 

@@ -5,15 +5,13 @@
 
 namespace Deep8 {
 
-template <typename T>
-LazyExecutor<T>::LazyExecutor(Trainer<T> *tr, DeviceType deviceType, bool flag) :
-	Executor<T>(tr, deviceType), clearFlag(flag) {
+LazyExecutor::LazyExecutor(DeviceType deviceType, bool flag) :
+	Executor(deviceType), clearInterim(flag) {
 }
 
 /**use the auto batch algorithm to optimize the compute graph*/
-template <typename T>
-void LazyExecutor<T>::autoBatchGraph(Node *last) {
-	DEEP8_ARGUMENT_CHECK(nullptr != last, "the Parameter can not be nullptr");
+void LazyExecutor::autoBatchGraph(Node *last) {
+	DEEP8_ARGUMENT_CHECK(nullptr != last, "the Node can not be nullptr");
 
 	/**store the node that have 0 inputs*/
 	std::queue<Node*> zeroInDegree;
@@ -78,8 +76,7 @@ void LazyExecutor<T>::autoBatchGraph(Node *last) {
 }
 
 /**auto batch in every layer of graph*/
-template <typename T>
-void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
+void LazyExecutor::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 	/**empty or only 1 node, return*/
 	if (1 >= nodes.size()) {
 		return;
@@ -87,7 +84,7 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 
 	/**get the batched indexes*/
 	auto indexes = nodes[0]->autoBatchIndexes();
-	std::unordered_map<size_t, FunctionBase*> batchNodes;
+	std::unordered_map<size_t, Function*> batchNodes;
 
 	for (auto i : indexes) {
 		std::vector<Node*> inputs;
@@ -96,11 +93,11 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 		/**get all inputs node and shape*/
 		for (auto item : nodes) {
 			inputs.emplace_back(item->inputs[i]);
-			inputsShape.emplace_back(item->inputs[i]->outputShape);
+			inputsShape.emplace_back(item->inputs[i]->shape);
 		}
 
 		auto bactedShape = nodes[0]->autoBatchShape(i, inputsShape);
-		batchNodes[i] = new Batch<T>(inputs, bactedShape);
+		batchNodes[i] = new Batch(inputs, bactedShape);
 		
 		this->addFunction(batchNodes[i]);
 	}
@@ -116,20 +113,21 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 	}
 
 	/**use the newNode instead of nodes*/
-	auto newNode = (FunctionBase*) nodes[0]->autoBatchClone(newNodeInputs);
+	auto newNode = (Function*) nodes[0]->autoBatchClone(newNodeInputs);
 	this->addFunction(newNode);
 
 	std::vector<Node*> unBatchNodes;
 	std::vector<Node*> unBatchInputs({ newNode });
+
 	size_t offset = 0;
 
 	for (size_t i = 0; i < nodes.size(); ++i) {
-		auto unBatchNode = new UnBatch<T>(unBatchInputs, offset, nodes[i]->outputShape);
+		auto unBatchNode = new UnBatch(unBatchInputs, offset, nodes[i]->shape);
 		this->addFunction(unBatchNode);
 
 		unBatchNodes.emplace_back(unBatchNode);
 
-		offset += unBatchNode->outputShape.size();
+		offset += unBatchNode->shape.size();
 	}
 
 	/**should clean the nodes and it's inputs, outputs*/
@@ -146,8 +144,10 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 		nodes[i]->inputs.clear();
 		nodes[i]->outputs.clear();
 
-		this->nodeCollection.erase(nodes[i]);
-		this->nonParameterCollection.erase(nodes[i]);
+		this->allNodes.erase(nodes[i]->id);
+		this->allVariables.erase(nodes[i]->id);
+		this->allFunctions.erase(nodes[i]->id);
+		this->interimNodes.erase(nodes[i]->id);
 
 		delete nodes[i];
 	}
@@ -156,10 +156,18 @@ void LazyExecutor<T>::autoBatchGraphLayer(std::vector<Node*> &nodes) {
 /**
  * malloc Intermediary Variable
  */
-template <typename T>
-void LazyExecutor<T>::mallocIntermediaryVariable(Node *last) {
-	std::unordered_set<Node*> visited;
+void LazyExecutor::mallocInterimVariable(Node *last) {
+	/**use Topological sorting to malloc Varialbe avoid the inputs of Function is not Variable*/
+
+	/**store the node that have 0 inputs*/
+	std::queue<Node*> zeroInDegree;
+
+	/**store the Node's in-degree*/
+	std::unordered_map<Node*, int> inDegree;
+
+	/**use the queue to loop the graph*/
 	std::queue<Node*> que;
+	std::unordered_set<Node*> visited;
 
 	que.push(last);
 	visited.insert(last);
@@ -168,84 +176,102 @@ void LazyExecutor<T>::mallocIntermediaryVariable(Node *last) {
 		auto node = que.front();
 		que.pop();
 
-		for (auto item : node->inputs) {
-			if (visited.find(item) == visited.end()) {
-				que.push(item);
-				visited.insert(item);
+		for (auto item : node->outputs.entries) {
+			inDegree[item.first]++;
+		}
+
+		if (node->inputs.empty()) {
+			zeroInDegree.push(node);
+		} else {
+			for (auto item : node->inputs) {
+				if (visited.find(item) == visited.end()) {
+					que.push(item);
+					visited.insert(item);
+				}
 			}
 		}
+	}
 
-		if (NodeType::Function != node->type) {
-			continue;
+	while (!zeroInDegree.empty()) {
+		auto size = zeroInDegree.size();
+
+		for (unsigned long i = 0; i < size; ++i) {
+			auto node = zeroInDegree.front();
+			zeroInDegree.pop();
+
+			for (auto item : node->outputs.entries) {
+				inDegree[item.first]--;
+
+				if (0 == inDegree[item.first]) {
+					zeroInDegree.push(item.first);
+				}
+			}
+
+			if (NodeType::Function != node->type) {
+				continue;
+			}
+
+			auto variable = this->createVariableByFunction((Function*) node);
+			variable->id  = this->generateUniqueId();
+
+			this->allNodes[variable->id]     = variable;
+			this->allVariables[variable->id] = variable;
+			this->interimNodes[variable->id] = variable;
+
+			variable->inputs.clear();
+			variable->outputs.clear();
+
+			node->outputs.remove(variable);
+
+			for (auto item : node->outputs.entries) {
+				item.first->inputs[item.second] = variable;
+				variable->outputs.add(item.first, item.second);
+			}
+
+			node->outputs.clear();
+
+			variable->inputs.emplace_back(node);
+			node->outputs.add(variable, 0);
 		}
-
-		auto variable = this->createVariableWithFunction((FunctionBase*) node);
-		variable->id  = this->generateNodeId();
-
-		this->nodeCollection.insert(variable);
-		this->nonParameterCollection.insert(variable);
-
-		variable->inputs.clear();
-		node->outputs.remove(variable);
-
-		for (auto item : node->outputs.entries) {
-			item.first->inputs[item.second] = variable;
-			variable->outputs.add(item.first, item.second);
-		}
-
-		node->outputs.clear();
-
-		variable->inputs.emplace_back(node);
-		node->outputs.add(variable, 0);
 	}
 }
 
-template <typename T>
-void LazyExecutor<T>::clearIntermediaryNodes() {
+void LazyExecutor::clearInterimNodes() {
 	/**clear all node output*/
-	for (auto item : this->nodeCollection) {
-		item->inputs.clear();
-		item->outputs.clear();
+	for (auto item : this->allNodes) {
+		item.second->inputs.clear();
+		item.second->outputs.clear();
 	}
 
-	for (auto item : this->nonParameterCollection) {
-		this->nodeCollection.erase(item);
+	for (auto item : this->interimNodes) {
+		this->allNodes.erase(item.first);
+		this->allFunctions.erase(item.first);
+		this->allVariables.erase(item.first);
 
-		delete item;
+		delete item.second;
 	}
 
-	this->nonParameterCollection.clear();
+	this->interimNodes.clear();
 }
 
-template <typename T>
-Node* LazyExecutor<T>::addFunction(FunctionBase *function) {
-	function->id = this->generateNodeId();
+Node* LazyExecutor::addFunction(Function *function) {
+	function->id = this->generateUniqueId();
 
-	this->nodeCollection.insert(function);
-	this->nonParameterCollection.insert(function);
+	this->allNodes[function->id]     = function;
+	this->allFunctions[function->id] = function;
+	this->interimNodes[function->id] = function;
 
 	return function;
 }
 
-template <typename T>
-void LazyExecutor<T>::forward(Expression<T> &e) {
-	this->forward(e.node);
-}
-
-template <typename T>
-void LazyExecutor<T>::backward(Expression<T> &e) {
-	this->backward(e.node);
-}
-
-template <typename T>
-void LazyExecutor<T>::forward(Node *last) {
+void LazyExecutor::forward(Node *last) {
 	DEEP8_ARGUMENT_CHECK(nullptr != last, "the last can not be nullptr");
 
 	/**first step autobath this graph*/
 	autoBatchGraph(last);
 
 	/**sencond step, malloc the intermediary variable*/
-	mallocIntermediaryVariable(last);
+	mallocInterimVariable(last);
 
 	/**do the real calculation*/
 	std::unordered_set<Node*> visited;
@@ -275,17 +301,16 @@ void LazyExecutor<T>::forward(Node *last) {
 	}
 }
 
-template <typename T>
-void LazyExecutor<T>::backward(Node *last) {
-	VariableBase *lastVar = nullptr;
+void LazyExecutor::backward(Node *last) {
+	Variable *lastVar = nullptr;
 
 	if (NodeType::Function == last->type) {
 		/**if the node is a function must have a variable output*/
 		DEEP8_ARGUMENT_CHECK(1 == last->outputs.size() && NodeType::Variable == last->outputs.first()->type, "the last node must have a Variable output");
 
-		lastVar = static_cast<VariableBase*>(last->outputs.first());
+		lastVar = (Variable*)(last->outputs.first());
 	} else if (NodeType::Variable == last->type) {
-		lastVar = static_cast<VariableBase*>(last);
+		lastVar = (Variable*)(last);
 	} else {
 		DEEP8_RUNTIME_ERROR("the node type is error");
 	}
@@ -306,7 +331,7 @@ void LazyExecutor<T>::backward(Node *last) {
 		que.pop();
 
 		if (NodeType::Variable == node->type) {
-			static_cast<VariableBase*>(node)->zeroGradient();
+			((Variable*)node)->zeroGradient();
 		}
 
 		for (auto input : node->inputs) {
@@ -340,15 +365,14 @@ void LazyExecutor<T>::backward(Node *last) {
 		}
 	}
 
-	/**update the parameter*/
-	this->trainer->training(this->parameterCollection);
-
 	/**clear the function and variable*/
-	if (clearFlag) {
-		this->clearIntermediaryNodes();
+	if (clearInterim) {
+		this->clearInterimNodes();
 	}
 }
 
-DEEP8_DECLARATION_INSTANCE(LazyExecutor)
+
+
+
 
 }

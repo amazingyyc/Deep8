@@ -1,44 +1,28 @@
-#include "Tanh.h"
-#include "AutoBatchCodeHelper.h"
+#include "math/Tanh.h"
+#include "nodes/Tanh.h"
+#include "model/AutoBatchCodeHelper.h"
 
 namespace Deep8 {
 
-template <typename T>
-struct TanHForwardExpr {
-	inline T operator()(T in) const {
-		return tanh(in);
-	}
-};
-
-template <typename T>
-struct TanHBackwardExpr {
-	inline T operator()(T outputGrad, T output) const {
-		return outputGrad * (T(1.0) - output * output);
-	}
-};
-
-template <typename T>
-Tanh<T>::Tanh(std::vector<Node *> &inputs) : Function<T>(inputs) {
-		check();
+Tanh::Tanh(std::vector<Node *> &inputs) : Function(inputs) {
+    check();
 }
 
-template <typename T>
-void Tanh<T>::check() {
-	Function<T>::check();
+void Tanh::check() {
+	Function::check();
 
 	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Tanh Function needs only 1 input");
 
-	this->outputShape = this->inputs[0]->outputShape;
+    this->shape = this->inputs[0]->shape;
+    this->elementType = this->inputs[0]->elementType;
 }
 
-template <typename T>
-int Tanh<T>::supportAutoBatch() {
+int Tanh::supportAutoBatch() {
     return -1;
 }
 
 /**auto batch code*/
-template <typename T>
-size_t Tanh<T>::autoBatchCode() {
+size_t Tanh::autoBatchCode() {
     AutoBatchCodeHelper helper;
 
     helper.functionType(FunctionType::Tanh);
@@ -50,8 +34,7 @@ size_t Tanh<T>::autoBatchCode() {
  * return the inputs[index]'s shape if it is be batched together.
  * the shapes is the inputs[index]'s shape that will be batched.
  */
-template <typename T>
-Shape Tanh<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
+Shape Tanh::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
 
     /**simple set it to a 1 batch shape*/
@@ -67,43 +50,27 @@ Shape Tanh<T>::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
 /**
  * return the inputs's index that can be auto batched
  */
-template <typename T>
-std::vector<size_t> Tanh<T>::autoBatchIndexes() {
+std::vector<size_t> Tanh::autoBatchIndexes() {
     return std::vector<size_t>({ 0 });
 }
 
 /**
  * clone current node for auto batch
  */
-template <typename T>
-Node* Tanh<T>::autoBatchClone(std::vector<Node*> &inputs) {
-	return new Tanh<T>(inputs);
+Node* Tanh::autoBatchClone(std::vector<Node*> &inputs) {
+	return new Tanh(inputs);
 }
 
-template <typename T>
-void Tanh<T>::forwardCPU(const std::vector<const Tensor<T>*> &inputs, Tensor<T> *output) {
-	auto device = static_cast<CPUDevice*>(output->device())->eigenDevice;
-
-	eTVec(output).device(*device) = eTVec(inputs[0]).unaryExpr(TanHForwardExpr<T>());
+void Tanh::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+	Math::Tanh(*(inputs[0]), *output);
 }
 
-
-template <typename T>
-void Tanh<T>::backwardCPU(const std::vector<const Tensor<T>*> &inputs,
-							const Tensor<T> *output,
-							const Tensor<T> *outputGradient,
-							size_t index,
-							Tensor<T> *iGradient) {
-	if (0 != index) {
-		DEEP8_RUNTIME_ERROR("the index of Tanh backwardCPU is error");
-	}
-
-	auto device = static_cast<CPUDevice*>(iGradient->device())->eigenDevice;
-
-	eTVec(iGradient).device(*device) += eTVec(outputGradient).binaryExpr(eTVec(output), TanHBackwardExpr<T>());
+void Tanh::backward(const std::vector<const Tensor*> &inputs, 
+					const Tensor *output, 
+					const Tensor *outputGradient, 
+					size_t index, 
+					Tensor *iGradient) {
+	Math::TanhGrad(*(inputs[0]), *iGradient, *output, *outputGradient);
 }
-
-DEEP8_RE_DECLARATION_HALF_FUNC(Tanh);
-DEEP8_DECLARATION_INSTANCE(Tanh);
 
 }

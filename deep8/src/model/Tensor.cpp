@@ -1,181 +1,199 @@
 #include "Tensor.h"
-#include "TypeUtils.h"
 
 namespace Deep8 {
 
-template<typename T>
-Tensor<T>::Tensor() : storage(), offset(0), shape() {
+Tensor::Tensor(): storage(), offset(0), shape(), elementType(ElementType::unknown()) {
 }
 
-template<typename T>
-Tensor<T>::Tensor(Shape &s) : storage(), offset(0), shape(s) {
+Tensor::Tensor(Shape &s): storage(), offset(0), shape(s), elementType(ElementType::unknown()) {
 }
 
-template<typename T>
-Tensor<T>::Tensor(TensorStorage &ts, size_t off, Shape &s) : storage(ts), offset(off), shape(s) {
+Tensor::Tensor(TensorStorage &ts, size_t off, Shape &s, ElementType et): storage(ts), offset(off), shape(s), elementType(et) {
 }
 
-template<typename T>
-Tensor<T>::Tensor(TensorStorage &ts, size_t off, std::vector<size_t> &list) : Tensor(ts, off, 1, list) {
+Tensor::Tensor(TensorStorage &ts, size_t off, std::vector<size_t> &list, ElementType et): Tensor(ts, off, 1, list, et) {
 }
 
-template<typename T>
-Tensor<T>::Tensor(TensorStorage &ts, size_t off, size_t batch, std::vector<size_t> &list) : storage(ts), offset(off), shape(batch, list) {
+Tensor::Tensor(TensorStorage &ts, size_t off, size_t batch, std::vector<size_t> &list, ElementType et): storage(ts), offset(off), shape(batch, list), elementType(et) {
 }
 
-template<typename T>
-DeviceType Tensor<T>::deviceType() {
+DeviceType Tensor::deviceType() {
 	return storage.device->type;
 }
 
-template<typename T>
-Device* Tensor<T>::device() {
+DeviceType Tensor::deviceType() const {
+	return storage.device->type;
+}
+
+Device* Tensor::device() {
 	return storage.device;
 }
 
-template<typename T>
-Device* Tensor<T>::device() const {
+Device* Tensor::device() const {
 	return storage.device;
 }
 
-template<typename T>
-size_t* Tensor<T>::refPtr() const {
+size_t* Tensor::refPtr() const {
 	return storage.refPtr;
 }
 
-template<typename T>
-size_t Tensor<T>::refCount() {
+size_t Tensor::refCount() {
 	return storage.refPtr[0];
 }
 
-template<typename T>
-void* Tensor<T>::raw() {
+void* Tensor::raw() {
 	return (byte*)(storage.ptr) + offset;
 }
 
-template<typename T>
-void* Tensor<T>::raw() const {
+void* Tensor::raw() const {
 	return (byte*)(storage.ptr) + offset;
 }
 
-template<typename T>
-T* Tensor<T>::data() {
-	return static_cast<T*>(raw());
-}
-
-template<typename T>
-T* Tensor<T>::data() const {
-	return static_cast<T*>(raw());
-}
-
-template<typename T>
-bool Tensor<T>::isScalar() {
+bool Tensor::isScalar() {
 	return 1 == shape.size();
 }
 
-template<typename T>
-void Tensor<T>::zero() {
-	DEEP8_ARGUMENT_CHECK(nullptr != this->raw(), "the tensor is null");
-	storage.device->zero(this->raw(), sizeof(T) * shape.size());
+void Tensor::zero() {
+	storage.device->zero(this->raw(), elementType.byteWidth * shape.size());
 }
 
-template<typename T>
-size_t Tensor<T>::nDims() const {
-	return shape.nDims;
-}
+void Tensor::one() {
+	DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor is not a scalar");
 
-template<typename T>
-size_t Tensor<T>::size() const {
-	return shape.size();
-}
-
-template<typename T>
-size_t Tensor<T>::batchSize() const {
-	return shape.batchSize();
-}
-
-template<typename T>
-size_t Tensor<T>::batch() const {
-	return shape.batch;
-}
-
-template<typename T>
-size_t Tensor<T>::row() const {
-	return shape.row();
-}
-
-template<typename T>
-size_t Tensor<T>::col() const {
-	return shape.col();
-}
-
-template<typename T>
-size_t Tensor<T>::dim(size_t d) const {
-	return shape.dim(d);
-}
-
-template<typename T>
-size_t Tensor<T>::stride(size_t d) const {
-	return shape.stride(d);
-}
-
-/**release the storage*/
-template<typename T>
-void Tensor<T>::release() {
-	storage.release();
-}
-
-template<typename T>
-T Tensor<T>::scalar() {
-	DEEP8_ARGUMENT_CHECK(this->isScalar(), "the tensor must be a scalar");
-
-	if (DeviceType::CPU == device()->type) {
-		return data()[0];
+	if (DeviceType::CPU == this->deviceType()) {
+		switch (this->elementType.id) {
+		case DType::Float32:
+			this->data<float>()[0] = 1;
+			break;
+		case DType::Float64:
+			this->data<double>()[0] = 1;
+			break;
+		default:
+			DEEP8_RUNTIME_ERROR("the type is not support");
+			break;
+		}
 	} else {
 #ifdef HAVE_CUDA
-		T scalar;
+        Device* device = this->device();
 
-		device()->copyFromGPUToCPU(raw(), &scalar, sizeof(T));
-
-		return scalar;
+		switch (this->elementType.id) {
+		case DType::Float32:
+			device->copyFromGPUToGPU(device->gpuOneFloat(), this->raw(), this->elementType.byteWidth);
+			break;
+		case DType::Float64:
+			device->copyFromGPUToGPU(device->gpuOneDouble(), this->raw(), this->elementType.byteWidth);
+			break;
+#ifdef HAVE_HALF
+		case DType::Float16:
+			device->copyFromGPUToGPU(device->gpuOneHalf(), this->raw(), this->elementType.byteWidth);
+			break;
+#endif
+		default:
+			DEEP8_RUNTIME_ERROR("the type is not support");
+			break;
+		}
 #else
-		DEEP8_RUNTIME_ERROR("can not call GPU function without a GPU");
+		DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif
 	}
 }
 
-template <typename T>
-std::string Tensor<T>::toString() {
-	std::stringstream ss;
-	ss << "Device Type:" << (DeviceType::CPU == deviceType() ? "CPU" : "GPU");
-	ss << ", Data Type:" << typeStr<T>();
-	ss << ", Data Shape:" << shape.toString();
-	ss << ", ptr:" << raw();
-
-    return ss.str();
+size_t Tensor::byteCount() const  {
+	return this->elementType.byteWidth * this->size();
 }
 
-/**convert the value to string to print*/
-template <typename T>
-std::string Tensor<T>::valueString() {
+
+size_t Tensor::batch() const {
+    return shape.batch;
+}
+
+size_t Tensor::nDims() const {
+	return shape.nDims;
+}
+
+size_t Tensor::size() const {
+	return shape.size();
+}
+
+size_t Tensor::batchSize() const {
+	return shape.batchSize();
+}
+
+size_t Tensor::row() const {
+	return shape.row();
+}
+
+size_t Tensor::col() const {
+	return shape.col();
+}
+
+size_t Tensor::dim(size_t d) const {
+	return shape.dim(d);
+}
+
+size_t Tensor::stride(size_t d) const {
+	return shape.stride(d);
+}
+
+/**release the storage*/
+void Tensor::release() {
+	storage.release();
+}
+
+std::string Tensor::valueStr() {
 	std::stringstream ss;
 	ss << "[";
 
+	auto size = shape.size();
+
 	if (DeviceType::CPU == deviceType()) {
-		for (size_t i = 0; i < shape.size(); ++i) {
-			ss << data()[i] << ", ";
+		if (DType::Float32 == elementType.id) {
+			for (size_t i = 0; i < size; ++i) {
+				ss << data<float>()[i] << ", ";
+			}
+		} else if (DType::Float64 == elementType.id) {
+			for (size_t i = 0; i < size; ++i) {
+				ss << data<double>()[i] << ", ";
+			}
+		} else {
+			DEEP8_RUNTIME_ERROR("the type is error");
 		}
 	} else {
 #ifdef HAVE_CUDA
-		std::vector<T> vec(shape.size());
+		if (DType::Float32 == elementType.id) {
+			
 
-		device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(T) * shape.size());
+			std::vector<float> vec(size);
 
-		for (size_t i = 0; i < shape.size(); ++i) {
-			ss << vec[i] << ", ";
+			device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(float) * size);
+
+			for (size_t i = 0; i < size; ++i) {
+				ss << vec[i] << ", ";
+			}
+		} else if (DType::Float64 == elementType.id) {
+			std::vector<double> vec(size);
+
+			device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(double) * size);
+
+			for (size_t i = 0; i < size; ++i) {
+				ss << vec[i] << ", ";
+			}
+#ifdef HAVE_HALF
+		} else if (DType::Float16 == elementType.id) {
+			std::vector<half> vec(size);
+
+			device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(half) * size);
+
+			for (size_t i = 0; i < size; ++i) {
+				ss << vec[i] << ", ";
+			}
+		}
+#endif
+		} else {
+			DEEP8_RUNTIME_ERROR("the type is error");
 		}
 #else
-		DEEP8_RUNTIME_ERROR("Can not call GPU function without a GPU");
+		DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif
 	}
 
@@ -184,6 +202,5 @@ std::string Tensor<T>::valueString() {
 	return ss.str();
 }
 
-DEEP8_DECLARATION_INSTANCE(Tensor);
 
 }
