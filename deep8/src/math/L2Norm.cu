@@ -9,6 +9,11 @@ namespace Math {
 
 template <typename T>
 struct L2NormKernelOp {
+    T ratio;
+
+    L2NormKernelOp(T r): ratio(r) {
+    }
+
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
         return T(0);
     }
@@ -22,22 +27,36 @@ struct L2NormKernelOp {
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T complete(T ret) {
-        return cudaSqrt(ret);
+        return cudaSqrt(ret) * ratio;
     }
 };
     
 void L2NormGPU(const Tensor &x, Tensor &y) {
+    auto xsize = (int) x.shape.size();
+
     switch (x.elementType.id) {
     case DType::Float32:
-        CallReduceKernel<float, L2NormKernelOp<float>>(x.data<float>(), y.data<float>(), (int)x.shape.size(), L2NormKernelOp<float>());
+        CallReduceKernel<float, L2NormKernelOp<float>>(
+            x.data<float>(), 
+            y.data<float>(), 
+            xsize, 
+            L2NormKernelOp<float>(1.0 / float(xsize)));
         break;
     case DType::Float64:
-        CallReduceKernel<double, L2NormKernelOp<double>>(x.data<double>(), y.data<double>(), (int)x.shape.size(), L2NormKernelOp<double>());
+        CallReduceKernel<double, L2NormKernelOp<double>>(
+            x.data<double>(), 
+            y.data<double>(), 
+            xsize,
+            L2NormKernelOp<double>(1.0 / double(xsize)));
         break;
 
 #ifdef HAVE_HALF
     case DType::Float16:
-        CallReduceKernel<half, L2NormKernelOp<half>>(x.data<half>(), y.data<half>(), (int)x.shape.size(), L2NormKernelOp<half>());
+        CallReduceKernel<half, L2NormKernelOp<half>>(
+            x.data<half>(), 
+            y.data<half>(), 
+            xsize, 
+            L2NormKernelOp<half>(__float2half(1.0 / float(xsize))));
         break;
 #endif
 
@@ -49,23 +68,48 @@ void L2NormGPU(const Tensor &x, Tensor &y) {
 
 template <typename T>
 struct L2NormGradKernelOp {
+    T ratio;
+
+    L2NormGradKernelOp(T r): ratio(r) {
+    }
+
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &dy) {
-		return x * dy / y;
+		return x * dy * ratio / y;
 	}
 };
 
 void L2NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
+    auto xsize = (int) x.shape.size();
+
     switch (x.elementType.id) {
         case DType::Float32:
-            CallReduceGradKernel<float, L2NormGradKernelOp<float>>(x.data<float>(), dx.data<float>(), y.data<float>(), dy.data<float>(), (int)dx.shape.size(), L2NormGradKernelOp<float>());
+            CallReduceGradKernel<float, L2NormGradKernelOp<float>>(
+                x.data<float>(), 
+                dx.data<float>(), 
+                y.data<float>(), 
+                dy.data<float>(), 
+                (int)dx.shape.size(), 
+                L2NormGradKernelOp<float>(1.0 / float(xsize)));
             break;
         case DType::Float64:
-            CallReduceGradKernel<double, L2NormGradKernelOp<double>>(x.data<double>(), dx.data<double>(), y.data<double>(), dy.data<double>(), (int)dx.shape.size(), L2NormGradKernelOp<double>());
+            CallReduceGradKernel<double, L2NormGradKernelOp<double>>(
+                x.data<double>(), 
+                dx.data<double>(), 
+                y.data<double>(), 
+                dy.data<double>(), 
+                (int)dx.shape.size(), 
+                L2NormGradKernelOp<double>(1.0 / double(xsize)));
             break;
     
     #ifdef HAVE_HALF
         case DType::Float16:
-            CallReduceGradKernel<half, L2NormGradKernelOp<half>>(x.data<half>(), dx.data<half>(), y.data<half>(), dy.data<half>(), (int)dx.shape.size(), L2NormGradKernelOp<half>());
+            CallReduceGradKernel<half, L2NormGradKernelOp<half>>(
+                x.data<half>(), 
+                dx.data<half>(), 
+                y.data<half>(), 
+                dy.data<half>(), 
+                (int)dx.shape.size(), 
+                L2NormGradKernelOp<half>(__float2half(1.0 / double(xsize))));
             break;
     #endif
     

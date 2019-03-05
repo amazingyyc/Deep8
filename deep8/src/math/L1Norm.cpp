@@ -45,13 +45,15 @@ template <typename T>
 void L1NormCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
+    int size = (int) xshape.size();
+
 	Eigen::array<int, 1> reshapeDims = { 1 };
 	Eigen::array<int, 1> sumDims = { 0 };
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, (int)yshape.size());
 
-    yvec.device(*eigenDevice) = xvec.abs().sum(sumDims).reshape(reshapeDims);
+    yvec.device(*eigenDevice) = xvec.abs().sum(sumDims).reshape(reshapeDims) / T (size);
 }
 
 void L1NormCPU(const Tensor &x, Tensor &y) {
@@ -72,11 +74,16 @@ void L1NormCPU(const Tensor &x, Tensor &y) {
 
 template <typename T>
 struct L1NormGradEigenExpr {
-    inline T operator()(T dy, T x) const {
+    T ratio;
+
+    L1NormGradEigenExpr(T r): ratio(r) {
+    }
+
+    inline T operator()(T x) const {
         if (x >= T(0)) {
-            return dy;
+            return ratio;
         } else {
-            return -dy;
+            return -ratio;
         }
     }
 };
@@ -86,15 +93,13 @@ void L1NormGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *d
     auto eigenDevice = device->eigenDevice;
 
     int xsize = (int)xshape.size();
-    int ysize = (int)yshape.size();
-
-    Eigen::array<int, 1> broad = { xsize };
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  xvec( x, xsize);
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, xsize);
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dyvec(dy, ysize);
 
-    dxvec.device(*eigenDevice) += dyvec.broadcast(broad).binaryExpr(xvec, L1NormGradEigenExpr<T>());
+    auto ratio = dy[0] / T (xsize);
+
+    dxvec.device(*eigenDevice) += xvec.unaryExpr(L1NormGradEigenExpr<T>(ratio));
 }
 
 void L1NormGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {

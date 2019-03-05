@@ -45,13 +45,15 @@ template <typename T>
 void L2NormCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
+    int size = (int) xshape.size();
+
 	Eigen::array<int, 1> reshapeDims = { 1 };
 	Eigen::array<int, 1> sumDims = { 0 };
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int)xshape.size());
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, (int)yshape.size());
 
-    yvec.device(*eigenDevice) = xvec.square().sum(sumDims).sqrt().reshape(reshapeDims);
+    yvec.device(*eigenDevice) = xvec.square().sum(sumDims).sqrt().reshape(reshapeDims) / T(size);
 }
 
 void L2NormCPU(const Tensor &x, Tensor &y) {
@@ -75,16 +77,13 @@ void L2NormGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y
     auto eigenDevice = device->eigenDevice;
 
     int xsize = (int)xshape.size();
-    int ysize = (int)yshape.size();
-
-    Eigen::array<int, 1> broad = { xsize };
 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  xvec( x, xsize);
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, xsize);
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  yvec( y, ysize);
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dyvec(dy, ysize);
 
-    dxvec.device(*eigenDevice) += (dyvec / yvec).broadcast(broad) * xvec;
+    auto ratio = dy[0] / (y[0] * T(xsize));
+
+    dxvec.device(*eigenDevice) += xvec * ratio;
 }
 
 void L2NormGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {

@@ -25,21 +25,7 @@ TEST(L1Norm, forwardCPU) {
 		temp += std::abs(input.data<double>()[i]);
 	}
 
-	ASSERT_EQ(temp, output.data<double>()[0]);
-
-	/*
-    for (int i = 0; i < 10; ++i) {
-        long double temp = 0;
-
-        auto inputPtr = input.data() + i * 200;
-
-        for (int j = 0; j < 200; ++j) {
-            temp += std::abs(inputPtr[j]);
-        }
-
-        ASSERT_EQ(temp, output.data()[i]);
-    }
-	*/
+	ASSERT_TRUE(std::abs(temp / double(10 * 200) - output.data<double>()[0]) < 1e-6);
 
 }
 
@@ -67,28 +53,11 @@ TEST(L1Norm, backwardCPU) {
 
 	for (int i = 0; i < 400 * 200; ++i) {
 		if (inputValue.data<float>()[i] >= 0) {
-			ASSERT_EQ(inputGrad.data<float>()[i], outputGrad.data<float>()[0]);
+			ASSERT_EQ(inputGrad.data<float>()[i], outputGrad.data<float>()[0] / float(400 * 200));
 		} else {
-			ASSERT_EQ(inputGrad.data<float>()[i], -outputGrad.data<float>()[0]);
+			ASSERT_EQ(inputGrad.data<float>()[i], -outputGrad.data<float>()[0] / float(400 * 200));
 		}
 	}
-
-	/*
-	for (int i = 0; i < 400; ++i) {
-        auto inputPtr = inputValue.data() + i * 200;
-        auto inputGradPtr = inputGrad.data() + i * 200;
-
-        for (int j = 0; j < 200; ++j) {
-            if (inputPtr[j] > 0) {
-                ASSERT_EQ(inputGradPtr[j], outputGrad.data()[i]);
-            } else if (inputPtr[j] == 0) {
-                ASSERT_EQ(inputGradPtr[j], 0);
-            } else {
-                ASSERT_EQ(inputGradPtr[j], -outputGrad.data()[i]);
-            }
-        }
-    }
-	*/
 
 
 }
@@ -134,44 +103,15 @@ TEST(L1Norm, GPU_float) {
 		temp += std::abs(inputPtr[i]);
 	}
 
-	ASSERT_EQ(temp, outputPtr[0]);
-
-	/*
-	for (int i = 0; i < 400; ++i) {
-        real temp = 0;
-
-        auto tempInputPtr = inputPtr + i * 200;
-
-        for (int j = 0; j < 200; ++j) {
-            temp += std::abs(tempInputPtr[j]);
-        }
-
-        ASSERT_EQ(temp, outputPtr[i]);
-    }
-	*/
+	ASSERT_EQ(temp / float(400 * 200), outputPtr[0]);
 
 	for (int i = 0; i < 400 * 200; ++i) {
 		if (inputPtr[i] >= 0) {
-			ASSERT_EQ(inputGradPtr[i], outputGradPtr[0]);
+			ASSERT_EQ(inputGradPtr[i], outputGradPtr[0] / float(400 * 200));
 		} else {
-			ASSERT_EQ(inputGradPtr[i], -outputGradPtr[0]);
+			ASSERT_EQ(inputGradPtr[i], -outputGradPtr[0] / float(400 * 200));
 		}
 	}
-
-	/*
-    for (int i = 0; i < 400; ++i) {
-        auto tempInputPtr = inputPtr + i * 200;
-        auto tempInputGradPtr = inputGradPtr + i * 200;
-
-        for (int j = 0; j < 200; ++j) {
-            if (tempInputPtr[j] >= 0) {
-                ASSERT_EQ(tempInputGradPtr[j], outputGradPtr[i]);
-            } else {
-                ASSERT_EQ(tempInputGradPtr[j], -outputGradPtr[i]);
-            }
-        }
-    }
-	*/
 
     free(inputPtr);
 	free(inputGradPtr);
