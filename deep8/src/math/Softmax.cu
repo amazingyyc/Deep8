@@ -70,22 +70,16 @@ void SoftmaxGPUImpl(GPUDevice *device,
                     T *ptr) {
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) xshape.batch;
+    dim1 = (int) xshape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) xshape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) xshape.dim(i);
+    }
 
-        for (int i = axis + 1; i < xshape.nDims; ++i) {
-            dim2 *= (int) xshape.dim(i);
-        }
+    for (int i = axis + 1; i < xshape.nDims; ++i) {
+        dim2 *= (int) xshape.dim(i);
     }
 
     /**find max value*/
@@ -308,22 +302,16 @@ void SoftmaxGradGPUImpl(GPUDevice *device,
                         T *dotptr) {
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) xshape.batch;
+    dim1 = (int) xshape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) xshape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) xshape.dim(i);
+    }
 
-        for (int i = axis + 1; i < xshape.nDims; ++i) {
-            dim2 *= (int) xshape.dim(i);
-        }
+    for (int i = axis + 1; i < xshape.nDims; ++i) {
+        dim2 *= (int) xshape.dim(i);
     }
 
     int gridSize  = dim0 * dim2;

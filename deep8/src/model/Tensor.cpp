@@ -187,7 +187,6 @@ std::string Tensor::valueStr() {
 			for (size_t i = 0; i < size; ++i) {
 				ss << vec[i] << ", ";
 			}
-		}
 #endif
 		} else {
 			DEEP8_RUNTIME_ERROR("the type is error");

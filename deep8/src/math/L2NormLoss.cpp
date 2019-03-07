@@ -1,4 +1,4 @@
-#include "math/L2Norm.h"
+#include "math/L2NormLoss.h"
 
 namespace Deep8 {
 namespace Math {
@@ -6,16 +6,16 @@ namespace Math {
 /*
  * y = l2norm(x)
  */
-void L2Norm(const Tensor &x, Tensor &y) {
+void L2NormLoss(const Tensor &x, Tensor &y) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType  == y.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(1 == y.shape.size(), "the y size must be 1");
 
     if (DeviceType::CPU == x.deviceType()) {
-        L2NormCPU(x, y);
+        L2NormLossCPU(x, y);
     } else {
 #ifdef HAVE_CUDA
-        L2NormGPU(x, y);
+        L2NormLossGPU(x, y);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -25,16 +25,16 @@ void L2Norm(const Tensor &x, Tensor &y) {
 /*
  * calculate the grad(x) of L2Norm
  */
-void L2NormGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
+void L2NormLossGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType  == dx.elementType  && x.elementType == y.elementType && x.elementType  == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && y.shape == dy.shape && 1 == y.shape.size(), "the param shape error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        L2NormGradCPU(x, dx, y, dy);
+        L2NormLossGradCPU(x, dx, y, dy);
     } else {
 #ifdef HAVE_CUDA
-        L2NormGradGPU(x, dx, y, dy);
+        L2NormLossGradGPU(x, dx, y, dy);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -42,7 +42,7 @@ void L2NormGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) 
 }
 
 template <typename T>
-void L2NormCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
+void L2NormLossCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     int size = (int) xshape.size();
@@ -56,15 +56,15 @@ void L2NormCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Sha
     yvec.device(*eigenDevice) = xvec.square().sum(sumDims).sqrt().reshape(reshapeDims) / T(size);
 }
 
-void L2NormCPU(const Tensor &x, Tensor &y) {
+void L2NormLossCPU(const Tensor &x, Tensor &y) {
     auto device = (CPUDevice*)x.device();
 
     switch (x.elementType.id) {
     case DType::Float32:
-        L2NormCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
+        L2NormLossCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        L2NormCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
+        L2NormLossCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
@@ -73,7 +73,7 @@ void L2NormCPU(const Tensor &x, Tensor &y) {
 }
 
 template <typename T>
-void L2NormGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape) {
+void L2NormLossGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape) {
     auto eigenDevice = device->eigenDevice;
 
     int xsize = (int)xshape.size();
@@ -86,15 +86,15 @@ void L2NormGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *y
     dxvec.device(*eigenDevice) += xvec * ratio;
 }
 
-void L2NormGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
+void L2NormLossGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     auto device = (CPUDevice*)x.device();
 
     switch (x.elementType.id) {
     case DType::Float32:
-        L2NormGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape);
+        L2NormLossGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, y.data<float>(), dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        L2NormGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape);
+        L2NormLossGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, y.data<double>(), dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");

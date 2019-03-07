@@ -170,14 +170,14 @@ Expression Expression::exp() {
     return Expression(executor, executor->addFunction(new Exp(inputs)));
 }
 
-Expression Expression::l1Norm() {
+Expression Expression::l1NormLoss() {
     std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new L1Norm(inputs)));
+    return Expression(executor, executor->addFunction(new L1NormLoss(inputs)));
 }
 
-Expression Expression::l2Norm() {
+Expression Expression::l2NormLoss() {
     std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new L2Norm(inputs)));
+    return Expression(executor, executor->addFunction(new L2NormLoss(inputs)));
 }
 
 Expression Expression::linear(float a, float b) {

@@ -15,17 +15,19 @@ struct CrossEntropyKernelOp {
 };
 
 template <int blockSize, typename T>
-__global__ void CrossEntropyKernel(const T *x, const T *y, T *z, const T scale, const int N) {
+__global__ void CrossEntropyKernel(const T *x, const T *y, T *z, const int batch, const int size) {
     GPUSharedMemory<T> shareMemory;
     T *shared = shareMemory.pointer();
 
+    int blockId = blockIdx.x;
     int threaId = threadIdx.x;
+
     int i = threaId;
 
     shared[threaId] = 0;
 
-    while (i < N) {
-        shared[threaId] += y[i] * cudaLog(x[i]);
+    while (i < size) {
+        shared[threaId] += (-y[i] * cudaLog(x[i]));
 
         i += blockSize;
     }
@@ -69,7 +71,7 @@ __global__ void CrossEntropyKernel(const T *x, const T *y, T *z, const T scale, 
     }
 
     if (0 == threaId) {
-        z[0] = shared[threaId] * scale;
+        z[blockId] = shared[threaId];
     }
 }
 
@@ -81,41 +83,40 @@ void CrossEntropyGPUImpl(GPUDevice *device,
                          const Shape &yshape, 
                          T *z, 
                          const Shape &zshape) {
-    auto batch = xshape.batch;
-    auto scale = -T(1.0) / T(batch);
+    auto batch = (int) xshape.batch;
+    auto size  = (int) xshape.batchSize();
 
-    int N = (int) xshape.size();
+    int gridSize  = batch;
+    int blockSize = DEEP8_GPU_BLOCK_SIZE;
 
-    int blockSize = 1024;
-
-    if (blockSize > N) {
-        blockSize = prevPowerOf2(N);
+    if (blockSize > size) {
+        blockSize = prevPowerOf2(size);
     }
 
     int sharedSize = sizeof(T) * blockSize;
 
     if (1024 == blockSize) {
-        CrossEntropyKernel<1024, T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<1024, T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (512 == blockSize) {
-        CrossEntropyKernel<512,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<512,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (256 == blockSize) {
-        CrossEntropyKernel<256,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<256,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (128 == blockSize) {
-        CrossEntropyKernel<128,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<128,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (64 == blockSize) {
-        CrossEntropyKernel<64,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<64,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (32 == blockSize) {
-        CrossEntropyKernel<32,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<32,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (16 == blockSize) {
-        CrossEntropyKernel<16,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<16,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (8 == blockSize) {
-        CrossEntropyKernel<8,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<8,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (4 == blockSize) {
-        CrossEntropyKernel<4,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<4,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (2 == blockSize) {
-        CrossEntropyKernel<2,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<2,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else if (1 == blockSize) {
-        CrossEntropyKernel<1,  T> << <1, blockSize, sharedSize >> > (x, y, z, scale, N);
+        CrossEntropyKernel<1,  T> << <gridSize, blockSize, sharedSize >> > (x, y, z, batch, size);
     } else {
         DEEP8_RUNTIME_ERROR("the block size is error");
 	}
@@ -163,12 +164,14 @@ void CrossEntropyGPU(const Tensor &x, const Tensor &y, Tensor &z) {
 }
 
 template <typename T>
-__global__ void CrossEntropyGradXKernel(const T *x, T *dx, const T *y, const T *dz, const T scale, const int N) {
+__global__ void CrossEntropyGradXKernel(const T *x, T *dx, const T *y, const T *dz, const int batch, const int size, const int N) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		dx[i] += scale * dz[0] * y[i] / x[i];
+        int row = i / size;
+
+		dx[i] -= dz[row] * y[i] / x[i];
 	}
 }
 
@@ -182,14 +185,15 @@ void CrossEntropyGradXGPUImpl(GPUDevice *device,
                               const T *z, 
                               const T *dz, 
                               const Shape &zshape) {
-    auto batch = xshape.batch;
-    auto scale = -T(1.0) / T(batch);
+    auto batch = (int) xshape.batch;
+    auto size  = (int) xshape.batchSize();
 
     int N = (int) xshape.size();
+
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
     
-    CrossEntropyGradXKernel<T><<<grideSize, blockSize >>>(x, dx, y, dz, scale, N);
+    CrossEntropyGradXKernel<T><<<grideSize, blockSize >>>(x, dx, y, dz, batch, size, N);
 }
 
 void CrossEntropyGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &z, const Tensor &dz) {
@@ -241,12 +245,14 @@ void CrossEntropyGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Te
 
 
 template <typename T>
-__global__ void CrossEntropyGradYKernel(const T *x, const T *y, T *dy, const T *dz, const T scale, const int N) {
+__global__ void CrossEntropyGradYKernel(const T *x, const T *y, T *dy, const T *dz, const int batch, const int size, const int N) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 
 	for (int i = start; i < N; i += stride) {
-		dy[i] += scale * dz[0] * cudaLog(x[i]);
+        int row = i / size;
+
+		dy[i] -= dz[row] * cudaLog(x[i]);
 	}
 }
 
@@ -260,14 +266,15 @@ void CrossEntropyGradYGPUImpl(GPUDevice *device,
                               const T *z, 
                               const T *dz, 
                               const Shape &zshape) {
-    auto batch = yshape.batch;
-    auto scale = -T(1.0) / T(batch);
+    auto batch = (int) yshape.batch;
+    auto size  = (int) yshape.batchSize();
 
     int N = (int) yshape.size();
+
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
-    CrossEntropyGradYKernel<T><<<grideSize, blockSize >>>(x, y, dy, dz, scale, N);
+    CrossEntropyGradYKernel<T><<<grideSize, blockSize >>>(x, y, dy, dz, batch, size, N);
 }
 
 void CrossEntropyGradYGPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {

@@ -11,8 +11,8 @@
 #include "nodes/DeConv2d.h"
 #include "nodes/Divide.h"
 #include "nodes/Exp.h"
-#include "nodes/L1Norm.h"
-#include "nodes/L2Norm.h"
+#include "nodes/L1NormLoss.h"
+#include "nodes/L2NormLoss.h"
 #include "nodes/Linear.h"
 #include "nodes/Log.h"
 #include "nodes/LogSoftmax.h"
@@ -97,8 +97,8 @@ public:
 							size_t strideX = 1);
 
 	Expression exp();
-	Expression l1Norm();
-	Expression l2Norm();
+	Expression l1NormLoss();
+	Expression l2NormLoss();
 	Expression linear(float a, float b);
 	Expression log();
 	Expression logSoftmax(int axis = -1);

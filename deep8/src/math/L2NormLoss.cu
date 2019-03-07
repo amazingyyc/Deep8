@@ -2,16 +2,16 @@
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
 #include "math/GPUReduce.h"
-#include "math/L2Norm.h"
+#include "math/L2NormLoss.h"
 
 namespace Deep8 {
 namespace Math {
 
 template <typename T>
-struct L2NormKernelOp {
+struct L2NormLossKernelOp {
     T ratio;
 
-    L2NormKernelOp(T r): ratio(r) {
+    L2NormLossKernelOp(T r): ratio(r) {
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
@@ -31,32 +31,32 @@ struct L2NormKernelOp {
     }
 };
     
-void L2NormGPU(const Tensor &x, Tensor &y) {
+void L2NormLossGPU(const Tensor &x, Tensor &y) {
     auto xsize = (int) x.shape.size();
 
     switch (x.elementType.id) {
     case DType::Float32:
-        CallReduceKernel<float, L2NormKernelOp<float>>(
+        CallReduceKernel<float, L2NormLossKernelOp<float>>(
             x.data<float>(), 
             y.data<float>(), 
             xsize, 
-            L2NormKernelOp<float>(1.0 / float(xsize)));
+            L2NormLossKernelOp<float>(1.0 / float(xsize)));
         break;
     case DType::Float64:
-        CallReduceKernel<double, L2NormKernelOp<double>>(
+        CallReduceKernel<double, L2NormLossKernelOp<double>>(
             x.data<double>(), 
             y.data<double>(), 
             xsize,
-            L2NormKernelOp<double>(1.0 / double(xsize)));
+            L2NormLossKernelOp<double>(1.0 / double(xsize)));
         break;
 
 #ifdef HAVE_HALF
     case DType::Float16:
-        CallReduceKernel<half, L2NormKernelOp<half>>(
+        CallReduceKernel<half, L2NormLossKernelOp<half>>(
             x.data<half>(), 
             y.data<half>(), 
             xsize, 
-            L2NormKernelOp<half>(__float2half(1.0 / float(xsize))));
+            L2NormLossKernelOp<half>(__float2half(1.0 / float(xsize))));
         break;
 #endif
 
@@ -67,10 +67,10 @@ void L2NormGPU(const Tensor &x, Tensor &y) {
 }
 
 template <typename T>
-struct L2NormGradKernelOp {
+struct L2NormLossGradKernelOp {
     T ratio;
 
-    L2NormGradKernelOp(T r): ratio(r) {
+    L2NormLossGradKernelOp(T r): ratio(r) {
     }
 
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &dy) {
@@ -78,38 +78,38 @@ struct L2NormGradKernelOp {
 	}
 };
 
-void L2NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
+void L2NormLossGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy) {
     auto xsize = (int) x.shape.size();
 
     switch (x.elementType.id) {
         case DType::Float32:
-            CallReduceGradKernel<float, L2NormGradKernelOp<float>>(
+            CallReduceGradKernel<float, L2NormLossGradKernelOp<float>>(
                 x.data<float>(), 
                 dx.data<float>(), 
                 y.data<float>(), 
                 dy.data<float>(), 
                 (int)dx.shape.size(), 
-                L2NormGradKernelOp<float>(1.0 / float(xsize)));
+                L2NormLossGradKernelOp<float>(1.0 / float(xsize)));
             break;
         case DType::Float64:
-            CallReduceGradKernel<double, L2NormGradKernelOp<double>>(
+            CallReduceGradKernel<double, L2NormLossGradKernelOp<double>>(
                 x.data<double>(), 
                 dx.data<double>(), 
                 y.data<double>(), 
                 dy.data<double>(), 
                 (int)dx.shape.size(), 
-                L2NormGradKernelOp<double>(1.0 / double(xsize)));
+                L2NormLossGradKernelOp<double>(1.0 / double(xsize)));
             break;
     
     #ifdef HAVE_HALF
         case DType::Float16:
-            CallReduceGradKernel<half, L2NormGradKernelOp<half>>(
+            CallReduceGradKernel<half, L2NormLossGradKernelOp<half>>(
                 x.data<half>(), 
                 dx.data<half>(), 
                 y.data<half>(), 
                 dy.data<half>(), 
                 (int)dx.shape.size(), 
-                L2NormGradKernelOp<half>(__float2half(1.0 / double(xsize))));
+                L2NormLossGradKernelOp<half>(__float2half(1.0 / float(xsize))));
             break;
     #endif
     

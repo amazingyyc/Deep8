@@ -7,7 +7,12 @@ void Softmax(const Tensor &x, Tensor &y, int axis, void *ptr) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType  == y.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape  == y.shape, "the shape must be same");
-    DEEP8_ARGUMENT_CHECK(axis < (int) x.shape.nDims, "the axis is error");
+
+    if (-1 == axis) {
+        axis = (int)x.shape.nDims - 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int) x.shape.nDims, "the axis is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         SoftmaxCPU(x, y, axis, ptr);
@@ -24,7 +29,12 @@ void SoftmaxGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy,
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType  == dx.elementType  && x.elementType == y.elementType && x.elementType  == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && x.shape == y.shape && x.shape == dy.shape, "the param shape must be same");
-    DEEP8_ARGUMENT_CHECK(axis < (int) x.shape.nDims, "the axis is error");
+
+    if (-1 == axis) {
+        axis = (int)x.shape.nDims - 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int) x.shape.nDims, "the axis is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         SoftmaxGradCPU(x, dx, y, dy, axis, ptr);
@@ -43,22 +53,16 @@ void SoftmaxCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Sh
 
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) xshape.batch;
+    dim1 = (int) xshape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) xshape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) xshape.dim(i);
+    }
 
-        for (int i = axis + 1; i < xshape.nDims; ++i) {
-            dim2 *= (int) xshape.dim(i);
-        }
+    for (int i = axis + 1; i < xshape.nDims; ++i) {
+        dim2 *= (int) xshape.dim(i);
     }
 
     Eigen::array<int, 1> reduceDims = { 1 };
@@ -97,22 +101,16 @@ void SoftmaxGradCPUImpl(CPUDevice *device, T *x, T *dx, const Shape &xshape, T *
 
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) xshape.batch;
+    dim1 = (int) xshape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) xshape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) xshape.dim(i);
+    }
 
-        for (int i = axis + 1; i < xshape.nDims; ++i) {
-            dim2 *= (int) xshape.dim(i);
-        }
+    for (int i = axis + 1; i < xshape.nDims; ++i) {
+        dim2 *= (int) xshape.dim(i);
     }
 
     Eigen::array<int, 1> sumDims = { 1 };

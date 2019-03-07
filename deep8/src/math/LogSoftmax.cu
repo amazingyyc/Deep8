@@ -72,22 +72,16 @@ template <typename T>
 void LogSoftmaxGPUImpl(GPUDevice *device, const T *x, const Shape &xshape, T *y, const Shape &yshape, int axis, T *maxptr, T *sumlogptr) {
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) xshape.batch;
+    dim1 = (int) xshape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) xshape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) xshape.dim(i);
+    }
 
-        for (int i = axis + 1; i < xshape.nDims; ++i) {
-            dim2 *= (int) xshape.dim(i);
-        }
+    for (int i = axis + 1; i < xshape.nDims; ++i) {
+        dim2 *= (int) xshape.dim(i);
     }
 
     if (1 == dim2) {
@@ -222,22 +216,16 @@ template <typename T>
 void LogSoftmaxGradGPUImpl(GPUDevice *device, const T *x, T *dx, const Shape &xshape, const T *y, const T *dy, const Shape &yshape, int axis, T *sumptr) {
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) xshape.batch;
-        dim1 = (int) xshape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) xshape.batch;
+    dim1 = (int) xshape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) xshape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) xshape.dim(i);
+    }
 
-        for (int i = axis + 1; i < xshape.nDims; ++i) {
-            dim2 *= (int) xshape.dim(i);
-        }
+    for (int i = axis + 1; i < xshape.nDims; ++i) {
+        dim2 *= (int) xshape.dim(i);
     }
 
     /**cal sum*/

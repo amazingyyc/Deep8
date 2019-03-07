@@ -1,7 +1,7 @@
 #ifndef DEEP8_L1NORMTEST_H
 #define DEEP8_L1NORMTEST_H
 
-#include "nodes/L1Norm.h"
+#include "nodes/L1NormLoss.h"
 
 namespace Deep8 {
 
@@ -14,7 +14,7 @@ TEST(L1Norm, forwardCPU) {
     auto inputVar1 = createFakeVariable(device, ElementType::from<double>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    L1Norm l1Norm(inputs);
+    L1NormLoss l1Norm(inputs);
 
     std::vector<const Tensor*> inputTensor = {&input};
 
@@ -42,7 +42,7 @@ TEST(L1Norm, backwardCPU) {
     auto inputVar = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar};
-    L1Norm l1Norm(inputs);
+    L1NormLoss l1Norm(inputs);
 
     zeroTensor(device, inputGrad);
 
@@ -87,7 +87,7 @@ TEST(L1Norm, GPU_float) {
     zeroTensor(device, inputGrad);
 
 	std::vector<Node*> inputs = {&inputVar};
-	L1Norm l1norm(inputs);
+    L1NormLoss l1norm(inputs);
 
     std::vector<const Tensor*> inputValues = {&input};
 
@@ -137,7 +137,7 @@ TEST(L1Norm, half_GPU) {
 	auto inputVar = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar };
-	L1Norm l1norm(inputs);
+    L1NormLoss l1norm(inputs);
 
 	std::vector<const Tensor*> inputValues = { &input };
 

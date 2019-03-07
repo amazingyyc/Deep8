@@ -15,7 +15,7 @@ void CrossEntropy::check() {
     DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.size() == this->inputs[1]->shape.size(), "inputs's shape size must be equal");
     DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.batch == this->inputs[1]->shape.batch, "inputs's batch must be equal");
 
-    this->shape       = Shape(1, { 1 });
+    this->shape       = Shape(this->inputs[0]->shape.batch, { 1 });
     this->elementType = this->inputs[0]->elementType;
 }
 

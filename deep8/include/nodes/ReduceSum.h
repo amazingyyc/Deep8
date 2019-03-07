@@ -13,7 +13,7 @@ public:
     int axis;
     bool keepDims;
 
-    explicit ReduceSum(std::vector<Node *> &inputs, int a = -1, bool keep = false);
+    explicit ReduceSum(std::vector<Node *> &inputs, int a = -1, bool keep = true);
 
 	void check() override;
 

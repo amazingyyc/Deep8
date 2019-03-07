@@ -11,33 +11,28 @@ void ReduceMean::check() {
     Function::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "only have 1 input");
-    DEEP8_ARGUMENT_CHECK(axis < this->inputs[0]->shape.nDims, "the axis is error");
 
-    auto shape = this->inputs[0]->shape;
+    auto inputShape = this->inputs[0]->shape;
+
+    if (axis == -1) {
+        axis = (int)inputShape.nDims - 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int) inputShape.nDims, "the axis is error");
+
     std::vector<size_t> list;
 
-    if (axis < 0) {
-        if (keepDims) {
-            for (int i = 0; i < (int)shape.nDims; ++i) {
+    for (int i = 0; i < (int)inputShape.nDims; ++i) {
+        if (i == axis) {
+            if (keepDims) {
                 list.emplace_back(1);
             }
         } else {
-            list.emplace_back(1);
-        }
-    }
-    else {
-        for (int i = 0; i < (int)shape.nDims; ++i) {
-            if (i == axis) {
-                if (keepDims) {
-                    list.emplace_back(1);
-                }
-            } else {
-                list.emplace_back(shape[i]);
-            }
+            list.emplace_back(shape[i]);
         }
     }
 
-    this->shape = Shape(shape.batch, list);
+    this->shape = Shape(inputShape.batch, list);
     this->elementType = this->inputs[0]->elementType;
 }
 
