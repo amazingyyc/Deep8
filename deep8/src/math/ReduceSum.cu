@@ -30,22 +30,16 @@ void ReduceSumGPU(const Tensor &x, Tensor &y, int axis) {
     auto shape = x.shape;
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) shape.batch;
-        dim1 = (int) shape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) shape.batch;
-        dim1 = (int) shape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) shape.batch;
+    dim1 = (int) shape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) shape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) shape.dim(i);
+    }
 
-        for (int i = axis + 1; i < shape.nDims; ++i) {
-            dim2 *= (int) shape.dim(i);
-        }
+    for (int i = axis + 1; i < shape.nDims; ++i) {
+        dim2 *= (int) shape.dim(i);
     }
 
     switch (x.elementType.id) {
@@ -112,22 +106,16 @@ void ReduceSumGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor
     auto shape = x.shape;
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) shape.batch;
-        dim1 = (int) shape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) shape.batch;
-        dim1 = (int) shape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) shape.batch;
+    dim1 = (int) shape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) shape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) shape.dim(i);
+    }
 
-        for (int i = axis + 1; i < shape.nDims; ++i) {
-            dim2 *= (int) shape.dim(i);
-        }
+    for (int i = axis + 1; i < shape.nDims; ++i) {
+        dim2 *= (int) shape.dim(i);
     }
 
     int N = dim0 * dim2;

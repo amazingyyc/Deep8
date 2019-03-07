@@ -14,7 +14,7 @@ public:
     int axis;
     bool keepDims;
 
-    explicit ReduceMean(std::vector<Node *> &inputs, int a = -1, bool keep = false);
+    explicit ReduceMean(std::vector<Node *> &inputs, int a = -1, bool keep = true);
 
     void check() override;
 

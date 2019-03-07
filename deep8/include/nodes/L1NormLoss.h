@@ -1,13 +1,13 @@
-#ifndef DEEP8_L1NORM_H
-#define DEEP8_L1NORM_H
+#ifndef DEEP8_L1NORMLOSS_H
+#define DEEP8_L1NORMLOSS_H
 
 #include "Function.h"
 
 namespace Deep8 {
 
-class L1Norm: public Function {
+class L1NormLoss : public Function {
 public:
-    explicit L1Norm(std::vector<Node *> &inputs);
+    explicit L1NormLoss(std::vector<Node *> &inputs);
 
     void check() override;
 

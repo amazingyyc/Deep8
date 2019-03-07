@@ -1,4 +1,5 @@
 #include "math/AXPBYPCZ.h"
+#include "basic/GPUBasic.h"
 
 namespace Deep8 {
 namespace Math {

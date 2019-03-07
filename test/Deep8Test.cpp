@@ -15,8 +15,8 @@
 // #include "DeConv2dTest.h"
 // #include "DivideTest.h"
 // #include "ExpTest.h"
-// #include "L1NormTest.h"
-// #include "L2NormTest.h"
+#include "L1NormTest.h"
+#include "L2NormTest.h"
 // #include "LinearTest.h"
 // #include "LogTest.h"
 // #include "LReLuTest.h"
@@ -29,7 +29,7 @@
 // #include "SoftmaxTest.h"
 // #include "SquareTest.h"
 // #include "TanhTest.h"
-#include "LinearRegressionTest.h"
+//#include "LinearRegressionTest.h"
 //#include "AutoBatchTest.h"
 
 #ifdef HAVE_CUDA

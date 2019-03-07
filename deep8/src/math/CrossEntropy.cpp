@@ -7,7 +7,7 @@ void CrossEntropy(const Tensor &x, const Tensor &y, Tensor &z) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType() && x.deviceType()  == z.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == z.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.size() == y.size() && x.batch() == y.batch(), "the x/y shape error");
-    DEEP8_ARGUMENT_CHECK(1 == z.size(), "the z size must be 1");
+    DEEP8_ARGUMENT_CHECK(2 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         CrossEntropyCPU(x, y, z);
@@ -32,9 +32,10 @@ void CrossEntropyGradX(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
                          x.elementType == dz.elementType, "the param data type must be same");
     
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape, "the x shape is error");
-    DEEP8_ARGUMENT_CHECK(z.shape == dz.shape && 1 == z.size(), "the z shape is error");
+    DEEP8_ARGUMENT_CHECK(z.shape == dz.shape, "the z shape is error");
 
     DEEP8_ARGUMENT_CHECK(x.size() == y.size() && x.batch() == y.batch(), "the x/y shape error");
+    DEEP8_ARGUMENT_CHECK(2 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         CrossEntropyGradXCPU(x, dx, y, z, dz);
@@ -59,9 +60,10 @@ void CrossEntropyGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tenso
                          x.elementType == dz.elementType, "the param data type must be same");
     
     DEEP8_ARGUMENT_CHECK(y.shape == dy.shape, "the y shape is error");
-    DEEP8_ARGUMENT_CHECK(z.shape == dz.shape && 1 == z.size(), "the z shape is error");
+    DEEP8_ARGUMENT_CHECK(z.shape == dz.shape, "the z shape is error");
 
     DEEP8_ARGUMENT_CHECK(x.size() == y.size() && x.batch() == y.batch(), "the x/y shape error");
+    DEEP8_ARGUMENT_CHECK(2 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         CrossEntropyGradYCPU(x, y, dy, z, dz);
@@ -78,23 +80,23 @@ template <typename T>
 void CrossEntropyCPUImpl(CPUDevice *device, 
                         T *x, 
                         const Shape &xshape, 
-                        T *y, 
+                        T *y,
                         const Shape &yshape, 
                         T *z, 
                         const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
-    auto batch = xshape.batch;
-    auto scale = -T(1) / T(batch);
+    auto batch = (int) xshape.batch;
+    auto size  = (int) xshape.batchSize();
 
-    Eigen::array<int, 1> sumDims = { 0 };
-    Eigen::array<int, 1> reshape = { 1 };
+    Eigen::array<int, 1> sumDims = { 1 };
+    Eigen::array<int, 1> reshape = { batch };
 
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, (int) xshape.size());
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, (int) yshape.size());
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> zvec(z, (int) zshape.size());
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>> xvec(x, batch, size);
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>> yvec(y, batch, size);
+    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> zvec(z, batch);
 
-    zvec.device(*eigenDevice) = (yvec * xvec.log()).sum(sumDims).reshape(reshape) * scale;
+    zvec.device(*eigenDevice) = (-yvec * xvec.log()).sum(sumDims).reshape(reshape);
 }
 
 void CrossEntropyCPU(const Tensor &x, const Tensor &y, Tensor &z) {
@@ -137,14 +139,17 @@ void CrossEntropyGradXCPUImpl(CPUDevice *device,
                               const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
-    auto batch = xshape.batch;
-    auto scale = -T(1) * dz[0] / T(batch);
+    auto batch = (int) xshape.batch;
+    auto size  = (int) xshape.batchSize();
 
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  xvec( x, (int)xshape.size());
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, (int)xshape.size());
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  yvec( y, (int)yshape.size());
+    Eigen::array<int, 2> broad = { 1, size };
 
-    dxvec.device(*eigenDevice) += (yvec / xvec) * scale;
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>>  xvec( x, batch, size);
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>> dxvec(dx, batch, size);
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>>  yvec( y, batch, size);
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>> dzvec(dz, batch, 1);
+
+    dxvec.device(*eigenDevice) -= dzvec.broadcast(broad) * yvec / xvec;
 }
 
 void CrossEntropyGradXCPU(const Tensor &x, 
@@ -185,23 +190,26 @@ void CrossEntropyGradXCPU(const Tensor &x,
 
 template <typename T>
 void CrossEntropyGradYCPUImpl(CPUDevice *device, 
-                                T *x, 
+                              T *x, 
                               const Shape &xshape, 
                               T *y, 
                               T *dy,
                               const Shape &yshape, 
-                              T *z, 
+                              T *z,
                               T *dz, 
                               const Shape &zshape) {
     auto eigenDevice = device->eigenDevice;
 
-    auto batch = yshape.batch;
-    auto scale = -T(1) * dz[0] / T(batch);
+    auto batch = (int)yshape.batch;
+    auto size  = (int)yshape.batchSize();
 
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>>  xvec( x, (int)xshape.size());
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dyvec(dy, (int)yshape.size());
+    Eigen::array<int, 2> broad = { 1, size };
 
-    dyvec.device(*eigenDevice) += xvec.log() * scale;
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>>  xvec( x, batch, size);
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>> dyvec(dy, batch, size);
+    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>> dzvec(dz, batch, 1);
+
+    dyvec.device(*eigenDevice) -= xvec.log() * dzvec.broadcast(broad);
 }
 
 void CrossEntropyGradYCPU(const Tensor &x, const Tensor &y, Tensor &dy, const Tensor &z, const Tensor &dz) {

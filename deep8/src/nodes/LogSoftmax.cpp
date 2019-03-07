@@ -14,7 +14,11 @@ void LogSoftmax::check() {
 
     auto inputShape = this->inputs[0]->shape;
 
-    DEEP8_ARGUMENT_CHECK(axis < (int) inputShape.nDims, "the axis is error");
+    if (-1 == axis) {
+        axis = (int)inputShape.nDims - 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int)inputShape.nDims, "the axis is error");
 
     this->shape = inputShape;
     this->elementType = this->inputs[0]->elementType;
@@ -26,22 +30,16 @@ void LogSoftmax::forward(const std::vector<const Tensor*> &inputs, Tensor *outpu
     auto shape = inputs[0]->shape;
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) shape.batch;
-        dim1 = (int) shape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) shape.batch;
-        dim1 = (int) shape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) shape.batch;
+    dim1 = (int) shape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) shape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) shape.dim(i);
+    }
 
-        for (int i = axis + 1; i < shape.nDims; ++i) {
-            dim2 *= (int) shape.dim(i);
-        }
+    for (int i = axis + 1; i < shape.nDims; ++i) {
+        dim2 *= (int) shape.dim(i);
     }
 
     auto maxptr = device->malloc(output->elementType.byteWidth * dim0 * dim2);
@@ -65,22 +63,16 @@ void LogSoftmax::backward(const std::vector<const Tensor*> &inputs,
     auto shape = iGradient->shape;
     int dim0, dim1, dim2;
 
-    if (axis < 0) {
-        dim0 = (int) shape.batch;
-        dim1 = (int) shape.batchSize();
-        dim2 = 1;
-    } else {
-        dim0 = (int) shape.batch;
-        dim1 = (int) shape.dim(axis);
-        dim2 = 1;
+    dim0 = (int) shape.batch;
+    dim1 = (int) shape.dim(axis);
+    dim2 = 1;
 
-        for (int i = 0; i < axis; ++i) {
-            dim0 *= (int) shape.dim(i);
-        }
+    for (int i = 0; i < axis; ++i) {
+        dim0 *= (int) shape.dim(i);
+    }
 
-        for (int i = axis + 1; i < shape.nDims; ++i) {
-            dim2 *= (int) shape.dim(i);
-        }
+    for (int i = axis + 1; i < shape.nDims; ++i) {
+        dim2 *= (int) shape.dim(i);
     }
 
     auto sumptr = device->malloc(iGradient->elementType.byteWidth * dim0 * dim2);

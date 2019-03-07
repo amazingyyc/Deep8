@@ -6,6 +6,18 @@
 
 namespace Deep8 {
 
+Expression parameter(Executor *executor, std::vector<size_t> list, bool updateGradient, DType type) {
+	return Expression(executor, executor->addVariable(list, type, updateGradient));
+}
+
+Expression parameter(Executor *executor, size_t batch, std::vector<size_t> list, bool updateGradient, DType type) {
+	return Expression(executor, executor->addVariable(batch, list, type, updateGradient));
+}
+
+Expression parameter(Executor *executor, Shape &shape, bool updateGradient, DType type) {
+	return Expression(executor, executor->addVariable(shape, type, updateGradient));
+}
+
 Expression::Expression() : executor(nullptr), node(nullptr) {
 }
 
@@ -106,22 +118,22 @@ Expression Expression::operator / (const Expression &y) const {
     return Expression(executor, executor->addFunction(new Divide(inputs)));
 }
 
-Expression Expression::add(const Expression &y) {
+Expression Expression::add(Expression &y) {
     std::vector<Node*> inputs = {node, y.node};
     return Expression(executor, executor->addFunction(new Add(inputs)));
 }
 
-Expression Expression::minus(const Expression &y) {
+Expression Expression::minus(Expression &y) {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new Minus(inputs)));
 }
 
-Expression Expression::multiply(const Expression &y) {
+Expression Expression::multiply(Expression &y) {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new Multiply(inputs)));
 }
 
-Expression Expression::divide(const Expression &y) {
+Expression Expression::divide(Expression &y) {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new Divide(inputs)));
 }
@@ -141,7 +153,7 @@ Expression Expression::avgPooling2d(bool covered,
     return Expression(executor, executor->addFunction(new AvgPooling2d(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
 }
 
-Expression Expression::conv2d(const Expression &filter, 
+Expression Expression::conv2d(Expression &filter, 
                         bool covered, 
                         size_t strideY, 
                         size_t strideX, 
@@ -152,12 +164,12 @@ Expression Expression::conv2d(const Expression &filter,
     return Expression(executor, executor->addFunction(new Conv2d(inputs, covered, strideY, strideX, dilationY, dilationX)));
 }
 
-Expression Expression::crossEntropy(const Expression &y) {
+Expression Expression::crossEntropy(Expression &y) {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new CrossEntropy(inputs)));
 }
 
-Expression Expression::deConv2d(const Expression &filter, 
+Expression Expression::deConv2d(Expression &filter, 
                         bool covered, 
                         size_t strideY, 
                         size_t strideX) {
@@ -168,16 +180,6 @@ Expression Expression::deConv2d(const Expression &filter,
 Expression Expression::exp() {
     std::vector<Node*> inputs = { node };
     return Expression(executor, executor->addFunction(new Exp(inputs)));
-}
-
-Expression Expression::l1Norm() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new L1Norm(inputs)));
-}
-
-Expression Expression::l2Norm() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new L2Norm(inputs)));
 }
 
 Expression Expression::linear(float a, float b) {
@@ -200,7 +202,7 @@ Expression Expression::lRelu(float a) {
     return Expression(executor, executor->addFunction(new LReLu(inputs, a)));
 }
 
-Expression Expression::matrixMultiply(const Expression &y) {
+Expression Expression::matrixMultiply(Expression &y) {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new MatrixMultiply(inputs)));
 }
@@ -259,16 +261,27 @@ Expression Expression::tanh() {
     return Expression(executor, executor->addFunction(new Tanh(inputs)));
 }
 
-Expression parameter(Executor *executor, std::vector<size_t> list, bool updateGradient, DType type) {
-	return Expression(executor, executor->addVariable(list, type, updateGradient));
+Expression Expression::meanLoss() {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new MeanLoss(inputs)));
+}
+Expression Expression::l1NormLoss() {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new L1NormLoss(inputs)));
 }
 
-Expression parameter(Executor *executor, size_t batch, std::vector<size_t> list, bool updateGradient, DType type) {
-	return Expression(executor, executor->addVariable(batch, list, type, updateGradient));
+Expression Expression::l2NormLoss() {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new L2NormLoss(inputs)));
 }
 
-Expression parameter(Executor *executor, Shape &shape, bool updateGradient, DType type) {
-	return Expression(executor, executor->addVariable(shape, type, updateGradient));
+Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
+    DEEP8_ARGUMENT_CHECK(this->node->shape == y.node->shape, "the shape of SoftmaxCrossEntropyLoss must be same");
+    DEEP8_ARGUMENT_CHECK(1 == this->node->shape.nDims, "the shape's ndims must be 1");
+
+    auto pred = this->logSoftmax();
+    return y.linear(-1).multiply(pred).reduceSum().meanLoss();
 }
+
 
 }

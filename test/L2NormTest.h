@@ -1,11 +1,11 @@
 #ifndef DEEP8_L2NORMTEST_H
 #define DEEP8_L2NORMTEST_H
 
-#include "nodes/L2Norm.h"
+#include "nodes/L2NormLoss.h"
 
 namespace Deep8 {
 
-TEST(L2Norm, forwardCPU) {
+TEST(L2NormLoss, forwardCPU) {
 	CPUDevice device;
 
     auto input  = createTensor(device, ElementType::from<double>(), 10, {200});
@@ -14,7 +14,7 @@ TEST(L2Norm, forwardCPU) {
     auto inputVar1 = createFakeVariable(device, ElementType::from<double>());
 
     std::vector<Node*> inputs = {&inputVar1};
-    L2Norm l2Norm(inputs);
+    L2NormLoss l2Norm(inputs);
 
     std::vector<const Tensor*> inputTensor = {&input};
 
@@ -26,11 +26,11 @@ TEST(L2Norm, forwardCPU) {
 		temp += input.data<double>()[i] * input.data<double>()[i];
 	}
 
-	ASSERT_EQ(sqrt(temp), output.data<double>()[0]);
+	ASSERT_EQ(sqrt(temp) / double(10 * 200), output.data<double>()[0]);
 
 }
 
-TEST(L2Norm, backwardCPU) {
+TEST(L2NormLoss, backwardCPU) {
 	CPUDevice device;
 
 	auto inputValue = createTensor(device, ElementType::from<float>(), 400, {200});
@@ -42,7 +42,7 @@ TEST(L2Norm, backwardCPU) {
     auto inputVar = createFakeVariable(device, ElementType::from<float>());
 
     std::vector<Node*> inputs = {&inputVar};
-    L2Norm l2Norm(inputs);
+    L2NormLoss l2Norm(inputs);
 
     zeroTensor(device, inputGrad);
 
@@ -53,16 +53,16 @@ TEST(L2Norm, backwardCPU) {
 
 
 	for (int i = 0; i < 400 * 200; ++i) {
-		auto temp = outputGrad.data<float>()[0] / outputValue.data<float>()[0];
+		auto temp = outputGrad.data<float>()[0] / outputValue.data<float>()[0] / float(400 * 200);
 
-		ASSERT_EQ(temp * inputValue.data<float>()[i], inputGrad.data<float>()[i]);
+		ASSERT_TRUE(std::abs(temp * inputValue.data<float>()[i] - inputGrad.data<float>()[i]) < 1e-6);
 	}
 
 }
 
 #ifdef HAVE_CUDA
 
-TEST(L2Norm, GPU_float) {
+TEST(L2NormLoss, GPU_float) {
     typedef double real;
 
 	GPUDevice device;
@@ -85,7 +85,7 @@ TEST(L2Norm, GPU_float) {
     zeroTensor(device, inputGrad);
 
 	std::vector<Node*> inputs = {&inputVar};
-	L2Norm l2norm(inputs);
+    L2NormLoss l2norm(inputs);
 
     std::vector<const Tensor*> inputValues = {&input};
 
@@ -100,10 +100,10 @@ TEST(L2Norm, GPU_float) {
 		temp += inputPtr[i] * inputPtr[i];
 	}
 
-	ASSERT_EQ(sqrt(temp), outputPtr[0]);
+	ASSERT_EQ(sqrt(temp) / real(400 * 200), outputPtr[0]);
 
 	for (int i = 0; i < 400 * 200; ++i) {
-		auto temp = outputGradPtr[0] / outputPtr[0];
+		auto temp = outputGradPtr[0] / outputPtr[0] / real(400 * 200);
 
 		ASSERT_TRUE(std::abs(temp * inputPtr[i] - inputGradPtr[i]) < 1e-6);
 	}
@@ -118,7 +118,7 @@ TEST(L2Norm, GPU_float) {
 
 #ifdef HAVE_HALF
 
-TEST(L2Norm, half_GPU) {
+TEST(L2NormLoss, half_GPU) {
 	typedef half real;
 
 	GPUDevice device;
@@ -132,7 +132,7 @@ TEST(L2Norm, half_GPU) {
 	auto inputVar = createFakeVariable(device, ElementType::from<real>());
 
 	std::vector<Node*> inputs = { &inputVar };
-	L2Norm l2norm(inputs);
+    L2NormLoss l2norm(inputs);
 
 	std::vector<const Tensor*> inputValues = { &input };
 

@@ -166,8 +166,6 @@ void declareExpression(py::module &m) {
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
             .def("exp",     &Expression::exp)
-            .def("l1Norm",  &Expression::l1Norm)
-            .def("l2Norm",  &Expression::l2Norm)
             .def("linear",  &Expression::linear)
             .def("log",     &Expression::log)
             .def("logSoftmax", &Expression::logSoftmax, 
@@ -204,7 +202,11 @@ void declareExpression(py::module &m) {
                 py::buffer_info info = buffer.request();
 
                 express->fetch(info.ptr);
-            });
+            })
+            .def("meanLoss", &Expression::meanLoss)   
+            .def("l1NormLoss",  &Expression::l1NormLoss)
+            .def("l2NormLoss",  &Expression::l2NormLoss)
+            .def("softmaxCrossEntropyLoss", &Expression::softmaxCrossEntropyLoss);
 }
 
 /**
