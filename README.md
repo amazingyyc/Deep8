@@ -60,7 +60,7 @@ input.feed(x)
 output.feed(y)
 
 for i in range(1000):
-    (input * w - output).l1Norm().backward()
+    (input * w - output).l1NormLoss().backward()
 
     trainer.train(executor)
 
@@ -93,7 +93,7 @@ input.feed(x);
 output.feed(y);
 
 for (int i = 0; i < 1000; ++i) {
-    (input * w - output).l1Norm().backward();
+    (input * w - output).l1NormLoss().backward();
 
     trainer.train(&executor, executor.trainableParameters());
 
