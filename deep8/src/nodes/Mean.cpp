@@ -1,13 +1,13 @@
-#include "math/MeanLoss.h"
-#include "nodes/MeanLoss.h"
+#include "math/Mean.h"
+#include "nodes/Mean.h"
 
 namespace Deep8 {
 
-MeanLoss::MeanLoss(std::vector<Node*>& inputs) : Function(inputs) {
+Mean::Mean(std::vector<Node*>& inputs) : Function(inputs) {
     check();
 }
 
-void MeanLoss::check() {
+void Mean::check() {
     Function::check();
 
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L1NormLoss Function needs only 1 input");
@@ -16,18 +16,18 @@ void MeanLoss::check() {
     this->elementType = this->inputs[0]->elementType;
 }
 
-void MeanLoss::forward(const std::vector<const Tensor*>& inputs, Tensor* output) {
-    Math::MeanLoss(*(inputs[0]), *output);
+void Mean::forward(const std::vector<const Tensor*>& inputs, Tensor* output) {
+    Math::Mean(*(inputs[0]), *output);
 }
 
-void MeanLoss::backward(const std::vector<const Tensor*>& inputs,
+void Mean::backward(const std::vector<const Tensor*>& inputs,
                           const Tensor* output,
                           const Tensor* outputGradient,
                           size_t index,
                           Tensor* iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of L1NormLoss backward is error");
 
-    Math::MeanLossGrad(*(inputs[0]), *iGradient, *output, *outputGradient);
+    Math::MeanGrad(*(inputs[0]), *iGradient, *output, *outputGradient);
 }
 
 }

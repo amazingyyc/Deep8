@@ -16,17 +16,13 @@ TEST(LinearRegression, test) {
 	LinearDecayLearningRateIterator learningRate(1000);
 	AdamTrainer trainer(&learningRate);
 
-	auto w = parameter(&executor, { 2 });
-	w.gaussian();
+	auto w = parameter(&executor, { 2 }).gaussian();
 
-	auto input  = parameter(&executor, { 2, 2 }, false);
-	auto output = parameter(&executor, { 2 }, false);
-
-	input.feed(x);
-	output.feed(y);
+	auto input  = parameter(&executor, { 2, 2 }, false).feed(x);
+	auto output = parameter(&executor, { 2 }, false).feed(y);
 
     for (int i = 0; i < 1000; ++i) {
-        (input * w - output).l1Norm().backward();
+        (input * w - output).l1NormLoss().backward();
 
 		trainer.train(&executor, executor.trainableParameters());
 

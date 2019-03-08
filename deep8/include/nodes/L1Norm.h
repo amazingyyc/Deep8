@@ -1,13 +1,13 @@
-#ifndef DEEP8_L2NORMLOSS_H
-#define DEEP8_L2NORMLOSS_H
+#ifndef DEEP8_L1NORM_H
+#define DEEP8_L1NORM_H
 
 #include "Function.h"
 
 namespace Deep8 {
 
-class L2NormLoss : public Function {
+class L1Norm : public Function {
 public:
-    explicit L2NormLoss(std::vector<Node *> &inputs);
+    explicit L1Norm(std::vector<Node *> &inputs);
 
     void check() override;
 
@@ -18,10 +18,9 @@ protected:
 				  const Tensor *outputGradient, 
 				  size_t index, 
 				  Tensor *iGradient) override;
-
 };
 
 
 }
 
-#endif //DEEP8_L2NORM_H
+#endif //DEEP8_L1NORM_H

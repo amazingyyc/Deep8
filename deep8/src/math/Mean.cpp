@@ -1,34 +1,34 @@
-#include "math/MeanLoss.h"
+#include "math/Mean.h"
 
 namespace Deep8 {
 namespace Math {
 
-void MeanLoss(const Tensor& x, Tensor& y) {
+void Mean(const Tensor& x, Tensor& y) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(1 == y.shape.size(), "the y size must be 1");
 
     if (DeviceType::CPU == x.deviceType()) {
-        MeanLossCPU(x, y);
+        MeanCPU(x, y);
     } else {
 #ifdef HAVE_CUDA
-        MeanLossGPU(x, y);
+        MeanGPU(x, y);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
     }
 }
 
-void MeanLossGrad(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy) {
+void MeanGrad(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType && x.elementType == y.elementType && x.elementType == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && y.shape == dy.shape && 1 == y.shape.size(), "the param shape error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        MeanLossGradCPU(x, dx, y, dy);
+        MeanGradCPU(x, dx, y, dy);
     } else {
 #ifdef HAVE_CUDA
-        MeanLossGradGPU(x, dx, y, dy);
+        MeanGradGPU(x, dx, y, dy);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -36,7 +36,7 @@ void MeanLossGrad(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy
 }
 
 template <typename T>
-void MeanLossCPUImpl(CPUDevice* device, T* x, const Shape& xshape, T* y, const Shape& yshape) {
+void MeanCPUImpl(CPUDevice* device, T* x, const Shape& xshape, T* y, const Shape& yshape) {
     auto eigenDevice = device->eigenDevice;
 
     int xsize = (int)xshape.size();
@@ -50,15 +50,15 @@ void MeanLossCPUImpl(CPUDevice* device, T* x, const Shape& xshape, T* y, const S
     yvec.device(*eigenDevice) = xvec.sum(sumDims).reshape(reshapeDims) / T(xsize);
 }
 
-void MeanLossCPU(const Tensor& x, Tensor& y) {
+void MeanCPU(const Tensor& x, Tensor& y) {
     auto device = (CPUDevice*)x.device();
 
     switch (x.elementType.id) {
     case DType::Float32:
-        MeanLossCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
+        MeanCPUImpl<float>(device, x.data<float>(), x.shape, y.data<float>(), y.shape);
         break;
     case DType::Float64:
-        MeanLossCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
+        MeanCPUImpl<double>(device, x.data<double>(), x.shape, y.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
@@ -67,7 +67,7 @@ void MeanLossCPU(const Tensor& x, Tensor& y) {
 }
 
 template <typename T>
-void MeanLossGradCPUImpl(CPUDevice* device, T* x, T* dx, const Shape& xshape, T* dy, const Shape& yshape) {
+void MeanGradCPUImpl(CPUDevice* device, T* x, T* dx, const Shape& xshape, T* dy, const Shape& yshape) {
     auto eigenDevice = device->eigenDevice;
 
     int xsize = (int)xshape.size();
@@ -75,22 +75,20 @@ void MeanLossGradCPUImpl(CPUDevice* device, T* x, T* dx, const Shape& xshape, T*
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, xsize);
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dyvec(dy, 1);
 
-    auto ratio = T(1) / T(xsize);
-
     Eigen::array<int, 1> broad = { xsize };
 
-    dxvec.device(*eigenDevice) += dyvec.broadcast(broad) * ratio;
+    dxvec.device(*eigenDevice) += dyvec.broadcast(broad) / T(xsize);
 }
 
-void MeanLossGradCPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy) {
+void MeanGradCPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy) {
     auto device = (CPUDevice*)x.device();
 
     switch (x.elementType.id) {
     case DType::Float32:
-        MeanLossGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, dy.data<float>(), y.shape);
+        MeanGradCPUImpl<float>(device, x.data<float>(), dx.data<float>(), x.shape, dy.data<float>(), y.shape);
         break;
     case DType::Float64:
-        MeanLossGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, dy.data<double>(), y.shape);
+        MeanGradCPUImpl<double>(device, x.data<double>(), dx.data<double>(), x.shape, dy.data<double>(), y.shape);
         break;
     default:
         DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");

@@ -1,13 +1,13 @@
-#ifndef DEEP8_MEANLOSS_H
-#define DEEP8_MEANLOSS_H
+#ifndef DEEP8_MEAN_H
+#define DEEP8_MEAN_H
 
 #include "Function.h"
 
 namespace Deep8 {
 
-class MeanLoss : public Function {
+class Mean : public Function {
 public:
-    explicit MeanLoss(std::vector<Node*>& inputs);
+    explicit Mean(std::vector<Node*>& inputs);
 
     void check() override;
 

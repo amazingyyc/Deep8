@@ -32,70 +32,87 @@ void Expression::backward() {
     executor->backward(node);
 }
 
-/**feed the data only work for Parameter*/
-void Expression::feed(const void *ptr) {
-    DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call feed function in no-variable node");
-
-    ((Variable*)node)->feed(ptr);
-}
-
-/**fetch data*/
-void Expression::fetch(void *ptr) {
-    DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call fetch function in no-variable node");
-
-    ((Variable*)node)->fetch(ptr);
-}
-
 std::string Expression::valueStr() {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call valueStr function in no-variable node");
 
     return ((Variable*)node)->value.valueStr();
 }
 
+/**feed the data only work for Parameter*/
+Expression Expression::feed(const void *ptr) {
+    DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call feed function in no-variable node");
+
+    ((Variable*)node)->feed(ptr);
+
+    return *this;
+}
+
+/**fetch data*/
+Expression Expression::fetch(void *ptr) {
+    DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call fetch function in no-variable node");
+
+    ((Variable*)node)->fetch(ptr);
+
+    return *this;
+}
 
 /**init the variable's value*/
-void Expression::constant(float scalar) {
+Expression Expression::constant(float scalar) {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "the Node must be a Variable");
 
     auto variable = (Variable*) node;
 
     Math::Constant(variable->value, scalar);
+
+    return *this;
 }
 
-void Expression::zero() {
+Expression Expression::zero() {
     constant(0);
+
+    return *this;
 }
 
-void Expression::one() {
+Expression Expression::one() {
     constant(1);
+
+    return *this;
 }
 
-void Expression::gaussian(float mean, float stddev) {
+Expression Expression::gaussian(float mean, float stddev) {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "the Node must be a Variable");
 
     auto variable = (Variable*) node;
 
     Math::Gaussian(variable->value, mean, stddev);
+
+    return *this;
 }
 
-void Expression::positiveUnitball() {
+Expression Expression::positiveUnitball() {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "the Node must be a Variable");
 
     auto variable = (Variable*) node;
 
     Math::positiveUnitball(variable->value);
+
+    return *this;
 }
 
-void Expression::random(float lower, float upper) {
+Expression Expression::random(float lower, float upper) {
     uniform(lower, upper);
+
+    return *this;
 }
 
-void Expression::uniform(float left, float right) {
+Expression Expression::uniform(float left, float right) {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "the Node must be a Variable");
 
     auto variable = (Variable*) node;
 
     Math::Uniform(variable->value, left, right);
+
+    return *this;
 }
 
 Expression Expression::operator + (const Expression &y) const {
@@ -182,6 +199,16 @@ Expression Expression::exp() {
     return Expression(executor, executor->addFunction(new Exp(inputs)));
 }
 
+Expression Expression::l1Norm() {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new L1Norm(inputs)));
+}
+
+Expression Expression::l2Norm() {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new L2Norm(inputs)));
+}
+
 Expression Expression::linear(float a, float b) {
     std::vector<Node*> inputs = { node };
     return Expression(executor, executor->addFunction(new Linear(inputs, a, b)));
@@ -214,6 +241,11 @@ Expression Expression::maxPooling2d(bool covered,
                         size_t strideX) {
     std::vector<Node*> inputs = { node };
     return Expression(executor, executor->addFunction(new MaxPooling2d(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
+}
+
+Expression Expression::mean() {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new Mean(inputs)));
 }
 
 Expression Expression::reduceMean(int axis, bool keep) {
@@ -256,23 +288,22 @@ Expression Expression::square() {
     return Expression(executor, executor->addFunction(new Square(inputs)));
 }
 
+Expression Expression::sum() {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new Sum(inputs)));
+}
+
 Expression Expression::tanh() {
     std::vector<Node*> inputs = { node };
     return Expression(executor, executor->addFunction(new Tanh(inputs)));
 }
 
-Expression Expression::meanLoss() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new MeanLoss(inputs)));
-}
 Expression Expression::l1NormLoss() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new L1NormLoss(inputs)));
+    return this->l1Norm().mean();
 }
 
 Expression Expression::l2NormLoss() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new L2NormLoss(inputs)));
+    return this->l2Norm().mean();
 }
 
 Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
@@ -280,7 +311,7 @@ Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
     DEEP8_ARGUMENT_CHECK(1 == this->node->shape.nDims, "the shape's ndims must be 1");
 
     auto pred = this->logSoftmax();
-    return y.linear(-1).multiply(pred).reduceSum().meanLoss();
+    return y.linear(-1).multiply(pred).reduceSum().mean();
 }
 
 
