@@ -34,15 +34,15 @@ set(DEEP8_SRC_FILES
 		src/math/Divide.cpp
 		src/math/Exp.cpp
 		src/math/Gaussian.cpp
-		src/math/L1NormLoss.cpp
-		src/math/L2NormLoss.cpp
+		src/math/L1Norm.cpp
+		src/math/L2Norm.cpp
 		src/math/Linear.cpp
 		src/math/Log.cpp
 		src/math/LogSoftmax.cpp
 		src/math/LReLu.cpp
 		src/math/MatrixMultiply.cpp
 		src/math/MaxPooling2d.cpp
-		src/math/MeanLoss.cpp
+		src/math/Mean.cpp
 		src/math/Minus.cpp
 		src/math/Multiply.cpp
 		src/math/PositiveUnitball.cpp
@@ -54,6 +54,7 @@ set(DEEP8_SRC_FILES
 		src/math/Sigmoid.cpp
 		src/math/Softmax.cpp
 		src/math/Square.cpp
+		src/math/Sum.cpp
 		src/math/Tanh.cpp
 		src/math/Uniform.cpp
 
@@ -80,15 +81,15 @@ set(DEEP8_SRC_FILES
 		src/nodes/Divide.cpp
 		src/nodes/Exp.cpp
 		src/nodes/Function.cpp
-		src/nodes/L1NormLoss.cpp
-		src/nodes/L2NormLoss.cpp
+		src/nodes/L1Norm.cpp
+		src/nodes/L2Norm.cpp
 		src/nodes/Linear.cpp
 		src/nodes/Log.cpp
 		src/nodes/LogSoftmax.cpp
 		src/nodes/LReLu.cpp
 		src/nodes/MatrixMultiply.cpp
 		src/nodes/MaxPooling2d.cpp
-		src/nodes/MeanLoss.cpp
+		src/nodes/Mean.cpp
 		src/nodes/Minus.cpp
 		src/nodes/Multiply.cpp
 		src/nodes/Node.cpp
@@ -100,6 +101,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/Sigmoid.cpp
 		src/nodes/Softmax.cpp
 		src/nodes/Square.cpp
+		src/nodes/Sum.cpp
 		src/nodes/Tanh.cpp
 		src/nodes/UnBatch.cpp
 		src/nodes/Variable.cpp
@@ -131,15 +133,15 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Divide.cu
 		src/math/Exp.cu
 		src/math/Gaussian.cu
-		src/math/L1NormLoss.cu
-	    src/math/L2NormLoss.cu
+		src/math/L1Norm.cu
+	    src/math/L2Norm.cu
 	    src/math/Linear.cu
 	    src/math/Log.cu
 		src/math/LogSoftmax.cu
 		src/math/LReLu.cu
 		src/math/MatrixMultiply.cu
 		src/math/MaxPooling2d.cu
-		src/math/MeanLoss.cu
+		src/math/Mean.cu
 		src/math/Minus.cu
 		src/math/Multiply.cu
 		src/math/PositiveUnitball.cu
@@ -150,6 +152,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Sigmoid.cu
 		src/math/Softmax.cu
 		src/math/Square.cu
+		src/math/Sum.cu
 		src/math/Tanh.cu
 		src/math/Uniform.cu
 

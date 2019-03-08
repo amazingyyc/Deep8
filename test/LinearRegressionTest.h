@@ -26,7 +26,7 @@ TEST(LinearRegression, test) {
 	output.feed(y);
 
     for (int i = 0; i < 1000; ++i) {
-        (input * w - output).l1Norm().backward();
+        (input * w - output).l1NormLoss().backward();
 
 		trainer.train(&executor, executor.trainableParameters());
 

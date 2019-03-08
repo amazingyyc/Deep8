@@ -11,15 +11,15 @@
 #include "nodes/DeConv2d.h"
 #include "nodes/Divide.h"
 #include "nodes/Exp.h"
-#include "nodes/L1NormLoss.h"
-#include "nodes/L2NormLoss.h"
+#include "nodes/L1Norm.h"
+#include "nodes/L2Norm.h"
 #include "nodes/Linear.h"
 #include "nodes/Log.h"
 #include "nodes/LogSoftmax.h"
 #include "nodes/LReLu.h"
 #include "nodes/MatrixMultiply.h"
 #include "nodes/MaxPooling2d.h"
-#include "nodes/MeanLoss.h"
+#include "nodes/Mean.h"
 #include "nodes/ReduceMean.h"
 #include "nodes/ReduceSum.h"
 #include "nodes/Minus.h"
@@ -29,6 +29,7 @@
 #include "nodes/Sigmoid.h"
 #include "nodes/Softmax.h"
 #include "nodes/Square.h"
+#include "nodes/Sum.h"
 #include "nodes/Tanh.h"
 
 #include "model/Executor.h"
@@ -98,6 +99,8 @@ public:
 							size_t strideX = 1);
 
 	Expression exp();
+	Expression l1Norm();
+	Expression l2Norm();
 	Expression linear(float a = 1, float b = 0);
 	Expression log();
 	Expression logSoftmax(int axis = -1);
@@ -109,6 +112,7 @@ public:
 							size_t filterWidth = 1, 
 							size_t strideY = 1, 
 							size_t strideX = 1);
+	Expression mean();
     Expression reduceMean(int axis = -1, bool keep = true);
 	Expression reduceSum(int axis = -1, bool keep = true);
 	Expression relu();
@@ -117,9 +121,9 @@ public:
 	Expression sigmoid();
 	Expression softmax(int axis = -1);
 	Expression square();
+	Expression sum();
 	Expression tanh();
 
-	Expression meanLoss();
 	Expression l1NormLoss();
 	Expression l2NormLoss();
 	Expression softmaxCrossEntropyLoss(Expression &y);

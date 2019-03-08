@@ -2,16 +2,16 @@
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
 #include "math/GPUReduce.h"
-#include "math/MeanLoss.h"
+#include "math/Mean.h"
 
 namespace Deep8 {
 namespace Math {
 
 template <typename T>
-struct MeanLossKernelOp {
+struct MeanKernelOp {
     T ratio;
 
-    MeanLossKernelOp(T r) : ratio(r) {
+    MeanKernelOp(T r) : ratio(r) {
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
@@ -31,32 +31,32 @@ struct MeanLossKernelOp {
     }
 };
 
-void MeanLossGPU(const Tensor& x, Tensor& y) {
+void MeanGPU(const Tensor& x, Tensor& y) {
     int size = (int)x.shape.size();
 
     switch (x.elementType.id) {
     case DType::Float32:
-        CallReduceKernel<float, MeanLossKernelOp<float>>(
+        CallReduceKernel<float, MeanKernelOp<float>>(
             x.data<float>(),
             y.data<float>(),
             size,
-            MeanLossKernelOp<float>(1.0 / float(size)));
+            MeanKernelOp<float>(1.0 / float(size)));
         break;
     case DType::Float64:
-        CallReduceKernel<double, MeanLossKernelOp<double>>(
+        CallReduceKernel<double, MeanKernelOp<double>>(
             x.data<double>(),
             y.data<double>(),
             size,
-            MeanLossKernelOp<double>(1.0 / double(size)));
+            MeanKernelOp<double>(1.0 / double(size)));
         break;
 
 #ifdef HAVE_HALF
     case DType::Float16:
-        CallReduceKernel<half, MeanLossKernelOp<half>>(
+        CallReduceKernel<half, MeanKernelOp<half>>(
             x.data<half>(),
             y.data<half>(),
             size,
-            MeanLossKernelOp<half>(__float2half(1.0 / float(size))));
+            MeanKernelOp<half>(__float2half(1.0 / float(size))));
         break;
 #endif
 
@@ -67,10 +67,10 @@ void MeanLossGPU(const Tensor& x, Tensor& y) {
 }
 
 template <typename T>
-struct MeanLossGradKernelOp {
+struct MeanGradKernelOp {
     T ratio;
 
-    MeanLossGradKernelOp(T r) : ratio(r) {
+    MeanGradKernelOp(T r) : ratio(r) {
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T& x, const T& y, const T& dy) {
@@ -78,38 +78,38 @@ struct MeanLossGradKernelOp {
     }
 };
 
-void MeanLossGradGPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy) {
+void MeanGradGPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy) {
     auto xsize = (int)x.shape.size();
 
     switch (x.elementType.id) {
     case DType::Float32:
-        CallReduceGradKernel<float, MeanLossGradKernelOp<float>>(
+        CallReduceGradKernel<float, MeanGradKernelOp<float>>(
             x.data<float>(),
             dx.data<float>(),
             y.data<float>(),
             dy.data<float>(),
             xsize,
-            MeanLossGradKernelOp<float>(1.0 / float(xsize)));
+            MeanGradKernelOp<float>(1.0 / float(xsize)));
         break;
     case DType::Float64:
-        CallReduceGradKernel<double, MeanLossGradKernelOp<double>>(
+        CallReduceGradKernel<double, MeanGradKernelOp<double>>(
             x.data<double>(),
             dx.data<double>(),
             y.data<double>(),
             dy.data<double>(),
             xsize,
-            MeanLossGradKernelOp<double>(1.0 / double(xsize)));
+            MeanGradKernelOp<double>(1.0 / double(xsize)));
         break;
 
 #ifdef HAVE_HALF
     case DType::Float16:
-        CallReduceGradKernel<half, MeanLossGradKernelOp<half>>(
+        CallReduceGradKernel<half, MeanGradKernelOp<half>>(
             x.data<half>(),
             dx.data<half>(),
             y.data<half>(),
             dy.data<half>(),
             xsize,
-            MeanLossGradKernelOp<half>(__float2half(1.0 / float(xsize))));
+            MeanGradKernelOp<half>(__float2half(1.0 / float(xsize))));
         break;
 #endif
 
