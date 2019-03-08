@@ -32,70 +32,87 @@ void Expression::backward() {
     executor->backward(node);
 }
 
-/**feed the data only work for Parameter*/
-void Expression::feed(const void *ptr) {
-    DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call feed function in no-variable node");
-
-    ((Variable*)node)->feed(ptr);
-}
-
-/**fetch data*/
-void Expression::fetch(void *ptr) {
-    DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call fetch function in no-variable node");
-
-    ((Variable*)node)->fetch(ptr);
-}
-
 std::string Expression::valueStr() {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call valueStr function in no-variable node");
 
     return ((Variable*)node)->value.valueStr();
 }
 
+/**feed the data only work for Parameter*/
+Expression Expression::feed(const void *ptr) {
+    DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call feed function in no-variable node");
+
+    ((Variable*)node)->feed(ptr);
+
+    return *this;
+}
+
+/**fetch data*/
+Expression Expression::fetch(void *ptr) {
+    DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "can not call fetch function in no-variable node");
+
+    ((Variable*)node)->fetch(ptr);
+
+    return *this;
+}
 
 /**init the variable's value*/
-void Expression::constant(float scalar) {
+Expression Expression::constant(float scalar) {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "the Node must be a Variable");
 
     auto variable = (Variable*) node;
 
     Math::Constant(variable->value, scalar);
+
+    return *this;
 }
 
-void Expression::zero() {
+Expression Expression::zero() {
     constant(0);
+
+    return *this;
 }
 
-void Expression::one() {
+Expression Expression::one() {
     constant(1);
+
+    return *this;
 }
 
-void Expression::gaussian(float mean, float stddev) {
+Expression Expression::gaussian(float mean, float stddev) {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "the Node must be a Variable");
 
     auto variable = (Variable*) node;
 
     Math::Gaussian(variable->value, mean, stddev);
+
+    return *this;
 }
 
-void Expression::positiveUnitball() {
+Expression Expression::positiveUnitball() {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "the Node must be a Variable");
 
     auto variable = (Variable*) node;
 
     Math::positiveUnitball(variable->value);
+
+    return *this;
 }
 
-void Expression::random(float lower, float upper) {
+Expression Expression::random(float lower, float upper) {
     uniform(lower, upper);
+
+    return *this;
 }
 
-void Expression::uniform(float left, float right) {
+Expression Expression::uniform(float left, float right) {
     DEEP8_ARGUMENT_CHECK(NodeType::Variable == node->type, "the Node must be a Variable");
 
     auto variable = (Variable*) node;
 
     Math::Uniform(variable->value, left, right);
+
+    return *this;
 }
 
 Expression Expression::operator + (const Expression &y) const {

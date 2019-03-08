@@ -52,19 +52,19 @@ public:
     void forward();
     void backward();
 
-	void feed(const void *ptr);
-	void fetch(void *ptr);
-
 	std::string valueStr();
 
+	Expression feed(const void *ptr);
+	Expression fetch(void *ptr);
+
 	/**init the variable's value*/
-	void constant(float scalar = 0);
-	void zero();
-	void one();
-	void gaussian(float mean = 0.0, float stddev = 0.01);
-	void positiveUnitball();
-	void random(float lower = 0.0, float upper = 1.0);
-	void uniform(float left = 0.0, float right = 1.0);
+	Expression constant(float scalar = 0);
+	Expression zero();
+	Expression one();
+	Expression gaussian(float mean = 0.0, float stddev = 0.01);
+	Expression positiveUnitball();
+	Expression random(float lower = 0.0, float upper = 1.0);
+	Expression uniform(float left = 0.0, float right = 1.0);
 
 	Expression operator + (const Expression &y) const;
 	Expression operator - (const Expression &y) const;
