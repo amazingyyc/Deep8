@@ -22,7 +22,7 @@ TEST(LinearRegression, test) {
 	auto output = parameter(&executor, { 2 }, false).feed(y);
 
     for (int i = 0; i < 1000; ++i) {
-        (input * w - output).l1NormLoss().backward();
+		(input * w).l2DistanceLoss(output).backward();
 
 		trainer.train(&executor, executor.trainableParameters());
 

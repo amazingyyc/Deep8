@@ -32,9 +32,12 @@ set(DEEP8_SRC_FILES
 		src/math/CrossEntropy.cpp
 		src/math/DeConv2d.cpp
 		src/math/Divide.cpp
+		src/math/Dot.cpp
 		src/math/Exp.cpp
 		src/math/Gaussian.cpp
+		src/math/L1Distance.cpp
 		src/math/L1Norm.cpp
+		src/math/L2Distance.cpp
 		src/math/L2Norm.cpp
 		src/math/Linear.cpp
 		src/math/Log.cpp
@@ -79,9 +82,12 @@ set(DEEP8_SRC_FILES
 		src/nodes/CrossEntropy.cpp
 		src/nodes/DeConv2d.cpp
 		src/nodes/Divide.cpp
+		src/nodes/Dot.cpp
 		src/nodes/Exp.cpp
 		src/nodes/Function.cpp
+		src/nodes/L1Distance.cpp
 		src/nodes/L1Norm.cpp
+		src/nodes/L2Distance.cpp
 		src/nodes/L2Norm.cpp
 		src/nodes/Linear.cpp
 		src/nodes/Log.cpp
@@ -131,9 +137,12 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/CrossEntropy.cu
 		src/math/DeConv2d.cu
 		src/math/Divide.cu
+		src/math/Dot.cu
 		src/math/Exp.cu
 		src/math/Gaussian.cu
+		src/math/L1Distance.cu
 		src/math/L1Norm.cu
+		src/math/L2Distance.cu
 	    src/math/L2Norm.cu
 	    src/math/Linear.cu
 	    src/math/Log.cu
