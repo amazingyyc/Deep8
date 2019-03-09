@@ -10,8 +10,11 @@
 #include "nodes/CrossEntropy.h"
 #include "nodes/DeConv2d.h"
 #include "nodes/Divide.h"
+#include "nodes/Dot.h"
 #include "nodes/Exp.h"
+#include "nodes/L1Distance.h"
 #include "nodes/L1Norm.h"
+#include "nodes/L2Distance.h"
 #include "nodes/L2Norm.h"
 #include "nodes/Linear.h"
 #include "nodes/Log.h"
@@ -75,6 +78,7 @@ public:
 	Expression minus(Expression &y);
 	Expression multiply(Expression &y);
 	Expression divide(Expression &y);
+	Expression dot(Expression &y);
 
 	/**one operand function*/
 	Expression abs();
@@ -99,7 +103,9 @@ public:
 							size_t strideX = 1);
 
 	Expression exp();
+	Expression l1Distance(Expression &y);
 	Expression l1Norm();
+	Expression l2Distance(Expression &y);
 	Expression l2Norm();
 	Expression linear(float a = 1, float b = 0);
 	Expression log();
@@ -124,7 +130,9 @@ public:
 	Expression sum();
 	Expression tanh();
 
+	Expression l1DistanceLoss(Expression &y);
 	Expression l1NormLoss();
+	Expression l2DistanceLoss(Expression &y);
 	Expression l2NormLoss();
 	Expression softmaxCrossEntropyLoss(Expression &y);
 };

@@ -145,6 +145,7 @@ void declareExpression(py::module &m) {
             .def("minus",       &Expression::minus)
             .def("multiply",    &Expression::multiply)
             .def("divide",      &Expression::divide)
+            .def("dot",         &Expression::dot)
             .def("abs",         &Expression::abs)
             .def("avgPooling2d", &Expression::avgPooling2d,
                             py::arg("covered") = false, 
@@ -165,10 +166,14 @@ void declareExpression(py::module &m) {
                             py::arg("covered") = false, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
-            .def("exp",     &Expression::exp)
-            .def("linear",  &Expression::linear)
-            .def("log",     &Expression::log)
-            .def("logSoftmax", &Expression::logSoftmax, 
+            .def("exp",             &Expression::exp)
+            .def("l1Distance",      &Expression::l1Distance)
+            .def("l1Norm",          &Expression::l1Norm)
+            .def("l2Distance",      &Expression::l2Distance)
+            .def("l2Norm",          &Expression::l2Norm)
+            .def("linear",          &Expression::linear)
+            .def("log",             &Expression::log)
+            .def("logSoftmax",      &Expression::logSoftmax, 
                                 py::arg("axis") = -1)
             .def("lRelu", &Expression::lRelu)
             .def("matrixMultiply",  &Expression::matrixMultiply)
@@ -178,7 +183,8 @@ void declareExpression(py::module &m) {
                             py::arg("filterWidth") = 1, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
-            .def("reduceMean", &Expression::reduceMean,
+            .def("mean",        &Expression::mean,
+            .def("reduceMean",  &Expression::reduceMean,
                             py::arg("axis") =  -1,
                             py::arg("keep") =  false)
             .def("reduceSum", &Expression::reduceSum,
@@ -190,6 +196,7 @@ void declareExpression(py::module &m) {
             .def("sigmoid", &Expression::sigmoid)
             .def("softmax", &Expression::softmax, py::arg("axis") = -1)
             .def("square",  &Expression::square)
+            .def("sum",     &Expression::sum)
             .def("tanh",    &Expression::tanh)
             .def("feed", [](Expression* express, py::buffer buffer) {
                 /**Request a buffer descriptor from Python*/
@@ -203,9 +210,10 @@ void declareExpression(py::module &m) {
 
                 express->fetch(info.ptr);
             })
-            .def("meanLoss", &Expression::meanLoss)   
-            .def("l1NormLoss",  &Expression::l1NormLoss)
-            .def("l2NormLoss",  &Expression::l2NormLoss)
+            .def("l1DistanceLoss",  &Expression::l1DistanceLoss)
+            .def("l1NormLoss",      &Expression::l1NormLoss)
+            .def("l2DistanceLoss",  &Expression::l2DistanceLoss)
+            .def("l2NormLoss",      &Expression::l2NormLoss)
             .def("softmaxCrossEntropyLoss", &Expression::softmaxCrossEntropyLoss);
 }
 

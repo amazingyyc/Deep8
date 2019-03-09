@@ -155,6 +155,11 @@ Expression Expression::divide(Expression &y) {
     return Expression(executor, executor->addFunction(new Divide(inputs)));
 }
 
+Expression Expression::dot(Expression &y) {
+    std::vector<Node*> inputs = { node, y.node };
+    return Expression(executor, executor->addFunction(new Dot(inputs)));
+}
+
 /**one operand function*/
 Expression Expression::abs() {
     std::vector<Node*> inputs = { node };
@@ -199,9 +204,19 @@ Expression Expression::exp() {
     return Expression(executor, executor->addFunction(new Exp(inputs)));
 }
 
+Expression Expression::l1Distance(Expression &y) {
+    std::vector<Node*> inputs = { node, y.node};
+    return Expression(executor, executor->addFunction(new L1Distance(inputs)));
+}
+
 Expression Expression::l1Norm() {
     std::vector<Node*> inputs = { node };
     return Expression(executor, executor->addFunction(new L1Norm(inputs)));
+}
+
+Expression Expression::l2Distance(Expression &y) {
+    std::vector<Node*> inputs = { node, y.node};
+    return Expression(executor, executor->addFunction(new L2Distance(inputs)));
 }
 
 Expression Expression::l2Norm() {
@@ -298,8 +313,16 @@ Expression Expression::tanh() {
     return Expression(executor, executor->addFunction(new Tanh(inputs)));
 }
 
+Expression Expression::l1DistanceLoss(Expression &y) {
+    return this->l1Distance(y).mean();
+}
+
 Expression Expression::l1NormLoss() {
     return this->l1Norm().mean();
+}
+
+Expression Expression::l2DistanceLoss(Expression &y) {
+    return this->l2Distance(y).mean();
 }
 
 Expression Expression::l2NormLoss() {
@@ -311,7 +334,7 @@ Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
     DEEP8_ARGUMENT_CHECK(1 == this->node->shape.nDims, "the shape's ndims must be 1");
 
     auto pred = this->logSoftmax();
-    return y.linear(-1).multiply(pred).reduceSum().mean();
+    return y.linear(-1).dot(pred).mean();
 }
 
 
