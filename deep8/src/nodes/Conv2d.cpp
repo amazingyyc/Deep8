@@ -57,8 +57,8 @@ void Conv2d::check() {
         outputDim[0] = outputHeight;
         outputDim[1] = outputWidth;
     } else {
-        int outputHeight = (inputHeight - realFilterHeight + strideY - 1) / strideY + 1;
-        int outputWidth  = (inputWidth  - realFilterWidth  + strideX - 1) / strideX + 1;
+        int outputHeight = (inputHeight - 1) / strideY + 1;
+        int outputWidth  = (inputWidth  - 1) / strideX + 1;
 
         DEEP8_ARGUMENT_CHECK(outputHeight > 0 && outputWidth > 0, "the output height or width must > 0")
 
