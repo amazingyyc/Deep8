@@ -14,7 +14,7 @@
 //#include "AddTest.h"
 //#include "AvgPooling2dTest.h"
 //#include "Conv2dTest.h"
-//#include "DeConv2dTest.h"
+#include "DeConv2dTest.h"
 //#include "DivideTest.h"
 //#include "ExpTest.h"
 //#include "L1NormTest.h"
@@ -28,7 +28,7 @@
 //#include "MultiplyTest.h"
 //#include "ReLuTest.h"
 //#include "SigmoidTest.h"
-#include "SoftmaxTest.h"
+//#include "SoftmaxTest.h"
 //#include "SquareTest.h"
 //#include "TanhTest.h"
 

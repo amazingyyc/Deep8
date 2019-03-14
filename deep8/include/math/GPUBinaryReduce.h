@@ -10,7 +10,7 @@ namespace Math {
 /**
  * special for tail reduce 
  */
-template <typename T, typename BinaryReduceOp, int blockSize>
+template <typename T, typename ReduceOp, int blockSize>
 __global__ void TailBinaryReduceKernel(const T *x, const T *y, T *z, const int row, const int col, ReduceOp op) {
     GPUSharedMemory<T> shareMemory;
 	T *shared = shareMemory.pointer();

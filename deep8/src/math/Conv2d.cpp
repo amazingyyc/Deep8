@@ -3,15 +3,7 @@
 namespace Deep8 {
 namespace Math {
 
-void Conv2d(const Tensor &x, 
-            const Tensor &y, 
-            Tensor &z,
-            void *ptr,
-            bool convered,
-            int strideY,
-            int strideX,
-            int dilationY,
-            int dilationX) {
+size_t Conv2dInterimSize(const Tensor& x, const Tensor& y, Tensor& z, bool covered, int strideY, int strideX, int dilationY, int dilationX) {
     DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == z.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1 && dilationY >= 1 && dilationX >= 1, "the stride and dilation must >= 1");
     DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
@@ -31,12 +23,60 @@ void Conv2d(const Tensor &x,
     int outputHeight;
     int outputWidth;
 
-    if (!convered) {
+    if (!covered) {
         outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
         outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
     } else {
-        outputHeight = (inputHeight - realFilterHeight + strideY - 1) / strideY + 1;
-        outputWidth  = (inputWidth  - realFilterWidth  + strideX - 1) / strideX + 1;
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(inputBatch    == (int)z.batch() &&
+                         outputHeight  == (int)z.dim(0) &&
+                         outputWidth   == (int)z.dim(1) &&
+                         outputChannel == (int)z.dim(2), "the z shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        return 0;
+    } else {
+        return x.elementType.byteWidth * inputBatch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+    }
+}
+
+void Conv2d(const Tensor &x, 
+            const Tensor &y, 
+            Tensor &z,
+            bool covered,
+            int strideY,
+            int strideX,
+            int dilationY,
+            int dilationX,
+            void* interimPtr) {
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == z.elementType, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1 && dilationY >= 1 && dilationX >= 1, "the stride and dilation must >= 1");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
+
+    auto inputBatch   = (int)x.batch();
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputChannel = (int)y.dim(0);
+    auto filterHeight  = (int)y.dim(1);
+    auto filterWidth   = (int)y.dim(2);
+
+    auto realFilterHeight = filterHeight + (filterHeight - 1) * (dilationY - 1);
+    auto realFilterWidth  = filterWidth  + (filterWidth  - 1) * (dilationX - 1);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
+        outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
+    } else {
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
     }
 
     DEEP8_ARGUMENT_CHECK(inputBatch   == (int)z.batch() && 
@@ -45,16 +85,56 @@ void Conv2d(const Tensor &x,
                         outputChannel == (int)z.dim(2), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        Conv2dCPU(x, y, z, convered, strideY, strideX, dilationY, dilationX);
+        Conv2dCPU(x, y, z, covered, strideY, strideX, dilationY, dilationX);
     } else {
 #ifdef HAVE_CUDA
-        Conv2dGPU(x, y, z, ptr, convered, strideY, strideX, dilationY, dilationX);
+        Conv2dGPU(x, y, z, covered, strideY, strideX, dilationY, dilationX, interimPtr);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
     }
 }
 
+size_t Conv2dGradXInterimSize(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& z, const Tensor& dz, bool covered, int strideY, int strideX, int dilationY, int dilationX) {
+    DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType && x.elementType == y.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && z.shape == dz.shape, "the shape is error");
+    DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1 && dilationY >= 1 && dilationX >= 1, "the stride and dilation must >= 1");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
+
+    auto inputBatch   = (int)x.batch();
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputChannel = (int)y.dim(0);
+    auto filterHeight  = (int)y.dim(1);
+    auto filterWidth   = (int)y.dim(2);
+
+    auto realFilterHeight = filterHeight + (filterHeight - 1) * (dilationY - 1);
+    auto realFilterWidth  = filterWidth + (filterWidth - 1) * (dilationX - 1);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
+        outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
+    } else {
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(inputBatch    == (int)z.batch() &&
+                         outputHeight  == (int)z.dim(0) &&
+                         outputWidth   == (int)z.dim(1) &&
+                         outputChannel == (int)z.dim(2), "the z shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        return 0;
+    } else {
+        return dx.elementType.byteWidth * inputBatch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+    }
+}
 
 /**calculate the gradient for x (input)*/
 void Conv2dGradX(const Tensor& x, 
@@ -62,12 +142,12 @@ void Conv2dGradX(const Tensor& x,
                 const Tensor& y,
                 const Tensor& z, 
                 const Tensor& dz,
-                void *ptr,
-                bool convered,
+                bool covered,
                 int strideY,
                 int strideX,
                 int dilationY,
-                int dilationX) {
+                int dilationX,
+                void* interimPtr) {
     DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType && x.elementType == y.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && z.shape == dz.shape, "the shape is error");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1 && dilationY >= 1 && dilationX >= 1, "the stride and dilation must >= 1");
@@ -88,12 +168,12 @@ void Conv2dGradX(const Tensor& x,
     int outputHeight;
     int outputWidth;
 
-    if (!convered) {
+    if (!covered) {
         outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
         outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
     } else {
-        outputHeight = (inputHeight - realFilterHeight + strideY - 1) / strideY + 1;
-        outputWidth  = (inputWidth  - realFilterWidth  + strideX - 1) / strideX + 1;
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
     }
 
     DEEP8_ARGUMENT_CHECK(inputBatch   == (int)z.batch() && 
@@ -102,28 +182,17 @@ void Conv2dGradX(const Tensor& x,
                         outputChannel == (int)z.dim(2), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        Conv2dGradXCPU(x, dx, y, z, dz, convered, strideY, strideX, dilationY, dilationX);
+        Conv2dGradXCPU(x, dx, y, z, dz, covered, strideY, strideX, dilationY, dilationX);
     } else {
 #ifdef HAVE_CUDA
-        Conv2dGradXGPU(x, dx, y, z, dz, ptr, convered, strideY, strideX, dilationY, dilationX);
+        Conv2dGradXGPU(x, dx, y, z, dz, covered, strideY, strideX, dilationY, dilationX, interimPtr);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
     }
 }
 
-/**gradient for y*/
-void Conv2dGradY(const Tensor &x,
-                const Tensor &y, 
-                Tensor &dy,
-                const Tensor &z, 
-                const Tensor& dz,
-                void *ptr,
-                bool convered,
-                int strideY,
-                int strideX,
-                int dilationY,
-                int dilationX) {
+size_t Conv2dGradYInterimSize(const Tensor& x, const Tensor& y, Tensor& dy, const Tensor& z, const Tensor& dz, bool covered, int strideY, int strideX, int dilationY, int dilationX) {
     DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == dy.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(y.shape == dy.shape && z.shape == dz.shape, "the shape is error");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1 && dilationY >= 1 && dilationX >= 1, "the stride and dilation must >= 1");
@@ -144,12 +213,64 @@ void Conv2dGradY(const Tensor &x,
     int outputHeight;
     int outputWidth;
 
-    if (!convered) {
+    if (!covered) {
         outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
         outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
     } else {
-        outputHeight = (inputHeight - realFilterHeight + strideY - 1) / strideY + 1;
-        outputWidth  = (inputWidth  - realFilterWidth  + strideX - 1) / strideX + 1;
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(inputBatch    == (int)z.batch() &&
+                         outputHeight  == (int)z.dim(0) &&
+                         outputWidth   == (int)z.dim(1) &&
+                         outputChannel == (int)z.dim(2), "the z shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        return 0;
+    } else {
+        return x.elementType.byteWidth * inputBatch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
+    }
+}
+
+/**gradient for y*/
+void Conv2dGradY(const Tensor &x,
+                const Tensor &y, 
+                Tensor &dy,
+                const Tensor &z, 
+                const Tensor& dz,
+                bool covered,
+                int strideY,
+                int strideX,
+                int dilationY,
+                int dilationX,
+                void* interimPtr) {
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == dy.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(y.shape == dy.shape && z.shape == dz.shape, "the shape is error");
+    DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1 && dilationY >= 1 && dilationX >= 1, "the stride and dilation must >= 1");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
+
+    auto inputBatch   = (int)x.batch();
+    auto inputHeight  = (int)x.dim(0);
+    auto inputWidth   = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputChannel = (int)y.dim(0);
+    auto filterHeight  = (int)y.dim(1);
+    auto filterWidth   = (int)y.dim(2);
+
+    auto realFilterHeight = filterHeight + (filterHeight - 1) * (dilationY - 1);
+    auto realFilterWidth  = filterWidth  + (filterWidth  - 1) * (dilationX - 1);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - realFilterHeight) / strideY + 1;
+        outputWidth  = (inputWidth  - realFilterWidth)  / strideX + 1;
+    } else {
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
     }
 
     DEEP8_ARGUMENT_CHECK(inputBatch   == (int)z.batch() && 
@@ -158,10 +279,10 @@ void Conv2dGradY(const Tensor &x,
                         outputChannel == (int)z.dim(2), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        Conv2dGradYCPU(x, y, dy, z, dz, convered, strideY, strideX, dilationY, dilationX);
+        Conv2dGradYCPU(x, y, dy, z, dz, covered, strideY, strideX, dilationY, dilationX);
     } else {
 #ifdef HAVE_CUDA
-        Conv2dGradYGPU(x, y, dy, z, dz, ptr, convered, strideY, strideX, dilationY, dilationX);
+        Conv2dGradYGPU(x, y, dy, z, dz, covered, strideY, strideX, dilationY, dilationX, interimPtr);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -173,7 +294,7 @@ void Conv2dCPUImpl(CPUDevice *device,
                     T* x, const Shape& xshape,
                     T* y, const Shape& yshape,
                     T* z, const Shape& zshape,
-                   bool convered,
+                   bool covered,
                    int strideY,
                    int strideX,
                    int dilationY,
@@ -238,7 +359,7 @@ void Conv2dCPUImpl(CPUDevice *device,
 void Conv2dCPU(const Tensor &x, 
                const Tensor &y, 
                Tensor &z, 
-               bool convered, 
+               bool covered, 
                int strideY, 
                int strideX, 
                int dilationY, 
@@ -250,7 +371,7 @@ void Conv2dCPU(const Tensor &x,
                              x.data<float>(), x.shape, 
                              y.data<float>(), y.shape, 
                              z.data<float>(), z.shape, 
-                             convered, 
+                             covered, 
                              strideY, 
                              strideX, 
                              dilationY, 
@@ -260,7 +381,7 @@ void Conv2dCPU(const Tensor &x,
                              x.data<double>(), x.shape,
                              y.data<double>(), y.shape,
                              z.data<double>(), z.shape,
-                             convered,
+                             covered,
                              strideY,
                              strideX,
                              dilationY,
@@ -287,7 +408,7 @@ void Conv2dGradXCPUImpl(CPUDevice *device,
                         int outputChannel,
                         int filterHeight,
                         int filterWidth,
-                        bool convered,
+                        bool covered,
                         int strideY,
                         int strideX,
                         int dilationY,
@@ -349,7 +470,7 @@ void Conv2dGradXCPU(const Tensor& x,
                     const Tensor& y,
                     const Tensor& z, 
                     const Tensor& dz,
-                    bool convered,
+                    bool covered,
                     int strideY,
                     int strideX,
                     int dilationY,
@@ -385,7 +506,7 @@ void Conv2dGradXCPU(const Tensor& x,
                                   outputChannel,
                                   filterHeight,
                                   filterWidth,
-                                  convered,
+                                  covered,
                                   strideY,
                                   strideX,
                                   dilationY,
@@ -406,7 +527,7 @@ void Conv2dGradXCPU(const Tensor& x,
                                   outputChannel,
                                   filterHeight,
                                   filterWidth,
-                                  convered,
+                                  covered,
                                   strideY,
                                   strideX,
                                   dilationY,
@@ -432,7 +553,7 @@ void Conv2dGradYCPUImpl(CPUDevice* device,
                         int outputChannel,
                         int filterHeight,
                         int filterWidth,
-                        bool convered,
+                        bool covered,
                         int strideY,
                         int strideX,
                         int dilationY,
@@ -485,7 +606,7 @@ void Conv2dGradYCPUImpl(CPUDevice* device,
 void Conv2dGradYCPU(const Tensor &x,
                     const Tensor &y, Tensor &dy,
                     const Tensor &z, const Tensor& dz,
-                    bool convered,
+                    bool covered,
                     int strideY,
                     int strideX,
                     int dilationY,
@@ -521,7 +642,7 @@ void Conv2dGradYCPU(const Tensor &x,
                                   outputChannel,
                                   filterHeight,
                                   filterWidth,
-                                  convered,
+                                  covered,
                                   strideY,
                                   strideX,
                                   dilationY,
@@ -542,7 +663,7 @@ void Conv2dGradYCPU(const Tensor &x,
                                   outputChannel,
                                   filterHeight,
                                   filterWidth,
-                                  convered,
+                                  covered,
                                   strideY,
                                   strideX,
                                   dilationY,

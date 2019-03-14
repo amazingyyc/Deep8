@@ -49,6 +49,7 @@ set(DEEP8_SRC_FILES
 		src/math/Minus.cpp
 		src/math/Multiply.cpp
 		src/math/PositiveUnitball.cpp
+		src/math/PReLu.cpp
 		src/math/Random.cpp
 		src/math/ReduceMean.cpp
 		src/math/ReduceSum.cpp
@@ -100,6 +101,7 @@ set(DEEP8_SRC_FILES
 		src/nodes/Multiply.cpp
 		src/nodes/Node.cpp
 		src/nodes/Parameter.cpp
+		src/nodes/PReLu.cpp
 		src/nodes/ReduceMean.cpp
 		src/nodes/ReduceSum.cpp
 		src/nodes/ReLu.cpp
@@ -154,6 +156,7 @@ set(DEEP8_CUDA_SRC_FILES
 		src/math/Minus.cu
 		src/math/Multiply.cu
 		src/math/PositiveUnitball.cu
+		src/math/PReLu.cu
 		src/math/ReduceMean.cu
 		src/math/ReduceSum.cu
 		src/math/ReLu.cu

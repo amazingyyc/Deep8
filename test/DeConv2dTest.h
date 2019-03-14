@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(DeConv2d, forwardCPU) {
-    bool isCovered = true;
+    bool isCovered = false;
 
     size_t strideY = 3;
 	size_t strideX = 3;
@@ -22,6 +22,14 @@ TEST(DeConv2d, forwardCPU) {
     size_t outputHeight = (inputHeight - 1) * strideY + 1 - strideY + filterH;
     size_t outputWidth  = (inputWidth  - 1) * strideX + 1 - strideX + filterW;
     size_t outputChannel = 32;
+
+    if (!isCovered) {
+        outputHeight = (inputHeight - 1) * strideY + filterH;
+        outputWidth  = (inputWidth  - 1) * strideX + filterW;
+    } else {
+        outputHeight = (inputHeight - 1) * strideY + 1;
+        outputWidth = (inputWidth   - 1) * strideX + 1;
+    }
 
 	CPUDevice device;
 
@@ -101,6 +109,14 @@ TEST(DeConv2d, backwardCPU) {
     size_t outputHeight = (inputHeight - 1) * strideH + 1 - strideH + filterH;
     size_t outputWidth  = (inputWidth  - 1) * strideW + 1 - strideW + filterW;
     size_t outputChannel = 32;
+
+    if (!isCovered) {
+        outputHeight = (inputHeight - 1) * strideH + filterH;
+        outputWidth = (inputWidth - 1) * strideW + filterW;
+    } else {
+        outputHeight = (inputHeight - 1) * strideH + 1;
+        outputWidth = (inputWidth - 1) * strideW + 1;
+    }
 
 	CPUDevice device;
 
@@ -273,6 +289,14 @@ TEST(DeConv2d, forwarGPU_float) {
 	size_t outputWidth = (inputWidth - 1) * strideX + 1 - strideX + filterW;
 	size_t outputChannel = 32;
 
+    if (!isCovered) {
+        outputHeight = (inputHeight - 1) * strideY + filterH;
+        outputWidth = (inputWidth - 1) * strideX + filterW;
+    } else {
+        outputHeight = (inputHeight - 1) * strideY + 1;
+        outputWidth = (inputWidth - 1) * strideX + 1;
+    }
+
 	auto inputPtr  = (float*)malloc(sizeof(float) * batch * inputHeight * inputWidth * inputChannel);
 	auto filterPtr = (float*)malloc(sizeof(float) * outputChannel * filterH * filterW * inputChannel);
 	auto outputPtr = (float*)malloc(sizeof(float) * batch * outputHeight * outputWidth * outputChannel);
@@ -361,6 +385,14 @@ TEST(DeConv2d, backwarGPU_float) {
     size_t outputHeight = (inputHeight - 1) * strideH + 1 - strideH + filterH;
     size_t outputWidth  = (inputWidth  - 1) * strideW + 1 - strideW + filterW;
     size_t outputChannel = 32;
+
+    if (!isCovered) {
+        outputHeight = (inputHeight - 1) * strideH + filterH;
+        outputWidth = (inputWidth - 1) * strideW + filterW;
+    } else {
+        outputHeight = (inputHeight - 1) * strideH + 1;
+        outputWidth = (inputWidth - 1) * strideW + 1;
+    }
 
 	GPUDevice device;
 
@@ -549,6 +581,14 @@ TEST(DeConv2d, half_GPU) {
 	size_t outputHeight = (inputHeight - 1) * strideH + 1 - strideH + filterH;
 	size_t outputWidth = (inputWidth - 1) * strideW + 1 - strideW + filterW;
 	size_t outputChannel = 32;
+
+    if (!isCovered) {
+        outputHeight = (inputHeight - 1) * strideH + filterH;
+        outputWidth = (inputWidth - 1) * strideW + filterW;
+    } else {
+        outputHeight = (inputHeight - 1) * strideH + 1;
+        outputWidth = (inputWidth - 1) * strideW + 1;
+    }
 
 	GPUDevice device;
 

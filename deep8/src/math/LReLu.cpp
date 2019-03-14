@@ -43,7 +43,7 @@ struct LReLuEigenExpr {
     } 
 
 	inline T operator()(T x) const {
-		return (x > 0 ? x : a * x);
+		return (x >= 0 ? x : a * x);
 	}
 };
 
@@ -81,7 +81,7 @@ struct LReLuGradEigenExpr {
     }
 
 	inline T operator()(T dy, T x) const {
-		return (x > 0 ? dy : a * dy);
+		return (x >= 0 ? dy : a * dy);
 	}
 };
 

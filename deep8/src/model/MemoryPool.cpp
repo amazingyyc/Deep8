@@ -115,6 +115,10 @@ int CPUMemoryPool::chunkType(size_t offset, size_t size) {
 }
 
 void* CPUMemoryPool::malloc(size_t size) {
+    if (0 == size) {
+        return nullptr;
+    }
+
 	size += sizeof(CPUMemoryChunk);
 	size = nextPowerOf2(size);
 
@@ -161,6 +165,10 @@ void* CPUMemoryPool::malloc(size_t size) {
 }
 
 void CPUMemoryPool::free(void *ptr) {
+    if (nullptr == ptr) {
+        return;
+    }
+
 	auto chunk = (CPUMemoryChunk*)((byte*)ptr - sizeof(CPUMemoryChunk));
 
 	DEEP8_ARGUMENT_CHECK(chunk->size > 0 && isPowerOf2(chunk->size), "the memory chunk is error");

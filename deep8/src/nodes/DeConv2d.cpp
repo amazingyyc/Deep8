@@ -45,8 +45,8 @@ void DeConv2d::check() {
         outputDim[0] = outputHeight;
         outputDim[1] = outputWidth;
     } else {
-        int outputHeight = (inputHeight - 1) * forwardStrideY + 1 - forwardStrideY + filterHeight;
-        int outputWidth  = (inputWidth  - 1) * forwardStrideX + 1 - forwardStrideX + filterWidth;
+        int outputHeight = (inputHeight - 1) * forwardStrideY + 1;
+        int outputWidth  = (inputWidth  - 1) * forwardStrideX + 1;
 
         DEEP8_ARGUMENT_CHECK(outputHeight > 0 && outputWidth > 0, "the output height/width must > 0")
 
@@ -61,24 +61,12 @@ void DeConv2d::check() {
 void DeConv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
     auto device = output->device();
 
-    if (DeviceType::CPU == device->type) {
-        Math::DeConv2d(*(inputs[0]), *(inputs[1]), *output, nullptr, forwardCovered, forwardStrideY, forwardStrideX);
-    } else {
-        auto batch       = inputs[0]->shape.batch;
-        auto inputHeight = inputs[0]->shape.dim(0);
-        auto inputWidth  = inputs[0]->shape.dim(1);
+    auto interimSize = Math::DeConv2dInterimSize(*(inputs[0]), *(inputs[1]), *output, forwardCovered, forwardStrideY, forwardStrideX);
+    auto interimPtr  = device->malloc(interimSize);
 
-        auto filterHeight = inputs[1]->shape.dim(1);
-        auto filterWidth  = inputs[1]->shape.dim(2);
+    Math::DeConv2d(*(inputs[0]), *(inputs[1]), *output, forwardCovered, forwardStrideY, forwardStrideX, interimPtr);
 
-        auto outputChannel = output->shape.dim(2);
-
-        auto ptr = device->malloc(inputs[1]->elementType.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
-
-        Math::DeConv2d(*(inputs[0]), *(inputs[1]), *output, ptr, forwardCovered, forwardStrideY, forwardStrideX);
-
-        device->free(ptr);
-    }
+    device->free(interimPtr);
 }
 
 void DeConv2d::backward(const std::vector<const Tensor*> &inputs, 
@@ -89,77 +77,47 @@ void DeConv2d::backward(const std::vector<const Tensor*> &inputs,
     if (0 == index) {
         auto device = iGradient->device();
 
-        if (DeviceType::CPU == device->type) {
-            Math::DeConv2dGradX(*(inputs[0]), 
-                                *iGradient, 
-                                *(inputs[1]), 
-                                *output, 
-                                *outputGradient, 
-                                nullptr, 
-                                forwardCovered, 
-                                forwardStrideY, 
-                                forwardStrideX);
-        } else {
-            auto batch       = inputs[0]->shape.batch;
-            auto inputHeight = inputs[0]->shape.dim(0);
-            auto inputWidth  = inputs[0]->shape.dim(1);
+        auto interimSize = Math::DeConv2dGradXInterimSize(*(inputs[0]), *iGradient, *(inputs[1]), *output, *outputGradient, forwardCovered, forwardStrideY, forwardStrideX);
+        auto interimPtr  = device->malloc(interimSize);
 
-            auto filterHeight = inputs[1]->shape.dim(1);
-            auto filterWidth  = inputs[1]->shape.dim(2);
+        Math::DeConv2dGradX(*(inputs[0]),
+                            *iGradient,
+                            *(inputs[1]),
+                            *output,
+                            *outputGradient,
+                            forwardCovered,
+                            forwardStrideY,
+                            forwardStrideX,
+                            interimPtr);
 
-            auto outputChannel = output->shape.dim(2);
+        device->free(interimPtr);
 
-            auto ptr = device->malloc(output->elementType.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
-            
-            Math::DeConv2dGradX(*(inputs[0]), 
-                                *iGradient, 
-                                *(inputs[1]), 
-                                *output, 
-                                *outputGradient, 
-                                ptr, 
-                                forwardCovered, 
-                                forwardStrideY, 
-                                forwardStrideX);
-
-            device->free(ptr);
-        }
     } else if (1 == index) {
         auto device = iGradient->device();
 
-        if (DeviceType::CPU == device->type) {
-            Math::DeConv2dGradY(*(inputs[0]), 
-                                *(inputs[1]), 
-                                *iGradient, 
-                                *output, 
-                                *outputGradient, 
-                                nullptr, 
-                                forwardCovered, 
-                                forwardStrideY, 
-                                forwardStrideX);
-        } else {
-            auto batch       = inputs[0]->shape.batch;
-            auto inputHeight = inputs[0]->shape.dim(0);
-            auto inputWidth  = inputs[0]->shape.dim(1);
+        auto interimSize = Math::DeConv2dGradYInterimSize(*(inputs[0]),
+                                                          *(inputs[1]),
+                                                          *iGradient,
+                                                          *output,
+                                                          *outputGradient,
+                                                          forwardCovered,
+                                                          forwardStrideY,
+                                                          forwardStrideX);
+        
+        auto interimPtr = device->malloc(interimSize);
 
-            auto filterHeight = inputs[1]->shape.dim(1);
-            auto filterWidth  = inputs[1]->shape.dim(2);
+        Math::DeConv2dGradY(*(inputs[0]),
+                            *(inputs[1]),
+                            *iGradient,
+                            *output,
+                            *outputGradient,
+                            forwardCovered,
+                            forwardStrideY,
+                            forwardStrideX,
+                            interimPtr);
 
-            auto outputChannel = output->shape.dim(2);
+        device->free(interimPtr);
 
-            auto ptr = device->malloc(output->elementType.byteWidth * batch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth);
-
-            Math::DeConv2dGradY(*(inputs[0]),   
-                                *(inputs[1]), 
-                                *iGradient, 
-                                *output, 
-                                *outputGradient, 
-                                ptr, 
-                                forwardCovered, 
-                                forwardStrideY, 
-                                forwardStrideX);
-
-            device->free(ptr);
-        }
     } else {
         DEEP8_RUNTIME_ERROR("the index of DeConv2d backward is error");
     }

@@ -18,7 +18,7 @@ namespace Deep8 {
  *
  * so the output is
  * the covered is false: (batch, (inputH - realFilterH) / strideH + 1, (inputW - realFilterW) / strideW + 1, outputChannel)
- * the covered is true: (batch, (inputH - realFilterH + strideH - 1) / strideH + 1, (inputW - realFilterW + strideW - 1) / strideW + 1, outputChannel)
+ * the covered is true: (batch, (inputH - 1) / strideH + 1, (inputW - 1) / strideW + 1, outputChannel)
  *
  * ref: A guide to convolution arithmetic for deep learning
  * the reverse of Conv2d TransposeConv2d:

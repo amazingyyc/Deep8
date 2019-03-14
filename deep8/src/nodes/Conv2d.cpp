@@ -73,25 +73,12 @@ void Conv2d::check() {
 void Conv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
     auto device = output->device();
 
-    if (DeviceType::CPU == device->type) {
-        Math::Conv2d(*(inputs[0]), *(inputs[1]), *output, nullptr, covered, strideY, strideX, dilationY, dilationX);
-    } else {
-        auto inputChannel = inputs[0]->shape.dim(2);
-        
-        auto filterHeight = inputs[1]->shape.dim(1);
-        auto filterWidth  = inputs[1]->shape.dim(2);
+    auto interimSize = Math::Conv2dInterimSize(*(inputs[0]), *(inputs[1]), *output, covered, strideY, strideX, dilationY, dilationX);
+    auto interimPtr  = device->malloc(interimSize);
 
-        auto batch = output->shape.batch;
-        auto outputHeight = output->shape.dim(0);
-        auto outputWidth  = output->shape.dim(1);
+    Math::Conv2d(*(inputs[0]), *(inputs[1]), *output, covered, strideY, strideX, dilationY, dilationX, interimPtr);
 
-        auto size = inputs[0]->elementType.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
-        auto ptr  = device->malloc(size);
-
-        Math::Conv2d(*(inputs[0]), *(inputs[1]), *output, ptr, covered, strideY, strideX, dilationY, dilationX);
-
-        device->free(ptr);
-    }
+    device->free(interimPtr);
 }
 
 void Conv2d::backward(const std::vector<const Tensor*> &inputs, 
@@ -102,87 +89,62 @@ void Conv2d::backward(const std::vector<const Tensor*> &inputs,
     if (0 == index) {
         auto device = iGradient->device();
 
-        if (DeviceType::CPU == device->type) {
-            Math::Conv2dGradX(*(inputs[0]), 
-                            *iGradient, 
-                            *(inputs[1]),
-                            *output, 
-                            *outputGradient, 
-                            nullptr, 
-                            covered, 
-                            strideY, 
-                            strideX, 
-                            dilationY, 
-                            dilationX);
-        } else {
-            auto inputChannel = inputs[0]->shape.dim(2);
-        
-            auto filterHeight = inputs[1]->shape.dim(1);
-            auto filterWidth  = inputs[1]->shape.dim(2);
+        auto interimSize = Math::Conv2dGradXInterimSize(*(inputs[0]), 
+                                                      *iGradient,
+                                                      *(inputs[1]),
+                                                      *output,
+                                                      *outputGradient,
+                                                      covered,
+                                                      strideY,
+                                                      strideX,
+                                                      dilationY,
+                                                      dilationX);
 
-            auto batch        = output->shape.batch;
-            auto outputHeight = output->shape.dim(0);
-            auto outputWidth  = output->shape.dim(1);
+        auto interimPtr = device->malloc(interimSize);
 
-            auto size = inputs[0]->elementType.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
-            auto ptr  = device->malloc(size);
+        Math::Conv2dGradX(*(inputs[0]),
+                          *iGradient,
+                          *(inputs[1]),
+                          *output,
+                          *outputGradient,
+                          covered,
+                          strideY,
+                          strideX,
+                          dilationY,
+                          dilationX,
+                          interimPtr);
 
-            Math::Conv2dGradX(*(inputs[0]), 
-                            *iGradient, 
-                            *(inputs[1]),
-                            *output, 
-                            *outputGradient, 
-                            ptr, 
-                            covered, 
-                            strideY, 
-                            strideX, 
-                            dilationY, 
-                            dilationX);
+        device->free(interimPtr);
 
-            device->free(ptr);
-        }
     } else if (1 == index) {
         auto device = iGradient->device();
 
-        if (DeviceType::CPU == device->type) {
-            Math::Conv2dGradY(*(inputs[0]), 
-                            *(inputs[1]), 
-                            *iGradient, 
-                            *output, 
-                            *outputGradient, 
-                            nullptr, 
-                            covered, 
-                            strideY, 
-                            strideX, 
-                            dilationY, 
-                            dilationX);
-        } else {
-            auto inputChannel = inputs[0]->shape.dim(2);
-        
-            auto filterHeight = inputs[1]->shape.dim(1);
-            auto filterWidth  = inputs[1]->shape.dim(2);
+        auto interimSize = Math::Conv2dGradYInterimSize(*(inputs[0]),
+                                                      *(inputs[1]),
+                                                      *iGradient,
+                                                      *output,
+                                                      *outputGradient,
+                                                      covered,
+                                                      strideY,
+                                                      strideX,
+                                                      dilationY,
+                                                      dilationX);
 
-            auto batch        = output->shape.batch;
-            auto outputHeight = output->shape.dim(0);
-            auto outputWidth  = output->shape.dim(1);
+        auto interimPtr = device->malloc(interimSize);
 
-            auto size = inputs[0]->elementType.byteWidth * batch * outputHeight * outputWidth * filterHeight * filterWidth * inputChannel;
-            auto ptr  = device->malloc(size);
+        Math::Conv2dGradY(*(inputs[0]),
+                          *(inputs[1]),
+                          *iGradient,
+                          *output,
+                          *outputGradient,
+                          covered,
+                          strideY,
+                          strideX,
+                          dilationY,
+                          dilationX,
+                          interimPtr);
 
-            Math::Conv2dGradY(*(inputs[0]), 
-                *(inputs[1]), 
-                *iGradient, 
-                *output, 
-                *outputGradient, 
-                ptr, 
-                covered, 
-                strideY, 
-                strideX, 
-                dilationY, 
-                dilationX);
-
-            device->free(ptr);
-        }
+        device->free(interimPtr);
     } else {
         DEEP8_RUNTIME_ERROR("the index is error");
     }
