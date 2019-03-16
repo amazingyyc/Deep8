@@ -10,7 +10,7 @@
 
 // #include "AbsTest.h"
 // #include "AddTest.h"
-// #include "AvgPooling2dTest.h"
+//#include "AvgPooling2dTest.h"
 // #include "Conv2dTest.h"
 // #include "DeConv2dTest.h"
 // #include "DivideTest.h"
@@ -21,7 +21,7 @@
 // #include "LogTest.h"
 // #include "LReLuTest.h"
 // #include "MatrixMultiplyTest.h"
-// #include "MaxPooling2dTest.h"
+#include "MaxPooling2dTest.h"
 // #include "MinusTest.h"
 // #include "MultiplyTest.h"
 // #include "ReLuTest.h"
@@ -29,7 +29,7 @@
 // #include "SoftmaxTest.h"
 // #include "SquareTest.h"
 // #include "TanhTest.h"
-#include "LinearRegressionTest.h"
+//#include "LinearRegressionTest.h"
 //#include "AutoBatchTest.h"
 
 #ifdef HAVE_CUDA

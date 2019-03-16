@@ -27,6 +27,7 @@
 #include "nodes/ReduceSum.h"
 #include "nodes/Minus.h"
 #include "nodes/Multiply.h"
+#include "nodes/PReLu.h"
 #include "nodes/ReLu.h"
 #include "nodes/ReShape.h"
 #include "nodes/Sigmoid.h"
@@ -119,6 +120,7 @@ public:
 							size_t strideY = 1, 
 							size_t strideX = 1);
 	Expression mean();
+	Expression pRelu(Expression &y);
     Expression reduceMean(int axis = -1, bool keep = true);
 	Expression reduceSum(int axis = -1, bool keep = true);
 	Expression relu();

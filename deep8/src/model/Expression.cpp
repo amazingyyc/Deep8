@@ -263,6 +263,11 @@ Expression Expression::mean() {
     return Expression(executor, executor->addFunction(new Mean(inputs)));
 }
 
+Expression Expression::pRelu(Expression &y) {
+    std::vector<Node*> inputs = { node, y.node };
+    return Expression(executor, executor->addFunction(new PReLu(inputs)));
+}
+
 Expression Expression::reduceMean(int axis, bool keep) {
     std::vector<Node*> inputs = { node };
     return Expression(executor, executor->addFunction(new ReduceMean(inputs, axis, keep)));

@@ -183,7 +183,8 @@ void declareExpression(py::module &m) {
                             py::arg("filterWidth") = 1, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
-            .def("mean",        &Expression::mean,
+            .def("mean",        &Expression::mean)
+            .def("pRelu",       &Expression::pRelu)
             .def("reduceMean",  &Expression::reduceMean,
                             py::arg("axis") =  -1,
                             py::arg("keep") =  false)

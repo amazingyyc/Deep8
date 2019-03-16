@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 
 # if the device have GPU and if build the test
-set(HAVE_GPU TRUE)
-set(BUILD_PYTHON FALSE)
+set(HAVE_GPU FALSE)
+set(BUILD_PYTHON TRUE)
 set(BUILD_TEST TRUE)
 
 set(CMAKE_CXX_STANDARD 11)
