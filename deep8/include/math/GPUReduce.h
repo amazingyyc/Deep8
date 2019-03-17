@@ -1,12 +1,88 @@
 #ifndef DEEP8_MATH_REDUCE_H
 #define DEEP8_MATH_REDUCE_H
 
-#include "GPUBasic.h"
+#include "model/Shape.h"
+#include "utils/ShapeUtils.h"
+#include "basic/GPUBasic.h"
 
 namespace Deep8 {
 namespace Math {
 
+template <typename T, typename ReduceOp, int NumDims>
+__global__ void ReduceKernel(const T *x, const NVShape<NumDims> xshape, T *y, const NVShape<NumDims> yshape, ReduceOp op, const int N) {
+    int start   = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
 
+    int xindex[NumDims];
+    int yindex[NumDims];
+
+	for (int i = start; i < N; i += stride) {
+		T ret = op.commense();
+
+       for (int k = 0, index = i; k < NumDims; ++k) {
+           yindex[k] = index / yshape.strides[k];
+           xindex[k] = yindex[k];
+
+           index %= yshape.strides[k];
+       }
+
+       int j = NumDims - 1;
+
+       while (j >= 0) {
+           if (j == NumDims - 1) {
+               int xi = 0;
+
+               for (int l = 0; l < NumDims; ++l) {
+                   xi += xindex[l] * xshape.strides[l];
+               }
+
+               ret = op.init(ret, x[xi]);
+           }
+
+           if (xshape.dims[j] == yshape.dims[j]) {
+               j--;
+           } else {
+               xindex[j]++;
+
+               if (xindex[j] >= xshape.dims[j]) {
+                   j--;
+               } else {
+                   for (int l = j + 1; l < NumDims; ++l) {
+                       xindex[l] = yindex[l];
+                   }
+
+                   j = NumDims - 1;
+               }
+           }
+       }
+
+       y[i] = op.complete(ret);
+	}
+}
+
+template <typename T, typename ReduceOp, int NumDims>
+__global__ void ReduceGradKernel(const T *x, T *dx, const NVShape<NumDims> xshape, const T *y, const T *dy, const NVShape<NumDims> yshape, ReduceOp op, const int N) {
+	int start  = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	int xindex[NumDims];
+
+	for (int xi = start; xi < N; xi += stride) {
+		int yi = 0;
+
+		for (int k = 0, index = xi; k < NumDims; ++k) {
+			int xd = index / xshape.stride[k];
+
+			if (xshape.dims[k] == yshape.dims[k]) {
+				yi += xd * yshape.strides[k];
+			}
+
+			index %= xshape.strides[k];
+		}
+
+		dx[xi] += op(x[xi], y[yi], dy[yi]);
+	}
+}
 
 template <typename T, typename ReduceOp>
 __global__ void MiddleReduceKernel( const T *x, 
@@ -385,21 +461,293 @@ void CallTailReduceKernel(const T *x, T *y, const int row, const int col, Reduce
  * for Reduce 
  */
 template <typename T, typename ReduceOp>
-void CallReduceKernel(const T *x, T *y, const int size, ReduceOp op) {
+void CallAllReduceKernel(const T *x, T *y, const int size, ReduceOp op) {
     CallTailReduceKernel<T, ReduceOp>(x, y, 1, size, op);
 }
 
 template <typename T, typename ReduceOp>
-void CallReduceGradKernel(const T *x, T *dx, const T *y, const T *dy, const int size, ReduceOp op) {
+void CallAllReduceGradKernel(const T *x, T *dx, const T *y, const T *dy, const int size, ReduceOp op) {
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (size + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     TailReduceGradKernel<T, ReduceOp> <<< grideSize, blockSize >>> (x, dx, y, dy, 1, size, op, size);
 }
 
+template <typename T, typename ReduceOp>
+void CallReduceKernel(const T *x, std::vector<int> &xshape, T *y, std::vector<int> &yshape, ReduceOp op) {
+	DEEP8_ARGUMENT_CHECK(xshape.size() == yshape.size(), "the reduce shape rank must be same");
+	DEEP8_ARGUMENT_CHECK(1 <= xshape.size() && xshape.size() <= MAX_TENSOR_DIMS + 1, "the reduce shape rank error");
 
+	int rank = xshape.size();
 
+	std::vector<bool> axis(rank);
 
+	for (int i = 0; i < rank; ++i) {
+		DEEP8_ARGUMENT_CHECK(xshape[i] >= 1 && yshape[i] >= 1, "the shape is error");
+		DEEP8_ARGUMENT_CHECK(1 == yshape[i] || xshape[i] == yshape[i], "the shape is error");
+
+		if (xshape[i] != yshape[i]) {
+			axis[i] = true;
+		} else {
+			axis[i] = false;
+		}
+	}
+
+	std::vector<bool> shrikAxis;
+	shrikAxis.emplace_back(axis[0]);
+
+	for (int i = 1; i < rank; ++i) {
+		if (axis[i] != axis[i - 1]) {
+			shrikAxis.emplace_back(axis[i]);
+		}
+	}
+
+	if (1 == shrikAxis.size()) {
+		DEEP8_ARGUMENT_CHECK(shrikAxis[0], "error, must be set the reduce dimension");
+
+		/**reduce all dimension*/
+		int size = 1;
+
+		for (auto i : xshape) {
+			size *= i;
+		}
+
+		CallAllReduceKernel<T, ReduceOp>(x, y, size, op);
+	} else if (2 == shrikAxis.size() && shrikAxis[0] && !shrikAxis[1]) {
+		/**head reduce*/
+		int row = 1;
+		int col = 1;
+
+		for (int i = 0; i < rank; ++i) {
+			if (axis[i]) {
+				row *= xshape[i];
+			} else {
+				col *= xshape[i];
+			}
+		}
+
+		CallHeadReduceKernel<T, ReduceOp>(x, y, row, col, op);
+	} else if (2 == shrikAxis.size() && !shrikAxis[0] && shrikAxis[1]) {
+		/**tail reduce*/
+		int row = 1;
+		int col = 1;
+
+		for (int i = 0; i < rank; ++i) {
+			if (!axis[i]) {
+				row *= xshape[i];
+			} else {
+				col *= xshape[i];
+			}
+		}
+
+		CallTailReduceKernel<T, ReduceOp>(x, y, row, col, op);
+	} else if (3 == shrikAxis.size() && !shrikAxis[0] && shrikAxis[1] && !shrikAxis[2]) {
+		/**middle reduce*/
+		int dim0 = 1;
+		int dim1 = 1;
+		int dim2 = 1;
+
+		int i = 0; 
+		for (; i < rank && !axis[i]; ++i) {
+			dim0 *= xshape[i];
+		}
+
+		for (; i < rank && axis[i]; ++i) {
+			dim1 *= xshape[i];
+		}
+
+		for (; i < rank; ++i) {
+			dim2 *= xshape[i];
+		}
+
+		int N = dim0 * dim2;
+        int blockSize = DEEP8_GPU_BLOCK_SIZE;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+		MiddleReduceKernel<T, ReduceOp> <<<grideSize, blockSize>>>(x, y, dim0, dim1, dim2, op, N);
+	} else {
+		int N = 1;
+
+		for (int i = 0; i < rank; ++i) {
+			N *= yshape[i];
+		}
+
+		int blockSize = DEEP8_GPU_BLOCK_SIZE;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+		if (1 == rank) {
+			auto xnvshape = convertToNVShape<1>(xshape);
+			auto ynvshape = convertToNVShape<1>(yshape);
+
+			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
+		} else if (2 == rank) {
+			auto xnvshape = convertToNVShape<2>(xshape);
+			auto ynvshape = convertToNVShape<2>(yshape);
+
+			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
+		} else if (3 == rank) {
+			auto xnvshape = convertToNVShape<3>(xshape);
+			auto ynvshape = convertToNVShape<3>(yshape);
+
+			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
+		} else if (4 == rank) {
+			auto xnvshape = convertToNVShape<4>(xshape);
+			auto ynvshape = convertToNVShape<4>(yshape);
+
+			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
+		} else if (5 == rank) {
+			auto xnvshape = convertToNVShape<5>(xshape);
+			auto ynvshape = convertToNVShape<5>(yshape);
+
+			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
+		} else {
+			DEEP8_RUNTIME_ERROR("the shape's rank is error");
+		}
+	}
+}
+
+template <typename T, typename ReduceOp>
+void CallReduceGradKernel(const T *x, T *dx, std::vector<int> &xshape, const T *y, const T *dy, std::vector<int> &yshape, ReduceOp op) {
+	DEEP8_ARGUMENT_CHECK(xshape.size() == yshape.size(), "the reduce shape rank must be same");
+	DEEP8_ARGUMENT_CHECK(1 <= xshape.size() && xshape.size() <= MAX_TENSOR_DIMS + 1, "the reduce shape rank error");
+
+	int rank = xshape.size();
+
+	std::vector<bool> axis(rank);
+
+	for (int i = 0; i < rank; ++i) {
+		DEEP8_ARGUMENT_CHECK(xshape[i] >= 1 && yshape[i] >= 1, "the shape is error");
+		DEEP8_ARGUMENT_CHECK(1 == yshape[i] || xshape[i] == yshape[i], "the shape is error");
+
+		if (xshape[i] != yshape[i]) {
+			axis[i] = true;
+		} else {
+			axis[i] = false;
+		}
+	}
+
+	std::vector<bool> shrikAxis;
+	shrikAxis.emplace_back(axis[0]);
+
+	for (int i = 1; i < rank; ++i) {
+		if (axis[i] != axis[i - 1]) {
+			shrikAxis.emplace_back(axis[i]);
+		}
+	}
+
+	if (1 == shrikAxis.size()) {
+		DEEP8_ARGUMENT_CHECK(shrikAxis[0], "error, must be set the reduce dimension");
+
+		/**reduce all dimension*/
+		int size = 1;
+
+		for (auto i : xshape) {
+			size *= i;
+		}
+
+		CallAllReduceGradKernel<T, ReduceOp>(x, dx, y, dy, size, op);
+	} else if (2 == shrikAxis.size() && shrikAxis[0] && !shrikAxis[1]) {
+		/**head reduce*/
+		int row = 1;
+		int col = 1;
+
+		for (int i = 0; i < rank; ++i) {
+			if (axis[i]) {
+				row *= xshape[i];
+			} else {
+				col *= xshape[i];
+			}
+		}
+
+		int N = row * col;
+
+		int blockSize = DEEP8_GPU_BLOCK_SIZE;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+		HeadReduceGradKernel<T, ReduceOp> <<<grideSize, blockSize>>>(x, dx, y, dy, row, col, op, N);
+	} else if (2 == shrikAxis.size() && !shrikAxis[0] && shrikAxis[1]) {
+		/**tail reduce*/
+		int row = 1;
+		int col = 1;
+
+		for (int i = 0; i < rank; ++i) {
+			if (!axis[i]) {
+				row *= xshape[i];
+			} else {
+				col *= xshape[i];
+			}
+		}
+
+		int N = row * col;
+
+		int blockSize = DEEP8_GPU_BLOCK_SIZE;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+		TailReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, y, dy, row, col, op, N);
+	} else if (3 == shrikAxis.size() && !shrikAxis[0] && shrikAxis[1] && !shrikAxis[2]) {
+		/**middle reduce*/
+		int dim0 = 1;
+		int dim1 = 1;
+		int dim2 = 1;
+
+		int i = 0; 
+		for (; i < rank && !axis[i]; ++i) {
+			dim0 *= xshape[i];
+		}
+
+		for (; i < rank && axis[i]; ++i) {
+			dim1 *= xshape[i];
+		}
+
+		for (; i < rank; ++i) {
+			dim2 *= xshape[i];
+		}
+
+		int N = dim0 * dim1 * dim2;
+        int blockSize = DEEP8_GPU_BLOCK_SIZE;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+		MiddleReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, y, dy, dim0, dim1, dim2, op, N);
+	} else {
+		int N = 1;
+
+		for (int i = 0; i < rank; ++i) {
+			N *= xshape[i];
+		}
+
+		int blockSize = DEEP8_GPU_BLOCK_SIZE;
+        int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+
+		if (1 == rank) {
+			auto xnvshape = convertToNVShape<1>(xshape);
+			auto ynvshape = convertToNVShape<1>(yshape);
+
+			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
+		} else if (2 == rank) {
+			auto xnvshape = convertToNVShape<2>(xshape);
+			auto ynvshape = convertToNVShape<2>(yshape);
+
+			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
+		} else if (3 == rank) {
+			auto xnvshape = convertToNVShape<3>(xshape);
+			auto ynvshape = convertToNVShape<3>(yshape);
+
+			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
+		} else if (4 == rank) {
+			auto xnvshape = convertToNVShape<4>(xshape);
+			auto ynvshape = convertToNVShape<4>(yshape);
+
+			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
+		} else if (5 == rank) {
+			auto xnvshape = convertToNVShape<5>(xshape);
+			auto ynvshape = convertToNVShape<5>(yshape);
+			
+			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
+		} else {
+			DEEP8_RUNTIME_ERROR("the shape's rank is error");
+		}
+	} 
+}
 
 }
 }

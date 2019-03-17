@@ -101,6 +101,25 @@ NVShape<NumDims> convertToNVShape(const Shape &shape) {
     return nvshape;
 }
 
+template <int NumDims>
+NVShape<NumDims> convertToNVShape(std::vector<int> &shape) {
+    DEEP8_ARGUMENT_CHECK(NumDims == shape.size(), "the shape is error ");
+
+    NVShape<NumDims> nvshape;
+
+    for (int i = 0; i < NumDims; ++i) {
+        nvshape.dims[i] = shape[i];
+    }
+
+    nvshape.strides[NumDims - 1] = 1;
+
+    for (int i = NumDims - 2; i >= 0; --i) {
+        nvshape.strides[i] = nvshape.strides[i + 1] * nvshape.dims[i + 1];
+    }
+
+    return nvshape;
+}
+
 
 }
 
