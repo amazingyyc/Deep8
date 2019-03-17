@@ -6,6 +6,8 @@
 namespace Deep8 {
 namespace Math {
 
+
+
 template <typename T, typename ReduceOp>
 __global__ void MiddleReduceKernel( const T *x, 
                                     T *y, 

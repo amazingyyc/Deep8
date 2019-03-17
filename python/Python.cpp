@@ -199,17 +199,17 @@ void declareExpression(py::module &m) {
             .def("square",  &Expression::square)
             .def("sum",     &Expression::sum)
             .def("tanh",    &Expression::tanh)
-            .def("feed", [](Expression* express, py::buffer buffer) {
+            .def("feed", [](Expression* express, py::buffer buffer) -> Expression {
                 /**Request a buffer descriptor from Python*/
                 py::buffer_info info = buffer.request();
 
-                express->feed(info.ptr);
+                return express->feed(info.ptr);                 
             })
-            .def("fetch", [](Expression* express, py::buffer buffer) {
+            .def("fetch", [](Expression* express, py::buffer buffer) -> Expression {
                 /**Request a buffer descriptor from Python*/
                 py::buffer_info info = buffer.request();
 
-                express->fetch(info.ptr);
+                return express->fetch(info.ptr);
             })
             .def("l1DistanceLoss",  &Expression::l1DistanceLoss)
             .def("l1NormLoss",      &Expression::l1NormLoss)
@@ -241,6 +241,22 @@ void declareExpressionFunction(py::module &m) {
                     py::arg("shape"),
                     py::arg("updateGradient") = true, 
                     py::arg("type") = DType::Float32);
+
+    m.def("inputParameter", (Expression (*)(Executor*, std::vector<size_t>, DType)) &inputParameter,
+                        py::arg("executor"),
+                        py::arg("list"),
+                        py::arg("type") = DType::Float32);
+    
+    m.def("inputParameter", (Expression (*)(Executor*, size_t, std::vector<size_t>, DType)) &inputParameter,
+                        py::arg("executor"),
+                        py::arg("batch"),
+                        py::arg("list"),
+                        py::arg("type") = DType::Float32);
+
+    m.def("inputParameter", (Expression (*)(Executor*, Shape&, DType)) &inputParameter,
+                        py::arg("executor"),
+                        py::arg("shape"),
+                        py::arg("type") = DType::Float32);
 }
 
 /**

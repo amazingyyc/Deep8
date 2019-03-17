@@ -139,11 +139,15 @@ public:
 	Expression softmaxCrossEntropyLoss(Expression &y);
 };
 
-/**create parameter*/
+/**create parameter, the parameter will be in memory*/
 Expression parameter(Executor *executor, std::vector<size_t> list, bool updateGradient = true, DType type = DType::Float32);
 Expression parameter(Executor *executor, size_t batch, std::vector<size_t> list, bool updateGradient = true, DType type = DType::Float32);
 Expression parameter(Executor *executor, Shape &shape, bool updateGradient = true, DType type = DType::Float32);
 
+/**create input paramater, the input parameter will deleted after bakward, it is temp*/
+Expression inputParameter(Executor *executor, std::vector<size_t> list, DType type = DType::Float32);
+Expression inputParameter(Executor *executor, size_t batch, std::vector<size_t> list, DType type = DType::Float32);
+Expression inputParameter(Executor *executor, Shape &shape, DType type = DType::Float32);
 
 }
 

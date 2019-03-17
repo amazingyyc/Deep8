@@ -18,6 +18,19 @@ Expression parameter(Executor *executor, Shape &shape, bool updateGradient, DTyp
 	return Expression(executor, executor->addVariable(shape, type, updateGradient));
 }
 
+/**create input paramater, the input parameter will deleted after bakward, it is temp*/
+Expression inputParameter(Executor *executor, std::vector<size_t> list, DType type) {
+    return Expression(executor, executor->addVariable(list, type, false, false));
+}
+
+Expression inputParameter(Executor *executor, size_t batch, std::vector<size_t> list, DType type) {
+    return Expression(executor, executor->addVariable(batch, list, type, false, false));
+}
+
+Expression inputParameter(Executor *executor, Shape &shape, DType type) {
+    return Expression(executor, executor->addVariable(shape, type, false, false));
+}
+
 Expression::Expression() : executor(nullptr), node(nullptr) {
 }
 

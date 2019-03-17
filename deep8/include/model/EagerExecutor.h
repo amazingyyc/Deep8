@@ -14,16 +14,8 @@ namespace Deep8 {
  * When create the Function Add DefaultExecutor will calculate the result put it into Z immediately.
  */
 class EagerExecutor : public Executor {
-protected:
-	bool clearInterim;
-
-	/**store the interim Nodes*/
-	std::unordered_map<int64_t, Node*> interimNodes;
-
 public:
 	explicit EagerExecutor(DeviceType deviceType = DeviceType::CPU, bool flag = true);
-
-	void clearInterimNodes();
 
 	/**give a function and create the output Variable*/
 	Node *addFunction(Function *func) override;
