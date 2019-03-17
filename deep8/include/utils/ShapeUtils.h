@@ -120,6 +120,18 @@ NVShape<NumDims> convertToNVShape(std::vector<int> &shape) {
     return nvshape;
 }
 
+std::vector<int> convertShapeToVector(const Shape &shape) {
+    int rank = shape.nDims + 1;
+
+    std::vector<int> array(rank);
+    array[0] = shape.batch;
+
+    for (int i = 1; i < rank; ++i) {
+        array[i] = shape.dim(i - 1);
+    }
+
+    return array;
+}
 
 }
 

@@ -282,8 +282,8 @@ Expression Expression::pRelu(Expression &y) {
 }
 
 Expression Expression::reduceMean(int axis, bool keep) {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new ReduceMean(inputs, axis, keep)));
+    // std::vector<Node*> inputs = { node };
+    // return Expression(executor, executor->addFunction(new ReduceMean(inputs, axis, keep)));
 }
 
 Expression Expression::reduceSum(int axis, bool keep) {

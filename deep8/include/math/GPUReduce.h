@@ -486,7 +486,7 @@ void CallReduceKernel(const T *x, std::vector<int> &xshape, T *y, std::vector<in
 		DEEP8_ARGUMENT_CHECK(xshape[i] >= 1 && yshape[i] >= 1, "the shape is error");
 		DEEP8_ARGUMENT_CHECK(1 == yshape[i] || xshape[i] == yshape[i], "the shape is error");
 
-		if (xshape[i] != yshape[i]) {
+		if (1 == yshape[i]) {
 			axis[i] = true;
 		} else {
 			axis[i] = false;

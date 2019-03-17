@@ -178,7 +178,7 @@ void AddGradCPUImpl(CPUDevice *device, T *dxy, const Shape &xyshape, T *dz, cons
     }
 
     auto xyarray = enlargeShapeToMaxDim(xyshape);
-    auto zarray = enlargeShapeToMaxDim(zshape);
+    auto zarray  = enlargeShapeToMaxDim(zshape);
 
     Eigen::array<int, diffCount> sumDims;
 
