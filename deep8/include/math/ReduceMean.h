@@ -16,10 +16,10 @@ namespace Math {
  */
 void ReduceMean(const Tensor &x, Tensor &y, const std::vector<int> &axis, bool keepDims);
 
-void ReduceMeanCPU(const Tensor &x, Tensor &y, const std::vector<int> axis, bool keepDims);
+void ReduceMeanCPU(const Tensor &x, Tensor &y, const std::vector<int> &axis, bool keepDims);
 
 #ifdef HAVE_CUDA
-void ReduceMeanGPU(const Tensor &x, Tensor &y, const std::vector<int> axis, bool keepDims);
+void ReduceMeanGPU(const Tensor &x, Tensor &y, const std::vector<int> &axis, bool keepDims);
 #endif
 
 void ReduceMeanGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, const std::vector<int> &axis, bool keepDims);

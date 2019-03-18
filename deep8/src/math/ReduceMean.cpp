@@ -299,7 +299,7 @@ void ReduceMeanGradCPUEigenImpl(CPUDevice*device, T *x, T *dx, std::vector<int> 
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, xsize);
     Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dyvec(dy, ysize);
 
-    dxvec.reshape(yshape).device(*eigenDevice) += dyvec.reshape(xshape).broadcast(broadDims) / T(ratio);
+    dxvec.reshape(xshape).device(*eigenDevice) += dyvec.reshape(yshape).broadcast(broadDims) / T(ratio);
 }
 
 template <typename T>
@@ -353,7 +353,7 @@ void ReduceMeanGradCPUImpl(CPUDevice*device, T *x, T *dx, const Shape &xshape, T
     }
 }
 
-void ReduceMeanGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, const std::vector<int> &axis) {
+void ReduceMeanGradCPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy, const std::vector<int>& axis, bool keepDims) {
     auto device = (CPUDevice*)x.device();
 
     switch (x.elementType.id) {

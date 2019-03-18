@@ -71,7 +71,7 @@ __global__ void ReduceGradKernel(const T *x, T *dx, const NVShape<NumDims> xshap
 		int yi = 0;
 
 		for (int k = 0, index = xi; k < NumDims; ++k) {
-			int xd = index / xshape.stride[k];
+			int xd = index / xshape.strides[k];
 
 			if (xshape.dims[k] == yshape.dims[k]) {
 				yi += xd * yshape.strides[k];
@@ -480,25 +480,25 @@ void CallReduceKernel(const T *x, std::vector<int> &xshape, T *y, std::vector<in
 
 	int rank = xshape.size();
 
-	std::vector<bool> axis(rank);
+	std::vector<bool> reduceAxis(rank);
 
 	for (int i = 0; i < rank; ++i) {
 		DEEP8_ARGUMENT_CHECK(xshape[i] >= 1 && yshape[i] >= 1, "the shape is error");
 		DEEP8_ARGUMENT_CHECK(1 == yshape[i] || xshape[i] == yshape[i], "the shape is error");
 
-		if (1 == yshape[i]) {
-			axis[i] = true;
+		if (xshape[i] != yshape[i]) {
+            reduceAxis[i] = true;
 		} else {
-			axis[i] = false;
+            reduceAxis[i] = false;
 		}
 	}
 
 	std::vector<bool> shrikAxis;
-	shrikAxis.emplace_back(axis[0]);
+	shrikAxis.emplace_back(reduceAxis[0]);
 
 	for (int i = 1; i < rank; ++i) {
-		if (axis[i] != axis[i - 1]) {
-			shrikAxis.emplace_back(axis[i]);
+		if (reduceAxis[i] != reduceAxis[i - 1]) {
+			shrikAxis.emplace_back(reduceAxis[i]);
 		}
 	}
 
@@ -519,7 +519,7 @@ void CallReduceKernel(const T *x, std::vector<int> &xshape, T *y, std::vector<in
 		int col = 1;
 
 		for (int i = 0; i < rank; ++i) {
-			if (axis[i]) {
+			if (reduceAxis[i]) {
 				row *= xshape[i];
 			} else {
 				col *= xshape[i];
@@ -533,7 +533,7 @@ void CallReduceKernel(const T *x, std::vector<int> &xshape, T *y, std::vector<in
 		int col = 1;
 
 		for (int i = 0; i < rank; ++i) {
-			if (!axis[i]) {
+			if (!reduceAxis[i]) {
 				row *= xshape[i];
 			} else {
 				col *= xshape[i];
@@ -548,11 +548,11 @@ void CallReduceKernel(const T *x, std::vector<int> &xshape, T *y, std::vector<in
 		int dim2 = 1;
 
 		int i = 0; 
-		for (; i < rank && !axis[i]; ++i) {
+		for (; i < rank && !reduceAxis[i]; ++i) {
 			dim0 *= xshape[i];
 		}
 
-		for (; i < rank && axis[i]; ++i) {
+		for (; i < rank && reduceAxis[i]; ++i) {
 			dim1 *= xshape[i];
 		}
 
@@ -560,7 +560,7 @@ void CallReduceKernel(const T *x, std::vector<int> &xshape, T *y, std::vector<in
 			dim2 *= xshape[i];
 		}
 
-		int N = dim0 * dim2;
+		int N         = dim0 * dim2;
         int blockSize = DEEP8_GPU_BLOCK_SIZE;
         int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
@@ -576,28 +576,28 @@ void CallReduceKernel(const T *x, std::vector<int> &xshape, T *y, std::vector<in
         int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
 		if (1 == rank) {
-			auto xnvshape = convertToNVShape<1>(xshape);
-			auto ynvshape = convertToNVShape<1>(yshape);
+			auto xnvshape = convertVectorToNVShape<1>(xshape);
+			auto ynvshape = convertVectorToNVShape<1>(yshape);
 
 			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
 		} else if (2 == rank) {
-			auto xnvshape = convertToNVShape<2>(xshape);
-			auto ynvshape = convertToNVShape<2>(yshape);
+			auto xnvshape = convertVectorToNVShape<2>(xshape);
+			auto ynvshape = convertVectorToNVShape<2>(yshape);
 
 			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
 		} else if (3 == rank) {
-			auto xnvshape = convertToNVShape<3>(xshape);
-			auto ynvshape = convertToNVShape<3>(yshape);
+			auto xnvshape = convertVectorToNVShape<3>(xshape);
+			auto ynvshape = convertVectorToNVShape<3>(yshape);
 
 			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
 		} else if (4 == rank) {
-			auto xnvshape = convertToNVShape<4>(xshape);
-			auto ynvshape = convertToNVShape<4>(yshape);
+			auto xnvshape = convertVectorToNVShape<4>(xshape);
+			auto ynvshape = convertVectorToNVShape<4>(yshape);
 
 			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
 		} else if (5 == rank) {
-			auto xnvshape = convertToNVShape<5>(xshape);
-			auto ynvshape = convertToNVShape<5>(yshape);
+			auto xnvshape = convertVectorToNVShape<5>(xshape);
+			auto ynvshape = convertVectorToNVShape<5>(yshape);
 
 			ReduceKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, xnvshape, y, ynvshape, op, N);
 		} else {
@@ -613,25 +613,25 @@ void CallReduceGradKernel(const T *x, T *dx, std::vector<int> &xshape, const T *
 
 	int rank = xshape.size();
 
-	std::vector<bool> axis(rank);
+	std::vector<bool> reduceAxis(rank);
 
 	for (int i = 0; i < rank; ++i) {
 		DEEP8_ARGUMENT_CHECK(xshape[i] >= 1 && yshape[i] >= 1, "the shape is error");
 		DEEP8_ARGUMENT_CHECK(1 == yshape[i] || xshape[i] == yshape[i], "the shape is error");
 
 		if (xshape[i] != yshape[i]) {
-			axis[i] = true;
+            reduceAxis[i] = true;
 		} else {
-			axis[i] = false;
+            reduceAxis[i] = false;
 		}
 	}
 
 	std::vector<bool> shrikAxis;
-	shrikAxis.emplace_back(axis[0]);
+	shrikAxis.emplace_back(reduceAxis[0]);
 
 	for (int i = 1; i < rank; ++i) {
-		if (axis[i] != axis[i - 1]) {
-			shrikAxis.emplace_back(axis[i]);
+		if (reduceAxis[i] != reduceAxis[i - 1]) {
+			shrikAxis.emplace_back(reduceAxis[i]);
 		}
 	}
 
@@ -652,7 +652,7 @@ void CallReduceGradKernel(const T *x, T *dx, std::vector<int> &xshape, const T *
 		int col = 1;
 
 		for (int i = 0; i < rank; ++i) {
-			if (axis[i]) {
+			if (reduceAxis[i]) {
 				row *= xshape[i];
 			} else {
 				col *= xshape[i];
@@ -671,7 +671,7 @@ void CallReduceGradKernel(const T *x, T *dx, std::vector<int> &xshape, const T *
 		int col = 1;
 
 		for (int i = 0; i < rank; ++i) {
-			if (!axis[i]) {
+			if (!reduceAxis[i]) {
 				row *= xshape[i];
 			} else {
 				col *= xshape[i];
@@ -691,11 +691,11 @@ void CallReduceGradKernel(const T *x, T *dx, std::vector<int> &xshape, const T *
 		int dim2 = 1;
 
 		int i = 0; 
-		for (; i < rank && !axis[i]; ++i) {
+		for (; i < rank && !reduceAxis[i]; ++i) {
 			dim0 *= xshape[i];
 		}
 
-		for (; i < rank && axis[i]; ++i) {
+		for (; i < rank && reduceAxis[i]; ++i) {
 			dim1 *= xshape[i];
 		}
 
@@ -719,28 +719,28 @@ void CallReduceGradKernel(const T *x, T *dx, std::vector<int> &xshape, const T *
         int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
 		if (1 == rank) {
-			auto xnvshape = convertToNVShape<1>(xshape);
-			auto ynvshape = convertToNVShape<1>(yshape);
+			auto xnvshape = convertVectorToNVShape<1>(xshape);
+			auto ynvshape = convertVectorToNVShape<1>(yshape);
 
 			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
 		} else if (2 == rank) {
-			auto xnvshape = convertToNVShape<2>(xshape);
-			auto ynvshape = convertToNVShape<2>(yshape);
+			auto xnvshape = convertVectorToNVShape<2>(xshape);
+			auto ynvshape = convertVectorToNVShape<2>(yshape);
 
 			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
 		} else if (3 == rank) {
-			auto xnvshape = convertToNVShape<3>(xshape);
-			auto ynvshape = convertToNVShape<3>(yshape);
+			auto xnvshape = convertVectorToNVShape<3>(xshape);
+			auto ynvshape = convertVectorToNVShape<3>(yshape);
 
 			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
 		} else if (4 == rank) {
-			auto xnvshape = convertToNVShape<4>(xshape);
-			auto ynvshape = convertToNVShape<4>(yshape);
+			auto xnvshape = convertVectorToNVShape<4>(xshape);
+			auto ynvshape = convertVectorToNVShape<4>(yshape);
 
 			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
 		} else if (5 == rank) {
-			auto xnvshape = convertToNVShape<5>(xshape);
-			auto ynvshape = convertToNVShape<5>(yshape);
+			auto xnvshape = convertVectorToNVShape<5>(xshape);
+			auto ynvshape = convertVectorToNVShape<5>(yshape);
 			
 			ReduceGradKernel<T, ReduceOp><<<grideSize, blockSize>>>(x, dx, xnvshape, y, dy, ynvshape, op, N);
 		} else {

@@ -1,3 +1,4 @@
+#include "utils/ShapeUtils.h"
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
@@ -117,7 +118,7 @@ struct ReduceMeanGradKernelOp {
     }
 };
 
-void ReduceMeanGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const std::vector<int> &axis, bool keepDims) {
+void ReduceMeanGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor& dy, const std::vector<int> &axis, bool keepDims) {
     auto xshape = convertShapeToVector(x.shape);
 
     int rank = xshape.size();

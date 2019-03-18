@@ -1,3 +1,4 @@
+#include "utils/ShapeUtils.h"
 #include "math/ReduceMean.h"
 #include "nodes/ReduceMean.h"
 

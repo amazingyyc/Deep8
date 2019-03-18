@@ -78,7 +78,7 @@ inline Eigen::array<int64_t, MAX_TENSOR_DIMS + 1> enlongateShapeToMaxDim(const S
 
 /**generate a NVShape*/
 template <int NumDims>
-NVShape<NumDims> convertToNVShape(const Shape &shape) {
+inline NVShape<NumDims> convertToNVShape(const Shape &shape) {
     DEEP8_ARGUMENT_CHECK(NumDims > shape.nDims && NumDims > 0, "the NumDims is error ");
 
     NVShape<NumDims> nvshape;
@@ -102,7 +102,7 @@ NVShape<NumDims> convertToNVShape(const Shape &shape) {
 }
 
 template <int NumDims>
-NVShape<NumDims> convertToNVShape(std::vector<int> &shape) {
+inline NVShape<NumDims> convertVectorToNVShape(std::vector<int> &shape) {
     DEEP8_ARGUMENT_CHECK(NumDims == shape.size(), "the shape is error ");
 
     NVShape<NumDims> nvshape;
@@ -120,7 +120,7 @@ NVShape<NumDims> convertToNVShape(std::vector<int> &shape) {
     return nvshape;
 }
 
-std::vector<int> convertShapeToVector(const Shape &shape) {
+inline std::vector<int> convertShapeToVector(const Shape &shape) {
     int rank = shape.nDims + 1;
 
     std::vector<int> array(rank);

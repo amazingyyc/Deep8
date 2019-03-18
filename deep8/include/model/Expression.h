@@ -22,7 +22,6 @@
 #include "nodes/LReLu.h"
 #include "nodes/MatrixMultiply.h"
 #include "nodes/MaxPooling2d.h"
-#include "nodes/Mean.h"
 #include "nodes/ReduceMean.h"
 #include "nodes/ReduceSum.h"
 #include "nodes/Minus.h"
@@ -33,7 +32,6 @@
 #include "nodes/Sigmoid.h"
 #include "nodes/Softmax.h"
 #include "nodes/Square.h"
-#include "nodes/Sum.h"
 #include "nodes/Tanh.h"
 
 #include "model/Executor.h"
@@ -119,8 +117,8 @@ public:
 							size_t filterWidth = 1, 
 							size_t strideY = 1, 
 							size_t strideX = 1);
-	Expression mean();
-	Expression pRelu(Expression &y);
+
+    Expression pRelu(Expression &y);
     Expression reduceMean(int axis = -1, bool keep = true);
 	Expression reduceSum(int axis = -1, bool keep = true);
 	Expression relu();
@@ -129,7 +127,6 @@ public:
 	Expression sigmoid();
 	Expression softmax(int axis = -1);
 	Expression square();
-	Expression sum();
 	Expression tanh();
 
 	Expression l1DistanceLoss(Expression &y);

@@ -6,17 +6,12 @@
 
 namespace Deep8 {
 
-/**
- * axis empty means all reduce
- * the axis is 0 mean the batch dimension
- * -1 means the last dimension
- */
 class ReduceMean : public Function {
 public:
     std::vector<int> axis;
     bool keepDims;
 
-    explicit ReduceMean(std::vector<Node *> &inputs, std::vector<int> reduceAxis = {-1}, bool keep = true);
+    explicit ReduceMean(std::vector<Node *> &inputs, std::vector<int> reduceAxis = {}, bool keep = true);
 
     void check() override;
 

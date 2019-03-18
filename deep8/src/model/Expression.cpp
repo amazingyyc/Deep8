@@ -271,11 +271,6 @@ Expression Expression::maxPooling2d(bool covered,
     return Expression(executor, executor->addFunction(new MaxPooling2d(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
 }
 
-Expression Expression::mean() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new Mean(inputs)));
-}
-
 Expression Expression::pRelu(Expression &y) {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new PReLu(inputs)));
@@ -284,11 +279,15 @@ Expression Expression::pRelu(Expression &y) {
 Expression Expression::reduceMean(int axis, bool keep) {
     // std::vector<Node*> inputs = { node };
     // return Expression(executor, executor->addFunction(new ReduceMean(inputs, axis, keep)));
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new ReLu(inputs)));
 }
 
 Expression Expression::reduceSum(int axis, bool keep) {
+    //std::vector<Node*> inputs = { node };
+    //return Expression(executor, executor->addFunction(new ReduceSum(inputs, axis, keep)));
     std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new ReduceSum(inputs, axis, keep)));
+    return Expression(executor, executor->addFunction(new ReLu(inputs)));
 }
 
 Expression Expression::relu() {
@@ -321,30 +320,25 @@ Expression Expression::square() {
     return Expression(executor, executor->addFunction(new Square(inputs)));
 }
 
-Expression Expression::sum() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new Sum(inputs)));
-}
-
 Expression Expression::tanh() {
     std::vector<Node*> inputs = { node };
     return Expression(executor, executor->addFunction(new Tanh(inputs)));
 }
 
 Expression Expression::l1DistanceLoss(Expression &y) {
-    return this->l1Distance(y).mean();
+    return this->l1Distance(y);
 }
 
 Expression Expression::l1NormLoss() {
-    return this->l1Norm().mean();
+    return this->l1Norm();
 }
 
 Expression Expression::l2DistanceLoss(Expression &y) {
-    return this->l2Distance(y).mean();
+    return this->l2Distance(y);
 }
 
 Expression Expression::l2NormLoss() {
-    return this->l2Norm().mean();
+    return this->l2Norm();
 }
 
 Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
@@ -352,7 +346,7 @@ Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
     DEEP8_ARGUMENT_CHECK(1 == this->node->shape.nDims, "the shape's ndims must be 1");
 
     auto pred = this->logSoftmax();
-    return y.linear(-1).dot(pred).mean();
+    return y.linear(-1).dot(pred);
 }
 
 
