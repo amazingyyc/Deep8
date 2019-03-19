@@ -183,7 +183,6 @@ void declareExpression(py::module &m) {
                             py::arg("filterWidth") = 1, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1)
-            .def("mean",        &Expression::mean)
             .def("pRelu",       &Expression::pRelu)
             .def("reduceMean",  &Expression::reduceMean,
                             py::arg("axis") =  -1,
@@ -197,7 +196,6 @@ void declareExpression(py::module &m) {
             .def("sigmoid", &Expression::sigmoid)
             .def("softmax", &Expression::softmax, py::arg("axis") = -1)
             .def("square",  &Expression::square)
-            .def("sum",     &Expression::sum)
             .def("tanh",    &Expression::tanh)
             .def("feed", [](Expression* express, py::buffer buffer) -> Expression {
                 /**Request a buffer descriptor from Python*/

@@ -22,11 +22,11 @@
 #include "nodes/LReLu.h"
 #include "nodes/MatrixMultiply.h"
 #include "nodes/MaxPooling2d.h"
-#include "nodes/ReduceMean.h"
-#include "nodes/ReduceSum.h"
 #include "nodes/Minus.h"
 #include "nodes/Multiply.h"
 #include "nodes/PReLu.h"
+#include "nodes/ReduceMean.h"
+#include "nodes/ReduceSum.h"
 #include "nodes/ReLu.h"
 #include "nodes/ReShape.h"
 #include "nodes/Sigmoid.h"
@@ -119,8 +119,8 @@ public:
 							size_t strideX = 1);
 
     Expression pRelu(Expression &y);
-    Expression reduceMean(int axis = -1, bool keep = true);
-	Expression reduceSum(int axis = -1, bool keep = true);
+    Expression reduceMean(std::vector<int> axis = {-1}, bool keepDims = true);
+	Expression reduceSum(std::vector<int> axis = {-1}, bool keepDims = true);
 	Expression relu();
 	Expression reShape(Shape &shape);
 	Expression reShape(std::vector<size_t> list);

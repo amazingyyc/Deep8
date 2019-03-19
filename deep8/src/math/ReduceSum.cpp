@@ -44,6 +44,10 @@ void ReduceSum(const Tensor& x, Tensor& y, const std::vector<int>& axis, bool ke
         }
     }
 
+    if (ylist.empty()) {
+        ylist.emplace_back(1);
+    }
+
     Shape yshape(ybatch, ylist);
 
     DEEP8_ARGUMENT_CHECK(yshape == y.shape, "the y shape is error");
@@ -100,6 +104,10 @@ void ReduceSumGrad(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& d
         }
     }
 
+    if (ylist.empty()) {
+        ylist.emplace_back(1);
+    }
+    
     Shape yshape(ybatch, ylist);
 
     DEEP8_ARGUMENT_CHECK(yshape == y.shape, "the y shape is error");
@@ -193,13 +201,17 @@ void ReduceSumCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const 
     }
 
     if (1 == NumDims) {
-        if (1 == ReduceCount) {
+        if (0 == ReduceCount) {
+            ReduceSumCPUEigenImpl<T, 1, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 1, 1>(device, x, xarray, y, yarray);
         } else {
             DEEP8_RUNTIME_ERROR("the shape is error");
         }
     } else if (2 == NumDims) {
-        if (1 == ReduceCount) {
+        if (0 == ReduceCount) {
+            ReduceSumCPUEigenImpl<T, 2, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 2, 1>(device, x, xarray, y, yarray);
         } else if (2 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 2, 2>(device, x, xarray, y, yarray);
@@ -207,7 +219,9 @@ void ReduceSumCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const 
             DEEP8_RUNTIME_ERROR("the shape is error");
         }
     } else if (3 == NumDims) {
-        if (1 == ReduceCount) {
+        if (0 == ReduceCount) {
+            ReduceSumCPUEigenImpl<T, 3, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 3, 1>(device, x, xarray, y, yarray);
         } else if (2 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 3, 2>(device, x, xarray, y, yarray);
@@ -217,7 +231,9 @@ void ReduceSumCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const 
             DEEP8_RUNTIME_ERROR("the shape is error");
         }
     } else if (4 == NumDims) {
-        if (1 == ReduceCount) {
+        if (0 == ReduceCount) {
+            ReduceSumCPUEigenImpl<T, 4, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 4, 1>(device, x, xarray, y, yarray);
         } else if (2 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 4, 2>(device, x, xarray, y, yarray);
@@ -229,7 +245,9 @@ void ReduceSumCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const 
             DEEP8_RUNTIME_ERROR("the shape is error");
         }
     } else if (5 == NumDims) {
-        if (1 == ReduceCount) {
+        if (0 == ReduceCount) {
+            ReduceSumCPUEigenImpl<T, 5, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 5, 1>(device, x, xarray, y, yarray);
         } else if (2 == ReduceCount) {
             ReduceSumCPUEigenImpl<T, 5, 2>(device, x, xarray, y, yarray);

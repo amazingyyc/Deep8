@@ -276,18 +276,14 @@ Expression Expression::pRelu(Expression &y) {
     return Expression(executor, executor->addFunction(new PReLu(inputs)));
 }
 
-Expression Expression::reduceMean(int axis, bool keep) {
-    // std::vector<Node*> inputs = { node };
-    // return Expression(executor, executor->addFunction(new ReduceMean(inputs, axis, keep)));
+Expression Expression::reduceMean(std::vector<int> axis, bool keepDims) {
     std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new ReLu(inputs)));
+    return Expression(executor, executor->addFunction(new ReduceMean(inputs, axis, keepDims)));
 }
 
-Expression Expression::reduceSum(int axis, bool keep) {
-    //std::vector<Node*> inputs = { node };
-    //return Expression(executor, executor->addFunction(new ReduceSum(inputs, axis, keep)));
+Expression Expression::reduceSum(std::vector<int> axis, bool keepDims) {
     std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new ReLu(inputs)));
+    return Expression(executor, executor->addFunction(new ReduceSum(inputs, axis, keepDims)));
 }
 
 Expression Expression::relu() {
@@ -326,19 +322,19 @@ Expression Expression::tanh() {
 }
 
 Expression Expression::l1DistanceLoss(Expression &y) {
-    return this->l1Distance(y);
+    return this->l1Distance(y).reduceMean({}, false);
 }
 
 Expression Expression::l1NormLoss() {
-    return this->l1Norm();
+    return this->l1Norm().reduceMean({}, false);
 }
 
 Expression Expression::l2DistanceLoss(Expression &y) {
-    return this->l2Distance(y);
+    return this->l2Distance(y).reduceMean({}, false);
 }
 
 Expression Expression::l2NormLoss() {
-    return this->l2Norm();
+    return this->l2Norm().reduceMean({}, false);
 }
 
 Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
@@ -346,7 +342,7 @@ Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
     DEEP8_ARGUMENT_CHECK(1 == this->node->shape.nDims, "the shape's ndims must be 1");
 
     auto pred = this->logSoftmax();
-    return y.linear(-1).dot(pred);
+    return y.linear(-1).dot(pred).reduceMean({}, false);
 }
 
 

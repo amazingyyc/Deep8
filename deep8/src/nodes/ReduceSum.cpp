@@ -53,6 +53,10 @@ void ReduceSum::check() {
         }
     }
 
+    if (list.empty()) {
+        list.emplace_back(1);
+    }
+
     this->shape = Shape(outputBatch, list);
     this->elementType = this->inputs[0]->elementType;
 }
