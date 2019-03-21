@@ -35,6 +35,8 @@ TEST(Divide, GPU) {
     zeroTensor(device, input1Grad);
     zeroTensor(device, input2Grad);
 
+    std::vector<const Tensor*> inputValues = { &input1, &input2 };
+
     dot.forward(inputValues, &output);
     dot.backward(inputValues, &output, &outputGrad, 0, &input1Grad);
     dot.backward(inputValues, &output, &outputGrad, 1, &input2Grad);
@@ -43,7 +45,7 @@ TEST(Divide, GPU) {
     device.copyFromGPUToCPU(input1Grad.raw(), input1GradPtr, sizeof(float) * 1 * 100);
     device.copyFromGPUToCPU(input2Grad.raw(), input2GradPtr, sizeof(float) * 1 * 100);
 
-    float temp = 0;
+    float tmp = 0;
 
     for (int i = 0; i < 100; ++i) {
         tmp += input1Ptr[i] * input2Ptr[i];
