@@ -65,8 +65,6 @@ __global__ void ReduceGradKernel(const T *x, T *dx, const NVShape<NumDims> xshap
 	int start  = blockIdx.x * blockDim.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 
-	int xindex[NumDims];
-
 	for (int xi = start; xi < N; xi += stride) {
 		int yi = 0;
 

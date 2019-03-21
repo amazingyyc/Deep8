@@ -16,7 +16,7 @@ struct ReduceMeanKernelOp {
     }
 
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T commense() {
-		return 0;
+		return T(0);
 	}
 
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T init(T ret, T cur) {

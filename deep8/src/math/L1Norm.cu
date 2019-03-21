@@ -27,7 +27,7 @@ struct L1NormKernelOp {
 	}
 };
 
-void L1NormLossGPU(const Tensor &x, Tensor &y) {
+void L1NormGPU(const Tensor &x, Tensor &y) {
     int batch = (int) x.shape.batch;
     int size  = (int) x.shape.batchSize();
 

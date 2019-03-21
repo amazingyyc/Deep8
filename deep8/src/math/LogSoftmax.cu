@@ -241,7 +241,7 @@ void LogSoftmaxGradGPUImpl(GPUDevice *device, const T *x, T *dx, const Shape &xs
         MiddleReduceKernel<T, LogSoftmaxSumKernelOp<T>> <<<grideSize, blockSize>>>(dy, sumptr, dim0, dim1, dim2, LogSoftmaxSumKernelOp<T>(), N);
     }
 
-    int N = dim0 * dim1 * dim2;
+    int N         = dim0 * dim1 * dim2;
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
     int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 

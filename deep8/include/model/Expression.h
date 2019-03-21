@@ -73,11 +73,21 @@ public:
 	Expression operator * (const Expression &y) const;
 	Expression operator / (const Expression &y) const;
 
+    Expression operator + (float c) const;
+    Expression operator - (float c) const;
+    Expression operator * (float c) const;
+    Expression operator / (float c) const;
+
     Expression add(Expression &y);
 	Expression minus(Expression &y);
 	Expression multiply(Expression &y);
 	Expression divide(Expression &y);
 	Expression dot(Expression &y);
+
+    Expression addConstant(float c);
+    Expression minusConstant(float c);
+    Expression multiplyConstant(float c);
+    Expression divideConstant(float c);
 
 	/**one operand function*/
 	Expression abs();

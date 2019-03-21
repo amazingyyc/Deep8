@@ -77,8 +77,8 @@ template <typename T, typename ReduceOp>
 void CallTailBinaryReduceKernel(const T *x, const T *y, T *z, const int row, const int col, ReduceOp op) {
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
 
-	if (blockSize > row) {
-		blockSize = prevPowerOf2(row);
+	if (blockSize > col) {
+		blockSize = prevPowerOf2(col);
 	}
 
     int sharedSize = sizeof(T) * blockSize;
@@ -137,7 +137,7 @@ __global__ void TailBinaryReduceGradXKernel(const T *x,
 	int stride = blockDim.x * gridDim.x;
 
     for (int i = start; i < N; i += stride) {
-        int j = i % col;
+        int j = i / col;
 
         dx[i] += op(x[i], y[i], z[j], dz[j]);
 	}
@@ -166,7 +166,7 @@ __global__ void TailBinaryReduceGradYKernel(const T *x,
 	int stride = blockDim.x * gridDim.x;
 
     for (int i = start; i < N; i += stride) {
-        int j = i % col;
+        int j = i / col;
 
         dy[i] += op(x[i], y[i], z[j], dz[j]);
 	}
