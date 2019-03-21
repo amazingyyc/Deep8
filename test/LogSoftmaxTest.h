@@ -32,8 +32,8 @@ TEST(LogSoftmax, GPU) {
 
 	std::vector<const Tensor*> inputTensor = { &input };
 
-    softmax.forward(inputTensor, &output);
-	softmax.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
+    logsoftmax.forward(inputTensor, &output);
+    logsoftmax.backward(inputTensor, &output, &outputGrad, 0, &inputGrad);
 
 	device.copyFromGPUToCPU(output.raw(), outputPtr, sizeof(real) * 400 * 200);
 	device.copyFromGPUToCPU(inputGrad.raw(), inputGradPtr, sizeof(real) * 400 * 200);
@@ -51,8 +51,8 @@ TEST(LogSoftmax, GPU) {
         for (int j = 0; j < 200; ++j) {
             auto tmp = outputGradPtr[i * 200 + j] - std::exp(outputPtr[i * 200 + j]) * tempsumptr[i];
 
-            if (std::abs(tmp - inputGradPtr[i * 200 + j]) > 1e-6) {
-                std::cout << tmp << ", " << inputGradPtr[i * 200 + j] << std::endl;
+            if (std::abs(tmp - inputGradPtr[i * 200 + j]) > 1e-4) {
+                std::cout << tmp << ", " << inputGradPtr[i * 200 + j] << "==>" << tmp - inputGradPtr[i * 200 + j] <<std::endl;
                 ASSERT_TRUE(false);
             }
         }
