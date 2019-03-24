@@ -378,8 +378,7 @@ Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
     DEEP8_ARGUMENT_CHECK(1 == this->node->shape.nDims, "the shape's ndims must be 1");
 
     auto pred = this->logSoftmax();
-    return y.linear(-1).dot(pred);
-    // return y.linear(-1).dot(pred).reduceMean({}, false);
+    return y.linear(-1).dot(pred).reduceMean({}, false);
 }
 
 

@@ -64,7 +64,7 @@ void ReLuCPU(const Tensor &x, Tensor &y) {
 template <typename T>
 struct ReLuGradEigenExpr {
     inline T operator()(T dy, T x) const {
-        return x >= 0 ? dy : 0;
+        return x > 0 ? dy : 0;
     }
 };
 

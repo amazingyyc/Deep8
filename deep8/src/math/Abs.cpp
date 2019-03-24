@@ -69,8 +69,10 @@ void AbsCPU(const Tensor &x, Tensor &y) {
 template <typename T>
 struct AbsGradEigenExpr {
     inline T operator()(T dy, T x) const {
-        if (x >= T(0)) {
+        if (x > T(0)) {
             return dy;
+        } else if (T(0) == x) {
+            return T(0);
         } else {
             return -dy;
         }

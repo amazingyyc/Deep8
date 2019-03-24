@@ -73,8 +73,10 @@ void L1NormCPU(const Tensor &x, Tensor &y) {
 template <typename T>
 struct L1NormGradEigenExpr {
     inline T operator()(T x, T dy) const {
-        if (x >= T(0)) {
+        if (x > T(0)) {
             return dy;
+        } else if (T(0) == x) {
+            return T(0);
         } else {
             return -dy;
         }

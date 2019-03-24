@@ -11,7 +11,7 @@ namespace Math {
 template <typename T>
 struct PReLuKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T& x, const T& y) {
-        return x >= T(0) ? x : x * y;
+        return x > T(0) ? x : x * y;
     }
 };
 
@@ -50,7 +50,7 @@ void PReLuGPU(const Tensor& x, const Tensor& y, Tensor& z) {
 template <typename T>
 struct PReLuGradXKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T& x, const T& y, const T& z, const T& dz) {
-        return x >= T(0) ? dz : y * dz;
+        return x > T(0) ? dz : y * dz;
     }
 };
 
@@ -92,7 +92,7 @@ void PReLuGradXGPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& z
 template <typename T>
 struct PReLuGradYKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T& x, const T& y, const T& z, const T& dz) {
-        return x >= T(0) ? T(0) : dz * x;
+        return x > T(0) ? T(0) : dz * x;
     }
 };
 

@@ -79,7 +79,13 @@ void L1DistanceGPU(const Tensor &x, const Tensor &y, Tensor &z) {
 template <typename T>
 struct L1DistanceGradXKernelOp {
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &z, const T &dz) {
-        return x >= y ? dz : -dz;
+        if (x > y) {
+            return dz;
+        } else if (x == y) {
+            return T(0);
+        } else {
+            return -dz;
+        }
 	}
 };
 
@@ -138,7 +144,13 @@ void L1DistanceGradXGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tens
 template <typename T>
 struct L1DistanceGradYKernelOp {
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &z, const T &dz) {
-        return y >= x ? dz : -dz;
+        if (y > x) {
+            return dz;
+        } else if (y == x) {
+            return T(0);
+        } else {
+            return -dz;
+        }
 	}
 };
 

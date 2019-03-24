@@ -70,7 +70,7 @@ void PReLuGradY(const Tensor& x, const Tensor& y, Tensor& dy, const Tensor& z, c
 template <typename T>
 struct PReLuEigenExpr {
     inline T operator()(T x, T y) const {
-        return (x >= 0 ? x : x * y);
+        return (x > 0 ? x : x * y);
     }
 };
 
@@ -106,7 +106,7 @@ void PReLuCPU(const Tensor& x, const Tensor& y, Tensor& z) {
 template <typename T>
 struct PReLuGradXEigenExpr {
     inline T operator()(T x, T y) const {
-        return (x >= 0 ? 1 : y);
+        return (x > 0 ? 1 : y);
     }
 };
 
@@ -143,7 +143,7 @@ void PReLuGradXCPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& z
 template <typename T>
 struct PReLuGradYEigenExpr {
     inline T operator()(T dz, T x) const {
-        return (x >= 0 ? 0 : dz * x);
+        return (x > 0 ? 0 : dz * x);
     }
 };
 
