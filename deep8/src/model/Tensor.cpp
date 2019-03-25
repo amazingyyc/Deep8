@@ -185,7 +185,7 @@ std::string Tensor::valueStr() {
 			device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(half) * size);
 
 			for (size_t i = 0; i < size; ++i) {
-				ss << __half2float(vec[i]) << ", ";
+				ss << vec[i] << ", ";
 			}
 #endif
 		} else {

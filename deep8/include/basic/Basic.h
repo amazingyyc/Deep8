@@ -26,6 +26,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <unordered_set>
+#include <cfloat>
 
 #ifdef __GUNC__
 #include <mm_malloc.h>
