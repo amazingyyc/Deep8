@@ -1,4 +1,4 @@
-#include "Tensor.h"
+#include "model/Tensor.h"
 
 namespace Deep8 {
 
@@ -185,7 +185,7 @@ std::string Tensor::valueStr() {
 			device()->copyFromGPUToCPU(raw(), &(vec[0]), sizeof(half) * size);
 
 			for (size_t i = 0; i < size; ++i) {
-				ss << vec[i] << ", ";
+				ss << __half2float(vec[i]) << ", ";
 			}
 #endif
 		} else {
