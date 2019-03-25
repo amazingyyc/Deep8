@@ -217,9 +217,9 @@ void declareExpression(py::module &m) {
 
                 return express->fetch(info.ptr);
             })
-            .def("l1DistanceLoss",  &Expression::l1DistanceLoss)
+            .def("l1Loss",  &Expression::l1Loss)
             .def("l1NormLoss",      &Expression::l1NormLoss)
-            .def("l2DistanceLoss",  &Expression::l2DistanceLoss)
+            .def("l2Loss",  &Expression::l2Loss)
             .def("l2NormLoss",      &Expression::l2NormLoss)
             .def("softmaxCrossEntropyLoss", &Expression::softmaxCrossEntropyLoss);
 }

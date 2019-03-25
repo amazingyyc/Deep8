@@ -139,9 +139,9 @@ public:
 	Expression square();
 	Expression tanh();
 
-	Expression l1DistanceLoss(Expression &y);
+	Expression l1Loss(Expression &y);
 	Expression l1NormLoss();
-	Expression l2DistanceLoss(Expression &y);
+	Expression l2Loss(Expression &y);
 	Expression l2NormLoss();
 	Expression softmaxCrossEntropyLoss(Expression &y);
 };

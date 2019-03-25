@@ -8,6 +8,10 @@ namespace Deep8 {
 
 #ifdef HAVE_CUDA
 
+/**get curand error*/
+std::string curandGetErrorString(curandStatus_t error);
+
+
 #define CUDA_CHECK(cudaExecute)							\
 {														\
 	auto ret = cudaExecute;								\
@@ -35,7 +39,8 @@ namespace Deep8 {
 	if (ret != CURAND_STATUS_SUCCESS) {					 \
 		DEEP8_RUNTIME_ERROR("the cuRand get a error: "	 \
 			<< #cudaExecute								 \
-			<< ".");								     \
+			<< ","   								     \
+            << curandGetErrorString(ret));               \
 	}													 \
 };														 \
 

@@ -357,16 +357,16 @@ Expression Expression::tanh() {
     return Expression(executor, executor->addFunction(new Tanh(inputs)));
 }
 
-Expression Expression::l1DistanceLoss(Expression &y) {
-    return this->l1Distance(y).reduceMean({}, false);
+Expression Expression::l1Loss(Expression &y) {
+    return this->minus(y).abs().reduceMean({}, false);
 }
 
 Expression Expression::l1NormLoss() {
     return this->l1Norm().reduceMean({}, false);
 }
 
-Expression Expression::l2DistanceLoss(Expression &y) {
-    return this->l2Distance(y).reduceMean({}, false);
+Expression Expression::l2Loss(Expression &y) {
+    return this->minus(y).square().reduceMean({}, false);
 }
 
 Expression Expression::l2NormLoss() {

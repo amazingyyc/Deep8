@@ -14,12 +14,31 @@ void GaussianGPUImpl(GPUDevice *device, T *x, int size, T mean, T stddev) {
 
 template <>
 void GaussianGPUImpl<float>(GPUDevice *device, float *x, int size, float mean, float stddev) {
-    CURAND_CHECK(curandGenerateNormal(device->curandGenerator, x, size, mean, stddev));
+    /**if 0 != size % 2, than the curandGenerateNormal will get error*/
+    if (0 == size % 2) {
+        CURAND_CHECK(curandGenerateNormal(device->curandGenerator, x, size, mean, stddev));
+    } else {
+        float last = mean;
+
+        CURAND_CHECK(curandGenerateNormal(device->curandGenerator, x, size - 1, mean, stddev));
+
+        device->copyFromCPUToGPU(&last, x + (size - 1), sizeof(float));
+    }
+
 }
 
 template <>
 void GaussianGPUImpl<double>(GPUDevice *device, double *x, int size, double mean, double stddev) {
-    CURAND_CHECK(curandGenerateNormalDouble(device->curandGenerator, x, size, mean, stddev));
+    if (0 == size % 2) {
+        CURAND_CHECK(curandGenerateNormalDouble(device->curandGenerator, x, size, mean, stddev));
+    } else {
+        double last = mean;
+
+        CURAND_CHECK(curandGenerateNormalDouble(device->curandGenerator, x, size - 1, mean, stddev));
+
+        device->copyFromCPUToGPU(&last, x + (size - 1), sizeof(double));
+    }
+
 }
 
 void GaussianGPU(Tensor &x, float mean, float stddev) {
