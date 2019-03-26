@@ -1,8 +1,8 @@
 #ifndef DEEP8_GPUMEMORYPOOL_H
 #define DEEP8_GPUMEMORYPOOL_H
 
-#include "GPUMemoryAllocator.h"
-#include "MemoryPool.h"
+#include "model/GPUMemoryAllocator.h"
+#include "model/MemoryPool.h"
 
 namespace Deep8 {
 

@@ -1,9 +1,9 @@
 #ifndef DEEP8_GPUMEMORYALLOCATOR_H
 #define DEEP8_GPUMEMORYALLOCATOR_H
 
-#include "GPUBasic.h"
-#include "GPUException.h"
-#include "MemoryAllocator.h"
+#include "basic/GPUBasic.h"
+#include "basic/GPUException.h"
+#include "model/MemoryAllocator.h"
 
 namespace Deep8 {
 

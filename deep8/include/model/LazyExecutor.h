@@ -1,7 +1,7 @@
 #ifndef DEEP8_LAZYEXECUTOR_H
 #define DEEP8_LAZYEXECUTOR_H
 
-#include "Executor.h"
+#include "model/Executor.h"
 
 namespace Deep8 {
 

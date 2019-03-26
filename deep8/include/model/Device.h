@@ -1,8 +1,8 @@
 #ifndef DEEP8_DEVICE_H
 #define DEEP8_DEVICE_H
 
-#include "Basic.h"
-#include "MemoryPool.h"
+#include "basic/Basic.h"
+#include "model/MemoryPool.h"
 
 namespace Deep8 {
 
