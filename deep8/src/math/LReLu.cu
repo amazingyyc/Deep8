@@ -15,7 +15,7 @@ struct LReLuKernelOp {
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x) {
-        return x >= T(0) ? x : a * x;
+        return x > T(0) ? x : a * x;
     }
 };
 
@@ -68,7 +68,7 @@ struct LReLuGradKernelOp {
     }
 
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &dy) {
-        return x >= T(0) ? dy : a * dy;
+        return x > T(0) ? dy : a * dy;
     }
 };
 

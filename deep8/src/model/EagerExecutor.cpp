@@ -3,8 +3,7 @@
 
 namespace Deep8 {
 
-EagerExecutor::EagerExecutor(DeviceType deviceType, bool flag) :
-	Executor(deviceType), clearInterim(flag) {
+EagerExecutor::EagerExecutor(DeviceType deviceType, bool flag): Executor(deviceType, flag) {
 }
 
 Node* EagerExecutor::addFunction(Function *function) {
@@ -27,24 +26,6 @@ Node* EagerExecutor::addFunction(Function *function) {
 	function->forward();
 
 	return variable;
-}
-
-void EagerExecutor::clearInterimNodes() {
-	/**clear all node output*/
-	for (auto item : this->allNodes) {
-		item.second->inputs.clear();
-		item.second->outputs.clear();
-	}
-
-	for (auto item : this->interimNodes) {
-		this->allNodes.erase(item.first);
-		this->allFunctions.erase(item.first);
-		this->allVariables.erase(item.first);
-
-		delete item.second;
-	}
-
-	this->interimNodes.clear();
 }
 
 void EagerExecutor::forward(Node *) {

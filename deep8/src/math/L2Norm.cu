@@ -1,3 +1,9 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
+#include "math/GPUReduce.h"
+#include "math/GPUBinaryElementWise.h"
+#include "math/GPUBinaryReduce.h"
 #include "math/L2Norm.h"
 
 namespace Deep8 {
@@ -79,7 +85,7 @@ void L2NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
 
     switch (x.elementType.id) {
         case DType::Float32:
-            TailReduceGradKernel<float, L2NormGradKernelOp<float>> (
+            TailReduceGradKernel<float, L2NormGradKernelOp<float>> <<<blockSize, grideSize >>> (
                 x.data<float>(), 
                 dx.data<float>(), 
                 y.data<float>(), 
@@ -90,7 +96,7 @@ void L2NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
                 N);
             break;
         case DType::Float64:
-            TailReduceGradKernel<double, L2NormGradKernelOp<double>> (
+            TailReduceGradKernel<double, L2NormGradKernelOp<double>> << <blockSize, grideSize >> > (
                 x.data<double>(), 
                 dx.data<double>(), 
                 y.data<double>(), 
@@ -103,7 +109,7 @@ void L2NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
     
     #ifdef HAVE_HALF
         case DType::Float16:
-            TailReduceGradKernel<half, L2NormGradKernelOp<half>> (
+            TailReduceGradKernel<half, L2NormGradKernelOp<half>> << <blockSize, grideSize >> > (
                 x.data<half>(), 
                 dx.data<half>(), 
                 y.data<half>(), 

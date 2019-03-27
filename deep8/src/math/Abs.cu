@@ -47,7 +47,13 @@ void AbsGPU(const Tensor &x, Tensor &y) {
 template <typename T>
 struct AbsGradKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &dy) {
-        return x >= T(0) ? dy : -dy;
+        if (x > T(0)) {
+            return dy;
+        } else if (T(0) == x) {
+            return T(0);
+        } else {
+            return -dy;
+        }
     }
 };
 

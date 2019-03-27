@@ -107,8 +107,10 @@ void L1DistanceCPU(const Tensor &x, const Tensor &y, Tensor &z) {
 template <typename T>
 struct L1DistanceGradXEigenExpr {
     inline T operator()(T x, T y) const {
-        if (x >= y) {
+        if (x > y) {
             return 1;
+        } else if (x == y) {
+            return 0;
         } else {
             return -1;
         }
@@ -151,8 +153,10 @@ void L1DistanceGradXCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tens
 template <typename T>
 struct L1DistanceGradYEigenExpr {
     inline T operator()(T x, T y) const {
-        if (y >= x) {
+        if (y > x) {
             return 1;
+        } else if (y == x) {
+            return 0;
         } else {
             return -1;
         }

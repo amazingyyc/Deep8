@@ -73,7 +73,6 @@ struct LinearGradKernelOp {
     }
 };
 
-
 void LinearGradGPU(const Tensor &x, Tensor &dx, const float a, const float b, const Tensor &y, const Tensor &dy) {
     auto n = (int)dx.shape.size();
 

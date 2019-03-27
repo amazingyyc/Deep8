@@ -4,9 +4,9 @@ namespace Deep8 {
 namespace Math {
 
 void Softmax(const Tensor &x, Tensor &y, int axis, void *ptr) {
-    DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.elementType  == y.elementType, "the param data type must be same");
-    DEEP8_ARGUMENT_CHECK(x.shape  == y.shape, "the shape must be same");
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType(), "the param device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType, "the param data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.shape == y.shape, "the shape must be same");
 
     if (-1 == axis) {
         axis = (int)x.shape.nDims - 1;

@@ -6,7 +6,7 @@
 namespace Deep8 {
 
 TEST(Conv2d, forwardCPU_float) {
-    bool isCovered = false;
+    bool isCovered = true;
 
     size_t strideH = 2;
 	size_t strideW = 2;
@@ -25,8 +25,17 @@ TEST(Conv2d, forwardCPU_float) {
     auto realFilterH = filterH + (filterH - 1) * (dilationH - 1);
     auto realFilterW = filterW + (filterW - 1) * (dilationW - 1);
 
-	size_t outputHeight = (inputHeight - realFilterH) / static_cast<size_t>(strideH) + 1;
-	size_t outputWidth  = (inputWidth - realFilterW)  / static_cast<size_t>(strideW) + 1;
+    size_t outputHeight;
+    size_t outputWidth;
+
+    if (!isCovered) {
+        outputHeight = (inputHeight - realFilterH) / static_cast<size_t>(strideH) + 1;
+        outputWidth  = (inputWidth  - realFilterW) / static_cast<size_t>(strideW) + 1;
+    } else {
+        outputHeight = (inputHeight - 1) / static_cast<size_t>(strideH) + 1;
+        outputWidth  = (inputWidth  - 1) / static_cast<size_t>(strideW) + 1;
+    }
+
 	size_t outputChannel = 32;
 
 	CPUDevice device;
@@ -81,27 +90,36 @@ TEST(Conv2d, forwardCPU_float) {
 }
 
 TEST(Conv2d, backwardCPU_float) {
-    bool isCovered = false;
+    bool isCovered = true;
 
-	size_t strideH = 2;
-	size_t strideW = 2;
+	size_t strideH = 1;
+	size_t strideW = 1;
 
-	size_t dilationH = 2;
-	size_t dilationW = 2;
+	size_t dilationH = 1;
+	size_t dilationW = 1;
 
 	size_t batch = 2;
 	size_t inputHeight  = 32;
 	size_t inputWidth   = 32;
 	size_t inputChannel = 64;
 
-	size_t filterH = 4;
-	size_t filterW = 4;
+	size_t filterH = 5;
+	size_t filterW = 5;
 
     auto realFilterH = filterH + (filterH - 1) * (dilationH - 1);
     auto realFilterW = filterW + (filterW - 1) * (dilationW - 1);
 
-	size_t outputHeight = (inputHeight - realFilterH) / static_cast<size_t>(strideH) + 1;
-	size_t outputWidth  = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
+    size_t outputHeight = (inputHeight - realFilterH) / static_cast<size_t>(strideH) + 1;
+    size_t outputWidth = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
+
+    if (!isCovered) {
+        outputHeight = (inputHeight - realFilterH) / static_cast<size_t>(strideH) + 1;
+        outputWidth = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
+    } else {
+        outputHeight = (inputHeight - 1) / static_cast<size_t>(strideH) + 1;
+        outputWidth = (inputWidth - 1) / static_cast<size_t>(strideW) + 1;
+    }
+	
 	size_t outputChannel = 32;
 
 	CPUDevice device;
@@ -316,21 +334,21 @@ TEST(Conv2d, forwardGPU_float) {
 }
 
 TEST(Conv2d, backwardGPU_float) {
-    bool isCovered = false;
+    bool isCovered = true;
 
-	size_t strideH = 2;
-	size_t strideW = 2;
+	size_t strideH = 1;
+	size_t strideW = 1;
 
-	size_t dilationH = 2;
-	size_t dilationW = 2;
+	size_t dilationH = 1;
+	size_t dilationW = 1;
 
 	size_t batch = 2;
 	size_t inputHeight  = 32;
 	size_t inputWidth   = 32;
 	size_t inputChannel = 64;
 
-	size_t filterH = 4;
-	size_t filterW = 4;
+	size_t filterH = 5;
+	size_t filterW = 5;
 
     auto realFilterH = filterH + (filterH - 1) * (dilationH - 1);
     auto realFilterW = filterW + (filterW - 1) * (dilationW - 1);
@@ -338,6 +356,14 @@ TEST(Conv2d, backwardGPU_float) {
 	size_t outputHeight = (inputHeight - realFilterH) / static_cast<size_t>(strideH) + 1;
 	size_t outputWidth  = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
 	size_t outputChannel = 32;
+
+    if (!isCovered) {
+        outputHeight = (inputHeight - realFilterH) / static_cast<size_t>(strideH) + 1;
+        outputWidth = (inputWidth - realFilterW) / static_cast<size_t>(strideW) + 1;
+    } else {
+        outputHeight = (inputHeight - 1) / static_cast<size_t>(strideH) + 1;
+        outputWidth = (inputWidth - 1) / static_cast<size_t>(strideW) + 1;
+    }
 
 	GPUDevice device;
 

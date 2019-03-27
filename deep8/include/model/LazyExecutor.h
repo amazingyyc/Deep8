@@ -1,7 +1,7 @@
 #ifndef DEEP8_LAZYEXECUTOR_H
 #define DEEP8_LAZYEXECUTOR_H
 
-#include "Executor.h"
+#include "model/Executor.h"
 
 namespace Deep8 {
 
@@ -10,12 +10,6 @@ namespace Deep8 {
  * it will calculate when call forward func, and will optimize the compute graph
  */
 class LazyExecutor : public Executor {
-protected:
-	bool clearInterim;
-
-	/**store the interim Nodes*/
-	std::unordered_map<int64_t, Node*> interimNodes;
-
 protected:
 	/**use the auto batch algorithm to optimize the compute graph*/
 	void autoBatchGraph(Node *);
@@ -28,8 +22,6 @@ protected:
 
 public:
 	explicit LazyExecutor(DeviceType deviceType = DeviceType::CPU, bool flag = true);
-
-	void clearInterimNodes();
 
 	Node *addFunction(Function *func) override;
 

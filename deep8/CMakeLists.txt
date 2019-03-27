@@ -1,12 +1,93 @@
-if (HAVE_GPU)
-	project(deep8_native LANGUAGES CXX CUDA)
+if (BUILD_WITH_GPU)
+    project(deep8_native LANGUAGES CXX CUDA)
 else()
     project(deep8_native LANGUAGES CXX)
 endif()
 
-message(STATUS "========================================================================================================")
 message(STATUS "Begin compile deep8_native")
-message(STATUS "========================================================================================================")
+
+# c++11
+set(CMAKE_CXX_STANDARD 11)
+
+if (BUILD_WITH_GPU)
+    # find the CUDA
+    find_package(CUDA)
+
+    if (NOT CUDA_FOUND)
+        # can not find the GPU
+        message(FATAL_ERROR, "can not find the CUDA, set BUILD_WITH_GPU to be FALSE to compiler")
+    endif()
+
+    # find the CUDA
+    message(STATUS "find the CUDA, the version is => ${CUDA_VERSION}, the path is => ${CUDA_TOOLKIT_ROOT_DIR}")
+    set(HAVE_CUDA TRUE)
+
+    if (CUDA_HAS_FP16)
+        message(STATUS "support half")
+        set(HAVE_HALF TRUE)
+    endif()
+
+    # include the CUDA head dir
+    message(STATUS "include the CUDA head files => ${CUDA_INCLUDE_DIRS}")
+    include_directories(SYSTEM ${CUDA_INCLUDE_DIRS})
+
+    #set the CUDA_LIBRARIES to cudart_static, nvlink does not support space in path
+    message(STATUS "include the CUDA cudart_static")
+    set(CUDA_LIBRARIES cudart_static)
+
+    message(STATUS "include the CUDA Random Number Generation library")
+    list(APPEND CUDA_LIBRARIES curand)
+
+    message(STATUS "include the CUDA Blas library")
+    list(APPEND CUDA_LIBRARIES cublas)
+
+    # begin to find the cudnn
+    message(STATUS "begin to find the CUDNN at ENV{CUDNN_ROOT} or {CUDA_TOOLKIT_ROOT_DIR}")
+
+    if (DEFINED ENV{CUDNN_ROOT})
+        set(CUDNN_ROOT $ENV{CUDNN_ROOT})
+    endif()
+
+    if (NOT DEFINED CUDNN_ROOT)
+        set(CUDNN_ROOT ${CUDA_TOOLKIT_ROOT_DIR})
+    endif()
+
+    # find the CUDNN head file path
+    find_path(CUDNN_INCLUDE_DIRS cudnn.h HINTS ${CUDNN_ROOT} ${CUDNN_ROOT}/include)
+
+    # find the library
+    find_library(CUDNN_LIBRARIES NAMES libcudnn.so cudnn.lib PATHS ${CUDNN_ROOT} ${CUDNN_ROOT}/lib ${CUDNN_ROOT}/lib64 ${CUDNN_ROOT}/lib/x64)
+
+    if (CUDNN_INCLUDE_DIRS AND CUDNN_LIBRARIES)
+        message(STATUS "find the CUDNN include dirs is => ${CUDNN_INCLUDE_DIRS}, library dir is => ${CUDNN_LIBRARIES}")
+        set(HAVE_CUDNN TRUE)
+
+        include_directories(SYSTEM ${CUDNN_INCLUDE_DIRS})
+        list(APPEND CUDA_LIBRARIES cudnn)
+    else()
+        message(WARNING "can not find the CUDNN, some Function can not be used in Deep8")
+    endif()
+
+    # print the libraries of CUDN or CUDNN
+    message(STATUS "the following libraries will be incldue in Deep8 => ${CUDA_LIBRARIES}")
+endif()
+
+if (BUILD_WITH_GPU)
+    message(STATUS "build with GPU and set Eigen use multi-threads")
+    add_definitions(-DHAVE_CUDA -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
+
+    if (HAVE_CUDNN)
+        add_definitions(-DHAVE_CUDNN)
+    endif()
+
+    if (HAVE_HALF)
+        add_definitions(-DHAVE_HALF)
+    endif()
+
+else()
+    message(STATUS "do not have GPU only support CPU")
+    add_definitions(-DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DEIGEN_NO_CUDA)
+endif()
 
 # deep8 include
 include_directories(include)
@@ -18,186 +99,33 @@ include_directories(include/trainer)
 include_directories(include/utils)
 
 file(GLOB_RECURSE DEEP8_HEAD_FILES "include/*.h")
+file(GLOB_RECURSE DEEP8_SRC_FILES "src/*cpp")
+file(GLOB_RECURSE DEEP8_CUDA_SRC_FILES "src/*cu")
 
-set(DEEP8_SRC_FILES
-		src/math/Abs.cpp
-		src/math/AdagradUpdate.cpp
-		src/math/AdamUpdate.cpp
-		src/math/Add.cpp
-		src/math/AvgPooling2d.cpp
-		src/math/AXPBY.cpp
-		src/math/AXPBYPCZ.cpp
-		src/math/Constant.cpp
-		src/math/Conv2d.cpp
-		src/math/CrossEntropy.cpp
-		src/math/DeConv2d.cpp
-		src/math/Divide.cpp
-		src/math/Dot.cpp
-		src/math/Exp.cpp
-		src/math/Gaussian.cpp
-		src/math/L1Distance.cpp
-		src/math/L1Norm.cpp
-		src/math/L2Distance.cpp
-		src/math/L2Norm.cpp
-		src/math/Linear.cpp
-		src/math/Log.cpp
-		src/math/LogSoftmax.cpp
-		src/math/LReLu.cpp
-		src/math/MatrixMultiply.cpp
-		src/math/MaxPooling2d.cpp
-		src/math/Mean.cpp
-		src/math/Minus.cpp
-		src/math/Multiply.cpp
-		src/math/PositiveUnitball.cpp
-		src/math/Random.cpp
-		src/math/ReduceMean.cpp
-		src/math/ReduceSum.cpp
-		src/math/ReLu.cpp
-		src/math/RMSPropUpdate.cpp
-		src/math/Sigmoid.cpp
-		src/math/Softmax.cpp
-		src/math/Square.cpp
-		src/math/Sum.cpp
-		src/math/Tanh.cpp
-		src/math/Uniform.cpp
+if (BUILD_WITH_GPU)
+    # enable separable compilation
+    set(CUDA_SEPARABLE_COMPILATION ON)
+    
+    string(APPEND CMAKE_CUDA_FLAGS " -std=c++11 -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_62,code=sm_62 -gencode arch=compute_70,code=sm_70  -gencode arch=compute_72,code=sm_72 -DVERBOSE -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DHAVE_CUDA -DEIGEN_NO_CUDA -D_FORCE_INLINES")
 
-		src/model/AutoBatchCodeHelper.cpp
-		src/model/Device.cpp
-		src/model/EagerExecutor.cpp
-		src/model/Executor.cpp
-		src/model/Expression.cpp
-		src/model/LazyExecutor.cpp
-		src/model/MemoryAllocator.cpp
-		src/model/MemoryPool.cpp
-		src/model/OutputEntry.cpp
-		src/model/Shape.cpp
-		src/model/Tensor.cpp
-		src/model/TensorStorage.cpp
-		
-		src/nodes/Abs.cpp
-		src/nodes/Add.cpp
-		src/nodes/AvgPooling2d.cpp
-		src/nodes/Batch.cpp
-		src/nodes/Conv2d.cpp
-		src/nodes/CrossEntropy.cpp
-		src/nodes/DeConv2d.cpp
-		src/nodes/Divide.cpp
-		src/nodes/Dot.cpp
-		src/nodes/Exp.cpp
-		src/nodes/Function.cpp
-		src/nodes/L1Distance.cpp
-		src/nodes/L1Norm.cpp
-		src/nodes/L2Distance.cpp
-		src/nodes/L2Norm.cpp
-		src/nodes/Linear.cpp
-		src/nodes/Log.cpp
-		src/nodes/LogSoftmax.cpp
-		src/nodes/LReLu.cpp
-		src/nodes/MatrixMultiply.cpp
-		src/nodes/MaxPooling2d.cpp
-		src/nodes/Mean.cpp
-		src/nodes/Minus.cpp
-		src/nodes/Multiply.cpp
-		src/nodes/Node.cpp
-		src/nodes/Parameter.cpp
-		src/nodes/ReduceMean.cpp
-		src/nodes/ReduceSum.cpp
-		src/nodes/ReLu.cpp
-		src/nodes/ReShape.cpp
-		src/nodes/Sigmoid.cpp
-		src/nodes/Softmax.cpp
-		src/nodes/Square.cpp
-		src/nodes/Sum.cpp
-		src/nodes/Tanh.cpp
-		src/nodes/UnBatch.cpp
-		src/nodes/Variable.cpp
+    # enable cudnn
+    if (HAVE_CUDNN)
+        string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_CUDNN")
+    endif()
 
-		src/trainer/LearningRateIterator.cpp
-		src/trainer/ConstantLearningRateIterator.cpp
-		src/trainer/LinearDecayLearningRateIterator.cpp
-		src/trainer/Trainer.cpp
-		src/trainer/SGDTrainer.cpp
-		src/trainer/AdagradTrainer.cpp
-		src/trainer/MomentumTrainer.cpp
-		src/trainer/RMSPropTrainer.cpp
-		src/trainer/AdamTrainer.cpp
-		)
+    if (HAVE_HALF)
+        string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_HALF")
+    endif()
 
-set(DEEP8_CUDA_SRC_FILES
+    add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES})
 
-		src/math/Abs.cu
-		src/math/AdagradUpdate.cu
-		src/math/AdamUpdate.cu
-		src/math/Add.cu
-		src/math/AvgPooling2d.cu
-		src/math/AXPBY.cu
-		src/math/AXPBYPCZ.cu
-		src/math/Constant.cu
-		src/math/Conv2d.cu
-		src/math/CrossEntropy.cu
-		src/math/DeConv2d.cu
-		src/math/Divide.cu
-		src/math/Dot.cu
-		src/math/Exp.cu
-		src/math/Gaussian.cu
-		src/math/L1Distance.cu
-		src/math/L1Norm.cu
-		src/math/L2Distance.cu
-	    src/math/L2Norm.cu
-	    src/math/Linear.cu
-	    src/math/Log.cu
-		src/math/LogSoftmax.cu
-		src/math/LReLu.cu
-		src/math/MatrixMultiply.cu
-		src/math/MaxPooling2d.cu
-		src/math/Mean.cu
-		src/math/Minus.cu
-		src/math/Multiply.cu
-		src/math/PositiveUnitball.cu
-		src/math/ReduceMean.cu
-		src/math/ReduceSum.cu
-		src/math/ReLu.cu
-		src/math/RMSPropUpdate.cu
-		src/math/Sigmoid.cu
-		src/math/Softmax.cu
-		src/math/Square.cu
-		src/math/Sum.cu
-		src/math/Tanh.cu
-		src/math/Uniform.cu
-
-		src/model/Executor.cu
-		src/model/GPUDevice.cu
-		src/model/GPUMemoryAllocator.cu
-		src/model/GPUMemoryPool.cu
-		)
-
-if (HAVE_GPU AND HAVE_CUDA)
-	# enable separable compilation
-	set(CUDA_SEPARABLE_COMPILATION ON)
-	
-	string(APPEND CMAKE_CUDA_FLAGS " -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_62,code=sm_62 -gencode arch=compute_70,code=sm_70  -gencode arch=compute_72,code=sm_72 -DVERBOSE -DEIGEN_USE_THREADS  -DEIGEN_FAST_MATH -DHAVE_CUDA -DEIGEN_NO_CUDA -D_FORCE_INLINES")
-
-	# enable cudnn
-	if (HAVE_CUDNN)
-		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_CUDNN")
-	endif()
-
-	if (HAVE_HALF)
-		string(APPEND CMAKE_CUDA_FLAGS "-DHAVE_HALF")
-	endif()
-
-	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_CUDA_SRC_FILES} ${DEEP8_HEAD_FILES})
-
-	# link the gtest and CUDA library
-	target_link_libraries(deep8_native ${CUDA_LIBRARIES})
+    # link the gtest and CUDA library
+    target_link_libraries(deep8_native ${CUDA_LIBRARIES})
 else()
-	add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_HEAD_FILES})
+    add_library(deep8_native ${DEEP8_SRC_FILES} ${DEEP8_HEAD_FILES})
 endif()
 
 install(TARGETS deep8_native DESTINATION lib)
-# install(FILES ${DEEP8_HEAD_FILES} DESTINATION include/deep8)
 install(DIRECTORY deep8/include/ DESTINATION include/deep8)
 
-message(STATUS "========================================================================================================")
 message(STATUS "end compile deep8_native")
-message(STATUS "========================================================================================================")

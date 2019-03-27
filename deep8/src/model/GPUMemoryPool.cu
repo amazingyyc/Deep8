@@ -130,6 +130,10 @@ int GPUMemoryPool::chunkType(size_t offset, size_t size) {
 }
 
 void* GPUMemoryPool::malloc(size_t size) {
+    if (0 == size) {
+        return nullptr;
+    }
+
 	size = nextPowerOf2(size);
 
 	DEEP8_ARGUMENT_CHECK(size > 0, "can not malloc 0 memory");
@@ -182,6 +186,10 @@ void* GPUMemoryPool::malloc(size_t size) {
 }
 
 void GPUMemoryPool::free(void *ptr) {
+    if (nullptr == ptr) {
+        return;
+    }
+
 	if (ptrMaps.find(ptr) == ptrMaps.end()) {
 		DEEP8_RUNTIME_ERROR("free memory error");
 	}

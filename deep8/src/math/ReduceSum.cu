@@ -1,3 +1,4 @@
+#include "utils/ShapeUtils.h"
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
@@ -26,66 +27,68 @@ struct ReduceSumKernelOp {
 	}
 };
 
-void ReduceSumGPU(const Tensor &x, Tensor &y, int axis) {
-    auto shape = x.shape;
-    int dim0, dim1, dim2;
+void ReduceSumGPU(const Tensor& x, Tensor& y, const std::vector<int>& axis, bool keepDims) {
+    auto xshape = convertShapeToVector(x.shape);
 
-    dim0 = (int) shape.batch;
-    dim1 = (int) shape.dim(axis);
-    dim2 = 1;
+    int rank = xshape.size();
 
-    for (int i = 0; i < axis; ++i) {
-        dim0 *= (int) shape.dim(i);
+    std::vector<bool> reduceAxis(rank);
+
+    if (axis.empty()) {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = true;
+        }
+    } else {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = false;
+        }
+
+        for (int i = 0; i < axis.size(); ++i) {
+            DEEP8_ARGUMENT_CHECK(-rank <= axis[i] && axis[i] < rank, "the reduce dims is error");
+
+            reduceAxis[(axis[i] + rank) % rank] = true;
+        }
     }
 
-    for (int i = axis + 1; i < shape.nDims; ++i) {
-        dim2 *= (int) shape.dim(i);
+    auto yshape = xshape;
+
+    for (int i = 0; i < rank; ++i) {
+        if (reduceAxis[i]) {
+            yshape[i] = 1;
+        } else {
+            yshape[i] = xshape[i];
+        }
     }
 
     switch (x.elementType.id) {
     case DType::Float32:
-        if (1 == dim2) {
-            CallTailReduceKernel<float, ReduceSumKernelOp<float>>(x.data<float>(), y.data<float>(), dim0, dim1, ReduceSumKernelOp<float>());
-        } else if (1 == dim0) {
-            CallHeadReduceKernel<float, ReduceSumKernelOp<float>>(x.data<float>(), y.data<float>(), dim1, dim2, ReduceSumKernelOp<float>());
-        } else {
-            int N = dim0 * dim2;
-            int blockSize = DEEP8_GPU_BLOCK_SIZE;
-            int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
-
-            MiddleReduceKernel<float, ReduceSumKernelOp<float>> <<<grideSize, blockSize>>>(x.data<float>(), y.data<float>(), dim0, dim1, dim2, ReduceSumKernelOp<float>(), N);
-        }
-
+        CallReduceKernel<float, ReduceSumKernelOp<float>>(
+            x.data<float>(),
+            xshape,
+            y.data<float>(),
+            yshape,
+            ReduceSumKernelOp<float>()
+            );
         break;
     case DType::Float64:
-        if (1 == dim2) {
-            CallTailReduceKernel<double, ReduceSumKernelOp<double>>(x.data<double>(), y.data<double>(), dim0, dim1, ReduceSumKernelOp<double>());
-        } else if (1 == dim0) {
-            CallHeadReduceKernel<double, ReduceSumKernelOp<double>>(x.data<double>(), y.data<double>(), dim1, dim2, ReduceSumKernelOp<double>());
-        } else {
-            int N = dim0 * dim2;
-            int blockSize = DEEP8_GPU_BLOCK_SIZE;
-            int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
-
-            MiddleReduceKernel<double, ReduceSumKernelOp<double>> <<<grideSize, blockSize>>>(x.data<double>(), y.data<double>(), dim0, dim1, dim2, ReduceSumKernelOp<double>(), N);
-        }
-
+        CallReduceKernel<double, ReduceSumKernelOp<double>>(
+            x.data<double>(),
+            xshape,
+            y.data<double>(),
+            yshape,
+            ReduceSumKernelOp<double>()
+            );
         break;
 
 #ifdef HAVE_HALF
     case DType::Float16:
-        if (1 == dim2) {
-            CallTailReduceKernel<half, ReduceSumKernelOp<half>>(x.data<half>(), y.data<half>(), dim0, dim1, ReduceSumKernelOp<half>());
-        } else if (1 == dim0) {
-            CallHeadReduceKernel<half, ReduceSumKernelOp<half>>(x.data<half>(), y.data<half>(), dim1, dim2, ReduceSumKernelOp<half>());
-        } else {
-            int N = dim0 * dim2;
-            int blockSize = DEEP8_GPU_BLOCK_SIZE;
-            int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
-
-            MiddleReduceKernel<half, ReduceSumKernelOp<half>> <<<grideSize, blockSize>>>(x.data<half>(), y.data<half>(), dim0, dim1, dim2, ReduceSumKernelOp<half>(), N);
-        }
-
+        CallReduceKernel<half, ReduceSumKernelOp<half>>(
+            x.data<half>(),
+            xshape,
+            y.data<half>(),
+            yshape,
+            ReduceSumKernelOp<half>()
+            );
         break;
 #endif
 
@@ -102,64 +105,74 @@ struct ReduceSumGradKernelOp {
 	}
 };
 
-void ReduceSumGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis) {
-    auto shape = x.shape;
-    int dim0, dim1, dim2;
+void ReduceSumGradGPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy, const std::vector<int>& axis, bool keepDims) {
+    auto xshape = convertShapeToVector(x.shape);
 
-    dim0 = (int) shape.batch;
-    dim1 = (int) shape.dim(axis);
-    dim2 = 1;
+    int rank = xshape.size();
 
-    for (int i = 0; i < axis; ++i) {
-        dim0 *= (int) shape.dim(i);
+    std::vector<bool> reduceAxis(rank);
+
+    if (axis.empty()) {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = true;
+        }
+    } else {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = false;
+        }
+
+        for (int i = 0; i < axis.size(); ++i) {
+            DEEP8_ARGUMENT_CHECK(-rank <= axis[i] && axis[i] < rank, "the reduce dims is error");
+
+            reduceAxis[(axis[i] + rank) % rank] = true;
+        }
     }
 
-    for (int i = axis + 1; i < shape.nDims; ++i) {
-        dim2 *= (int) shape.dim(i);
+    auto yshape = xshape;
+
+    for (int i = 0; i < rank; ++i) {
+        if (reduceAxis[i]) {
+            yshape[i] = 1;
+        } else {
+            yshape[i] = xshape[i];
+        }
     }
 
-    int N = dim0 * dim2;
-    int blockSize = DEEP8_GPU_BLOCK_SIZE;
-    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
-    
     switch (x.elementType.id) {
     case DType::Float32:
-        MiddleReduceGradKernel<float, ReduceSumGradKernelOp<float>> <<<grideSize, blockSize>>>(
-            x.data<float>(), 
-            dx.data<float>(), 
-            y.data<float>(), 
-            dy.data<float>(), 
-            dim0, 
-            dim1, 
-            dim2, 
-            ReduceSumGradKernelOp<float>(), 
-            N);
+        CallReduceGradKernel<float, ReduceSumGradKernelOp<float>>(
+            x.data<float>(),
+            dx.data<float>(),
+            xshape,
+            y.data<float>(),
+            dy.data<float>(),
+            yshape,
+            ReduceSumGradKernelOp<float>()
+            );
         break;
     case DType::Float64:
-        MiddleReduceGradKernel<double, ReduceSumGradKernelOp<double>> <<<grideSize, blockSize>>>(
-            x.data<double>(), 
-            dx.data<double>(), 
-            y.data<double>(), 
-            dy.data<double>(), 
-            dim0, 
-            dim1, 
-            dim2, 
-            ReduceSumGradKernelOp<double>(), 
-            N);
+        CallReduceGradKernel<double, ReduceSumGradKernelOp<double>>(
+            x.data<double>(),
+            dx.data<double>(),
+            xshape,
+            y.data<double>(),
+            dy.data<double>(),
+            yshape,
+            ReduceSumGradKernelOp<double>()
+            );
         break;
 
 #ifdef HAVE_HALF
     case DType::Float16:
-        MiddleReduceGradKernel<half, ReduceSumGradKernelOp<half>> <<<grideSize, blockSize>>>(
-            x.data<half>(), 
-            dx.data<half>(), 
-            y.data<half>(), 
-            dy.data<half>(), 
-            dim0, 
-            dim1, 
-            dim2, 
-            ReduceSumGradKernelOp<half>(), 
-            N);
+        CallReduceGradKernel<half, ReduceSumGradKernelOp<half>>(
+            x.data<half>(),
+            dx.data<half>(),
+            xshape,
+            y.data<half>(),
+            dy.data<half>(),
+            yshape,
+            ReduceSumGradKernelOp<half>()
+            );
         break;
 #endif
 
@@ -167,7 +180,6 @@ void ReduceSumGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor
         DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
     }
-
 }
 
 

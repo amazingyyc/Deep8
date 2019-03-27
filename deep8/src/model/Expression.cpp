@@ -18,6 +18,19 @@ Expression parameter(Executor *executor, Shape &shape, bool updateGradient, DTyp
 	return Expression(executor, executor->addVariable(shape, type, updateGradient));
 }
 
+/**create input paramater, the input parameter will deleted after bakward, it is temp*/
+Expression inputParameter(Executor *executor, std::vector<size_t> list, DType type) {
+    return Expression(executor, executor->addVariable(list, type, false, false));
+}
+
+Expression inputParameter(Executor *executor, size_t batch, std::vector<size_t> list, DType type) {
+    return Expression(executor, executor->addVariable(batch, list, type, false, false));
+}
+
+Expression inputParameter(Executor *executor, Shape &shape, DType type) {
+    return Expression(executor, executor->addVariable(shape, type, false, false));
+}
+
 Expression::Expression() : executor(nullptr), node(nullptr) {
 }
 
@@ -64,19 +77,19 @@ Expression Expression::constant(float scalar) {
 
     Math::Constant(variable->value, scalar);
 
-    return *this;
+    return (*this);
 }
 
 Expression Expression::zero() {
     constant(0);
 
-    return *this;
+    return (*this);
 }
 
 Expression Expression::one() {
     constant(1);
 
-    return *this;
+    return (*this);
 }
 
 Expression Expression::gaussian(float mean, float stddev) {
@@ -86,7 +99,7 @@ Expression Expression::gaussian(float mean, float stddev) {
 
     Math::Gaussian(variable->value, mean, stddev);
 
-    return *this;
+    return (*this);
 }
 
 Expression Expression::positiveUnitball() {
@@ -96,13 +109,13 @@ Expression Expression::positiveUnitball() {
 
     Math::positiveUnitball(variable->value);
 
-    return *this;
+    return (*this);
 }
 
 Expression Expression::random(float lower, float upper) {
     uniform(lower, upper);
 
-    return *this;
+    return (*this);
 }
 
 Expression Expression::uniform(float left, float right) {
@@ -112,7 +125,7 @@ Expression Expression::uniform(float left, float right) {
 
     Math::Uniform(variable->value, left, right);
 
-    return *this;
+    return (*this);
 }
 
 Expression Expression::operator + (const Expression &y) const {
@@ -135,6 +148,26 @@ Expression Expression::operator / (const Expression &y) const {
     return Expression(executor, executor->addFunction(new Divide(inputs)));
 }
 
+Expression Expression::operator + (float c) const {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new Linear(inputs, 1.0, c)));
+}
+
+Expression Expression::operator - (float c) const {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new Linear(inputs, 1.0, -c)));
+}
+
+Expression Expression::operator * (float c) const {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new Linear(inputs, c, 0.0)));
+}
+
+Expression Expression::operator / (float c) const {
+    std::vector<Node*> inputs = { node };
+    return Expression(executor, executor->addFunction(new Linear(inputs, 1.0 / c, 0.0)));
+}
+
 Expression Expression::add(Expression &y) {
     std::vector<Node*> inputs = {node, y.node};
     return Expression(executor, executor->addFunction(new Add(inputs)));
@@ -153,6 +186,22 @@ Expression Expression::multiply(Expression &y) {
 Expression Expression::divide(Expression &y) {
     std::vector<Node*> inputs = { node, y.node };
     return Expression(executor, executor->addFunction(new Divide(inputs)));
+}
+
+Expression Expression::addConstant(float c) {
+    return this->linear(1.0, c);
+}
+
+Expression Expression::minusConstant(float c) {
+    return this->linear(1.0, -c);
+}
+
+Expression Expression::multiplyConstant(float c) {
+    return this->linear(c, 0.0);
+}
+
+Expression Expression::divideConstant(float c) {
+    return this->linear(1.0 / c, 0.0);
 }
 
 Expression Expression::dot(Expression &y) {
@@ -258,19 +307,19 @@ Expression Expression::maxPooling2d(bool covered,
     return Expression(executor, executor->addFunction(new MaxPooling2d(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
 }
 
-Expression Expression::mean() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new Mean(inputs)));
+Expression Expression::pRelu(Expression &y) {
+    std::vector<Node*> inputs = { node, y.node };
+    return Expression(executor, executor->addFunction(new PReLu(inputs)));
 }
 
-Expression Expression::reduceMean(int axis, bool keep) {
+Expression Expression::reduceMean(std::vector<int> axis, bool keepDims) {
     std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new ReduceMean(inputs, axis, keep)));
+    return Expression(executor, executor->addFunction(new ReduceMean(inputs, axis, keepDims)));
 }
 
-Expression Expression::reduceSum(int axis, bool keep) {
+Expression Expression::reduceSum(std::vector<int> axis, bool keepDims) {
     std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new ReduceSum(inputs, axis, keep)));
+    return Expression(executor, executor->addFunction(new ReduceSum(inputs, axis, keepDims)));
 }
 
 Expression Expression::relu() {
@@ -303,30 +352,25 @@ Expression Expression::square() {
     return Expression(executor, executor->addFunction(new Square(inputs)));
 }
 
-Expression Expression::sum() {
-    std::vector<Node*> inputs = { node };
-    return Expression(executor, executor->addFunction(new Sum(inputs)));
-}
-
 Expression Expression::tanh() {
     std::vector<Node*> inputs = { node };
     return Expression(executor, executor->addFunction(new Tanh(inputs)));
 }
 
-Expression Expression::l1DistanceLoss(Expression &y) {
-    return this->l1Distance(y).mean();
+Expression Expression::l1Loss(Expression &y) {
+    return this->minus(y).abs().reduceMean({}, false);
 }
 
 Expression Expression::l1NormLoss() {
-    return this->l1Norm().mean();
+    return this->l1Norm().reduceMean({}, false);
 }
 
-Expression Expression::l2DistanceLoss(Expression &y) {
-    return this->l2Distance(y).mean();
+Expression Expression::l2Loss(Expression &y) {
+    return this->minus(y).square().reduceMean({}, false);
 }
 
 Expression Expression::l2NormLoss() {
-    return this->l2Norm().mean();
+    return this->l2Norm().reduceMean({}, false);
 }
 
 Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
@@ -334,7 +378,7 @@ Expression Expression::softmaxCrossEntropyLoss(Expression &y) {
     DEEP8_ARGUMENT_CHECK(1 == this->node->shape.nDims, "the shape's ndims must be 1");
 
     auto pred = this->logSoftmax();
-    return y.linear(-1).dot(pred).mean();
+    return y.linear(-1).dot(pred).reduceMean({}, false);
 }
 
 

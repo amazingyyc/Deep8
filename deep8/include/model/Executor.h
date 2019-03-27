@@ -30,7 +30,12 @@ protected:
 	/**store all function*/
 	std::unordered_map<int64_t, Function*> allFunctions;
 
-	explicit Executor(DeviceType deviceType = DeviceType::CPU);
+	/**store the interim Nodes, the nodes will be deleted when after backward*/
+	std::unordered_map<int64_t, Node*> interimNodes;
+
+	bool clearInterim;
+
+	explicit Executor(DeviceType deviceType = DeviceType::CPU, bool flag = true);
 
 protected:
 	/**init device*/
@@ -58,14 +63,17 @@ protected:
 public:
 	virtual ~Executor();
 
-	/**add a Variable*/
-	Variable* addVariable(std::vector<size_t>,               DType type, bool updateGradient = true);
-	Variable* addVariable(size_t batch, std::vector<size_t>, DType type, bool updateGradient = true);
-	Variable* addVariable(Shape &shape,                      DType type, bool updateGradient = true);
+	/**clear interim nodes*/
+	void clearInterimNodes();
 
-    Variable* addVariable(std::vector<size_t>,               ElementType type, bool updateGradient = true);
-    Variable* addVariable(size_t batch, std::vector<size_t>, ElementType type, bool updateGradient = true);
-    Variable* addVariable(Shape& shape,                      ElementType type, bool updateGradient = true);
+	/**add a Variable updateGradient: if the variable has the gradient, retain: if ratian in memory after backwarx*/
+	Variable* addVariable(Shape &shape, DType type, bool updateGradient = true, bool retain = true);
+	Variable* addVariable(std::vector<size_t>, DType type, bool updateGradient = true, bool retain = true);
+	Variable* addVariable(size_t batch, std::vector<size_t>, DType type, bool updateGradient = true, bool retain = true);
+
+    Variable* addVariable(Shape& shape, ElementType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::vector<size_t>, ElementType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(size_t batch, std::vector<size_t>, ElementType type, bool updateGradient = true, bool retain = true);
 
 	/**get a Node/Variable/Function by Id*/
 	Node*     getNodeById(int64_t id);

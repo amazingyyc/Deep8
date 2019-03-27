@@ -27,8 +27,8 @@ void MaxPooling2d(const Tensor &x,
         outputHeight = (inputHeight - filterHeight) / strideY + 1;
         outputWidth  = (inputWidth  - filterWidth)  / strideX + 1;
     } else {
-        outputHeight = (inputHeight - filterHeight + strideY - 1) / strideY + 1;
-        outputWidth  = (inputWidth  - filterWidth  + strideX - 1) / strideX + 1;
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
     }
 
     DEEP8_ARGUMENT_CHECK(batch        == (int)y.batch() &&
@@ -76,8 +76,8 @@ void MaxPooling2dGrad(const Tensor &x,
         outputHeight = (inputHeight - filterHeight) / strideY + 1;
         outputWidth  = (inputWidth - filterWidth) / strideX + 1;
     } else {
-        outputHeight = (inputHeight - filterHeight + strideY - 1) / strideY + 1;
-        outputWidth  = (inputWidth - filterWidth + strideX - 1) / strideX + 1;
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
     }
 
     DEEP8_ARGUMENT_CHECK(outputHeight == (int)y.dim(0) &&

@@ -5,8 +5,7 @@
 
 namespace Deep8 {
 
-LazyExecutor::LazyExecutor(DeviceType deviceType, bool flag) :
-	Executor(deviceType), clearInterim(flag) {
+LazyExecutor::LazyExecutor(DeviceType deviceType, bool flag): Executor(deviceType, flag) {
 }
 
 /**use the auto batch algorithm to optimize the compute graph*/
@@ -234,24 +233,6 @@ void LazyExecutor::mallocInterimVariable(Node *last) {
 			node->outputs.add(variable, 0);
 		}
 	}
-}
-
-void LazyExecutor::clearInterimNodes() {
-	/**clear all node output*/
-	for (auto item : this->allNodes) {
-		item.second->inputs.clear();
-		item.second->outputs.clear();
-	}
-
-	for (auto item : this->interimNodes) {
-		this->allNodes.erase(item.first);
-		this->allFunctions.erase(item.first);
-		this->allVariables.erase(item.first);
-
-		delete item.second;
-	}
-
-	this->interimNodes.clear();
 }
 
 Node* LazyExecutor::addFunction(Function *function) {

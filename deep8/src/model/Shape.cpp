@@ -37,7 +37,7 @@ Shape::Shape(std::vector<size_t> list): batch(1), nDims(0) {
 }
 
 Shape::Shape(size_t b, std::vector<size_t> list): batch(b), nDims(0) {
-	DEEP8_ARGUMENT_CHECK(0 < list.size() && list.size() <= MAX_TENSOR_DIMS, "the dim of a Tensor must not bigger than " << MAX_TENSOR_DIMS);
+	DEEP8_ARGUMENT_CHECK(1 <= list.size() && list.size() <= MAX_TENSOR_DIMS, "the list size:" << list.size() << " is error must >= 1 and <= "<< MAX_TENSOR_DIMS);
 
 	for (auto d : list) {
 		DEEP8_ARGUMENT_CHECK(0 != d, "the dim can not be 0");

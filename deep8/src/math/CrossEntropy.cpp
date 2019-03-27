@@ -7,14 +7,14 @@ void CrossEntropy(const Tensor &x, const Tensor &y, Tensor &z) {
     DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType() && x.deviceType()  == z.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == z.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.size() == y.size() && x.batch() == y.batch(), "the x/y shape error");
-    DEEP8_ARGUMENT_CHECK(2 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
+    DEEP8_ARGUMENT_CHECK(1 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         CrossEntropyCPU(x, y, z);
     } else {
 #ifdef HAVE_CUDA
         CrossEntropyGPU(x, y, z);
-#else 
+#else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif
     }
@@ -35,7 +35,7 @@ void CrossEntropyGradX(const Tensor &x, Tensor &dx, const Tensor &y, const Tenso
     DEEP8_ARGUMENT_CHECK(z.shape == dz.shape, "the z shape is error");
 
     DEEP8_ARGUMENT_CHECK(x.size() == y.size() && x.batch() == y.batch(), "the x/y shape error");
-    DEEP8_ARGUMENT_CHECK(2 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
+    DEEP8_ARGUMENT_CHECK(1 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         CrossEntropyGradXCPU(x, dx, y, z, dz);
@@ -63,7 +63,7 @@ void CrossEntropyGradY(const Tensor &x, const Tensor &y, Tensor &dy, const Tenso
     DEEP8_ARGUMENT_CHECK(z.shape == dz.shape, "the z shape is error");
 
     DEEP8_ARGUMENT_CHECK(x.size() == y.size() && x.batch() == y.batch(), "the x/y shape error");
-    DEEP8_ARGUMENT_CHECK(2 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
+    DEEP8_ARGUMENT_CHECK(1 == z.shape.nDims && x.batch() == z.batch() && 1 == z.dim(0), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
         CrossEntropyGradYCPU(x, y, dy, z, dz);

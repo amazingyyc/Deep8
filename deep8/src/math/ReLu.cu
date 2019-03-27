@@ -10,7 +10,7 @@ namespace Math {
 template <typename T>
 struct ReLuKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x) {
-        return x >= T(0) ? x : T(0);
+        return x > T(0) ? x : T(0);
     }
 };
 
@@ -58,7 +58,7 @@ void ReLuGPU(const Tensor &x, Tensor &y) {
 template <typename T>
 struct ReLuGradKernelOp {
     DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &dy) {
-        return x >= T(0) ? dy : T(0);
+        return x > T(0) ? dy : T(0);
     }
 };
 

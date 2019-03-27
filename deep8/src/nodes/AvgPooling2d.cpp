@@ -14,13 +14,12 @@ void AvgPooling2d::check() {
     DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the AvgPooling2d only need 1 input");
     DEEP8_ARGUMENT_CHECK(filterHeight >= 1 && filterWidth >= 1 && strideY >= 1 && strideX >= 1, "the filter size or stride is error");
     DEEP8_ARGUMENT_CHECK(3 == this->inputs[0]->shape.nDims, "AvgPooling2d needs inputs nDims is 3");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
 
     auto inputShape = this->inputs[0]->shape;
 
     if (!covered) {
         DEEP8_ARGUMENT_CHECK(filterHeight <= inputShape.dim(0) && filterWidth <= inputShape.dim(1),
-                             "the not forwardCovered mode type needs filter smaller than input");
+                             "the not forward Covered mode type needs filter smaller than input");
     }
 
     auto inputHeight = (int) inputShape.dim(0);
@@ -38,8 +37,8 @@ void AvgPooling2d::check() {
         outputDim[0] = outputHeight;
         outputDim[1] = outputWidth;
     } else {
-        int outputHeight = (inputHeight - filterHeight + strideY - 1) / strideY + 1;
-        int outputWidth  = (inputWidth  - filterWidth  + strideX - 1) / strideX + 1;
+        int outputHeight = (inputHeight - 1) / strideY + 1;
+        int outputWidth  = (inputWidth  - 1) / strideX + 1;
 
         DEEP8_ARGUMENT_CHECK(outputHeight > 0 && outputWidth > 0, "the output height or width must > 0")
 

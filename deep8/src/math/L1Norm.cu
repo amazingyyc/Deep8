@@ -27,7 +27,7 @@ struct L1NormKernelOp {
 	}
 };
 
-void L1NormLossGPU(const Tensor &x, Tensor &y) {
+void L1NormGPU(const Tensor &x, Tensor &y) {
     int batch = (int) x.shape.batch;
     int size  = (int) x.shape.batchSize();
 
@@ -69,7 +69,13 @@ void L1NormLossGPU(const Tensor &x, Tensor &y) {
 template <typename T>
 struct L1NormGradKernelOp {
 	DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE T operator()(const T &x, const T &y, const T &dy) {
-		return x >= T (0) ? dy : -dy;
+        if (x > T(0)) {
+            return dy;
+        } else if (T(0) == x) {
+            return T(0);
+        } else {
+            return -dy;
+        }
 	}
 };
 
@@ -84,7 +90,7 @@ void L1NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
 
     switch (x.elementType.id) {
         case DType::Float32:
-            TailReduceGradKernel<float, L1NormGradKernelOp<float>> (
+            TailReduceGradKernel<float, L1NormGradKernelOp<float>> << <blockSize, grideSize >> > (
                 x.data<float>(), 
                 dx.data<float>(), 
                 y.data<float>(), 
@@ -95,7 +101,7 @@ void L1NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
                 N);
             break;
         case DType::Float64:
-            TailReduceGradKernel<double, L1NormGradKernelOp<double>> (
+            TailReduceGradKernel<double, L1NormGradKernelOp<double>> << <blockSize, grideSize >> > (
                 x.data<double>(), 
                 dx.data<double>(), 
                 y.data<double>(), 
@@ -108,7 +114,7 @@ void L1NormGradGPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &d
 
 #ifdef HAVE_HALF
         case DType::Float16:
-            TailReduceGradKernel<half, L1NormGradKernelOp<half>> (
+            TailReduceGradKernel<half, L1NormGradKernelOp<half>> << <blockSize, grideSize >> > (
                 x.data<half>(), 
                 dx.data<half>(), 
                 y.data<half>(), 

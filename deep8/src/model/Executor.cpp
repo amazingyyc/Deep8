@@ -3,7 +3,7 @@
 
 namespace Deep8 {
 
-Executor::Executor(DeviceType deviceType): uniqueId(0) {
+Executor::Executor(DeviceType deviceType, bool flag): uniqueId(0), clearInterim(flag) {
 	if (deviceType == DeviceType::CPU) {
 		initDeviceCPU();
 	} else {
@@ -25,6 +25,7 @@ Executor::~Executor() {
 	allNodes.clear();
 	allVariables.clear();
 	allFunctions.clear();
+	interimNodes.clear();
 }
 
 void Executor::initDeviceCPU() {
@@ -86,19 +87,37 @@ Variable* Executor::createVariableByFunction(Function *func) {
 	}
 }
 
-Variable* Executor::addVariable(std::vector<size_t> list, DType type, bool updateGradient) {
+void Executor::clearInterimNodes() {
+	/**clear all node output*/
+	for (auto item : this->allNodes) {
+		item.second->inputs.clear();
+		item.second->outputs.clear();
+	}
+
+	for (auto item : this->interimNodes) {
+		this->allNodes.erase(item.first);
+		this->allFunctions.erase(item.first);
+		this->allVariables.erase(item.first);
+
+		delete item.second;
+	}
+
+	this->interimNodes.clear();
+}
+
+Variable* Executor::addVariable(std::vector<size_t> list, DType type, bool updateGradient, bool retain) {
 	Shape shape(list);
 
-	return addVariable(shape, type, updateGradient);
+	return addVariable(shape, type, updateGradient, retain);
 }
 
-Variable* Executor::addVariable(size_t batch, std::vector<size_t> list, DType type, bool updateGradient) {
+Variable* Executor::addVariable(size_t batch, std::vector<size_t> list, DType type, bool updateGradient, bool retain) {
 	Shape shape(batch, list);
 
-	return addVariable(shape, type, updateGradient);
+	return addVariable(shape, type, updateGradient, retain);
 }
 
-Variable* Executor::addVariable(Shape &shape, DType type, bool updateGradient) {
+Variable* Executor::addVariable(Shape &shape, DType type, bool updateGradient, bool retain) {
 	Variable *variable = nullptr;
 
 	if (updateGradient) {
@@ -118,19 +137,23 @@ Variable* Executor::addVariable(Shape &shape, DType type, bool updateGradient) {
 	allNodes[variable->id] = variable;
 	allVariables[variable->id] = variable;
 	
+	if (!retain) {
+		interimNodes[variable->id] = variable;
+	}
+
 	return variable;
 }
 
-Variable* Executor::addVariable(std::vector<size_t> list, ElementType type, bool updateGradient) {
-    return this->addVariable(list, type.id, updateGradient);
+Variable* Executor::addVariable(std::vector<size_t> list, ElementType type, bool updateGradient, bool retain) {
+    return this->addVariable(list, type.id, updateGradient, retain);
 }
 
-Variable* Executor::addVariable(size_t batch, std::vector<size_t> list, ElementType type, bool updateGradient) {
+Variable* Executor::addVariable(size_t batch, std::vector<size_t> list, ElementType type, bool updateGradient, bool retain) {
     return this->addVariable(batch, list, type.id, updateGradient);
 }
 
-Variable* Executor::addVariable(Shape& shape, ElementType type, bool updateGradient) {
-    return this->addVariable(shape, type.id, updateGradient);
+Variable* Executor::addVariable(Shape& shape, ElementType type, bool updateGradient, bool retain) {
+    return this->addVariable(shape, type.id, updateGradient, retain);
 }
 
 /**get a Node/Variable/Function by Id*/

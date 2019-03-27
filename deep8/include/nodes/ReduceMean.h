@@ -6,15 +6,12 @@
 
 namespace Deep8 {
 
-/**
- *  axis < 0 means all reduce
- */
 class ReduceMean : public Function {
 public:
-    int axis;
+    std::vector<int> axis;
     bool keepDims;
 
-    explicit ReduceMean(std::vector<Node *> &inputs, int a = -1, bool keep = true);
+    explicit ReduceMean(std::vector<Node *> &inputs, std::vector<int> reduceAxis = {}, bool keep = true);
 
     void check() override;
 

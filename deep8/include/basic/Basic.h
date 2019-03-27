@@ -26,6 +26,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <unordered_set>
+#include <cfloat>
 
 #ifdef __GUNC__
 #include <mm_malloc.h>
@@ -38,6 +39,7 @@
 
 #include <eigen/Eigen/Dense>
 #include <eigen/unsupported/Eigen/CXX11/Tensor>
+#include <eigen/unsupported/Eigen/CXX11/ThreadPool>
 
 /**define the byte type*/
 typedef unsigned char byte;

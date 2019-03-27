@@ -3,13 +3,44 @@
 namespace Deep8 {
 namespace Math {
 
-void DeConv2d(  const Tensor &x, 
-                const Tensor &y, 
-                Tensor &z,
-                void *zmat,
-                bool convered,
-                int strideY,
-                int strideX) {
+size_t DeConv2dInterimSize(const Tensor& x, const Tensor& y, Tensor& z, bool covered, int strideY, int strideX) {
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == z.elementType, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride must >= 1");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
+
+    auto inputBatch = (int)x.batch();
+    auto inputHeight = (int)x.dim(0);
+    auto inputWidth = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputChannel = (int)y.dim(0);
+    auto filterHeight = (int)y.dim(1);
+    auto filterWidth = (int)y.dim(2);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - 1) * strideY + filterHeight;
+        outputWidth  = (inputWidth  - 1) * strideX + filterWidth;
+    } else {
+        outputHeight = (inputHeight - 1) * strideY + 1;
+        outputWidth  = (inputWidth - 1)  * strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(inputBatch    == (int)z.batch() &&
+                         outputHeight  == (int)z.dim(0) &&
+                         outputWidth   == (int)z.dim(1) &&
+                         outputChannel == (int)z.dim(2), "the z shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        return 0;
+    } else {
+        return x.elementType.byteWidth * inputBatch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth;
+    }
+}
+
+void DeConv2d(const Tensor& x, const Tensor& y, Tensor& z, bool covered, int strideY, int strideX, void* interimPtr) {
     DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == z.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1 , "the stride must >= 1");
     DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
@@ -26,39 +57,69 @@ void DeConv2d(  const Tensor &x,
     int outputHeight;
     int outputWidth;
 
-    if (!convered) {
+    if (!covered) {
         outputHeight = (inputHeight - 1) * strideY + filterHeight;
         outputWidth  = (inputWidth  - 1) * strideX + filterWidth;
     } else {
-        outputHeight = (inputHeight - 1) * strideY + 1 - strideY + filterHeight;
-        outputWidth  = (inputWidth  - 1) * strideX + 1 - strideX + filterWidth;
+        outputHeight = (inputHeight - 1) * strideY + 1;
+        outputWidth  = (inputWidth  - 1) * strideX + 1;
     }
 
-    DEEP8_ARGUMENT_CHECK(inputBatch   == (int)z.batch() && 
-                    outputHeight  == (int)z.dim(0) &&
-                    outputWidth   == (int)z.dim(1) &&
-                    outputChannel == (int)z.dim(2), "the z shape is error");
+    DEEP8_ARGUMENT_CHECK(inputBatch == (int)z.batch() && 
+                    outputHeight    == (int)z.dim(0) &&
+                    outputWidth     == (int)z.dim(1) &&
+                    outputChannel   == (int)z.dim(2), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        DeConv2dCPU(x, y, z, convered, strideY, strideX);
+        DeConv2dCPU(x, y, z, covered, strideY, strideX);
     } else {
 #ifdef HAVE_CUDA
-        DeConv2dGPU(x, y, z, zmat, convered, strideY, strideX);
+        DeConv2dGPU(x, y, z, covered, strideY, strideX, interimPtr);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
     }
 }   
 
-void DeConv2dGradX( const Tensor& x, 
-                    Tensor& dx,
-                    const Tensor& y,
-                    const Tensor& z, 
-                    const Tensor& dz,
-                    void *dzmat,
-                    bool convered,
-                    int strideY,
-                    int strideX) {
+size_t DeConv2dGradXInterimSize(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& z, const Tensor& dz, bool covered, int strideY, int strideX) {
+    DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType && x.elementType == y.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && z.shape == dz.shape, "the shape is error");
+    DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride must >= 1");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
+
+    auto inputBatch = (int)x.batch();
+    auto inputHeight = (int)x.dim(0);
+    auto inputWidth = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputChannel = (int)y.dim(0);
+    auto filterHeight = (int)y.dim(1);
+    auto filterWidth = (int)y.dim(2);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - 1) * strideY + filterHeight;
+        outputWidth = (inputWidth - 1) * strideX + filterWidth;
+    } else {
+        outputHeight = (inputHeight - 1) * strideY + 1;
+        outputWidth  = (inputWidth - 1) * strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(inputBatch == (int)z.batch() &&
+                         outputHeight == (int)z.dim(0) &&
+                         outputWidth == (int)z.dim(1) &&
+                         outputChannel == (int)z.dim(2), "the z shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        return 0;
+    } else {
+        return x.elementType.byteWidth * inputBatch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth;
+    }
+}
+
+void DeConv2dGradX(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& z, const Tensor& dz, bool covered, int strideY, int strideX, void* interimPtr) {
     DEEP8_ARGUMENT_CHECK(x.elementType == dx.elementType && x.elementType == y.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && z.shape == dz.shape, "the shape is error");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride must >= 1");
@@ -76,12 +137,12 @@ void DeConv2dGradX( const Tensor& x,
     int outputHeight;
     int outputWidth;
 
-    if (!convered) {
+    if (!covered) {
         outputHeight = (inputHeight - 1) * strideY + filterHeight;
         outputWidth  = (inputWidth  - 1) * strideX + filterWidth;
     } else {
-        outputHeight = (inputHeight - 1) * strideY + 1 - strideY + filterHeight;
-        outputWidth  = (inputWidth  - 1) * strideX + 1 - strideX + filterWidth;
+        outputHeight = (inputHeight - 1) * strideY + 1;
+        outputWidth = (inputWidth - 1) * strideX + 1;
     }
 
     DEEP8_ARGUMENT_CHECK(inputBatch   == (int)z.batch() && 
@@ -90,25 +151,56 @@ void DeConv2dGradX( const Tensor& x,
                     outputChannel == (int)z.dim(2), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        DeConv2dGradXCPU(x, dx, y, z, dz, convered, strideY, strideX);
+        DeConv2dGradXCPU(x, dx, y, z, dz, covered, strideY, strideX);
     } else {
 #ifdef HAVE_CUDA
-        DeConv2dGradXGPU(x, dx, y, z, dz, dzmat, convered, strideY, strideX);
+        DeConv2dGradXGPU(x, dx, y, z, dz, covered, strideY, strideX, interimPtr);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
     }
 }
 
-void DeConv2dGradY( const Tensor &x,
-                    const Tensor &y, 
-                    Tensor &dy,
-                    const Tensor &z, 
-                    const Tensor& dz,
-                    void *dzmat,
-                    bool convered,
-                    int strideY,
-                    int strideX) {
+size_t DeConv2dGradYInterimSize(const Tensor& x, const Tensor& y, Tensor& dy, const Tensor& z, const Tensor& dz, bool covered, int strideY, int strideX) {
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == dy.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
+    DEEP8_ARGUMENT_CHECK(y.shape == dy.shape && z.shape == dz.shape, "the shape is error");
+    DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride must >= 1");
+    DEEP8_ARGUMENT_CHECK(3 == x.nDims() && 4 == y.nDims() && 3 == z.nDims(), "the shape is error");
+
+    auto inputBatch = (int)x.batch();
+    auto inputHeight = (int)x.dim(0);
+    auto inputWidth = (int)x.dim(1);
+    auto inputChannel = (int)x.dim(2);
+
+    auto outputChannel = (int)y.dim(0);
+    auto filterHeight = (int)y.dim(1);
+    auto filterWidth = (int)y.dim(2);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - 1) * strideY + filterHeight;
+        outputWidth = (inputWidth - 1) * strideX + filterWidth;
+    } else {
+        outputHeight = (inputHeight - 1) * strideY + 1;
+        outputWidth = (inputWidth - 1) * strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(inputBatch == (int)z.batch() &&
+                         outputHeight == (int)z.dim(0) &&
+                         outputWidth == (int)z.dim(1) &&
+                         outputChannel == (int)z.dim(2), "the z shape is error");
+
+    if (DeviceType::CPU == x.deviceType()) {
+        return 0;
+    } else {
+        return x.elementType.byteWidth * inputBatch * inputHeight * inputWidth * outputChannel * filterHeight * filterWidth;
+    }
+}
+
+
+void DeConv2dGradY(const Tensor& x, const Tensor& y, Tensor& dy, const Tensor& z, const Tensor& dz, bool covered, int strideY, int strideX, void* interimPtr) {
     DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType && x.elementType == dy.elementType && x.elementType == z.elementType && x.elementType == dz.elementType, "the data type must be same");
     DEEP8_ARGUMENT_CHECK(y.shape == dy.shape && z.shape == dz.shape, "the shape is error");
     DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride must >= 1");
@@ -126,12 +218,12 @@ void DeConv2dGradY( const Tensor &x,
     int outputHeight;
     int outputWidth;
 
-    if (!convered) {
+    if (!covered) {
         outputHeight = (inputHeight - 1) * strideY + filterHeight;
         outputWidth  = (inputWidth  - 1) * strideX + filterWidth;
     } else {
-        outputHeight = (inputHeight - 1) * strideY + 1 - strideY + filterHeight;
-        outputWidth  = (inputWidth  - 1) * strideX + 1 - strideX + filterWidth;
+        outputHeight = (inputHeight - 1) * strideY + 1;
+        outputWidth  = (inputWidth  - 1) * strideX + 1;
     }
 
     DEEP8_ARGUMENT_CHECK(inputBatch   == (int)z.batch() && 
@@ -140,10 +232,10 @@ void DeConv2dGradY( const Tensor &x,
                     outputChannel == (int)z.dim(2), "the z shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        DeConv2dGradYCPU(x, y, dy, z, dz, convered, strideY, strideX);
+        DeConv2dGradYCPU(x, y, dy, z, dz, covered, strideY, strideX);
     } else {
 #ifdef HAVE_CUDA
-        DeConv2dGradYGPU(x, y, dy, z, dz, dzmat, convered, strideY, strideX);
+        DeConv2dGradYGPU(x, y, dy, z, dz, covered, strideY, strideX, interimPtr);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
@@ -158,7 +250,7 @@ void DeConv2dCPUImpl(   CPUDevice *device,
                         const Shape &yshape, 
                         T *z, 
                         const Shape &zshape,
-                        bool convered,
+                        bool covered,
                         int strideY,
                         int strideX) {
     auto eigenDevice = device->eigenDevice;
@@ -214,7 +306,7 @@ void DeConv2dCPUImpl(   CPUDevice *device,
             .reshape(zvec.dimensions());
 }
 
-void DeConv2dCPU(const Tensor &x, const Tensor &y, Tensor &z, bool convered, int strideY, int strideX) {
+void DeConv2dCPU(const Tensor &x, const Tensor &y, Tensor &z, bool covered, int strideY, int strideX) {
     auto device = (CPUDevice*) x.device();
 
     switch (x.elementType.id) {
@@ -226,7 +318,7 @@ void DeConv2dCPU(const Tensor &x, const Tensor &y, Tensor &z, bool convered, int
                                 y.shape, 
                                 z.data<float>(), 
                                 z.shape,
-                                convered,
+                                covered,
                                 strideY,
                                 strideX);
         break;
@@ -238,7 +330,7 @@ void DeConv2dCPU(const Tensor &x, const Tensor &y, Tensor &z, bool convered, int
                                 y.shape, 
                                 z.data<double>(), 
                                 z.shape,
-                                convered,
+                                covered,
                                 strideY,
                                 strideX);
         break;
@@ -258,7 +350,7 @@ void DeConv2dGradXCPUImpl(  CPUDevice *device,
                             T *z,
                             T *dz,
                             const Shape &zshape,
-                            bool convered,
+                            bool covered,
                             int strideY,
                             int strideX) {
     auto eigenDevice = device->eigenDevice;
@@ -327,7 +419,7 @@ void DeConv2dGradXCPU(  const Tensor& x,
                         const Tensor& y,
                         const Tensor& z, 
                         const Tensor& dz,
-                        bool convered,
+                        bool covered,
                         int strideY,
                         int strideX) {
     auto device = (CPUDevice*)x.device();
@@ -343,7 +435,7 @@ void DeConv2dGradXCPU(  const Tensor& x,
                 z.data<float>(),
                 dz.data<float>(),
                 z.shape,
-                convered,
+                covered,
                 strideY,
                 strideX);
         break;
@@ -357,7 +449,7 @@ void DeConv2dGradXCPU(  const Tensor& x,
                 z.data<double>(),
                 dz.data<double>(),
                 z.shape,
-                convered,
+                covered,
                 strideY,
                 strideX);
         break;
@@ -377,7 +469,7 @@ void DeConv2dGradYCPUImpl(  CPUDevice *device,
                             T *z,
                             T *dz,
                             const Shape &zshape,
-                            bool convered,
+                            bool covered,
                             int strideY,
                             int strideX) {
     auto eigenDevice = device->eigenDevice;
@@ -422,10 +514,10 @@ void DeConv2dGradYCPUImpl(  CPUDevice *device,
     auto padH = std::max<int>(0, outputHeight + filterHeight - (inputHeight - 1) * strideY - 2);
     auto padW = std::max<int>(0, outputWidth + filterWidth - (inputWidth - 1) * strideX - 2);
 
-    auto padTop = padH / 2;
+    auto padTop    = padH / 2;
     auto padBottom = padH - padTop;
-    auto padLeft = padW / 2;
-    auto padRight = padW - padLeft;
+    auto padLeft   = padW / 2;
+    auto padRight  = padW - padLeft;
 
     dyvec.device(*eigenDevice) += dzvec.reshape(outputGradDim).shuffle(shuffleDims)
                 .contract(xvec.extract_image_patches(filterWidth, filterHeight, 1, 1,
@@ -441,7 +533,7 @@ void DeConv2dGradYCPU(  const Tensor &x,
                         Tensor &dy,
                         const Tensor &z, 
                         const Tensor& dz,
-                        bool convered,
+                        bool covered,
                         int strideY,
                         int strideX) {
     auto device = (CPUDevice*)x.device();
@@ -457,7 +549,7 @@ void DeConv2dGradYCPU(  const Tensor &x,
                     z.data<float>(), 
                     dz.data<float>(), 
                     z.shape,
-                    convered,
+                    covered,
                     strideY,
                     strideX);
         break;
@@ -471,7 +563,7 @@ void DeConv2dGradYCPU(  const Tensor &x,
                     z.data<double>(), 
                     dz.data<double>(), 
                     z.shape,
-                    convered,
+                    covered,
                     strideY,
                     strideX);
         break;

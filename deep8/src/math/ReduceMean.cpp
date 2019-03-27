@@ -1,105 +1,270 @@
+#include "utils/ShapeUtils.h"
 #include "math/ReduceMean.h"
 
 namespace Deep8 {
 namespace Math {
 
-void ReduceMean(const Tensor &x, Tensor &y, int axis) {
-    DEEP8_ARGUMENT_CHECK(x.deviceType()  == y.deviceType(), "the param device type must be same");
-    DEEP8_ARGUMENT_CHECK(x.elementType  == y.elementType, "the param data type must be same");
-    DEEP8_ARGUMENT_CHECK(x.batch()  == y.batch(), "the shape is error");
+void ReduceMean(const Tensor &x, Tensor &y, const std::vector<int> &axis, bool keepDims) {
+    DEEP8_ARGUMENT_CHECK(x.deviceType() == y.deviceType(), "the param device type must be same");
+    DEEP8_ARGUMENT_CHECK(x.elementType == y.elementType, "the param data type must be same");
 
-    if (-1 == axis) {
-        axis = x.shape.nDims - 1;
+    auto xshape = convertShapeToVector(x.shape);
+    int rank = xshape.size();
+
+    std::vector<bool> reduceAxis(rank);
+
+    if (axis.empty()) {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = true;
+        }
+    } else {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = false;
+        }
+
+        for (int i = 0; i < axis.size(); ++i) {
+            DEEP8_ARGUMENT_CHECK(-rank <= axis[i] && axis[i] < rank, "the reduce dim is error");
+
+            reduceAxis[(axis[i] + rank) % rank] = true;
+        }
     }
 
-    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int)x.shape.nDims, "the axis is error");
+    DEEP8_ARGUMENT_CHECK(reduceAxis.size() >= 2, "the shape is error");
 
-    int size = x.shape.batch;
+    size_t ybatch = reduceAxis[0] ? 1 : xshape[0];
+    std::vector<size_t> ylist;
 
-    for (int i = 0; i < axis; ++i) {
-        size *= (int)x.shape.dim(i);
+    for(int i = 1; i < rank; ++i) {
+        if (reduceAxis[i]) {
+            if (keepDims) {
+                ylist.emplace_back(1);
+            }
+        } else {
+            ylist.emplace_back(xshape[i]);
+        }
     }
 
-    for (int i = axis + 1; i < x.shape.nDims; ++i) {
-        size *= (int)x.shape.dim(i);
+    if (ylist.empty()) {
+        ylist.emplace_back(1);
     }
 
-    DEEP8_ARGUMENT_CHECK(size == (int)y.size(), "the shape is error");
+    Shape yshape(ybatch, ylist);
+
+    DEEP8_ARGUMENT_CHECK(yshape == y.shape, "the y shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        ReduceMeanCPU(x, y, axis);
+        ReduceMeanCPU(x, y, axis, keepDims);
     } else {
 #ifdef HAVE_CUDA
-        ReduceMeanGPU(x, y, axis);
+        ReduceMeanGPU(x, y, axis, keepDims);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
     }
 }
 
-void ReduceMeanGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis) {
+void ReduceMeanGrad(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, const std::vector<int> &axis, bool keepDims) {
     DEEP8_ARGUMENT_CHECK(x.deviceType() == dx.deviceType() && x.deviceType() == y.deviceType() && x.deviceType() == dy.deviceType(), "the param device type must be same");
     DEEP8_ARGUMENT_CHECK(x.elementType  == dx.elementType  && x.elementType == y.elementType && x.elementType  == dy.elementType, "the param data type must be same");
     DEEP8_ARGUMENT_CHECK(x.shape == dx.shape && y.shape == dy.shape, "the x/dx or y/dy shape must be same");
-    DEEP8_ARGUMENT_CHECK(x.batch() == y.batch(), "the shape is error");
 
-    if (-1 == axis) {
-        axis = x.shape.nDims - 1;
+    auto xshape = convertShapeToVector(x.shape);
+    int rank = xshape.size();
+
+    std::vector<bool> reduceAxis(rank);
+
+    if (axis.empty()) {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = true;
+        }
+    } else {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = false;
+        }
+
+        for (int i = 0; i < axis.size(); ++i) {
+            DEEP8_ARGUMENT_CHECK(-rank <= axis[i] && axis[i] < rank, "the reduce dim is error");
+
+            reduceAxis[(axis[i] + rank) % rank] = true;
+        }
     }
 
-    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int)x.shape.nDims, "the axis is error");
+    DEEP8_ARGUMENT_CHECK(reduceAxis.size() >= 2, "the shape is error");
 
-    int size = x.shape.batch;
+    size_t ybatch = reduceAxis[0] ? 1 : xshape[0];
+    std::vector<size_t> ylist;
 
-    for (int i = 0; i < axis; ++i) {
-        size *= (int)x.shape.dim(i);
+    for(int i = 1; i < rank; ++i) {
+        if (reduceAxis[i]) {
+            if (keepDims) {
+                ylist.emplace_back(1);
+            }
+        } else {
+            ylist.emplace_back(xshape[i]);
+        }
     }
 
-    for (int i = axis + 1; i < x.shape.nDims; ++i) {
-        size *= (int)x.shape.dim(i);
+    if (ylist.empty()) {
+        ylist.emplace_back(1);
     }
 
-    DEEP8_ARGUMENT_CHECK(size == (int)y.size(), "the shape is error");
+    Shape yshape(ybatch, ylist);
+
+    DEEP8_ARGUMENT_CHECK(yshape == y.shape, "the y shape is error");
 
     if (DeviceType::CPU == x.deviceType()) {
-        ReduceMeanGradCPU(x, dx, y, dy, axis);
+        ReduceMeanGradCPU(x, dx, y, dy, axis, keepDims);
     } else {
 #ifdef HAVE_CUDA
-        ReduceMeanGradGPU(x, dx, y, dy, axis);
+        ReduceMeanGradGPU(x, dx, y, dy, axis, keepDims);
 #else
         DEEP8_RUNTIME_ERROR("do not have a GPU");
 #endif  
     }
 }
 
-template <typename T>
-void ReduceMeanCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape, int axis) {
+template <typename T, int NumDims, int ReduceCount>
+void ReduceMeanCPUEigenImpl(CPUDevice *device, T *x, std::vector<int> &xarray, T *y, std::vector<int> &yarray) {
     auto eigenDevice = device->eigenDevice;
 
-    int dim0, dim1, dim2;
+    Eigen::array<int, NumDims> xshape;
+    Eigen::array<int, NumDims> yshape;
 
-    dim0 = (int) xshape.batch;
-    dim1 = (int) xshape.dim(axis);
-    dim2 = 1;
-
-    for (int i = 0; i < axis; ++i) {
-        dim0 *= (int) xshape.dim(i);
+    for (int i = 0; i < NumDims; ++i) {
+        xshape[i] = xarray[i];
+        yshape[i] = yarray[i];
     }
 
-    for (int i = axis + 1; i < xshape.nDims; ++i) {
-        dim2 *= (int) xshape.dim(i);
+    Eigen::array<int, ReduceCount> reduceDims;
+
+    for (int i = 0, j = 0; i < NumDims; ++i) {
+        if (xshape[i] != yshape[i]) {
+            reduceDims[j++] = i;
+        }
     }
 
-    Eigen::array<int, 1> reduceDims = { 1 };
-    Eigen::array<int, 2> reshape    = { dim0, dim2 };
+    int xsize = 1;
+    int ysize = 1;
 
-    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> xvec(x, dim0, dim1, dim2);
-    Eigen::TensorMap<Eigen::Tensor<T, 2, Eigen::RowMajor>> yvec(y, dim0, dim2);
+    for (int i = 0; i < NumDims; ++i) {
+        xsize *= xshape[i];
+        ysize *= yshape[i];
+    }
 
-    yvec.device(*eigenDevice) = xvec.mean(reduceDims).reshape(reshape);
+    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> xvec(x, xsize);
+    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> yvec(y, ysize);
+
+    yvec.reshape(yshape).device(*eigenDevice) = xvec.reshape(xshape).mean(reduceDims).reshape(yshape);
 }
 
-void ReduceMeanCPU(const Tensor &x, Tensor &y, int axis) {
+template <typename T>
+void ReduceMeanCPUImpl(CPUDevice *device, T *x, const Shape &xshape, T *y, const Shape &yshape, const std::vector<int> &axis) {
+    auto xarray = convertShapeToVector(xshape);
+    int rank = xarray.size();
+
+    std::vector<bool> reduceAxis(rank);
+
+    if (axis.empty()) {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = true;
+        }
+    } else {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = false;
+        }
+
+        for (int i = 0; i < axis.size(); ++i) {
+            DEEP8_ARGUMENT_CHECK(-rank <= axis[i] && axis[i] < rank, "the reduce dims is error");
+
+            reduceAxis[(axis[i] + rank) % rank] = true;
+        }
+    }
+
+    auto yarray = xarray;
+
+    for (int i = 0; i < rank; ++i) {
+        if (reduceAxis[i]) {
+            yarray[i] = 1;
+        } else {
+            yarray[i] = xarray[i];
+        }
+    }
+
+    int NumDims = rank;
+    int ReduceCount = 0;
+
+    for (int i = 0; i < rank; ++i) {
+        if (yarray[i] != xarray[i]) {
+            ReduceCount++;
+        }
+    }
+
+    if (1 == NumDims) {
+        if (0 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 1, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 1, 1>(device, x, xarray, y, yarray);
+        } else {
+            DEEP8_RUNTIME_ERROR("the shape is error");
+        }
+    } else if (2 == NumDims) {
+        if (0 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 2, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 2, 1>(device, x, xarray, y, yarray);
+        } else if (2 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 2, 2>(device, x, xarray, y, yarray);
+        } else {
+            DEEP8_RUNTIME_ERROR("the shape is error");
+        }
+    } else if (3 == NumDims) {
+        if (0 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 3, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 3, 1>(device, x, xarray, y, yarray);
+        } else if (2 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 3, 2>(device, x, xarray, y, yarray);
+        } else if (3 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 3, 3>(device, x, xarray, y, yarray);
+        } else {
+            DEEP8_RUNTIME_ERROR("the shape is error");
+        }
+    } else if (4 == NumDims) {
+        if (0 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 4, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 4, 1>(device, x, xarray, y, yarray);
+        } else if (2 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 4, 2>(device, x, xarray, y, yarray);
+        } else if (3 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 4, 3>(device, x, xarray, y, yarray);
+        } else if (4 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 4, 4>(device, x, xarray, y, yarray);
+        } else {
+            DEEP8_RUNTIME_ERROR("the shape is error");
+        }
+    } else if (5 == NumDims) {
+        if (0 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 5, 0>(device, x, xarray, y, yarray);
+        } else if (1 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 5, 1>(device, x, xarray, y, yarray);
+        } else if (2 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 5, 2>(device, x, xarray, y, yarray);
+        } else if (3 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 5, 3>(device, x, xarray, y, yarray);
+        } else if (4 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 5, 4>(device, x, xarray, y, yarray);
+        } else if (5 == ReduceCount) {
+            ReduceMeanCPUEigenImpl<T, 5, 5>(device, x, xarray, y, yarray);
+        } else {
+            DEEP8_RUNTIME_ERROR("the shape is error");
+        }
+    } else {
+        DEEP8_RUNTIME_ERROR("the shape is error");
+    }
+}
+
+void ReduceMeanCPU(const Tensor &x, Tensor &y, const std::vector<int> &axis, bool keepDims) {
     auto device = (CPUDevice*)x.device();
 
     switch (x.elementType.id) {
@@ -115,35 +280,98 @@ void ReduceMeanCPU(const Tensor &x, Tensor &y, int axis) {
     }
 }
 
-template <typename T>
-void ReduceMeanGradCPUImpl(CPUDevice*device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape, int axis) {
+template <typename T, int NumDims>
+void ReduceMeanGradCPUEigenImpl(CPUDevice*device, T *x, T *dx, std::vector<int> &xarray, T *y, T *dy, std::vector<int> &yarray) {
     auto eigenDevice = device->eigenDevice;
 
-    int dim0, dim1, dim2;
+    Eigen::array<int, NumDims> xshape;
+    Eigen::array<int, NumDims> yshape;
 
-    dim0 = (int) xshape.batch;
-    dim1 = (int) xshape.dim(axis);
-    dim2 = 1;
-
-    for (int i = 0; i < axis; ++i) {
-        dim0 *= (int) xshape.dim(i);
+    for (int i = 0; i < NumDims; ++i) {
+        xshape[i] = xarray[i];
+        yshape[i] = yarray[i];
     }
 
-    for (int i = axis + 1; i < xshape.nDims; ++i) {
-        dim2 *= (int) xshape.dim(i);
+    Eigen::array<int, NumDims> broadDims;
+
+    int ratio = 1;
+
+    for (int i = 0, j = 0; i < NumDims; ++i) {
+        if (xshape[i] != yshape[i]) {
+            broadDims[i] = xshape[i];
+
+            ratio *= xshape[i];
+        } else {
+            broadDims[i] = 1;
+        }
     }
 
-    auto ratio = T(1) / T(dim1);
+    int xsize = 1;
+    int ysize = 1;
     
-    Eigen::array<int, 3> broad = { 1, dim1, 1 };
+    for (int i = 0; i < NumDims; ++i) {
+        xsize *= xshape[i];
+        ysize *= yshape[i];
+    }
 
-    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> dxvec(dx, dim0, dim1, dim2);
-    Eigen::TensorMap<Eigen::Tensor<T, 3, Eigen::RowMajor>> dyvec(dy, dim0,    1, dim2);
+    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dxvec(dx, xsize);
+    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor>> dyvec(dy, ysize);
 
-    dxvec.device(*eigenDevice) += dyvec.broadcast(broad) * ratio;
+    dxvec.reshape(xshape).device(*eigenDevice) += dyvec.reshape(yshape).broadcast(broadDims) / T(ratio);
 }
 
-void ReduceMeanGradCPU(const Tensor &x, Tensor &dx, const Tensor &y, const Tensor &dy, int axis) {
+template <typename T>
+void ReduceMeanGradCPUImpl(CPUDevice*device, T *x, T *dx, const Shape &xshape, T *y, T *dy, const Shape &yshape, const std::vector<int> &axis) {
+    auto xarray = convertShapeToVector(xshape);
+    
+    int rank = xarray.size();
+
+    std::vector<bool> reduceAxis(rank);
+
+    if (axis.empty()) {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = true;
+        }
+    } else {
+        for (int i = 0; i < rank; ++i) {
+            reduceAxis[i] = false;
+        }
+
+        for (int i = 0; i < axis.size(); ++i) {
+            DEEP8_ARGUMENT_CHECK(-rank <= axis[i] && axis[i] < rank, "the reduce dims is error");
+
+            reduceAxis[(axis[i] + rank) % rank] = true;
+        }
+    }
+
+    auto yarray = xarray;
+
+    for (int i = 0; i < rank; ++i) {
+        if (reduceAxis[i]) {
+            yarray[i] = 1;
+        } else {
+            yarray[i] = xarray[i];
+        }
+    }
+
+    int NumDims = rank;
+
+    if (1 == NumDims) {
+        ReduceMeanGradCPUEigenImpl<T, 1>(device, x, dx, xarray, y, dy, yarray);
+    } else if (2 == NumDims) {
+        ReduceMeanGradCPUEigenImpl<T, 2>(device, x, dx, xarray, y, dy, yarray);
+    } else if (3 == NumDims) {
+        ReduceMeanGradCPUEigenImpl<T, 3>(device, x, dx, xarray, y, dy, yarray);
+    } else if (4 == NumDims) {
+        ReduceMeanGradCPUEigenImpl<T, 4>(device, x, dx, xarray, y, dy, yarray);
+    } else if (5 == NumDims) {
+        ReduceMeanGradCPUEigenImpl<T, 5>(device, x, dx, xarray, y, dy, yarray);
+    } else {
+        DEEP8_RUNTIME_ERROR("the shape is error");
+    }
+}
+
+void ReduceMeanGradCPU(const Tensor& x, Tensor& dx, const Tensor& y, const Tensor& dy, const std::vector<int>& axis, bool keepDims) {
     auto device = (CPUDevice*)x.device();
 
     switch (x.elementType.id) {

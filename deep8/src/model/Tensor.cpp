@@ -1,4 +1,4 @@
-#include "Tensor.h"
+#include "model/Tensor.h"
 
 namespace Deep8 {
 
