@@ -39,6 +39,7 @@
 
 #include <eigen/Eigen/Dense>
 #include <eigen/unsupported/Eigen/CXX11/Tensor>
+#include <eigen/unsupported/Eigen/CXX11/ThreadPool>
 
 /**define the byte type*/
 typedef unsigned char byte;
