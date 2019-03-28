@@ -86,15 +86,11 @@ Expression Expression::constant(float scalar) {
 }
 
 Expression Expression::zero() {
-    constant(0);
-
-    return (*this);
+    return constant(0);
 }
 
 Expression Expression::one() {
-    constant(1);
-
-    return (*this);
+    return constant(1);
 }
 
 Expression Expression::gaussian(float mean, float stddev) {
@@ -118,9 +114,7 @@ Expression Expression::positiveUnitball() {
 }
 
 Expression Expression::random(float lower, float upper) {
-    uniform(lower, upper);
-
-    return (*this);
+    return uniform(lower, upper);
 }
 
 Expression Expression::uniform(float left, float right) {
@@ -146,51 +140,19 @@ Expression Expression::assign(Expression& y) {
 }
 
 Expression Expression::operator += (const Expression& y) const {
-    DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->node->type && NodeType::Variable == y.node->type, "the Node must be a Variable");
-    DEEP8_ARGUMENT_CHECK(this->node->shape == y.node->shape, "the Node shape must be same");
-
-    auto xvar = (Variable*)this->node;
-    auto yvar = (Variable*)y.node;
-
-    Math::Add(yvar->value, xvar->value, xvar->value);
-
-    return (*this);
+    return (*this) + y;
 }
 
 Expression Expression::operator -= (const Expression& y) const {
-    DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->node->type && NodeType::Variable == y.node->type, "the Node must be a Variable");
-    DEEP8_ARGUMENT_CHECK(this->node->shape == y.node->shape, "the Node shape must be same");
-
-    auto xvar = (Variable*)this->node;
-    auto yvar = (Variable*)y.node;
-
-    Math::Minus(xvar->value, yvar->value, xvar->value);
-
-    return (*this);
+    return (*this) - y;
 }
 
 Expression Expression::operator *= (const Expression& y) const {
-    DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->node->type && NodeType::Variable == y.node->type, "the Node must be a Variable");
-    DEEP8_ARGUMENT_CHECK(this->node->shape == y.node->shape, "the Node shape must be same");
-
-    auto xvar = (Variable*)this->node;
-    auto yvar = (Variable*)y.node;
-
-    Math::Multiply(yvar->value, xvar->value, xvar->value);
-
-    return (*this);
+    return (*this) * y;
 }
 
 Expression Expression::operator /= (const Expression& y) const {
-    DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->node->type && NodeType::Variable == y.node->type, "the Node must be a Variable");
-    DEEP8_ARGUMENT_CHECK(this->node->shape == y.node->shape, "the Node shape must be same");
-
-    auto xvar = (Variable*)this->node;
-    auto yvar = (Variable*)y.node;
-
-    Math::Divide(xvar->value, yvar->value, xvar->value);
-
-    return (*this);
+    return (*this) / y;
 }
 
 Expression Expression::operator + (const Expression &y) const {
