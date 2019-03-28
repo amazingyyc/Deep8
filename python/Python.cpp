@@ -137,6 +137,11 @@ void declareExpression(py::module &m) {
             .def("uniform", &Expression::uniform, 
                                 py::arg("left") = 0.0, 
                                 py::arg("right") = 1.0)
+            .def("assign", &Expression::assign)
+            .def(py::self += py::self)
+            .def(py::self -= py::self)
+            .def(py::self *= py::self)
+            .def(py::self /= py::self)
             .def(py::self + py::self)
             .def(py::self - py::self)
             .def(py::self * py::self)

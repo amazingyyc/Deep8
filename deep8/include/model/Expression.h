@@ -68,6 +68,13 @@ public:
 	Expression random(float lower = 0.0, float upper = 1.0);
 	Expression uniform(float left = 0.0, float right = 1.0);
 
+	Expression assign(Expression& y);
+
+    Expression operator += (const Expression& y) const;
+    Expression operator -= (const Expression& y) const;
+    Expression operator *= (const Expression& y) const;
+    Expression operator /= (const Expression& y) const;
+
 	Expression operator + (const Expression &y) const;
 	Expression operator - (const Expression &y) const;
 	Expression operator * (const Expression &y) const;

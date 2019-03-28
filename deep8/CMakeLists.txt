@@ -10,9 +10,6 @@ message(STATUS "Begin compile deep8_native")
 set(CMAKE_CXX_STANDARD 11)
 
 if (BUILD_WITH_GPU)
-    # find the CUDA
-    find_package(CUDA)
-
     if (NOT CUDA_FOUND)
         # can not find the GPU
         message(FATAL_ERROR, "can not find the CUDA, set BUILD_WITH_GPU to be FALSE to compiler")
@@ -106,7 +103,7 @@ if (BUILD_WITH_GPU)
     # enable separable compilation
     set(CUDA_SEPARABLE_COMPILATION ON)
     
-    string(APPEND CMAKE_CUDA_FLAGS " -std=c++11 -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_62,code=sm_62 -gencode arch=compute_70,code=sm_70  -gencode arch=compute_72,code=sm_72 -DVERBOSE -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DHAVE_CUDA -DEIGEN_NO_CUDA -D_FORCE_INLINES")
+    string(APPEND CMAKE_CUDA_FLAGS " -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_62,code=sm_62 -gencode arch=compute_70,code=sm_70  -gencode arch=compute_72,code=sm_72 -DVERBOSE -DEIGEN_USE_THREADS -DEIGEN_FAST_MATH -DHAVE_CUDA -DEIGEN_NO_CUDA -D_FORCE_INLINES")
 
     # enable cudnn
     if (HAVE_CUDNN)

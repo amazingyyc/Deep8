@@ -22,15 +22,15 @@ void AssignGPU(const Tensor &x, Tensor &y) {
 
     switch (x.elementType.id) {
     case DType::Float32:
-        UnaryElementWiseKernel<float, AssignKernelOp<float>> << <grideSize, blockSize >> > (x, y, AssignKernelOp<float>(), n);
+        UnaryElementWiseKernel<float, AssignKernelOp<float>> << <grideSize, blockSize >> > (x.data<float>(), y.data<float>(), AssignKernelOp<float>(), n);
         break;
     case DType::Float64:
-        UnaryElementWiseKernel<double, AssignKernelOp<double>> << <grideSize, blockSize >> > (x, y, AssignKernelOp<double>(), n);
+        UnaryElementWiseKernel<double, AssignKernelOp<double>> << <grideSize, blockSize >> > (x.data<double>(), y.data<double>(), AssignKernelOp<double>(), n);
         break;
 
 #ifdef HAVE_HALF
     case DType::Float16:
-        UnaryElementWiseKernel<half, AssignKernelOp<half>> << <grideSize, blockSize >> > (x, y, AssignKernelOp<half>(), n);
+        UnaryElementWiseKernel<half, AssignKernelOp<half>> << <grideSize, blockSize >> > (x.data<half>(), y.data<half>(), AssignKernelOp<half>(), n);
         break;
 #endif
 
