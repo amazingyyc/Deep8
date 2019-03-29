@@ -1,108 +1,107 @@
+#include "math/Constant.h"
 #include "nodes/Variable.h"
 
 namespace Deep8 {
 
-Variable::Variable(): Node() {
+Variable::Variable(int64_t id, std::string name): Node(id, name), updateGradient(false) {
 	this->type = NodeType::Variable;
 }
 
-Variable::Variable(Tensor &v): Node(), value(v)  {
-	this->type        = NodeType::Variable;
-	this->shape       = this->value.shape;
-    this->elementType = this->value.elementType;
+Variable::Variable(int64_t id, std::string name, Tensor &v): Node(id, name), value(v), updateGradient(false) {
+	this->type = NodeType::Variable;
 }
 
-Variable::Variable(Tensor &v, Tensor &g): Node(), value(v), gradient(g) {
+Variable::Variable(int64_t id, std::string name, Tensor &v, Tensor &g)
+    : Node(id, name), value(v), gradient(g), updateGradient(true) {
 	DEEP8_ARGUMENT_CHECK(value.deviceType() == gradient.deviceType(), "the values and gradient must be the same type");
 	DEEP8_ARGUMENT_CHECK(value.elementType  == gradient.elementType, "the values and gradient data type must be the same");
 	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape of Value and Gradient must be same");
 
-	this->type           = NodeType::Variable;
-	this->shape          = this->value.shape;
-    this->elementType    = this->value.elementType;
-    this->updateGradient = true;
+	this->type = NodeType::Variable;
 }
 
-Variable::Variable(Node *input, Shape &shape) : Node(input) {
-	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
-
-	for (auto i : inputs) {
-		DEEP8_ARGUMENT_CHECK(i->shape == shape, "the shape of the input is error")
-	}
-
-	this->type  = NodeType::Variable;
-	this->shape = shape;
+Variable::Variable(int64_t id, std::string name, Node *input, Tensor &v)
+    : Node(id, name, input), value(v), updateGradient(false) {
+	this->type = NodeType::Variable;
 }
 
-Variable::Variable(Node *input, Tensor &v): Node(input), value(v) {
-	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
-
-	for (auto i : inputs) {
-		DEEP8_ARGUMENT_CHECK(i->shape == value.shape, "the shape of the input and value must be same")
-	}
-
-	this->type        = NodeType::Variable;
-	this->shape       = this->value.shape;
-    this->elementType = this->value.elementType;
-}
-
-Variable::Variable(Node *input, Tensor &v, Tensor &g): Node(input), value(v), gradient(g) {
-	DEEP8_ARGUMENT_CHECK(1 == inputs.size(), "the Variable Node must need 1 input");
-
+Variable::Variable(int64_t id, std::string name, Node *input, Tensor &v, Tensor &g)
+    : Node(id, name, input), value(v), gradient(g), updateGradient(true) {
 	DEEP8_ARGUMENT_CHECK(value.deviceType() == gradient.deviceType(), "the values and gradient must be the same type");
 	DEEP8_ARGUMENT_CHECK(value.elementType  == gradient.elementType, "the values and gradient data type must be the same");
-	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape of Value and Gradient must be same");
+	DEEP8_ARGUMENT_CHECK(value.shape        == gradient.shape, "the shape of Value and Gradient must be same");
 
-	for (auto i : inputs) {
-		DEEP8_ARGUMENT_CHECK(i->shape == value.shape, "the shape of the inputs, value and gradient must be same")
-	}
-
-    this->type           = NodeType::Variable;
-    this->shape          = this->value.shape;
-    this->elementType    = this->value.elementType;
-    this->updateGradient = true;
+    this->type = NodeType::Variable;
 }
 
+Shape Variable::shape() {
+    if (updateGradient) {
+        DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the value and gradient shape must be same");
+    }
 
-/**
- * set the Gradient to be 0
- */
-void Variable::zeroGradient() {
-	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
-
-	gradient.zero();
+    return value.shape;
 }
 
-/**release the gradient*/
-void Variable::releaseGradient() {
-	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
+/**get the element type*/
+ElementType Variable::elementType() {
+    if (updateGradient) {
+        DEEP8_ARGUMENT_CHECK(value.elementType == gradient.elementType, "the value and gradient elementType must be same");
+    }
 
-	this->gradient.release();
+    return value.elementType;
 }
 
 /**
  * get the device type
  */
 DeviceType Variable::deviceType() {
-	return value.deviceType();
-}
+    if (updateGradient) {
+        DEEP8_ARGUMENT_CHECK(value.deviceType() == gradient.deviceType(), "the value and gradient deviceType must be same");
+    }
 
-/**
- * set the gradient be 1 for backward process
- */
-void Variable::setGradientOne() {
-	DEEP8_ARGUMENT_CHECK(this->updateGradient, "this variable does not update gradient");
-
-	/**set gradient to one*/
-	gradient.one();
+    return value.deviceType();
 }
 
 bool Variable::isScalar() {
-	if (this->updateGradient) {
-		return value.isScalar() && gradient.isScalar();
-	} else {
-		return value.isScalar();
-	}
+    if (updateGradient) {
+        return value.isScalar() && gradient.isScalar();
+    } else {
+        return value.isScalar();
+    }
+}
+
+/**zero value*/
+void Variable::zero() {
+    Math::Constant(value, 0);
+}
+
+/**
+ * set the Gradient to be 0
+ */
+void Variable::zeroGradient() {
+	DEEP8_ARGUMENT_CHECK(updateGradient, "this variable does not have gradient");
+
+    Math::Constant(gradient, 0);
+}
+
+/**set value to one*/
+void Variable::one() {
+    Math::Constant(value, 1);
+}
+
+/**set gradient to one*/
+void Variable::oneGradient() {
+    DEEP8_ARGUMENT_CHECK(updateGradient, "this variable does not have gradient");
+
+    Math::Constant(gradient, 1);
+}
+
+/**release the gradient*/
+void Variable::removeGradient() {
+    if (updateGradient) {
+        this->gradient = Tensor();
+        this->updateGradient = false;
+    }
 }
 
 /**feed data to value*/

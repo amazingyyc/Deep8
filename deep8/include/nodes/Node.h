@@ -3,6 +3,7 @@
 
 #include "basic/Basic.h"
 #include "basic/Exception.h"
+#include "model/Executor.h"
 #include "model/MemoryAllocator.h"
 #include "model/OutputEntry.h"
 #include "model/Shape.h"
@@ -28,8 +29,11 @@ public:
     /**what kind type of this Node, default is unknow*/
     NodeType type;
 
-	/**the Node id*/
+	/**the Node unique id*/
 	int64_t id;
+
+    /**the node have a unique name*/
+    std::string name;
 
 	/**store the input Node*/
     std::vector<Node*> inputs;
@@ -37,21 +41,10 @@ public:
 	/**store the output Node*/
 	OutputEntry outputs;
 
-    /**
-     * the shape, elementType, updateGradient
-     * for Variable, the shape and elementType is the Value's shape and elementType. updateGradient is true means it have a gradient or does not
-     * for Function, the shape and elementType is the output shape and ElementType, updateGradient means if the output Variable have a gradient
-     */
-    Shape shape;
-
-    ElementType elementType;
-
-    bool updateGradient;
-
 protected:
-	explicit Node();
-	explicit Node(Node *input);
-	explicit Node(std::vector<Node*> &inputs);
+	explicit Node(int64_t id, std::string name);
+	explicit Node(int64_t id, std::string name, Node *input);
+	explicit Node(int64_t id, std::string name, std::vector<Node*> &inputs);
 
 public:
 	virtual ~Node();

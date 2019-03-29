@@ -64,9 +64,6 @@ public:
     size_t dim(size_t d)    const;
     size_t stride(size_t d) const;
 
-    /**release the storage*/
-    void release();
-
     /**convert the Tensor to a string to print*/
     std::string valueStr();
 
