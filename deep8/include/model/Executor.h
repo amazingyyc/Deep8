@@ -6,12 +6,12 @@
 #include "model/Device.h"
 #include "model/ElementType.h"
 #include "model/Tensor.h"
-#include "nodes/Function.h"
-#include "nodes/Variable.h"
 
 namespace Deep8 {
 
-class Expression;
+class Node;
+class Variable;
+class Function;
 
 /**
  * the NodeName Type
@@ -33,7 +33,7 @@ protected:
 	int64_t uniqueId;
 
     /**store the name have been setted to avoid same name*/
-    std::unordered_map<NameType, int64_t> nameUniqueId;
+    std::unordered_map<std::string, int64_t> nameUniqueId;
     std::unordered_set<std::string> uniqueNames;
 
 	/**the device*/
@@ -43,7 +43,7 @@ protected:
     std::unordered_map<std::string, Node*> allNodes;
 
     /**the Variable that need to be store permanent, like trainable Parameter or some Variable need tobe use in training*/
-    std::unordered_map<std::string, Variable*> permanentVariables;
+    std::unordered_map<std::string, Variable*> retainVariables;
 
     /**store the interim Nodes, the nodes will be deleted when after backward include interim Variable and Function*/
     std::unordered_map<std::string, Node*> interimNodes;
@@ -76,7 +76,6 @@ protected:
 	Tensor createTensorGPU(Shape &shape, ElementType type);
 #endif
 
-
 	/**create a Variable to store the function output*/
 	Variable* createVariableByFunction(Function *func);
 
@@ -86,30 +85,37 @@ public:
     /**remove all Variable's gradient for predict mode*/
     void removeGradient();
 
-    /**add a Variable updateGradient: if the variable has the gradient, retain: if ratian in memory after backwarx*/
-    Variable* addVariable(Shape &shape,                      DType type, bool updateGradient = true, bool retain = true);
-    Variable* addVariable(std::vector<size_t>,               DType type, bool updateGradient = true, bool retain = true);
-    Variable* addVariable(size_t batch, std::vector<size_t>, DType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(Shape &shape,                       ElementType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(std::vector<size_t>,                ElementType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(size_t batch, std::vector<size_t>,  ElementType type, bool updateGradient = true, bool retain = true);
 
-    Variable* addVariable(Shape& shape,                      ElementType type, bool updateGradient = true, bool retain = true);
-    Variable* addVariable(std::vector<size_t>,               ElementType type, bool updateGradient = true, bool retain = true);
-    Variable* addVariable(size_t batch, std::vector<size_t>, ElementType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(Shape &shape,                       DType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(std::vector<size_t>,                DType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(size_t batch, std::vector<size_t>,  DType type, bool updateGradient = true, bool retain = true);
+
+    Variable& addVariable(std::string name, Shape &shape,                       ElementType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(std::string name, std::vector<size_t>,                ElementType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(std::string name, size_t batch, std::vector<size_t>,  ElementType type, bool updateGradient = true, bool retain = true);
+
+    Variable& addVariable(std::string name, Shape &shape,                       DType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(std::string name, std::vector<size_t>,                DType type, bool updateGradient = true, bool retain = true);
+    Variable& addVariable(std::string name, size_t batch, std::vector<size_t>,  DType type, bool updateGradient = true, bool retain = true);
 
 	/**clear interim nodes*/
 	void clearInterimNodes();
 
 	Node* nodeByName(std::string name);
 
-	Variable* permanentVariableByName(std::string name);
+	Variable* retainVariableByName(std::string name);
 
 	/**get all trainabel parameters*/
 	std::vector<Variable*> trainableParameters();
 
 	/**give a function and create the output Variable*/
-	virtual Node *addFunction(Function *func);
+	virtual Variable& addFunction(Function *func);
 
 	virtual void forward(Node *last);
-	virtual void backward(Node *last);
+	virtual void backward(Node *last, bool clearInterim = true);
 };
 
 }

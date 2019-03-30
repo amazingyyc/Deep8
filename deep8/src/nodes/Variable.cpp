@@ -1,18 +1,23 @@
 #include "math/Constant.h"
+#include "math/Gaussian.h"
+#include "math/PositiveUnitball.h"
+#include "math/Uniform.h"
+#include "math/Assign.h"
+
 #include "nodes/Variable.h"
 
 namespace Deep8 {
 
-Variable::Variable(int64_t id, std::string name): Node(id, name), updateGradient(false) {
+Variable::Variable(int64_t id, std::string name, Executor *exe): Node(id, name, exe), updateGradient(false) {
 	this->type = NodeType::Variable;
 }
 
-Variable::Variable(int64_t id, std::string name, Tensor &v): Node(id, name), value(v), updateGradient(false) {
+Variable::Variable(int64_t id, std::string name, Executor *exe, Tensor &v): Node(id, name, exe), value(v), updateGradient(false) {
 	this->type = NodeType::Variable;
 }
 
-Variable::Variable(int64_t id, std::string name, Tensor &v, Tensor &g)
-    : Node(id, name), value(v), gradient(g), updateGradient(true) {
+Variable::Variable(int64_t id, std::string name, Executor *exe, Tensor &v, Tensor &g)
+    : Node(id, name, exe), value(v), gradient(g), updateGradient(true) {
 	DEEP8_ARGUMENT_CHECK(value.deviceType() == gradient.deviceType(), "the values and gradient must be the same type");
 	DEEP8_ARGUMENT_CHECK(value.elementType  == gradient.elementType, "the values and gradient data type must be the same");
 	DEEP8_ARGUMENT_CHECK(value.shape == gradient.shape, "the shape of Value and Gradient must be same");
@@ -20,13 +25,18 @@ Variable::Variable(int64_t id, std::string name, Tensor &v, Tensor &g)
 	this->type = NodeType::Variable;
 }
 
-Variable::Variable(int64_t id, std::string name, Node *input, Tensor &v)
-    : Node(id, name, input), value(v), updateGradient(false) {
+Variable::Variable(int64_t id, std::string name, Executor *exe, Node *input)
+    : Node(id, name, exe, input), updateGradient(false) {
+    this->type = NodeType::Variable;
+}
+
+Variable::Variable(int64_t id, std::string name, Executor *exe, Node *input, Tensor &v)
+    : Node(id, name, exe, input), value(v), updateGradient(false) {
 	this->type = NodeType::Variable;
 }
 
-Variable::Variable(int64_t id, std::string name, Node *input, Tensor &v, Tensor &g)
-    : Node(id, name, input), value(v), gradient(g), updateGradient(true) {
+Variable::Variable(int64_t id, std::string name, Executor *exe, Node *input, Tensor &v, Tensor &g)
+    : Node(id, name, exe, input), value(v), gradient(g), updateGradient(true) {
 	DEEP8_ARGUMENT_CHECK(value.deviceType() == gradient.deviceType(), "the values and gradient must be the same type");
 	DEEP8_ARGUMENT_CHECK(value.elementType  == gradient.elementType, "the values and gradient data type must be the same");
 	DEEP8_ARGUMENT_CHECK(value.shape        == gradient.shape, "the shape of Value and Gradient must be same");
@@ -70,11 +80,6 @@ bool Variable::isScalar() {
     }
 }
 
-/**zero value*/
-void Variable::zero() {
-    Math::Constant(value, 0);
-}
-
 /**
  * set the Gradient to be 0
  */
@@ -82,11 +87,6 @@ void Variable::zeroGradient() {
 	DEEP8_ARGUMENT_CHECK(updateGradient, "this variable does not have gradient");
 
     Math::Constant(gradient, 0);
-}
-
-/**set value to one*/
-void Variable::one() {
-    Math::Constant(value, 1);
 }
 
 /**set gradient to one*/
@@ -104,8 +104,21 @@ void Variable::removeGradient() {
     }
 }
 
-/**feed data to value*/
-void Variable::feed(const void *ptr) {
+void Variable::forward() {
+	/**do nothing*/
+}
+
+void Variable::backward() {
+	/**do nothing*/
+}
+
+/**return a string for print value*/
+std::string Variable::valueStr() {
+    return value.valueStr();
+}
+
+/**feed data to value from CPU memory*/
+Variable& Variable::feed(const void *ptr) {
 	DEEP8_ARGUMENT_CHECK(nullptr != ptr, "the pointer can not be null");
 
 	if (DeviceType::CPU == value.deviceType()) {
@@ -117,10 +130,12 @@ void Variable::feed(const void *ptr) {
 		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
 #endif
 	}
+
+    return (*this);
 }
 
-/**fetch data from value*/
-void Variable::fetch(void *ptr) {
+/**copy memory from value to CPU memory*/
+Variable& Variable::fetch(void *ptr) {
 	DEEP8_ARGUMENT_CHECK(nullptr != ptr, "the pointer can not be null");
 
 	if (DeviceType::CPU == value.deviceType()) {
@@ -132,14 +147,50 @@ void Variable::fetch(void *ptr) {
 		DEEP8_RUNTIME_ERROR("can not call a GPU function without a GPU");
 #endif
 	}
+
+    return (*this);
 }
 
-void Variable::forward() {
-	/**do nothing*/
+Variable& Variable::constant(float scalar) {
+    Math::Constant(this->value, scalar);
+
+    return (*this);
 }
 
-void Variable::backward() {
-	/**do nothing*/
+Variable& Variable::zero() {
+    return constant(0);
+}
+
+Variable& Variable::one() {
+    return constant(1);
+}
+
+Variable& Variable::gaussian(float mean, float stddev) {
+    Math::Gaussian(this->value, mean, stddev);
+
+    return (*this);
+}
+
+Variable& Variable::positiveUnitball() {
+    Math::positiveUnitball(this->value);
+
+    return (*this);
+}
+
+Variable& Variable::random(float lower, float upper) {
+    return uniform(lower, upper);
+}
+
+Variable& Variable::uniform(float left, float right) {
+    Math::Uniform(this->value, left, right);
+
+    return (*this);
+}
+
+Variable& Variable::assign(Variable& v) {
+    Math::Assign(v.value, this->value);
+
+    return (*this);
 }
 
 }

@@ -2,72 +2,68 @@
 
 namespace Deep8 {
 
-ReShape::ReShape(std::vector<Node *> &inputs, Shape &shape): Function(inputs) {
-	Function::check();
-
-    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReShape Function needs only 1 input");
-
-    this->elementType = this->inputs[0]->elementType;
-
-	/**the outputShape's batch equal to inputs[0]'s*/
-	DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.batchSize() == shape.batchSize(), "the shape is error");
-
-	this->shape    = Shape(this->inputs[0]->shape.batch, shape);
-    this->isShared = true;
+ReShape::ReShape(std::vector<Node *> &inputs, Shape &shape): Function(inputs), reShape(shape) {
+    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReShape Function needs 1 input");
 }
 
-ReShape::ReShape(std::vector<Node *> &inputs, std::vector<size_t> &list): Function(inputs) {
-	Function::check();
+ReShape::ReShape(std::vector<Node *> &inputs, std::vector<size_t> &list): Function(inputs), reShape(list) {
+    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReShape Function needs 1 input");
+}
 
-    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReShape Function needs only 1 input");
+bool ReShape::isShared() {
+	return true;
+}
 
-    this->elementType = this->inputs[0]->elementType;
+Shape ReShape::checkShape(std::vector<Shape> &inputShapes) {
+	DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "the input count must be 1");
+	DEEP8_ARGUMENT_CHECK(inputShapes[0].batchSize() == this->reShape.batchSize(), "the input shape is error");
 
-	this->shape    = Shape(this->inputs[0]->shape.batch, list);
-    this->isShared = true;
+	return Shape(inputShapes[0].batch, this->reShape);
+}
 
-	DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.batchSize() == this->shape.batchSize(), "the shape is error");
+ElementType ReShape::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void ReShape::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
 }
 
-void ReShape::backward(const std::vector<const Tensor*> &inputs, 
-					const Tensor *output, 
-					const Tensor *outputGradient, 
-					size_t index, 
-					Tensor *iGradient) {
+void ReShape::backward(const std::vector<const Tensor*> &inputs, const Tensor *output, const Tensor *outputGradient, size_t index, Tensor *iGradient) {
 }
 
 void ReShape::forward() {
-	for (auto item : this->inputs) {
-		DEEP8_ARGUMENT_CHECK(NodeType::Variable == item->type, "the inputs must be Variable type");
-	}
-
+	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the inputs size must be 1");
 	DEEP8_ARGUMENT_CHECK(1 == this->outputs.size(), "the outputs size must be 1");
+	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->inputs[0]->type, "the inputs must be Variable type");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 
 	auto x = (Variable*)(this->inputs[0]);
 	auto y = (Variable*)(this->outputs.first());
 
-	y->shape          = this->shape;
-	y->updateGradient = this->updateGradient;
-    y->elementType    = this->elementType;
+	auto xshape = x->shape();
+
+	DEEP8_ARGUMENT_CHECK(xshape.batchSize() == this->reShape.batchSize(), "the input shape is error");
+
+	auto yshape = Shape(xshape.batch, this->reShape);
+
+	y->updateGradient = x->updateGradient;
 
 	/**value*/
 	y->value.storage     = x->value.storage;
 	y->value.offset      = x->value.offset;
 	y->value.elementType = x->value.elementType;
-	y->value.shape       = this->shape;
+	y->value.shape       = yshape;
 
 	if (x->updateGradient) {
 		y->gradient.storage     = x->gradient.storage;
 		y->gradient.offset      = x->gradient.offset;
 		y->gradient.elementType = x->gradient.elementType;
-		y->gradient.shape       = this->shape;
+		y->gradient.shape       = yshape;
 	} else {
 		/**set the output gradient is empty*/
-		y->releaseGradient();
+		y->removeGradient();
 	}
 }
 

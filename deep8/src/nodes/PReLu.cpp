@@ -4,18 +4,20 @@
 namespace Deep8 {
 
 PReLu::PReLu(std::vector<Node*>& inputs) : Function(inputs) {
-    check();
+    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the PReLu Function needs 2 input");
 }
 
-void PReLu::check() {
-    Function::check();
+Shape PReLu::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "the input count must be 2");
+    DEEP8_ARGUMENT_CHECK(inputShapes[0] == inputShapes[1], "the inputs shap must be same");
 
-    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the PReLu Function needs 2 input");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape == this->inputs[1]->shape, "the inputs shap must be same");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the input elementType must be same");
+    return inputShapes[0];
+}
 
-    this->shape       = this->inputs[0]->shape;
-    this->elementType = this->inputs[0]->elementType;
+ElementType PReLu::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputTypes.size(), "the input count must be 2");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void PReLu::forward(const std::vector<const Tensor*>& inputs, Tensor* output) {

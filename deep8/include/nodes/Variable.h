@@ -1,7 +1,8 @@
 #ifndef DEEP8_VARIABLE_H
 #define DEEP8_VARIABLE_H
 
-#include "Node.h"
+#include "model/Executor.h"
+#include "nodes/Node.h"
 
 namespace Deep8 {
 
@@ -14,14 +15,15 @@ public:
     bool updateGradient;
 
 protected:
-    explicit Variable(int64_t id, std::string name);
+    explicit Variable(int64_t id, std::string name, Executor *exe);
 
 public:
-    explicit Variable(int64_t id, std::string name, Tensor &v);
-    explicit Variable(int64_t id, std::string name, Tensor &v, Tensor &g);
+    explicit Variable(int64_t id, std::string name, Executor *exe, Tensor &v);
+    explicit Variable(int64_t id, std::string name, Executor *exe, Tensor &v, Tensor &g);
 
-	explicit Variable(int64_t id, std::string name, Node *input, Tensor &v);
-    explicit Variable(int64_t id, std::string name, Node *input, Tensor &v, Tensor &g);
+    explicit Variable(int64_t id, std::string name, Executor *exe, Node *input);
+	explicit Variable(int64_t id, std::string name, Executor *exe, Node *input, Tensor &v);
+    explicit Variable(int64_t id, std::string name, Executor *exe, Node *input, Tensor &v, Tensor &g);
 
 public:
 
@@ -37,14 +39,8 @@ public:
     /**if this is a scalar*/
     bool isScalar();
 
-    /**zero value*/
-    void zero();
-	
     /**set the Gradient to be 0*/
 	void zeroGradient();
-
-    /**set value to one*/
-    void one();
 
     /**set gradient to one*/
     void oneGradient();
@@ -52,16 +48,32 @@ public:
 	/**release the gradient*/
 	void removeGradient();
 
-	/**feed data to value*/
-	void feed(const void *);
-
-	/**fetch data from value*/
-	void fetch(void *);
-
 	/** the Variable do nothing in forward and backward process*/
 	void forward() override;
 	void backward() override;
 
+    /****************************************************************************/
+    /**function for build computer graph*/
+    /****************************************************************************/
+    
+    /**return a string for print value*/
+    std::string valueStr();
+
+    /**feed data to value from CPU memory*/
+    Variable& feed(const void*);
+
+    /**copy memory from value to CPU memory*/
+    Variable& fetch(void*);
+
+	Variable& constant(float scalar = 0);
+	Variable& zero();
+	Variable& one();
+	Variable& gaussian(float mean = 0.0, float stddev = 0.01);
+	Variable& positiveUnitball();
+	Variable& random(float lower = 0.0, float upper = 1.0);
+	Variable& uniform(float left = 0.0, float right = 1.0);
+
+	Variable& assign(Variable& v);
 };
 
 }

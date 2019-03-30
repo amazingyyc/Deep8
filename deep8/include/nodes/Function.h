@@ -45,20 +45,17 @@ enum class FunctionType {
 
 class Function: public Node {
 protected:
-    /**
-     * if a Function shared is true means the output Variable shared the memory with the input Variable
-     * default is false
-     */
-	bool isShared;
-	
-protected:
-    explicit Function(int64_t id, std::string name, std::vector<Node*>& inputs);
+    explicit Function(std::vector<Node*>& inputs);
 
 public:
 
+	/**is the function output shared memory with input*/
+	virtual bool isShared();
+
     /**return the shape and elementtype by the input's*/
-    Shape outputShape(std::vector<Shape&> inputShapes);
-    ElementType outputElementType(std::vector<ElementType&> inputTypes);
+    virtual Shape checkShape(std::vector<Shape> &inputShapes);
+
+    virtual ElementType checkElementType(std::vector<ElementType> &inputTypes);
 
     virtual void forward(const std::vector<const Tensor*> &inputs, Tensor *output);
     virtual void backward(const std::vector<const Tensor*> &inputs, const Tensor *output, const Tensor *outputGradient, size_t index, Tensor *iGradient);

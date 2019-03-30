@@ -13,9 +13,9 @@ void MomentumTrainer::update(Executor* executor, Variable* parameter, float lear
 
     if (momentums.find(parameter) == momentums.end()) {
         auto mv = executor->addVariable(value.shape, value.elementType, false);
-        mv->value.zero();
+        mv.value.zero();
 
-        momentums[parameter] = mv;
+        momentums[parameter] = &mv;
     }
 
     auto mv = momentums[parameter]->value;

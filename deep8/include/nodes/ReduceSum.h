@@ -12,9 +12,10 @@ public:
 
     explicit ReduceSum(std::vector<Node*>& inputs, std::vector<int> reduceAxis = { -1 }, bool keep = true);
 
-	void check() override;
+	Shape checkShape(std::vector<Shape> &inputShapes) override;
 
-protected:
+	ElementType checkElementType(std::vector<ElementType> &inputTypes) override;
+
 	void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
 	void backward(const std::vector<const Tensor*> &inputs, 
 				  const Tensor *output, 

@@ -4,22 +4,20 @@
 namespace Deep8 {
 
 Multiply::Multiply(std::vector<Node*> &inputs) : Function(inputs) {
-    check();
+    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the Multiply Function needs 2 input");
 }
 
-void Multiply::check() {
-	Function::check();
+Shape Multiply::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "the input count must be 2");
 
-	DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the inputs dim must be 2 in Multiply Function");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
-
-	/**
-	 * the Add Function apply to Broadcasting rule: https://docs.scipy.org/doc/numpy-1.13.0/user/basics.broadcasting.html
-	 */
-	this->shape = broadcastShape(this->inputs[0]->shape, this->inputs[1]->shape);
-    this->elementType = this->inputs[0]->elementType;
+    return broadcastShape(inputShapes[0], inputShapes[1]);
 }
 
+ElementType Multiply::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputTypes.size(), "the input count must be 2");
+
+    return Function::checkElementType(inputTypes);
+}
 void Multiply::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
     Math::Multiply(*(inputs[0]), *(inputs[1]), *output);
 }

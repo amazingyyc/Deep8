@@ -4,16 +4,19 @@
 namespace Deep8 {
 
 Square::Square(std::vector<Node*> &inputs): Function(inputs) {
-	check();
+	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Square Function needs 1 input");
 }
 
-void Square::check() {
-	Function::check();
+Shape Square::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "the input count must be 1");
 
-	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Square Function needs only 1 input");
+    return inputShapes[0];
+}
 
-    this->shape = this->inputs[0]->shape;
-    this->elementType = this->inputs[0]->elementType;
+ElementType Square::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void Square::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

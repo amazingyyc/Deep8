@@ -12,9 +12,9 @@ void RMSPropTrainer::update(Executor* executor, Variable* parameter, float learn
 
     if (v.find(parameter) == v.end()) {
         auto vt = executor->addVariable(value.shape, value.elementType, false);
-        vt->value.zero();
+        vt.value.zero();
 
-        v[parameter] = vt;
+        v[parameter] = &vt;
     }
 
     auto vt = v[parameter]->value;

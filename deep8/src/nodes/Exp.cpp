@@ -4,16 +4,19 @@
 namespace Deep8 {
 
 Exp::Exp(std::vector<Node *> &inputs): Function(inputs) {
-    check();
+    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Exp Function needs 1 input");
 }
 
-void Exp::check() {
-    Function::check();
+Shape Exp::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "the input count must be 1");
 
-    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Exp Function needs only 1 input");
+    return inputShapes[0];
+}
 
-    this->shape       = this->inputs[0]->shape;
-    this->elementType = this->inputs[0]->elementType;
+ElementType Exp::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void Exp::forward(const std::vector<const Tensor*> &inputs, Tensor *output)  {

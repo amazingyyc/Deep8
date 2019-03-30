@@ -12,9 +12,9 @@ void AdagradTrainer::update(Executor* executor, Variable* parameter, float learn
 
     if (accumulates.find(parameter) == accumulates.end()) {
         auto accu = executor->addVariable(value.shape, value.elementType, false);
-        accu->value.zero();
+        accu.value.zero();
 
-        accumulates[parameter] = accu;
+        accumulates[parameter] = &accu;
     }
     
     auto accu = accumulates[parameter]->value;

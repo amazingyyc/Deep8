@@ -5,15 +5,13 @@
 namespace Deep8 {
 
 ReduceSum::ReduceSum(std::vector<Node*>& inputs, std::vector<int> reduceAxis, bool keep) : Function(inputs), axis(reduceAxis), keepDims(keep) {
-    check();
+    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the ReduceSum Function needs 1 input");
 }
 
-void ReduceSum::check() {
-    Function::check();
+Shape ReduceSum::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "only have 1 input");
 
-    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "only have 1 input");
-
-    auto inputShape = convertShapeToVector(this->inputs[0]->shape);
+    auto inputShape = convertShapeToVector(inputShapes[0]);
 
     int rank = inputShape.size();
 
@@ -32,7 +30,7 @@ void ReduceSum::check() {
             DEEP8_ARGUMENT_CHECK(-rank <= axis[i] && axis[i] < rank, "the reduce dim is error");
 
             axis[i] = (axis[i] + rank) % rank;
-
+            
             reduceAxis[axis[i]] = true;
         }
     }
@@ -43,7 +41,7 @@ void ReduceSum::check() {
 
     std::vector<size_t> list;
 
-    for (int i = 1; i < rank; ++i) {
+    for(int i = 1; i < rank; ++i) {
         if (reduceAxis[i]) {
             if (keepDims) {
                 list.emplace_back(1);
@@ -57,8 +55,13 @@ void ReduceSum::check() {
         list.emplace_back(1);
     }
 
-    this->shape = Shape(outputBatch, list);
-    this->elementType = this->inputs[0]->elementType;
+    return Shape(outputBatch, list);
+}
+
+ElementType ReduceSum::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void ReduceSum::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

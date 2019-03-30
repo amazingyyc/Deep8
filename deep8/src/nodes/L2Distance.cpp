@@ -4,18 +4,20 @@
 namespace Deep8 {
 
 L2Distance::L2Distance(std::vector<Node *> &inputs): Function(inputs) {
-	check();
+    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the L2Distance Function needs 2 input");
 }
 
-void L2Distance::check() {
-    Function::check();
+Shape L2Distance::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "the input count must be 2");
+    DEEP8_ARGUMENT_CHECK(inputShapes[0] == inputShapes[1], "the input shape must be same");
 
-    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the L2Distance Function needs 2 input");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the input elementType must be same");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape == this->inputs[1]->shape, "the input shape must be same");
+    return Shape(inputShapes[0].batch, { 1 });
+}
 
-	this->shape       = Shape(this->inputs[0]->shape.batch, { 1 });
-    this->elementType = this->inputs[0]->elementType;
+ElementType L2Distance::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputTypes.size(), "the input count must be 2");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void L2Distance::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

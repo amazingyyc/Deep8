@@ -2,17 +2,32 @@
 
 namespace Deep8 {
 
-Function::Function(int64_t id, std::string name, std::vector<Node*> &inputs): Node(id, name, inputs), isShared(false) {
+Function::Function(std::vector<Node*> &inputs): Node(inputs) {
 	this->type = NodeType::Function;
 }
 
+/**is the function output shared memory with input*/
+bool Function::isShared() {
+	return false;
+}
+
 /**return the shape and elementtype by the input's*/
-Shape Function::outputShape(std::vector<Shape&> inputShapes) {
+Shape Function::checkShape(std::vector<Shape> &inputShapes) {
     return Shape();
 }
 
-ElementType Function::outputElementType(std::vector<ElementType&> inputTypes) {
-    return ElementType::unknown();
+ElementType Function::checkElementType(std::vector<ElementType> &inputTypes) {
+	if (inputTypes.empty()) {
+		return ElementType::unknown();
+	}
+
+	auto elementType = inputTypes[0];
+
+	for (int i = 1; i < inputTypes.size(); ++i) {
+		DEEP8_ARGUMENT_CHECK(elementType == inputTypes[i], "the input's ElementType must be same");
+	}
+
+    return elementType;
 }
 
 void Function::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
