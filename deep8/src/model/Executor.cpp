@@ -171,31 +171,31 @@ void Executor::removeGradient() {
     }
 }
 
-Variable& Executor::addVariable(Shape &shape, ElementType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(Shape &shape, ElementType type, bool updateGradient, bool retain) {
 	return addVariable(shape, type.id, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(std::vector<size_t> list, ElementType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(std::vector<size_t> list, ElementType type, bool updateGradient, bool retain) {
 	return addVariable(list, type.id, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(size_t batch, std::vector<size_t> list,  ElementType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(size_t batch, std::vector<size_t> list,  ElementType type, bool updateGradient, bool retain) {
 	return addVariable(batch, list, type.id, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(std::vector<size_t> list, DType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(std::vector<size_t> list, DType type, bool updateGradient, bool retain) {
 	Shape shape(list); 
 
 	return addVariable(shape, type, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(size_t batch, std::vector<size_t> list, DType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(size_t batch, std::vector<size_t> list, DType type, bool updateGradient, bool retain) {
 	Shape shape(batch, list);
 
 	return addVariable(shape, type, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(Shape &shape, DType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(Shape &shape, DType type, bool updateGradient, bool retain) {
 	auto id   = this->generateUniqueId();
 	auto name = this->generateUniqueName(NameType::Variable);
 
@@ -220,35 +220,35 @@ Variable& Executor::addVariable(Shape &shape, DType type, bool updateGradient, b
         interimNodes[name] = variable;
     }
 
-	return (*variable);
+	return variable;
 }
 
-Variable& Executor::addVariable(std::string name, Shape &shape, ElementType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(std::string name, Shape &shape, ElementType type, bool updateGradient, bool retain) {
 	return addVariable(name, shape, type.id, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(std::string name, std::vector<size_t> list, ElementType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(std::string name, std::vector<size_t> list, ElementType type, bool updateGradient, bool retain) {
 	return addVariable(name, list, type.id, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(std::string name, size_t batch, std::vector<size_t> list,  ElementType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(std::string name, size_t batch, std::vector<size_t> list,  ElementType type, bool updateGradient, bool retain) {
 	return addVariable(name, batch, list, type.id, updateGradient, retain);
 }
 
 
-Variable& Executor::addVariable(std::string name, std::vector<size_t> list, DType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(std::string name, std::vector<size_t> list, DType type, bool updateGradient, bool retain) {
 	Shape shape(list);
 
 	return addVariable(name, shape, type, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(std::string name, size_t batch, std::vector<size_t> list,  DType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(std::string name, size_t batch, std::vector<size_t> list,  DType type, bool updateGradient, bool retain) {
 	Shape shape(batch, list);
 
 	return addVariable(name, shape, type, updateGradient, retain);
 }
 
-Variable& Executor::addVariable(std::string name, Shape &shape, DType type, bool updateGradient, bool retain) {
+Variable* Executor::addVariable(std::string name, Shape &shape, DType type, bool updateGradient, bool retain) {
 	DEEP8_ARGUMENT_CHECK(uniqueNames.find(name) == uniqueNames.end(), "The name:" << name << "have been used, should set a uniqe name");
 
 	auto id = this->generateUniqueId();
@@ -277,7 +277,7 @@ Variable& Executor::addVariable(std::string name, Shape &shape, DType type, bool
         interimNodes[name] = variable;
     }
 
-	return (*variable);
+	return variable;
 }
 
 Node* Executor::nodeByName(std::string name) {

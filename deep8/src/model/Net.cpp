@@ -11,27 +11,27 @@ void backward(Variable *v, bool clearInterim) {
 }
 
 Variable& parameter(Executor *executor, std::vector<size_t> list, bool updateGradient, DType type) {
-    return executor->addVariable(list, type, updateGradient);
+    return *(executor->addVariable(list, type, updateGradient));
 }
 
 Variable& parameter(Executor *executor, size_t batch, std::vector<size_t> list, bool updateGradient, DType type) {
-    return executor->addVariable(batch, list, type, updateGradient);
+    return *(executor->addVariable(batch, list, type, updateGradient));
 }
 
 Variable& parameter(Executor *executor, Shape& shape, bool updateGradient, DType type) {
-    return executor->addVariable(shape, type, updateGradient);
+    return *(executor->addVariable(shape, type, updateGradient));
 }
 
-Variable& inputParameter(Executor *executor, std::vector<size_t> list, bool updateGradient, DType type) {
-    return executor->addVariable(list, type, false, false);
+Variable& inputParameter(Executor *executor, std::vector<size_t> list, DType type) {
+    return *(executor->addVariable(list, type, false, false));
 }
 
-Variable& inputParameter(Executor *executor, size_t batch, std::vector<size_t> list, bool updateGradient, DType type) {
-    return executor->addVariable(batch, list, type, false, false);
+Variable& inputParameter(Executor *executor, size_t batch, std::vector<size_t> list, DType type) {
+    return *(executor->addVariable(batch, list, type, false, false));
 }
 
-Variable& inputParameter(Executor *executor, Shape& shape, bool updateGradient, DType type) {
-    return executor->addVariable(shape, type, false, false);
+Variable& inputParameter(Executor *executor, Shape& shape, DType type) {
+    return *(executor->addVariable(shape, type, false, false));
 }
 
 Variable& feed(Variable &v, const void *ptr) {
@@ -84,9 +84,7 @@ Variable& dense(Variable &x, std::string weightName, int channel) {
 
         Shape weightShape({size_t(channel), xshape.row()});
         
-        auto weightVar = x.executor->addVariable(weightName, weightShape, x.value.elementType, true, true);
-
-        weight = &weightVar;
+        weight = x.executor->addVariable(weightName, weightShape, x.value.elementType, true, true);
     }
 
     std::vector<Node*> inputs = { weight, &x};
@@ -94,14 +92,33 @@ Variable& dense(Variable &x, std::string weightName, int channel) {
     return x.executor->addFunction(new MatrixMultiply(inputs));
 }
 
+Variable& bias(Variable &x, std::string biasName) {
+    auto bias = x.executor->retainVariableByName(biasName);
+
+    if (nullptr == bias) {
+        auto xshape = x.shape();
+
+        DEEP8_ARGUMENT_CHECK(xshape.nDims >= 1, "the dense input nDims must >= 1s");
+
+        auto lastDim = xshape.dim(xshape.nDims - 1);
+
+        Shape biasShape({lastDim});
+
+        bias = x.executor->addVariable(biasName, biasShape, x.value.elementType, true, true);
+    }
+
+    std::vector<Node*> inputs = { &x, bias};
+
+    return x.executor->addFunction(new Add(inputs));
+}
+
 Variable& pRelu(Variable &x, std::string pName) {
     auto p = x.executor->retainVariableByName(pName);
 
     if (nullptr == p) {
         auto pshape = x.shape();
-        auto pvar   = x.executor->addVariable(pName, pshape, x.value.elementType, true, true);
-
-        p = &pvar;
+        
+        p   = x.executor->addVariable(pName, pshape, x.value.elementType, true, true);
     }
 
     std::vector<Node*> inputs = { &x, p};
@@ -139,9 +156,7 @@ Variable& conv2d(Variable &x,
 
         Shape filterShape({size_t(outputChannel), size_t(filterHeight), size_t(filterWidth), inputChannel});
 
-        auto filerVar = x.executor->addVariable(filterName, filterShape, x.value.elementType, true, true);
-
-        filter = &filerVar;
+        filter = x.executor->addVariable(filterName, filterShape, x.value.elementType, true, true);
     }
 
     std::vector<Node*> inputs = { &x, filter };
@@ -175,9 +190,7 @@ Variable& deConv2d( Variable &x,
 
         Shape filterShape({size_t(outputChannel), size_t(filterHeight), size_t(filterWidth), inputChannel});
 
-        auto filerVar = x.executor->addVariable(filterName, filterShape, x.value.elementType, true, true);
-
-        filter = &filerVar;
+        filter = x.executor->addVariable(filterName, filterShape, x.value.elementType, true, true);
     }
 
     std::vector<Node*> inputs = { &x, filter };

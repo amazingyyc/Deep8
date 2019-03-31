@@ -21,7 +21,7 @@ class Executor;
  * the Node type for now 2 type: Variable and Function
  */
 enum class NodeType {
-    Unknow,
+    Unknow = 0,
     Variable,
     Function,
 };

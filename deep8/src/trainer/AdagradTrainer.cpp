@@ -11,10 +11,10 @@ void AdagradTrainer::update(Executor* executor, Variable* parameter, float learn
     auto gradient = parameter->gradient;
 
     if (accumulates.find(parameter) == accumulates.end()) {
-        auto &accu = executor->addVariable(value.shape, value.elementType, false);
-        accu.value.zero();
+        auto accu = executor->addVariable(value.shape, value.elementType, false);
+        accu->value.zero();
 
-        accumulates[parameter] = &accu;
+        accumulates[parameter] = accu;
     }
     
     auto accu = accumulates[parameter]->value;

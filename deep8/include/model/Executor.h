@@ -85,21 +85,21 @@ public:
     /**remove all Variable's gradient for predict mode*/
     void removeGradient();
 
-    Variable& addVariable(Shape &shape,                       ElementType type, bool updateGradient = true, bool retain = true);
-    Variable& addVariable(std::vector<size_t>,                ElementType type, bool updateGradient = true, bool retain = true);
-    Variable& addVariable(size_t batch, std::vector<size_t>,  ElementType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(Shape &shape,                       ElementType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::vector<size_t>,                ElementType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(size_t batch, std::vector<size_t>,  ElementType type, bool updateGradient = true, bool retain = true);
 
-    Variable& addVariable(Shape &shape,                       DType type, bool updateGradient = true, bool retain = true);
-    Variable& addVariable(std::vector<size_t>,                DType type, bool updateGradient = true, bool retain = true);
-    Variable& addVariable(size_t batch, std::vector<size_t>,  DType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(Shape &shape,                       DType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::vector<size_t>,                DType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(size_t batch, std::vector<size_t>,  DType type, bool updateGradient = true, bool retain = true);
 
-    Variable& addVariable(std::string name, Shape &shape,                       ElementType type, bool updateGradient = true, bool retain = true);
-    Variable& addVariable(std::string name, std::vector<size_t>,                ElementType type, bool updateGradient = true, bool retain = true);
-    Variable& addVariable(std::string name, size_t batch, std::vector<size_t>,  ElementType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::string name, Shape &shape,                       ElementType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::string name, std::vector<size_t>,                ElementType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::string name, size_t batch, std::vector<size_t>,  ElementType type, bool updateGradient = true, bool retain = true);
 
-    Variable& addVariable(std::string name, Shape &shape,                       DType type, bool updateGradient = true, bool retain = true);
-    Variable& addVariable(std::string name, std::vector<size_t>,                DType type, bool updateGradient = true, bool retain = true);
-    Variable& addVariable(std::string name, size_t batch, std::vector<size_t>,  DType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::string name, Shape &shape,                       DType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::string name, std::vector<size_t>,                DType type, bool updateGradient = true, bool retain = true);
+    Variable* addVariable(std::string name, size_t batch, std::vector<size_t>,  DType type, bool updateGradient = true, bool retain = true);
 
 	/**clear interim nodes*/
 	void clearInterimNodes();

@@ -43,9 +43,9 @@ Variable& parameter(Executor *, std::vector<size_t> ,         bool updateGradien
 Variable& parameter(Executor *, size_t, std::vector<size_t> , bool updateGradient = true, DType type = DType::Float32);
 Variable& parameter(Executor *, Shape& ,                      bool updateGradient = true, DType type = DType::Float32);
 
-Variable& inputParameter(Executor *, std::vector<size_t> ,         bool updateGradient = true, DType type = DType::Float32);
-Variable& inputParameter(Executor *, size_t, std::vector<size_t> , bool updateGradient = true, DType type = DType::Float32);
-Variable& inputParameter(Executor *, Shape& ,                      bool updateGradient = true, DType type = DType::Float32);
+Variable& inputParameter(Executor *, std::vector<size_t> ,         DType type = DType::Float32);
+Variable& inputParameter(Executor *, size_t, std::vector<size_t> , DType type = DType::Float32);
+Variable& inputParameter(Executor *, Shape& ,                      DType type = DType::Float32);
 
 Variable& feed(Variable&, const void*);
 
@@ -62,6 +62,8 @@ Variable& uniform(Variable&, float left = 0.0, float right = 1.0);
 Variable& assign(Variable &x, Variable &v);
 
 Variable& dense(Variable &x, std::string weightName, int channel);
+
+Variable& bias(Variable &x, std::string biasName);
 
 Variable& pRelu(Variable &x, std::string pName);
 

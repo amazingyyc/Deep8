@@ -21,6 +21,12 @@ ElementType LogSoftmax::checkElementType(std::vector<ElementType> &inputTypes) {
 }
 
 void LogSoftmax::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+    DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int)inputs[0]->shape.nDims, "the axis is error");
+    
+    if (-1 == axis) {
+        axis = (int)inputs[0]->shape.nDims - 1;
+    }
+
     auto device = output->device();
 
     auto shape = inputs[0]->shape;
@@ -53,6 +59,11 @@ void LogSoftmax::backward(const std::vector<const Tensor*> &inputs,
                         size_t index, 
                         Tensor *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of LogSoftmax backward is error");
+    DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int)inputs[0]->shape.nDims, "the axis is error");
+    
+    if (-1 == axis) {
+        axis = (int)inputs[0]->shape.nDims - 1;
+    }
 
     auto device = iGradient->device();
 
