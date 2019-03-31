@@ -11,7 +11,7 @@ void RMSPropTrainer::update(Executor* executor, Variable* parameter, float learn
     auto gradient = parameter->gradient;
 
     if (v.find(parameter) == v.end()) {
-        auto vt = executor->addVariable(value.shape, value.elementType, false);
+        auto &vt = executor->addVariable(value.shape, value.elementType, false);
         vt.value.zero();
 
         v[parameter] = &vt;

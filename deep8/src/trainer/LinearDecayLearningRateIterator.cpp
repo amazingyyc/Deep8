@@ -6,7 +6,7 @@ LinearDecayLearningRateIterator::LinearDecayLearningRateIterator(int64_t total, 
     :totalSteps(total), startLearningRate(start), endLearningRate(end) {
 }
 
-float LinearDecayLearningRateIterator::nextLearningRate(int64_t steps) {
+float LinearDecayLearningRateIterator::next(int64_t steps) {
     return (float(steps) / float(totalSteps)) * (endLearningRate - startLearningRate) + startLearningRate;
 }
 

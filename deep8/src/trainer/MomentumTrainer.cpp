@@ -12,7 +12,7 @@ void MomentumTrainer::update(Executor* executor, Variable* parameter, float lear
     auto gradient = parameter->gradient;
 
     if (momentums.find(parameter) == momentums.end()) {
-        auto mv = executor->addVariable(value.shape, value.elementType, false);
+        auto &mv = executor->addVariable(value.shape, value.elementType, false);
         mv.value.zero();
 
         momentums[parameter] = &mv;

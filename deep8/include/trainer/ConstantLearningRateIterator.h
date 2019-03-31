@@ -12,7 +12,7 @@ public:
 
    explicit ConstantLearningRateIterator(float lr = 0.01);
 
-   float nextLearningRate(int64_t steps) override;
+   float next(int64_t steps) override;
 };
 
 }

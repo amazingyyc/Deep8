@@ -25,14 +25,13 @@
 // #include "MinusTest.h"
 // #include "MultiplyTest.h"
 // #include "ReLuTest.h"
-#include "ReduceMeanTest.h"
-#include "ReduceSumTest.h"
+//#include "ReduceMeanTest.h"
+//#include "ReduceSumTest.h"
 // #include "SigmoidTest.h"
 // #include "SoftmaxTest.h"
 // #include "SquareTest.h"
 // #include "TanhTest.h"
-//#include "LinearRegressionTest.h"
-//#include "AutoBatchTest.h"
+#include "LinearRegressionTest.h"
 
 #ifdef HAVE_CUDA
 //#include "LinearRegressionGPUTest.h"

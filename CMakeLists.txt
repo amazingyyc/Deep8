@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8)
 # if the device have GPU and if build the test
 set(BUILD_WITH_GPU FALSE)
 set(BUILD_PYTHON FALSE)
-set(BUILD_TEST FALSE)
+set(BUILD_TEST TRUE)
 
 if (BUILD_WITH_GPU)
     # find the CUDA

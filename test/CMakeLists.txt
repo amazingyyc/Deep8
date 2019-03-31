@@ -4,6 +4,9 @@ else()
     project(deep8_test LANGUAGES CXX)
 endif()
 
+# c++11
+set(CMAKE_CXX_STANDARD 11)
+
 if (BUILD_WITH_GPU)
     add_definitions(-DHAVE_CUDA)
 

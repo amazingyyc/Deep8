@@ -7,7 +7,6 @@
 #include "model/Shape.h"
 #include "model/Tensor.h"
 #include "nodes/Variable.h"
-#include "nodes/Parameter.h"
 
 namespace Deep8 {
 
@@ -111,7 +110,7 @@ Deep8::Variable createFakeVariable(CPUDevice &device, ElementType type) {
 	Tensor value(storage, 0, shape, type);
 	Tensor grad(storage, 0, shape, type);
 
-	return Deep8::Parameter(value, grad);
+	return Deep8::Variable(0, "", nullptr, value, grad);
 }
 
 Deep8::Variable createFakeVariable(CPUDevice &device, ElementType type, size_t batch, std::vector<size_t> list) {
@@ -127,7 +126,7 @@ Deep8::Variable createFakeVariable(CPUDevice &device, ElementType type, size_t b
 	Tensor value(storage, 0, shape, type);
 	Tensor grad(storage, 0, shape, type);
 
-	return Deep8::Parameter(value, grad);
+	return Deep8::Variable(0, "", nullptr, value, grad);
 }
 
 #ifdef HAVE_CUDA
@@ -144,7 +143,7 @@ Deep8::Variable createFakeVariable(GPUDevice& device, ElementType type) {
     Tensor value(storage, 0, shape, type);
     Tensor grad(storage, 0, shape, type);
 
-    return Deep8::Parameter(value, grad);
+    return Deep8::Variable(0, "", nullptr, value, grad);
 }
 
 Deep8::Variable createFakeVariable(GPUDevice& device, ElementType type, size_t batch, std::vector<size_t> list) {
@@ -160,7 +159,7 @@ Deep8::Variable createFakeVariable(GPUDevice& device, ElementType type, size_t b
     Tensor value(storage, 0, shape, type);
     Tensor grad(storage, 0, shape, type);
 
-    return Deep8::Parameter(value, grad);
+    return Deep8::Variable(0, "", nullptr, value, grad);
 }
 #endif
 

@@ -36,6 +36,17 @@
 
 namespace Deep8 {
 
+void backward(Variable&, bool clearInterim = true);
+void backward(Variable*, bool clearInterim = true);
+
+Variable& parameter(Executor *, std::vector<size_t> ,         bool updateGradient = true, DType type = DType::Float32);
+Variable& parameter(Executor *, size_t, std::vector<size_t> , bool updateGradient = true, DType type = DType::Float32);
+Variable& parameter(Executor *, Shape& ,                      bool updateGradient = true, DType type = DType::Float32);
+
+Variable& inputParameter(Executor *, std::vector<size_t> ,         bool updateGradient = true, DType type = DType::Float32);
+Variable& inputParameter(Executor *, size_t, std::vector<size_t> , bool updateGradient = true, DType type = DType::Float32);
+Variable& inputParameter(Executor *, Shape& ,                      bool updateGradient = true, DType type = DType::Float32);
+
 Variable& feed(Variable&, const void*);
 
 Variable& fetch(Variable& ,void*);

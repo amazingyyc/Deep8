@@ -11,14 +11,14 @@ void AdamTrainer::update(Executor* executor, Variable* parameter, float learning
     auto gradient = parameter->gradient;
 
     if (m.find(parameter) == m.end()) {
-        auto mt = executor->addVariable(value.shape, value.elementType, false);
+        auto &mt = executor->addVariable(value.shape, value.elementType, false);
         mt.value.zero();
 
         m[parameter] = &mt;
     }
 
     if (v.find(parameter) == v.end()) {
-        auto vt = executor->addVariable(value.shape, value.elementType, false);
+        auto &vt = executor->addVariable(value.shape, value.elementType, false);
         vt.value.zero();
 
         v[parameter] = &vt;

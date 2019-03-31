@@ -2,6 +2,38 @@
 
 namespace Deep8 {
 
+void backward(Variable &v, bool clearInterim) {
+    v.executor->backward(&v, clearInterim);
+}
+
+void backward(Variable *v, bool clearInterim) {
+    v->executor->backward(v, clearInterim);
+}
+
+Variable& parameter(Executor *executor, std::vector<size_t> list, bool updateGradient, DType type) {
+    return executor->addVariable(list, type, updateGradient);
+}
+
+Variable& parameter(Executor *executor, size_t batch, std::vector<size_t> list, bool updateGradient, DType type) {
+    return executor->addVariable(batch, list, type, updateGradient);
+}
+
+Variable& parameter(Executor *executor, Shape& shape, bool updateGradient, DType type) {
+    return executor->addVariable(shape, type, updateGradient);
+}
+
+Variable& inputParameter(Executor *executor, std::vector<size_t> list, bool updateGradient, DType type) {
+    return executor->addVariable(list, type, false, false);
+}
+
+Variable& inputParameter(Executor *executor, size_t batch, std::vector<size_t> list, bool updateGradient, DType type) {
+    return executor->addVariable(batch, list, type, false, false);
+}
+
+Variable& inputParameter(Executor *executor, Shape& shape, bool updateGradient, DType type) {
+    return executor->addVariable(shape, type, false, false);
+}
+
 Variable& feed(Variable &v, const void *ptr) {
     return v.feed(ptr);
 }
