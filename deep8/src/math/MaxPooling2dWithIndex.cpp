@@ -133,7 +133,7 @@ void MaxPooling2dWithIndexCPUImpl(const T *x,
                     auto startw = std::max<int>(0, padLeft + w * strideX);
                     auto endw   = std::min<int>(inputWidth, padLeft + w * strideX + filterWidth);
 
-                    DEEP8_ARGUMENT_CHECK(endh > starth && endw > startw, "the input or output dim is error");
+                    DEEP8_ARGUMENT_CHECK(endh >= starth && endw >= startw, "the input or output dim is error");
 
                     int maxh = starth;
                     int maxw = startw;
@@ -291,7 +291,7 @@ void MaxPooling2dWithIndexCPU(const Tensor &x,
                                                 padTop,
                                                 padLeft);
 
-                                        barrier.Notify();
+            barrier.Notify();
         };
 
         for (int i = 0; i < threadNum; ++i) {
@@ -346,7 +346,6 @@ void MaxPooling2dWithIndexGradCPUImpl(T *x,
     int maxxi = batch * inputHeight * inputWidth * channel;
 
     for (int b = 0; b < batch; ++b) {
-        auto dxptr = dx + b * inputHeight  * inputWidth  * channel;
         auto dyptr = dy + b * outputHeight * outputWidth * channel;
         auto indexptr = index + b * outputHeight * outputWidth * channel;
 

@@ -1,3 +1,4 @@
+#include <crt/device_functions.h>
 #include "basic/GPUBasic.h"
 #include "model/GPUDevice.h"
 #include "math/GPUMath.h"
@@ -160,46 +161,16 @@ template <typename T>
 __global__ void MaxPooling2dWithIndexGradKernel(T *dx,
                                                const int *index,
                                                const T *dy,
-                                               const int batch,
-                                               const int inputHeight,
-                                               const int inputWidth,
-                                               const int outputHeight,
-                                               const int outputWidth,
-                                               const int channel,
-                                               const int filterHeight,
-                                               const int filterWidth,
-                                               const int strideY,
-                                               const int strideX,
-                                               const int padTop,
-                                               const int padLeft,
-                                               const int N) {
+                                               const int xsize,
+                                               const int ysize) {
     int start  = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
 
-    for (int i = start; i < N; i += stride) {
-        int b      =  i / (inputHeight * inputWidth * channel);
-        int inputY = (i % (inputHeight * inputWidth * channel)) / (inputWidth * channel);
-        int inputX = (i % (inputWidth * channel)) / channel;
-        int c      =  i % channel;
+    for (int yi = start; yi < ysize; yi += stride) {
+        int xi = index[yi];
 
-        for (int h = 0; h < filterHeight; ++h) {
-            for (int w = 0; w < filterWidth; ++w) {
-                int outputY = inputY - padTop  - h;
-                int outputX = inputX - padLeft - w;
-
-                if (0 == outputY % strideY && 0 == outputX % strideX) { 
-                    outputY /= strideY;
-                    outputX /= strideX;
-
-                    if (0 <= outputY && outputY < outputHeight && 0 <= outputX && outputX < outputWidth) {
-                        auto yi = ((b * outputHeight + outputY) * outputWidth + outputX) * channel + c;
-                        
-                        if (i == index[yi]) {
-                            dx[i] += dy[yi];
-                        }
-                    }
-                }
-            }
+        if (0 <= xi && xi < xsize) {
+            atomicAdd((T*)(dx + xi), dy[yi]);
         }
     }
 }
@@ -214,24 +185,11 @@ void MaxPooling2dWithIndexGradGPU(const Tensor &x,
                          int filterWidth, 
                          int strideY, 
                          int strideX) {
-    auto batch       = (int)x.batch();
-    auto inputHeight = (int)x.dim(0);
-    auto inputWidth  = (int)x.dim(1);
-    auto channel     = (int)x.dim(2);
-
-    auto outputHeight = (int)y.dim(0);
-    auto outputWidth  = (int)y.dim(1);
-
-    int padY = std::max<int>(0, (outputHeight - 1) * strideY + filterHeight - inputHeight);
-    int padX = std::max<int>(0, (outputWidth  - 1) * strideX + filterWidth  - inputWidth);
-
-    int padTop  = -(padY / 2);
-    int padLeft = -(padX / 2);
-
-    int N = batch * inputHeight * inputWidth * channel;
+    int xsize = (int) x.size();
+    int ysize = (int) y.size();
 
     int blockSize = DEEP8_GPU_BLOCK_SIZE;
-    int grideSize = (N + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
+    int grideSize = (ysize + DEEP8_GPU_BLOCK_SIZE - 1) / DEEP8_GPU_BLOCK_SIZE;
 
     switch (x.elementType.id) {
     case DType::Float32:
@@ -239,60 +197,33 @@ void MaxPooling2dWithIndexGradGPU(const Tensor &x,
             dx.data<float>(),
             index.data<int>(),
             dy.data<float>(),
-            batch,
-            inputHeight,
-            inputWidth,
-            outputHeight,
-            outputWidth,
-            channel,
-            filterHeight,
-            filterWidth,
-            strideY,
-            strideX,
-            padTop,
-            padLeft,
-            N);
+            xsize,
+            ysize);
         break;
     case DType::Float64:
         MaxPooling2dWithIndexGradKernel<double> << <grideSize, blockSize >> > (
             dx.data<double>(),
             index.data<int>(),
             dy.data<double>(),
-            batch,
-            inputHeight,
-            inputWidth,
-            outputHeight,
-            outputWidth,
-            channel,
-            filterHeight,
-            filterWidth,
-            strideY,
-            strideX,
-            padTop,
-            padLeft,
-            N);
+            xsize,
+            ysize);
         break;
-#ifdef HAVE_HALF
+
+#if defined(HAVE_HALF)
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 700
+
     case DType::Float16:
         MaxPooling2dWithIndexGradKernel<half> << <grideSize, blockSize >> > (
             dx.data<half>(),
             index.data<int>(),
             dy.data<half>(),
-            batch,
-            inputHeight,
-            inputWidth,
-            outputHeight,
-            outputWidth,
-            channel,
-            filterHeight,
-            filterWidth,
-            strideY,
-            strideX,
-            padTop,
-            padLeft,
-            N);
+            xsize,
+            ysize);
         break;
+
 #endif
+#endif
+
     default:
         DEEP8_RUNTIME_ERROR("type " << x.elementType.name << " is not support");
         break;
