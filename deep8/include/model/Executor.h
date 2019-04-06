@@ -112,7 +112,7 @@ public:
 	std::vector<Variable*> trainableParameters();
 
 	/**give a function and create the output Variable*/
-	virtual Variable& addFunction(Function *func);
+	virtual Variable* addFunction(Function *func);
 
 	virtual void forward(Node *last);
 	virtual void backward(Node *last, bool clearInterim = true);

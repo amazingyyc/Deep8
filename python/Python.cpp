@@ -184,7 +184,93 @@ void declareVariable(py::module &m) {
             }, py::is_operator(), pybind11::return_value_policy::reference)
             .def("__idiv__", [](Variable &x, Variable &y) -> Variable& {
                 return x / y;
-            }, py::is_operator(), pybind11::return_value_policy::reference);
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("add",      &Variable::add,      pybind11::return_value_policy::reference)
+            .def("minus",    &Variable::minus,    pybind11::return_value_policy::reference)
+            .def("multiply", &Variable::multiply, pybind11::return_value_policy::reference)
+            .def("divide",   &Variable::divide,   pybind11::return_value_policy::reference)
+            .def("addConstant",         &Variable::addConstant, pybind11::return_value_policy::reference)
+            .def("minusConstant",       &Variable::minusConstant, pybind11::return_value_policy::reference)
+            .def("multiplyConstant",    &Variable::multiplyConstant, pybind11::return_value_policy::reference)
+            .def("divideConstant",      &Variable::divideConstant, pybind11::return_value_policy::reference)
+            .def("abs",      &Variable::abs, pybind11::return_value_policy::reference)
+            .def("avgPooling2d", &Variable::avgPooling2d,
+                            py::arg("covered") = true, 
+                            py::arg("filterHeight") = 1, 
+                            py::arg("filterWidth") = 1, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideY") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("conv2d", &Variable::conv2d,
+                            py::arg("filter"),
+                            py::arg("covered") = true, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideX") = 1, 
+                            py::arg("dilationY") = 1, 
+                            py::arg("dilationX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("crossEntropy", &Variable::crossEntropy, pybind11::return_value_policy::reference)
+            .def("deConv2d", &Variable::deConv2d,
+                            py::arg("filter"),
+                            py::arg("covered") = true, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("dot",         &Variable::dot,         pybind11::return_value_policy::reference)
+            .def("exp",         &Variable::exp,         pybind11::return_value_policy::reference)
+            .def("l1Distance",  &Variable::l1Distance,  pybind11::return_value_policy::reference)
+            .def("l1Norm",      &Variable::l1Norm,      pybind11::return_value_policy::reference)
+            .def("l2Distance",  &Variable::l2Distance,  pybind11::return_value_policy::reference)
+            .def("l2Norm",      &Variable::l2Norm,      pybind11::return_value_policy::reference)
+            .def("linear",      &Variable::linear,      pybind11::return_value_policy::reference)
+            .def("log",         &Variable::log,         pybind11::return_value_policy::reference)
+            .def("logSoftmax",  &Variable::logSoftmax, py::arg("axis") = -1, pybind11::return_value_policy::reference)
+            .def("lRelu",       &Variable::lRelu,       pybind11::return_value_policy::reference)
+            .def("matrixMultiply", &Variable::matrixMultiply, pybind11::return_value_policy::reference)
+            .def("maxPooling2d", &Variable::maxPooling2d,
+                            py::arg("covered") = true, 
+                            py::arg("filterHeight") = 1, 
+                            py::arg("filterWidth") = 1, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("maxPooling2dWithIndex", &Variable::maxPooling2dWithIndex,
+                            py::arg("index"), 
+                            py::arg("covered") = true, 
+                            py::arg("filterHeight") = 1, 
+                            py::arg("filterWidth") = 1, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("maxUnPooling2d", &Variable::maxUnPooling2d,
+                            py::arg("index"), 
+                            py::arg("covered") = true, 
+                            py::arg("filterHeight") = 1, 
+                            py::arg("filterWidth") = 1, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("pRelu", &Variable::pRelu, pybind11::return_value_policy::reference)
+            .def("reduceMean", &Variable::reduceMean,
+                                    py::arg("axis") = std::vector<int>({-1}),  
+                                    py::arg("keepDims") = true, 
+                                    pybind11::return_value_policy::reference)
+            .def("reduceSum",  &Variable::reduceSum, 
+                                    py::arg("axis") = std::vector<int>({-1}),  
+                                    py::arg("keepDims") = true,
+                                    pybind11::return_value_policy::reference)
+            .def("relu", &Variable::relu, pybind11::return_value_policy::reference)
+            .def("reShape", (Variable& (Variable::*)(Shape&)) &Variable::reShape, pybind11::return_value_policy::reference)
+            .def("reShape", (Variable& (Variable::*)(std::vector<size_t>)) &Variable::reShape, pybind11::return_value_policy::reference)
+            .def("sigmoid", &Variable::sigmoid, pybind11::return_value_policy::reference)
+            .def("softmax", &Variable::softmax, py::arg("axis") = -1, pybind11::return_value_policy::reference)
+            .def("square",          &Variable::square,      pybind11::return_value_policy::reference)
+            .def("tanh",            &Variable::tanh,        pybind11::return_value_policy::reference)
+            .def("l1Loss",          &Variable::l1Loss,      pybind11::return_value_policy::reference)
+            .def("l1NormLoss",      &Variable::l1NormLoss,  pybind11::return_value_policy::reference)
+            .def("l2Loss",          &Variable::l2Loss,      pybind11::return_value_policy::reference)
+            .def("l2NormLoss",      &Variable::l2NormLoss,  pybind11::return_value_policy::reference)
+            .def("softmaxCrossEntropyLoss", &Variable::softmaxCrossEntropyLoss, pybind11::return_value_policy::reference);
 }
 
 /**Net*/
@@ -233,46 +319,6 @@ void declareNet(py::module &m) {
                         py::arg("shape"),
                         py::arg("type") = DType::Float32,
                         pybind11::return_value_policy::reference);
-    
-    m.def("dense", &dense,
-                py::arg("variable"), 
-                py::arg("name"),
-                py::arg("channel"),
-                pybind11::return_value_policy::reference);
-    
-    m.def("bias", &bias,
-                py::arg("variable"), 
-                py::arg("name"),
-                pybind11::return_value_policy::reference);
-
-    m.def("pRelu", &pRelu, 
-            py::arg("variable"),
-            py::arg("name"),
-            pybind11::return_value_policy::reference);
-
-    m.def("conv2d", &conv2d,
-            py::arg("variable"),
-            py::arg("name"),
-            py::arg("outputChannel"),
-            py::arg("filterHeight"),
-            py::arg("filterWidth"),
-            py::arg("covered") = true,
-            py::arg("strideY") = 1,
-            py::arg("strideX") = 1,
-            py::arg("dilationY") = 1,
-            py::arg("dilationX") = 1,
-            pybind11::return_value_policy::reference);
-
-    m.def("deConv2d", &deConv2d,
-            py::arg("variable"),
-            py::arg("name"),
-            py::arg("outputChannel"),
-            py::arg("filterHeight"),
-            py::arg("filterWidth"),
-            py::arg("covered") = true,
-            py::arg("strideY") = 1,
-            py::arg("strideX") = 1,
-            pybind11::return_value_policy::reference);
 
     m.def("add", &add, pybind11::return_value_policy::reference);
     m.def("minus", &minus, pybind11::return_value_policy::reference);
@@ -284,7 +330,6 @@ void declareNet(py::module &m) {
     m.def("multiplyConstant", &multiplyConstant, pybind11::return_value_policy::reference);
     m.def("divideConstant", &divideConstant, pybind11::return_value_policy::reference);
     
-    m.def("dot", &dot, pybind11::return_value_policy::reference);
     m.def("abs", &abs, pybind11::return_value_policy::reference);
 
     m.def("avgPooling2d", &avgPooling2d,
@@ -296,8 +341,27 @@ void declareNet(py::module &m) {
                 py::arg("strideX") = 1,
                 pybind11::return_value_policy::reference);
     
+    m.def("conv2d", &conv2d,
+                py::arg("variable"),
+                py::arg("filter"),
+                py::arg("covered") = true, 
+                py::arg("strideY") = 1, 
+                py::arg("strideX") = 1, 
+                py::arg("dilationY") = 1, 
+                py::arg("dilationX") = 1,
+                pybind11::return_value_policy::reference);
+
     m.def("crossEntropy", &crossEntropy, pybind11::return_value_policy::reference);
 
+    m.def("deConv2d", &deConv2d,
+            py::arg("variable"),
+            py::arg("filter"),
+            py::arg("covered") = true, 
+            py::arg("strideY") = 1, 
+            py::arg("strideX") = 1, 
+            pybind11::return_value_policy::reference);
+
+    m.def("dot", &dot, pybind11::return_value_policy::reference);
     m.def("exp", &exp, pybind11::return_value_policy::reference);
     m.def("l1Distance", &l1Distance, pybind11::return_value_policy::reference);
     m.def("l1Norm", &l1Norm, pybind11::return_value_policy::reference);
@@ -322,6 +386,8 @@ void declareNet(py::module &m) {
             py::arg("a") = 0.0, 
             pybind11::return_value_policy::reference);
 
+    m.def("matrixMultiply", &matrixMultiply, pybind11::return_value_policy::reference);
+
     m.def("maxPooling2d", &maxPooling2d,
                 py::arg("variable"),
                 py::arg("covered") = true, 
@@ -330,6 +396,28 @@ void declareNet(py::module &m) {
                 py::arg("strideY") = 1, 
                 py::arg("strideX") = 1,
                 pybind11::return_value_policy::reference);
+
+    m.def("maxPooling2dWithIndex", &maxPooling2dWithIndex,
+            py::arg("variable"),
+            py::arg("index"),
+            py::arg("covered") = true, 
+            py::arg("filterHeight") = 1, 
+            py::arg("filterWidth") = 1, 
+            py::arg("strideY") = 1, 
+            py::arg("strideX") = 1,
+            pybind11::return_value_policy::reference);
+
+    m.def("maxUnPooling2d", &maxUnPooling2d,
+            py::arg("variable"),
+            py::arg("index"),
+            py::arg("covered") = true, 
+            py::arg("filterHeight") = 1, 
+            py::arg("filterWidth") = 1, 
+            py::arg("strideY") = 1, 
+            py::arg("strideX") = 1,
+            pybind11::return_value_policy::reference);
+
+    m.def("pRelu", &pRelu, pybind11::return_value_policy::reference);
 
     m.def("reduceMean", &reduceMean,
                 py::arg("variable"), 

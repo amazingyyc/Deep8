@@ -74,152 +74,28 @@ Variable& assign(Variable &x, Variable &v) {
     return x.assign(v);
 }
 
-Variable& dense(Variable &x, std::string weightName, int channel) {
-    auto weight = x.executor->retainVariableByName(weightName);
-
-    if (nullptr == weight) {
-        auto xshape = x.shape();
-
-        DEEP8_ARGUMENT_CHECK(1 == xshape.nDims || 2 == xshape.nDims, "the dense input nDims must be 1/2");
-
-        Shape weightShape({size_t(channel), xshape.row()});
-        
-        weight = x.executor->addVariable(weightName, weightShape, x.value.elementType, true, true);
-    }
-
-    std::vector<Node*> inputs = { weight, &x};
-
-    return x.executor->addFunction(new MatrixMultiply(inputs));
-}
-
-Variable& bias(Variable &x, std::string biasName) {
-    auto bias = x.executor->retainVariableByName(biasName);
-
-    if (nullptr == bias) {
-        auto xshape = x.shape();
-
-        DEEP8_ARGUMENT_CHECK(xshape.nDims >= 1, "the dense input nDims must >= 1s");
-
-        auto lastDim = xshape.dim(xshape.nDims - 1);
-
-        Shape biasShape({lastDim});
-
-        bias = x.executor->addVariable(biasName, biasShape, x.value.elementType, true, true);
-    }
-
-    std::vector<Node*> inputs = { &x, bias};
-
-    return x.executor->addFunction(new Add(inputs));
-}
-
-Variable& pRelu(Variable &x, std::string pName) {
-    auto p = x.executor->retainVariableByName(pName);
-
-    if (nullptr == p) {
-        auto pshape = x.shape();
-        
-        p   = x.executor->addVariable(pName, pshape, x.value.elementType, true, true);
-    }
-
-    std::vector<Node*> inputs = { &x, p};
-
-    return x.executor->addFunction(new PReLu(inputs));
-}
-
-Variable& conv2d(Variable &x,
-                std::string filterName,
-                int outputChannel,
-                int filterHeight,
-                int filterWidth,
-                bool covered,
-                int strideY, 
-                int strideX, 
-                int dilationY, 
-                int dilationX) {
-    /**if the filter have been create*/
-    auto filter = x.executor->retainVariableByName(filterName);
-
-    /**if not created, create it*/
-    if (nullptr == filter) {
-        auto xshape = x.shape();
-
-        DEEP8_ARGUMENT_CHECK(3 == xshape.nDims, "the conv2d input nDims must be 3");
-        DEEP8_ARGUMENT_CHECK(outputChannel >= 1 
-                            && filterHeight >= 1
-                            && filterWidth >= 1
-                            && strideY >= 1
-                            && strideX >= 1
-                            && dilationY >= 1
-                            && dilationX >= 1, "the parameter is error");
-        
-        auto inputChannel = xshape.dim(2);
-
-        Shape filterShape({size_t(outputChannel), size_t(filterHeight), size_t(filterWidth), inputChannel});
-
-        filter = x.executor->addVariable(filterName, filterShape, x.value.elementType, true, true);
-    }
-
-    std::vector<Node*> inputs = { &x, filter };
-
-    return x.executor->addFunction(new Conv2d(inputs, covered, strideY, strideX, dilationY, dilationX));
-}
-
-Variable& deConv2d( Variable &x,
-                    std::string filterName,
-                    int outputChannel,
-                    int filterHeight,
-                    int filterWidth,
-                    bool covered, 
-                    int strideY, 
-                    int strideX) {
-    /**if the filter have been create*/
-    auto filter = x.executor->retainVariableByName(filterName);
-
-    /**if not created, create it*/
-    if (nullptr == filter) {
-        auto xshape = x.shape();
-
-        DEEP8_ARGUMENT_CHECK(3 == xshape.nDims, "the DeConv2d input nDims must be 3");
-        DEEP8_ARGUMENT_CHECK(outputChannel >= 1 
-                            && filterHeight >= 1
-                            && filterWidth >= 1
-                            && strideY >= 1
-                            && strideX >= 1, "the parameter is error");
-        
-        auto inputChannel = xshape.dim(2);
-
-        Shape filterShape({size_t(outputChannel), size_t(filterHeight), size_t(filterWidth), inputChannel});
-
-        filter = x.executor->addVariable(filterName, filterShape, x.value.elementType, true, true);
-    }
-
-    std::vector<Node*> inputs = { &x, filter };
-
-    return x.executor->addFunction(new DeConv2d(inputs, covered, strideY, strideX));
-}
-
 Variable& operator + (Variable &x, Variable &y) {
     std::vector<Node*> inputs = {&x, &y};
 
-    return x.executor->addFunction(new Add(inputs));
+    return *(x.executor->addFunction(new Add(inputs)));
 }
 
 Variable& operator - (Variable &x, Variable &y) {
     std::vector<Node*> inputs = {&x, &y};
 
-    return x.executor->addFunction(new Minus(inputs));
+    return *(x.executor->addFunction(new Minus(inputs)));
 }
 
 Variable& operator * (Variable &x, Variable &y) {
     std::vector<Node*> inputs = {&x, &y};
 
-    return x.executor->addFunction(new MatrixMultiply(inputs));
+    return *(x.executor->addFunction(new MatrixMultiply(inputs)));
 }
 
 Variable& operator / (Variable &x, Variable &y) {
     std::vector<Node*> inputs = {&x, &y};
 
-    return x.executor->addFunction(new Divide(inputs));
+    return *(x.executor->addFunction(new Divide(inputs)));
 }
 
 Variable& operator += (Variable &x, Variable &y) {
@@ -264,7 +140,7 @@ Variable& minus(Variable &x, Variable &y) {
 
 Variable& multiply(Variable &x, Variable &y) {
     std::vector<Node*> inputs = { &x, &y };
-    return x.executor->addFunction(new Multiply(inputs));
+    return *(x.executor->addFunction(new Multiply(inputs)));
 }
 
 Variable& divide(Variable &x, Variable &y) {
@@ -287,16 +163,10 @@ Variable& divideConstant(Variable &x, float c) {
     return linear(x, 1.0 / c, 0);
 }
 
-Variable& dot(Variable &x, Variable &y) {
-    std::vector<Node*> inputs = { &x, &y };
-
-    return x.executor->addFunction(new Dot(inputs));
-}
-
 Variable& abs(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new Abs(inputs));
+    return *(x.executor->addFunction(new Abs(inputs)));
 }
 
 Variable& avgPooling2d( Variable &x,
@@ -307,67 +177,101 @@ Variable& avgPooling2d( Variable &x,
                         int strideX) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new AvgPooling2d(inputs, covered, filterHeight, filterWidth, strideY, strideX));
+    return *(x.executor->addFunction(new AvgPooling2d(inputs, covered, filterHeight, filterWidth, strideY, strideX)));
+}
+
+Variable& conv2d(Variable &x,
+                Variable &filter,
+                bool covered,
+                int strideY, 
+                int strideX, 
+                int dilationY, 
+                int dilationX) {
+    std::vector<Node*> inputs = { &x, &filter };
+
+    return *(x.executor->addFunction(new Conv2d(inputs, covered, strideY, strideX, dilationY, dilationX)));
 }
 
 Variable& crossEntropy(Variable &x, Variable &y) {
     std::vector<Node*> inputs = { &x, &y };
     
-    return x.executor->addFunction(new CrossEntropy(inputs));
+    return *(x.executor->addFunction(new CrossEntropy(inputs)));
+}
+
+Variable& deConv2d( Variable &x,
+                    Variable &filter,
+                    bool covered, 
+                    int strideY, 
+                    int strideX) {
+    std::vector<Node*> inputs = { &x, &filter };
+
+    return *(x.executor->addFunction(new DeConv2d(inputs, covered, strideY, strideX)));
+}
+
+Variable& dot(Variable &x, Variable &y) {
+    std::vector<Node*> inputs = { &x, &y };
+
+    return *(x.executor->addFunction(new Dot(inputs)));
 }
 
 Variable& exp(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new Exp(inputs));
+    return *(x.executor->addFunction(new Exp(inputs)));
 }
 
 Variable& l1Distance(Variable &x, Variable &y) {
     std::vector<Node*> inputs = { &x, &y };
 
-    return x.executor->addFunction(new L1Distance(inputs));
+    return *(x.executor->addFunction(new L1Distance(inputs)));
 }
 
 Variable& l1Norm(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new L1Norm(inputs));
+    return *(x.executor->addFunction(new L1Norm(inputs)));
 }
 
 Variable& l2Distance(Variable &x, Variable &y) {
     std::vector<Node*> inputs = { &x, &y };
 
-    return x.executor->addFunction(new L2Distance(inputs));
+    return *(x.executor->addFunction(new L2Distance(inputs)));
 }
 
 Variable& l2Norm(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new L2Norm(inputs));
+    return *(x.executor->addFunction(new L2Norm(inputs)));
 }
 
 Variable& linear(Variable &x, float a, float b) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new Linear(inputs, a, b));
+    return *(x.executor->addFunction(new Linear(inputs, a, b)));
 }
 
 Variable& log(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new Log(inputs));
+    return *(x.executor->addFunction(new Log(inputs)));
 }
 
 Variable& logSoftmax(Variable &x, int axis) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new LogSoftmax(inputs, axis));
+    return *(x.executor->addFunction(new LogSoftmax(inputs, axis)));
 }
 
 Variable& lRelu(Variable &x, float a) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new LReLu(inputs, a));
+    return *(x.executor->addFunction(new LReLu(inputs, a)));
+}
+
+Variable& matrixMultiply(Variable &x, Variable &y) {
+    std::vector<Node*> inputs = { &x, &y};
+
+    return *(x.executor->addFunction(new MatrixMultiply(inputs)));
 }
 
 Variable& maxPooling2d( Variable &x,
@@ -378,61 +282,106 @@ Variable& maxPooling2d( Variable &x,
                         int strideX) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new MaxPooling2d(inputs, covered, filterHeight, filterWidth, strideY, strideX));
+    return *(x.executor->addFunction(new MaxPooling2d(inputs, 
+                                                covered, 
+                                                filterHeight, 
+                                                filterWidth, 
+                                                strideY, 
+                                                strideX)));
+}
+
+Variable& maxPooling2dWithIndex(Variable &x,
+                                Variable& index,
+                                bool covered, 
+                                int filterHeight, 
+                                int filterWidth, 
+                                int strideY, 
+                                int strideX) {
+    std::vector<Node*> inputs = { &x, &index};
+
+    return *(x.executor->addFunction(new MaxPooling2dWithIndex(inputs, 
+                                                            covered, 
+                                                            filterHeight, 
+                                                            filterWidth, 
+                                                            strideY, 
+                                                            strideX)));
+}
+
+Variable& maxUnPooling2d(Variable &x,
+                        Variable& index,
+                        bool covered, 
+                        int filterHeight, 
+                        int filterWidth, 
+                        int strideY, 
+                        int strideX) {
+    std::vector<Node*> inputs = { &x, &index};
+
+    return *(x.executor->addFunction(new MaxUnPooling2d(inputs, 
+                                                    covered, 
+                                                    filterHeight, 
+                                                    filterWidth, 
+                                                    strideY, 
+                                                    strideX)));
+}
+
+Variable& pRelu(Variable &x, Variable &p) {
+    std::vector<Node*> inputs = { &x, &p};
+
+    return *(x.executor->addFunction(new PReLu(inputs)));
 }
 
 Variable& reduceMean(Variable &x, std::vector<int> axis, bool keepDims) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new ReduceMean(inputs, axis, keepDims));
+    return *(x.executor->addFunction(new ReduceMean(inputs, axis, keepDims)));
 }
 
 Variable& reduceSum(Variable &x, std::vector<int> axis, bool keepDims) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new ReduceSum(inputs, axis, keepDims));
+    return *(x.executor->addFunction(new ReduceSum(inputs, axis, keepDims)));
 }
 
 Variable& relu(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new ReLu(inputs));
+    return *(x.executor->addFunction(new ReLu(inputs)));
 }
 
 Variable& reShape(Variable &x, Shape &shape) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new ReShape(inputs, shape));
+    return *(x.executor->addFunction(new ReShape(inputs, shape)));
 }
 
 Variable& reShape(Variable &x, std::vector<size_t> list) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new ReShape(inputs, list));
+    return *(x.executor->addFunction(new ReShape(inputs, list)));
 }
 
 Variable& sigmoid(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new Sigmoid(inputs));
+    return *(x.executor->addFunction(new Sigmoid(inputs)));
 }
 
 Variable& softmax(Variable &x, int axis) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new Softmax(inputs, axis));
+    return *(x.executor->addFunction(new Softmax(inputs, axis)));
 }
 
 Variable& square(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new Square(inputs));
+    return *(x.executor->addFunction(new Square(inputs)));
 }
 
 Variable& tanh(Variable &x) {
     std::vector<Node*> inputs = { &x };
 
-    return x.executor->addFunction(new Tanh(inputs));
+    return *(x.executor->addFunction(new Tanh(inputs)));
 }
 
 Variable& l1Loss(Variable &x, Variable &y) {

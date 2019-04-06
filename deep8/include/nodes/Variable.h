@@ -72,8 +72,90 @@ public:
 	Variable& positiveUnitball();
 	Variable& random(float lower = 0.0, float upper = 1.0);
 	Variable& uniform(float left = 0.0, float right = 1.0);
-
 	Variable& assign(Variable& v);
+
+    Variable& add(Variable &y);
+    Variable& minus(Variable &y);
+    Variable& multiply(Variable &y);
+    Variable& divide(Variable &y);
+
+    Variable& addConstant(float c);
+    Variable& minusConstant(float c);
+    Variable& multiplyConstant(float c);
+    Variable& divideConstant(float c);
+
+    Variable& abs();
+
+    Variable& avgPooling2d(bool covered = true, 
+                           int filterHeight = 1, 
+                           int filterWidth = 1, 
+                           int strideY = 1, 
+                           int strideX = 1);
+    
+    Variable& conv2d(Variable &filter,
+                    bool covered = true, 
+                    int strideY = 1, 
+                    int strideX = 1, 
+                    int dilationY = 1, 
+                    int dilationX = 1);
+
+    Variable& crossEntropy(Variable &y);
+
+    Variable& deConv2d( Variable &filter,
+                        bool covered = false, 
+                        int strideY = 1, 
+                        int strideX = 1);
+
+    Variable& dot(Variable &y);
+    Variable& exp();
+    Variable& l1Distance(Variable &y);
+    Variable& l1Norm();
+    Variable& l2Distance(Variable &y);
+    Variable& l2Norm();
+    Variable& linear(float a = 1, float b = 0);
+    Variable& log();
+    Variable& logSoftmax(int axis = -1);
+    Variable& lRelu(float a);
+
+    Variable& matrixMultiply(Variable &y);
+
+    Variable& maxPooling2d( bool covered = false, 
+                            int filterHeight = 1, 
+                            int filterWidth = 1, 
+                            int strideY = 1, 
+                            int strideX = 1);
+
+    Variable& maxPooling2dWithIndex(Variable& index,
+                                    bool covered = false, 
+                                    int filterHeight = 1, 
+                                    int filterWidth = 1, 
+                                    int strideY = 1, 
+                                    int strideX = 1);
+    
+    Variable& maxUnPooling2d(Variable& index,
+                            bool covered = false, 
+                            int filterHeight = 1, 
+                            int filterWidth = 1, 
+                            int strideY = 1, 
+                            int strideX = 1);
+    
+    Variable& pRelu(Variable &p);
+
+    Variable& reduceMean(std::vector<int> axis = {-1}, bool keepDims = true);
+    Variable& reduceSum(std::vector<int> axis = {-1}, bool keepDims = true);
+    Variable& relu();
+    Variable& reShape(Shape &shape);
+    Variable& reShape(std::vector<size_t> list);
+    Variable& sigmoid();
+    Variable& softmax(int axis = -1);
+    Variable& square();
+    Variable& tanh();
+
+    Variable& l1Loss(Variable &y);
+    Variable& l1NormLoss();
+    Variable& l2Loss(Variable &y);
+    Variable& l2NormLoss();
+    Variable& softmaxCrossEntropyLoss(Variable &y);
 };
 
 }

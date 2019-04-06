@@ -8,7 +8,7 @@ namespace Deep8 {
 EagerExecutor::EagerExecutor(DeviceType deviceType): Executor(deviceType) {
 }
 
-Variable& EagerExecutor::addFunction(Function *function) {
+Variable* EagerExecutor::addFunction(Function *function) {
 	function->id       = this->generateUniqueId();
 	function->name     = this->generateUniqueName(NameType::Function);
 	function->executor = this;
@@ -25,7 +25,7 @@ Variable& EagerExecutor::addFunction(Function *function) {
 	/**calculate output*/
 	function->forward();
 
-	return (*variable);
+	return variable;
 }
 
 void EagerExecutor::forward(Node *) {

@@ -21,6 +21,8 @@
 #include "nodes/LReLu.h"
 #include "nodes/MatrixMultiply.h"
 #include "nodes/MaxPooling2d.h"
+#include "nodes/MaxPooling2dWithIndex.h"
+#include "nodes/MaxUnPooling2d.h"
 #include "nodes/Minus.h"
 #include "nodes/Multiply.h"
 #include "nodes/PReLu.h"
@@ -49,7 +51,7 @@ Variable& inputParameter(Executor *, Shape& ,                      DType type = 
 
 Variable& feed(Variable&, const void*);
 
-Variable& fetch(Variable& ,void*);
+Variable& fetch(Variable&, void*);
 
 Variable& constant(Variable&, float scalar = 0);
 Variable& zero(Variable&);
@@ -58,34 +60,7 @@ Variable& gaussian(Variable&, float mean = 0.0, float stddev = 0.01);
 Variable& positiveUnitball(Variable&);
 Variable& random(Variable&, float lower = 0.0, float upper = 1.0);
 Variable& uniform(Variable&, float left = 0.0, float right = 1.0);
-
 Variable& assign(Variable &x, Variable &v);
-
-Variable& dense(Variable &x, std::string weightName, int channel);
-
-Variable& bias(Variable &x, std::string biasName);
-
-Variable& pRelu(Variable &x, std::string pName);
-
-Variable& conv2d(Variable &x, 
-                std::string filterName,
-                int outputChannel,
-                int filterHeight,
-                int filterWidth,
-                bool covered = true, 
-                int strideY = 1, 
-                int strideX = 1, 
-                int dilationY = 1, 
-                int dilationX = 1);
-
-Variable& deConv2d( Variable &x,
-                    std::string filterName,
-                    int outputChannel,
-                    int filterHeight,
-                    int filterWidth,
-                    bool covered = false, 
-                    int strideY = 1, 
-                    int strideX = 1);
 
 Variable& operator + (Variable &x, Variable &y);
 Variable& operator - (Variable &x, Variable &y);
@@ -112,8 +87,6 @@ Variable& minusConstant(Variable &x, float c);
 Variable& multiplyConstant(Variable &x, float c);
 Variable& divideConstant(Variable &x, float c);
 
-Variable& dot(Variable &x, Variable &y);
-
 Variable& abs(Variable &x);
 
 Variable& avgPooling2d( Variable &x,
@@ -123,8 +96,23 @@ Variable& avgPooling2d( Variable &x,
                         int strideY = 1, 
                         int strideX = 1);
 
+Variable& conv2d(Variable &x,
+                Variable &filter,
+                bool covered = true, 
+                int strideY = 1, 
+                int strideX = 1, 
+                int dilationY = 1, 
+                int dilationX = 1);
+
 Variable& crossEntropy(Variable &x, Variable &y);
 
+Variable& deConv2d( Variable &x,
+                    Variable &filter,
+                    bool covered = false, 
+                    int strideY = 1, 
+                    int strideX = 1);
+
+Variable& dot(Variable &x, Variable &y);
 Variable& exp(Variable &x);
 Variable& l1Distance(Variable &x, Variable &y);
 Variable& l1Norm(Variable &x);
@@ -135,12 +123,32 @@ Variable& log(Variable &x);
 Variable& logSoftmax(Variable &x, int axis = -1);
 Variable& lRelu(Variable &x, float a);
 
+Variable& matrixMultiply(Variable &x, Variable &y);
+
 Variable& maxPooling2d( Variable &x,
                         bool covered = false, 
                         int filterHeight = 1, 
                         int filterWidth = 1, 
                         int strideY = 1, 
                         int strideX = 1);
+
+Variable& maxPooling2dWithIndex(Variable &x,
+                                Variable& index,
+                                bool covered = false, 
+                                int filterHeight = 1, 
+                                int filterWidth = 1, 
+                                int strideY = 1, 
+                                int strideX = 1);
+
+Variable& maxUnPooling2d(Variable &x,
+                        Variable& index,
+                        bool covered = false, 
+                        int filterHeight = 1, 
+                        int filterWidth = 1, 
+                        int strideY = 1, 
+                        int strideX = 1);
+
+Variable& pRelu(Variable &x, Variable &p);
 
 Variable& reduceMean(Variable &x, std::vector<int> axis = {-1}, bool keepDims = true);
 Variable& reduceSum(Variable &x, std::vector<int> axis = {-1}, bool keepDims = true);

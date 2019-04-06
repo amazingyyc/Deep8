@@ -309,7 +309,7 @@ std::vector<Variable*> Executor::trainableParameters() {
 	return parameters;
 }
 
-Variable& Executor::addFunction(Function *func) {
+Variable* Executor::addFunction(Function *func) {
 	DEEP8_RUNTIME_ERROR("Can not call this function from Executor");
 }
 

@@ -18,7 +18,7 @@ public:
 	explicit EagerExecutor(DeviceType deviceType = DeviceType::CPU);
 
 	/**give a function and create the output Variable*/
-	Variable& addFunction(Function *func) override;
+	Variable* addFunction(Function *func) override;
 
 	void forward(Node *last) override;
 	void backward(Node *last, bool clearInterim = true) override;
