@@ -380,6 +380,12 @@ Variable& Variable::lRelu(float a) {
     return *(this->executor->addFunction(new LReLu(inputs, a)));
 }
 
+Variable& Variable::matrixMultiply(Variable &y) {
+    std::vector<Node*> inputs = { this, &y };
+
+    return *(this->executor->addFunction(new MatrixMultiply(inputs)));
+}
+
 Variable& Variable::maxPooling2d( bool covered, 
                                 int filterHeight, 
                                 int filterWidth, 
