@@ -1,24 +1,14 @@
-#ifndef DEEP8_MAXPOOLING2DWITHINDEX_H
-#define DEEP8_MAXPOOLING2DWITHINDEX_H
+#ifndef DEEP8_SQRT_H
+#define DEEP8_SQRT_H
 
 #include "Function.h"
 
 namespace Deep8 {
 
-class MaxPooling2dWithIndex: public Function {
+class Sqrt : public Function {
 public:
-    int filterHeight;
-    int filterWidth;
 
-    int strideY;
-    int strideX;
-
-    /**
-     * if the slide filter will cover all the input
-     */
-    bool covered;
-
-    explicit MaxPooling2dWithIndex(std::vector<Node *> &inputs, bool covered = false, int fh = 1, int fw = 1, int sy = 1, int sx = 1);
+	Sqrt(std::vector<Node*> &inputs);
 
 	Shape checkShape(std::vector<Shape> &inputShapes) override;
 
@@ -30,11 +20,10 @@ public:
 				  const Tensor *outputGradient, 
 				  size_t index, 
 				  Tensor *iGradient) override;
-
-
+				  
 };
 
 
 }
 
-#endif //DEEP8_MAXPOOLING2D_H
+#endif

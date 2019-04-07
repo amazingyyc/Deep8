@@ -3,6 +3,7 @@
 #include "math/PositiveUnitball.h"
 #include "math/Uniform.h"
 #include "math/Assign.h"
+#include "math/MaxIndex2d.h"
 
 #include "nodes/Abs.h"
 #include "nodes/Add.h"
@@ -23,7 +24,6 @@
 #include "nodes/LReLu.h"
 #include "nodes/MatrixMultiply.h"
 #include "nodes/MaxPooling2d.h"
-#include "nodes/MaxPooling2dWithIndex.h"
 #include "nodes/MaxUnPooling2d.h"
 #include "nodes/Minus.h"
 #include "nodes/Multiply.h"
@@ -34,6 +34,7 @@
 #include "nodes/ReShape.h"
 #include "nodes/Sigmoid.h"
 #include "nodes/Softmax.h"
+#include "nodes/Sqrt.h"
 #include "nodes/Square.h"
 #include "nodes/Tanh.h"
 #include "nodes/Variable.h"
@@ -401,20 +402,38 @@ Variable& Variable::maxPooling2d( bool covered,
                                                 strideX)));
 }
 
-Variable& Variable::maxPooling2dWithIndex(Variable& index,
-                                        bool covered, 
-                                        int filterHeight, 
-                                        int filterWidth, 
-                                        int strideY, 
-                                        int strideX) {
-    std::vector<Node*> inputs = { this, &index };
+Variable& Variable::maxIndex2d( bool covered, 
+                                int filterHeight, 
+                                int filterWidth, 
+                                int strideY, 
+                                int strideX) {
+    auto inputShape = this->shape();
 
-    return *(this->executor->addFunction(new MaxPooling2dWithIndex(inputs, 
-                                                        covered, 
-                                                        filterHeight, 
-                                                        filterWidth, 
-                                                        strideY, 
-                                                        strideX)));
+    auto batch        = (int)inputShape.batch;
+    auto inputHeight  = (int)inputShape.dim(0);
+    auto inputWidth   = (int)inputShape.dim(1);
+    auto inputChannel = (int)inputShape.dim(2);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - filterHeight) / strideY + 1;
+        outputWidth  = (inputWidth  - filterWidth) / strideX + 1;
+    } else {
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(outputHeight > 0 && outputWidth > 0, "the shape is error");
+
+    Shape indexShape((size_t)batch, {(size_t)outputHeight, (size_t)outputWidth, (size_t)inputChannel});
+
+    Variable *index = this->executor->addVariable(indexShape, DType::Int32, false, false);
+
+    Math::MaxIndex2d(this->value, index->value, covered, filterHeight, filterWidth, strideY, strideX);
+
+    return *index;
 }
 
 Variable& Variable::maxUnPooling2d(Variable& index,
@@ -479,6 +498,12 @@ Variable& Variable::softmax(int axis) {
     std::vector<Node*> inputs = { this };
 
     return *(this->executor->addFunction(new Softmax(inputs, axis)));
+}
+
+Variable& Variable::sqrt() {
+    std::vector<Node*> inputs = { this };
+
+    return *(this->executor->addFunction(new Sqrt(inputs)));
 }
 
 Variable& Variable::square() {

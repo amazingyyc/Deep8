@@ -21,7 +21,6 @@
 #include "nodes/LReLu.h"
 #include "nodes/MatrixMultiply.h"
 #include "nodes/MaxPooling2d.h"
-#include "nodes/MaxPooling2dWithIndex.h"
 #include "nodes/MaxUnPooling2d.h"
 #include "nodes/Minus.h"
 #include "nodes/Multiply.h"
@@ -32,6 +31,7 @@
 #include "nodes/ReShape.h"
 #include "nodes/Sigmoid.h"
 #include "nodes/Softmax.h"
+#include "nodes/Sqrt.h"
 #include "nodes/Square.h"
 #include "nodes/Tanh.h"
 #include "model/Executor.h"
@@ -132,13 +132,12 @@ Variable& maxPooling2d( Variable &x,
                         int strideY = 1, 
                         int strideX = 1);
 
-Variable& maxPooling2dWithIndex(Variable &x,
-                                Variable& index,
-                                bool covered = false, 
-                                int filterHeight = 1, 
-                                int filterWidth = 1, 
-                                int strideY = 1, 
-                                int strideX = 1);
+Variable& maxIndex2d(Variable &x,
+                        bool covered = false, 
+                        int filterHeight = 1, 
+                        int filterWidth = 1, 
+                        int strideY = 1, 
+                        int strideX = 1);
 
 Variable& maxUnPooling2d(Variable &x,
                         Variable& index,
@@ -157,6 +156,7 @@ Variable& reShape(Variable &x, Shape &shape);
 Variable& reShape(Variable &x, std::vector<size_t> list);
 Variable& sigmoid(Variable &x);
 Variable& softmax(Variable &x, int axis = -1);
+Variable& sqrt(Variable &x);
 Variable& square(Variable &x);
 Variable& tanh(Variable &x);
 

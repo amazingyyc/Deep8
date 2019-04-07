@@ -234,8 +234,7 @@ void declareVariable(py::module &m) {
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1,
                             pybind11::return_value_policy::reference)
-            .def("maxPooling2dWithIndex", &Variable::maxPooling2dWithIndex,
-                            py::arg("index"), 
+            .def("maxIndex2d", &Variable::maxIndex2d,
                             py::arg("covered") = true, 
                             py::arg("filterHeight") = 1, 
                             py::arg("filterWidth") = 1, 
@@ -264,6 +263,7 @@ void declareVariable(py::module &m) {
             .def("reShape", (Variable& (Variable::*)(std::vector<size_t>)) &Variable::reShape, pybind11::return_value_policy::reference)
             .def("sigmoid", &Variable::sigmoid, pybind11::return_value_policy::reference)
             .def("softmax", &Variable::softmax, py::arg("axis") = -1, pybind11::return_value_policy::reference)
+            .def("sqrt",            &Variable::sqrt,        pybind11::return_value_policy::reference)
             .def("square",          &Variable::square,      pybind11::return_value_policy::reference)
             .def("tanh",            &Variable::tanh,        pybind11::return_value_policy::reference)
             .def("l1Loss",          &Variable::l1Loss,      pybind11::return_value_policy::reference)
@@ -397,15 +397,14 @@ void declareNet(py::module &m) {
                 py::arg("strideX") = 1,
                 pybind11::return_value_policy::reference);
 
-    m.def("maxPooling2dWithIndex", &maxPooling2dWithIndex,
-            py::arg("variable"),
-            py::arg("index"),
-            py::arg("covered") = true, 
-            py::arg("filterHeight") = 1, 
-            py::arg("filterWidth") = 1, 
-            py::arg("strideY") = 1, 
-            py::arg("strideX") = 1,
-            pybind11::return_value_policy::reference);
+    m.def("maxIndex2d", &maxIndex2d,
+                py::arg("variable"),
+                py::arg("covered") = true, 
+                py::arg("filterHeight") = 1, 
+                py::arg("filterWidth") = 1, 
+                py::arg("strideY") = 1, 
+                py::arg("strideX") = 1,
+                pybind11::return_value_policy::reference);
 
     m.def("maxUnPooling2d", &maxUnPooling2d,
             py::arg("variable"),
@@ -450,8 +449,9 @@ void declareNet(py::module &m) {
                     py::arg("axis") = -1,  
                     pybind11::return_value_policy::reference);
 
+    m.def("sqrt",   &sqrt,   pybind11::return_value_policy::reference);
     m.def("square", &square, pybind11::return_value_policy::reference);
-    m.def("tanh", &tanh, pybind11::return_value_policy::reference);
+    m.def("tanh",   &tanh,   pybind11::return_value_policy::reference);
 
     m.def("l1Loss", &l1Loss, pybind11::return_value_policy::reference);
     m.def("l1NormLoss", &l1NormLoss, pybind11::return_value_policy::reference);
