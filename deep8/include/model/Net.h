@@ -21,7 +21,6 @@
 #include "nodes/LReLu.h"
 #include "nodes/MatrixMultiply.h"
 #include "nodes/MaxPooling2d.h"
-#include "nodes/MaxPooling2dWithIndex.h"
 #include "nodes/MaxUnPooling2d.h"
 #include "nodes/Minus.h"
 #include "nodes/Multiply.h"
@@ -133,13 +132,12 @@ Variable& maxPooling2d( Variable &x,
                         int strideY = 1, 
                         int strideX = 1);
 
-Variable& maxPooling2dWithIndex(Variable &x,
-                                Variable& index,
-                                bool covered = false, 
-                                int filterHeight = 1, 
-                                int filterWidth = 1, 
-                                int strideY = 1, 
-                                int strideX = 1);
+Variable& maxIndex2d(Variable &x,
+                        bool covered = false, 
+                        int filterHeight = 1, 
+                        int filterWidth = 1, 
+                        int strideY = 1, 
+                        int strideX = 1);
 
 Variable& maxUnPooling2d(Variable &x,
                         Variable& index,

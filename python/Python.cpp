@@ -234,8 +234,7 @@ void declareVariable(py::module &m) {
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1,
                             pybind11::return_value_policy::reference)
-            .def("maxPooling2dWithIndex", &Variable::maxPooling2dWithIndex,
-                            py::arg("index"), 
+            .def("maxIndex2d", &Variable::maxIndex2d,
                             py::arg("covered") = true, 
                             py::arg("filterHeight") = 1, 
                             py::arg("filterWidth") = 1, 
@@ -398,15 +397,14 @@ void declareNet(py::module &m) {
                 py::arg("strideX") = 1,
                 pybind11::return_value_policy::reference);
 
-    m.def("maxPooling2dWithIndex", &maxPooling2dWithIndex,
-            py::arg("variable"),
-            py::arg("index"),
-            py::arg("covered") = true, 
-            py::arg("filterHeight") = 1, 
-            py::arg("filterWidth") = 1, 
-            py::arg("strideY") = 1, 
-            py::arg("strideX") = 1,
-            pybind11::return_value_policy::reference);
+    m.def("maxIndex2d", &maxIndex2d,
+                py::arg("variable"),
+                py::arg("covered") = true, 
+                py::arg("filterHeight") = 1, 
+                py::arg("filterWidth") = 1, 
+                py::arg("strideY") = 1, 
+                py::arg("strideX") = 1,
+                pybind11::return_value_policy::reference);
 
     m.def("maxUnPooling2d", &maxUnPooling2d,
             py::arg("variable"),

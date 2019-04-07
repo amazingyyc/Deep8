@@ -124,14 +124,13 @@ public:
                             int filterWidth = 1, 
                             int strideY = 1, 
                             int strideX = 1);
+                            
+    Variable& maxIndex2d(   bool covered = false, 
+                            int filterHeight = 1, 
+                            int filterWidth = 1, 
+                            int strideY = 1, 
+                            int strideX = 1);
 
-    Variable& maxPooling2dWithIndex(Variable& index,
-                                    bool covered = false, 
-                                    int filterHeight = 1, 
-                                    int filterWidth = 1, 
-                                    int strideY = 1, 
-                                    int strideX = 1);
-    
     Variable& maxUnPooling2d(Variable& index,
                             bool covered = false, 
                             int filterHeight = 1, 

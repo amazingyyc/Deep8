@@ -1,3 +1,4 @@
+#include "math/MaxIndex2d.h"
 #include "model/Net.h"
 
 namespace Deep8 {
@@ -290,22 +291,42 @@ Variable& maxPooling2d( Variable &x,
                                                 strideX)));
 }
 
-Variable& maxPooling2dWithIndex(Variable &x,
-                                Variable& index,
-                                bool covered, 
-                                int filterHeight, 
-                                int filterWidth, 
-                                int strideY, 
-                                int strideX) {
-    std::vector<Node*> inputs = { &x, &index};
+/**this is return the index of max, and no need to calculate gradient in backward, so this will not added to the compute graph*/
+Variable& maxIndex2d(Variable &x,
+                    bool covered, 
+                    int filterHeight, 
+                    int filterWidth, 
+                    int strideY, 
+                    int strideX) {
+    auto inputShape = x.shape();
 
-    return *(x.executor->addFunction(new MaxPooling2dWithIndex(inputs, 
-                                                            covered, 
-                                                            filterHeight, 
-                                                            filterWidth, 
-                                                            strideY, 
-                                                            strideX)));
+    auto batch        = (int)inputShape.batch;
+    auto inputHeight  = (int)inputShape.dim(0);
+    auto inputWidth   = (int)inputShape.dim(1);
+    auto inputChannel = (int)inputShape.dim(2);
+
+    int outputHeight;
+    int outputWidth;
+
+    if (!covered) {
+        outputHeight = (inputHeight - filterHeight) / strideY + 1;
+        outputWidth  = (inputWidth  - filterWidth) / strideX + 1;
+    } else {
+        outputHeight = (inputHeight - 1) / strideY + 1;
+        outputWidth  = (inputWidth  - 1) / strideX + 1;
+    }
+
+    DEEP8_ARGUMENT_CHECK(outputHeight > 0 && outputWidth > 0, "the shape is error");
+
+    Shape indexShape((size_t)batch, {(size_t)outputHeight, (size_t)outputWidth, (size_t)inputChannel});
+
+    Variable *index = x.executor->addVariable(indexShape, DType::Int32, false, false);
+
+    Math::MaxIndex2d(x.value, index->value, covered, filterHeight, filterWidth, strideY, strideX);
+
+    return *index;
 }
+
 
 Variable& maxUnPooling2d(Variable &x,
                         Variable& index,
