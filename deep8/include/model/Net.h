@@ -32,6 +32,7 @@
 #include "nodes/ReShape.h"
 #include "nodes/Sigmoid.h"
 #include "nodes/Softmax.h"
+#include "nodes/Sqrt.h"
 #include "nodes/Square.h"
 #include "nodes/Tanh.h"
 #include "model/Executor.h"
@@ -157,6 +158,7 @@ Variable& reShape(Variable &x, Shape &shape);
 Variable& reShape(Variable &x, std::vector<size_t> list);
 Variable& sigmoid(Variable &x);
 Variable& softmax(Variable &x, int axis = -1);
+Variable& sqrt(Variable &x);
 Variable& square(Variable &x);
 Variable& tanh(Variable &x);
 

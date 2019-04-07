@@ -264,6 +264,7 @@ void declareVariable(py::module &m) {
             .def("reShape", (Variable& (Variable::*)(std::vector<size_t>)) &Variable::reShape, pybind11::return_value_policy::reference)
             .def("sigmoid", &Variable::sigmoid, pybind11::return_value_policy::reference)
             .def("softmax", &Variable::softmax, py::arg("axis") = -1, pybind11::return_value_policy::reference)
+            .def("sqrt",            &Variable::sqrt,        pybind11::return_value_policy::reference)
             .def("square",          &Variable::square,      pybind11::return_value_policy::reference)
             .def("tanh",            &Variable::tanh,        pybind11::return_value_policy::reference)
             .def("l1Loss",          &Variable::l1Loss,      pybind11::return_value_policy::reference)
@@ -450,8 +451,9 @@ void declareNet(py::module &m) {
                     py::arg("axis") = -1,  
                     pybind11::return_value_policy::reference);
 
+    m.def("sqrt",   &sqrt,   pybind11::return_value_policy::reference);
     m.def("square", &square, pybind11::return_value_policy::reference);
-    m.def("tanh", &tanh, pybind11::return_value_policy::reference);
+    m.def("tanh",   &tanh,   pybind11::return_value_policy::reference);
 
     m.def("l1Loss", &l1Loss, pybind11::return_value_policy::reference);
     m.def("l1NormLoss", &l1NormLoss, pybind11::return_value_policy::reference);

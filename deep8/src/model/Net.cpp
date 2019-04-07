@@ -372,6 +372,12 @@ Variable& softmax(Variable &x, int axis) {
     return *(x.executor->addFunction(new Softmax(inputs, axis)));
 }
 
+Variable& sqrt(Variable &x) {
+    std::vector<Node*> inputs = { &x };
+
+    return *(x.executor->addFunction(new Sqrt(inputs)));
+}
+
 Variable& square(Variable &x) {
     std::vector<Node*> inputs = { &x };
 

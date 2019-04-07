@@ -148,6 +148,7 @@ public:
     Variable& reShape(std::vector<size_t> list);
     Variable& sigmoid();
     Variable& softmax(int axis = -1);
+    Variable& sqrt();
     Variable& square();
     Variable& tanh();
 

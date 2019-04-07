@@ -34,6 +34,7 @@
 #include "nodes/ReShape.h"
 #include "nodes/Sigmoid.h"
 #include "nodes/Softmax.h"
+#include "nodes/Sqrt.h"
 #include "nodes/Square.h"
 #include "nodes/Tanh.h"
 #include "nodes/Variable.h"
@@ -479,6 +480,12 @@ Variable& Variable::softmax(int axis) {
     std::vector<Node*> inputs = { this };
 
     return *(this->executor->addFunction(new Softmax(inputs, axis)));
+}
+
+Variable& Variable::sqrt() {
+    std::vector<Node*> inputs = { this };
+
+    return *(this->executor->addFunction(new Sqrt(inputs)));
 }
 
 Variable& Variable::square() {
