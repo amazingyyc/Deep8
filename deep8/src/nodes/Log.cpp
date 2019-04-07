@@ -3,18 +3,20 @@
 
 namespace Deep8 {
 
-
 Log::Log(std::vector<Node *> &inputs): Function(inputs) {
-	check();
+	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Log Function needs 1 input");
 }
 
-void Log::check() {
-	Function::check();
+Shape Log::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "the input count must be 1");
 
-	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Log Function needs only 1 input");
+    return inputShapes[0];
+}
 
-	this->shape       = this->inputs[0]->shape;
-    this->elementType = this->inputs[0]->elementType;
+ElementType Log::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void Log::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

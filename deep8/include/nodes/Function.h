@@ -14,19 +14,27 @@ enum class FunctionType {
 	Abs,
 	Add,
 	AvgPooling2d,
+    Batch,
 	Conv2d,
 	DeConv2d,
+    CrossEntropy,
 	Divide,
 	Exp,
+    L1Distance,
 	L1Norm,
+    L2Distance,
 	L2Norm,
 	Linear,
 	Log,
+	LogSoftmax,
 	LReLu,
 	MatrixMultiply,
 	MaxPooling2d,
 	Minus,
 	Multiply,
+	PReLu,
+	ReduceMean,
+	ReduceSum,
 	ReLu,
 	ReShape,
 	Sigmoid,
@@ -37,22 +45,21 @@ enum class FunctionType {
 
 class Function: public Node {
 protected:
-    /**
-     * if a Function shared is true means the output Variable shared the memory with the input Variable
-     * default is false
-     */
-	bool isShared;
-	
-protected:
-    explicit Function();
     explicit Function(std::vector<Node*>& inputs);
 
-	virtual void check();
-
-	virtual void forward(const std::vector<const Tensor*> &inputs, Tensor *output);
-	virtual void backward(const std::vector<const Tensor*> &inputs, const Tensor *output, const Tensor *outputGradient, size_t index, Tensor *iGradient);
-
 public:
+
+	/**is the function output shared memory with input*/
+	virtual bool isShared();
+
+    /**return the shape and elementtype by the input's*/
+    virtual Shape checkShape(std::vector<Shape> &inputShapes);
+
+    virtual ElementType checkElementType(std::vector<ElementType> &inputTypes);
+
+    virtual void forward(const std::vector<const Tensor*> &inputs, Tensor *output);
+    virtual void backward(const std::vector<const Tensor*> &inputs, const Tensor *output, const Tensor *outputGradient, size_t index, Tensor *iGradient);
+
 	void forward() override;
 	void backward() override;
 };

@@ -135,11 +135,6 @@ size_t Tensor::stride(size_t d) const {
 	return shape.stride(d);
 }
 
-/**release the storage*/
-void Tensor::release() {
-	storage.release();
-}
-
 std::string Tensor::valueStr() {
 	std::stringstream ss;
 	ss << "[";

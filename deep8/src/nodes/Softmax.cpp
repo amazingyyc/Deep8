@@ -3,29 +3,29 @@
 
 namespace Deep8 {
 
-Softmax::Softmax(std::vector<Node *> &inputs, int a): Function(inputs), axis(a) {
-    check();
+Softmax::Softmax(std::vector<Node *> &inputs, int a): Function(inputs), axis(a) {    
+    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Softmax Function needs 1 input");
 }
 
-void Softmax::check() {
-	Function::check();
+Shape Softmax::checkShape(std::vector<Shape> &inputShapes) {
+	DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "the input count must be 1");
+    DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int) inputShapes[0].nDims, "the axis is error");
 
-	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Softmax Function needs only 1 input");
+	return inputShapes[0];
+}
 
-	auto inputShape = this->inputs[0]->shape;
+ElementType Softmax::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
 
-    if (-1 == axis) {
-        axis = (int)inputShape.nDims - 1;
-    }
-
-	DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int) inputShape.nDims, "the axis is error");
-
-    this->shape = this->inputs[0]->shape;
-    this->elementType = this->inputs[0]->elementType;
+    return Function::checkElementType(inputTypes);
 }
 
 void Softmax::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
-    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int)inputs[0]->shape.nDims, "the axis is error");
+    DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int)inputs[0]->shape.nDims, "the axis is error");
+
+    if (-1 == axis) {
+        axis = (int)inputs[0]->shape.nDims - 1;
+    }
 
     auto device = output->device();
 
@@ -56,7 +56,11 @@ void Softmax::backward(const std::vector<const Tensor*> &inputs,
 					const Tensor *outputGradient, 
 					size_t index, 
 					Tensor *iGradient) {
-    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int)inputs[0]->shape.nDims, "the axis is error");
+    DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int)inputs[0]->shape.nDims, "the axis is error");
+    
+    if (-1 == axis) {
+        axis = (int)inputs[0]->shape.nDims - 1;
+    }
 
     auto device = iGradient->device();
 

@@ -4,20 +4,19 @@
 namespace Deep8 {
 
 Minus::Minus(std::vector<Node *> &inputs): Function(inputs) {
-    check();
+    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the Minus Function needs 2 input");
 }
 
-void Minus::check() {
-	Function::check();
+Shape Minus::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "the input count must be 2");
 
-	DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the inputs size must be 2 in Add Function");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
+    return broadcastShape(inputShapes[0], inputShapes[1]);
+}
 
-	/**
-	 * the Minus Function apply to Broadcasting rule: https://docs.scipy.org/doc/numpy-1.13.0/user/basics.broadcasting.html
-	 */
-	this->shape       = broadcastShape(this->inputs[0]->shape, this->inputs[1]->shape);
-    this->elementType = this->inputs[0]->elementType;
+ElementType Minus::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputTypes.size(), "the input count must be 2");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void Minus::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

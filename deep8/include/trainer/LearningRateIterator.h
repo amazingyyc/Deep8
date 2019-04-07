@@ -8,7 +8,7 @@ namespace Deep8 {
 
 class LearningRateIterator {
 public:
-   virtual float nextLearningRate(int64_t steps);
+   virtual float next(int64_t steps);
 };
 
 }

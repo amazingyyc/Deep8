@@ -15,13 +15,13 @@ namespace Deep8 {
  */
 class EagerExecutor : public Executor {
 public:
-	explicit EagerExecutor(DeviceType deviceType = DeviceType::CPU, bool flag = true);
+	explicit EagerExecutor(DeviceType deviceType = DeviceType::CPU);
 
 	/**give a function and create the output Variable*/
-	Node *addFunction(Function *func) override;
+	Variable* addFunction(Function *func) override;
 
 	void forward(Node *last) override;
-	void backward(Node *last) override;
+	void backward(Node *last, bool clearInterim = true) override;
 };
 
 }

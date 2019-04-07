@@ -5,18 +5,15 @@ namespace Deep8 {
 
 DeConv2d::DeConv2d(std::vector<Node *> &inputs, bool covered, int strideY, int strideX)
         :Function(inputs), forwardCovered(covered), forwardStrideY(strideY), forwardStrideX(strideX) {
-    check();
+    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the DeConv2d Function needs 2 input");
+    DEEP8_ARGUMENT_CHECK(forwardStrideY >= 1 && forwardStrideX >= 1, "the stride is error");
 }
 
-void DeConv2d::check() {
-    Function::check();
+Shape DeConv2d::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "the input count must be 2");
 
-    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "need 2 inputs node");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
-    DEEP8_ARGUMENT_CHECK(forwardStrideY >= 1 && forwardStrideX >= 1, "the stride is error");
-
-    auto inputShape  = this->inputs[0]->shape;
-    auto filterShape = this->inputs[1]->shape;
+    auto inputShape  = inputShapes[0];
+    auto filterShape = inputShapes[1];
 
     DEEP8_ARGUMENT_CHECK(3 == inputShape.nDims, "Conv2d needs inputs nDims is 3");
     DEEP8_ARGUMENT_CHECK(4 == filterShape.nDims && 1 == filterShape.batch, "Conv2d needs filter nDims is 4, the batch must be 1");
@@ -54,8 +51,13 @@ void DeConv2d::check() {
         outputDim[1] = outputWidth;
     }
 
-    this->shape       = Shape(inputShape.batch, outputDim);
-    this->elementType = this->inputs[0]->elementType;
+    return Shape(inputShape.batch, outputDim);
+}
+
+ElementType DeConv2d::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputTypes.size(), "the input count must be 2");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void DeConv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

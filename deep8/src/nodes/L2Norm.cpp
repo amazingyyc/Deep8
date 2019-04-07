@@ -4,16 +4,19 @@
 namespace Deep8 {
 
 L2Norm::L2Norm(std::vector<Node *> &inputs): Function(inputs) {
-	check();
+	DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L2Norm Function needs 1 input");
 }
 
-void L2Norm::check() {
-    Function::check();
+Shape L2Norm::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "the input count must be 1");
 
-    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the L2Norm Function needs only 1 input");
+    return Shape(inputShapes[0].batch, { 1 });
+}
 
-	this->shape       = Shape(this->inputs[0]->shape.batch, { 1 });
-    this->elementType = this->inputs[0]->elementType;
+ElementType L2Norm::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void L2Norm::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

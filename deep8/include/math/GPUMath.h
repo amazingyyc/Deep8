@@ -1,7 +1,8 @@
 #ifndef DEEP8_MATH_GPUMATH_H
 #define DEEP8_MATH_GPUMATH_H
 
-#include "GPUBasic.h"
+#include <device_functions.h>
+#include "basic/GPUBasic.h"
 
 namespace Deep8 {
 namespace Math {
@@ -202,6 +203,60 @@ DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE double cudaMinValue() {
 template <>
 DEEP8_CUDA_FUNC DEEP8_CUDA_INLINE half cudaMinValue() {
 	return -65504.0;
+}
+#endif
+
+template <typename T>
+static __inline__ __device__ T cudaAtomicExch(T *address, T val) {
+    DEEP8_RUNTIME_ERROR("the type is not support");
+}
+
+template <>
+static __inline__ __device__ float cudaAtomicExch(float *address, float val) {
+    return atomicExch(address, val);
+}
+
+template <>
+static __inline__ __device__ double cudaAtomicExch(double *address, double val) {
+    auto ret = atomicExch((unsigned long long int*)(address), __double_as_longlong(val));
+
+    return __longlong_as_double(ret);
+}
+
+#ifdef HAVE_HALF
+/**ref: https://github.com/torch/cutorch/blob/master/lib/THC/THCAtomics.cuh*/
+static __inline__ __device__ half cudaAtomicExch(half *address, half val) {
+    __half_raw val_raw = __half_raw(val);
+
+    char *address_char = (char*)address;
+
+    if (0 == ((size_t)address_char & 0x2)) {
+        /**half in the first part*/
+        uint32_t *address_uint = (uint32_t*)address_char;
+
+        uint32_t old = *address_uint, assumed;
+
+        do {
+            assumed = old;
+
+            old = (old & 0xffff0000) | val_raw.x;
+
+            old = atomicCAS(address_uint, assumed, old);
+        } while (assumed != old);
+    } else {
+        /**half in the second part*/
+        uint32_t *address_uint = (uint32_t*)(address_char - 2);
+
+        uint32_t old = *address_uint, assumed;
+
+        do {
+            assumed = old;
+
+            old = (old & 0xffff) | (val_raw.x << 16);
+
+            old = atomicCAS(address_uint, assumed, old);
+        } while (assumed != old);
+    }
 }
 #endif
 

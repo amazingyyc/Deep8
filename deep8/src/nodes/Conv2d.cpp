@@ -5,26 +5,22 @@ namespace Deep8 {
 
 Conv2d::Conv2d(std::vector<Node *> &inputs, bool covered, int sy, int sx, int dy , int dx)
         :Function(inputs), covered(covered), strideY(sy), strideX(sx), dilationY(dy), dilationX(dx) {
-    check();
+    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the Conv2d Function needs 2 input");
+    DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride can not smaller than 1");
+    DEEP8_ARGUMENT_CHECK(dilationY >= 1 && dilationX >= 1, "the dilation can not smaller than 1");   
 }
 
-void Conv2d::check() {
-    Function::check();
+Shape Conv2d::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "the input count must be 2");
 
-    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "need 2 inputs node");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
-    DEEP8_ARGUMENT_CHECK(strideY >= 1 && strideX >= 1, "the stride can not smaller than 1");
-    DEEP8_ARGUMENT_CHECK(dilationY >= 1 && dilationX >= 1, "the dilation can not smaller than 1");
-
-    auto inputShape  = this->inputs[0]->shape;
-    auto filterShape = this->inputs[1]->shape;
+    auto inputShape  = inputShapes[0];
+    auto filterShape = inputShapes[1];
 
     DEEP8_ARGUMENT_CHECK(3 == inputShape.nDims, "Conv2d needs inputs nDims is 3");
     DEEP8_ARGUMENT_CHECK(4 == filterShape.nDims && 1 == filterShape.batch, "Conv2d needs filter nDims is 4, the batch must be 1");
 
     DEEP8_ARGUMENT_CHECK(inputShape.dim(2) == filterShape.dim(3), "the inputs dimension is error");
-    DEEP8_ARGUMENT_CHECK(filterShape.dim(1) > 0 && filterShape.dim(2) > 0,
-                         "the filter width and height must bigger than 0");
+    DEEP8_ARGUMENT_CHECK(filterShape.dim(1) > 0 && filterShape.dim(2) > 0, "the filter width and height must bigger than 0");
 
     if (!covered) {
         DEEP8_ARGUMENT_CHECK(filterShape.dim(1) <= inputShape.dim(0) && filterShape.dim(2) <= inputShape.dim(1),
@@ -66,8 +62,13 @@ void Conv2d::check() {
         outputDim[1] = outputWidth;
     }
 
-    this->shape = Shape(inputShape.batch, outputDim);
-    this->elementType = this->inputs[0]->elementType;
+    return Shape(inputShape.batch, outputDim);
+}
+
+ElementType Conv2d::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputTypes.size(), "the input count must be 2");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void Conv2d::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

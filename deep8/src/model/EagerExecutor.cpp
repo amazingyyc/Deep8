@@ -1,26 +1,26 @@
-#include "model/Expression.h"
+#include "nodes/Node.h"
+#include "nodes/Variable.h"
+#include "nodes/Function.h"
 #include "model/EagerExecutor.h"
 
 namespace Deep8 {
 
-EagerExecutor::EagerExecutor(DeviceType deviceType, bool flag): Executor(deviceType, flag) {
+EagerExecutor::EagerExecutor(DeviceType deviceType): Executor(deviceType) {
 }
 
-Node* EagerExecutor::addFunction(Function *function) {
+Variable* EagerExecutor::addFunction(Function *function) {
+	function->id       = this->generateUniqueId();
+	function->name     = this->generateUniqueName(NameType::Function);
+	function->executor = this;
+
 	auto variable = this->createVariableByFunction(function);
 
-	function->id = this->generateUniqueId();
-	variable->id = this->generateUniqueId();
-
-	this->allNodes[function->id] = function;
-	this->allNodes[variable->id] = variable;
-
-	this->allFunctions[function->id] = function;
-	this->allVariables[variable->id] = variable;
+	this->allNodes[function->name] = function;
+	this->allNodes[variable->name] = variable;
 
 	/**add to interim node*/
-	this->interimNodes[function->id] = function;
-	this->interimNodes[variable->id] = variable;
+	this->interimNodes[function->name] = function;
+	this->interimNodes[variable->name] = variable;
 
 	/**calculate output*/
 	function->forward();
@@ -32,10 +32,10 @@ void EagerExecutor::forward(Node *) {
 	DEEP8_RUNTIME_ERROR("the EagerExecutor can not call the forward");
 }
 
-void EagerExecutor::backward(Node *last) {
+void EagerExecutor::backward(Node *last, bool clearInterim) {
 	DEEP8_ARGUMENT_CHECK(nullptr != last && last->type == NodeType::Variable, "the last node must be a Variable");
 
-	auto lastVariable = (Variable*)(last);
+	auto lastVariable = (Variable*) last;
 
 	DEEP8_ARGUMENT_CHECK(lastVariable->isScalar(), "the last Variable gradient must be scalar");
 
@@ -65,7 +65,7 @@ void EagerExecutor::backward(Node *last) {
 	}
 
 	/**set the last Variable Gradient to 1*/
-	lastVariable->setGradientOne();
+	lastVariable->oneGradient();
 
 	/**calculate the gradient for the Variable*/
 	visited.clear();

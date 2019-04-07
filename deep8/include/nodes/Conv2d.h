@@ -18,11 +18,17 @@ public:
      */
     bool covered;
 
-    Conv2d(std::vector<Node *> &inputs, bool covered = false, int strideY = 1, int strideX = 1, int dilationY = 1, int dilationX = 1);
+    Conv2d( std::vector<Node *> &inputs, 
+            bool covered = false, 
+            int strideY = 1, 
+            int strideX = 1, 
+            int dilationY = 1, 
+            int dilationX = 1);
 
-    void check() override;
+	Shape checkShape(std::vector<Shape> &inputShapes) override;
 
-protected:
+	ElementType checkElementType(std::vector<ElementType> &inputTypes) override;
+
 	void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
 	void backward(const std::vector<const Tensor*> &inputs, 
 				  const Tensor *output, 

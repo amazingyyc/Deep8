@@ -15,7 +15,7 @@ public:
 
    explicit LinearDecayLearningRateIterator(int64_t total, float start = 0.01, float end = 0);
 
-   float nextLearningRate(int64_t steps) override;
+   float next(int64_t steps) override;
 };
 
 }

@@ -171,7 +171,8 @@ void Shape::reShape(Shape &other) {
 
 std::string Shape::toStr() {
 	std::stringstream ss;
-	ss << "nDims: " << nDims;
+	ss << "batch: " << batch;
+	ss << ", nDims: " << nDims;
 	ss << ", Dimension: [";
 
 	for (size_t i = 0; i < nDims; ++i) {

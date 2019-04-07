@@ -1,69 +1,23 @@
-#include "model/AutoBatchCodeHelper.h"
 #include "math/Abs.h"
 #include "nodes/Abs.h"
 
 namespace Deep8 {
 
 Abs::Abs(std::vector<Node *> &inputs) : Function(inputs) {
-    check();
+    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Abs Function needs 1 input");
 }
 
-void Abs::check() {
-    Function::check();
+Shape Abs::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "the input count must be 1");
 
-    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the Abs Function needs only 1 input");
-
-    /**check shape and ElementType*/
-    this->shape       = this->inputs[0]->shape;
-    this->elementType = this->inputs[0]->elementType;
+    return inputShapes[0];
 }
 
-/**
- * for Unary Function it can be auto bateched but default set it to not support auto-batch
- */
-int Abs::supportAutoBatch() {
-    return -1;
+ElementType Abs::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
+
+    return Function::checkElementType(inputTypes);
 }
-
-/**auto batch code*/
-size_t Abs::autoBatchCode() {
-    AutoBatchCodeHelper helper;
-
-    helper.functionType(FunctionType::Abs);
-
-    return helper.autoBatchCode();
-}
-
-/**
- * return the inputs[index]'s shape if it is be batched together.
- * the shapes is the inputs[index]'s shape that will be batched.
- */
-Shape Abs::autoBatchShape(size_t index, std::vector<Shape> &shapes) {
-    DEEP8_ARGUMENT_CHECK(0 == index, "the index is error!");
-
-    /**simple set it to a 1 batch shape*/
-    size_t size = 0;
-
-    for (auto item : shapes) {
-        size += item.size();
-    }
-
-    return Shape({size});
-}
-
-/**
- * return the inputs's index that can be auto batched
- */
-std::vector<size_t> Abs::autoBatchIndexes() {
-    return std::vector<size_t>({ 0 });
-}
-
-/**
- * clone current node for auto batch
- */
-Node* Abs::autoBatchClone(std::vector<Node*> &inputs) {
-    return new Abs(inputs);
-} 
 
 void Abs::forward(const std::vector<const Tensor*> &inputs, Tensor *output)  {
     Math::Abs(*(inputs[0]), *output);

@@ -3,8 +3,7 @@
 
 #include "model/Device.h"
 #include "model/EagerExecutor.h"
-#include "model/LazyExecutor.h"
-#include "model/Expression.h"
+#include "model/Net.h"
 #include "trainer/ConstantLearningRateIterator.h"
 #include "trainer/LinearDecayLearningRateIterator.h"
 #include "trainer/Trainer.h"

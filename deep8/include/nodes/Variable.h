@@ -1,119 +1,161 @@
 #ifndef DEEP8_VARIABLE_H
 #define DEEP8_VARIABLE_H
 
-#include "Node.h"
+#include "model/Executor.h"
+#include "nodes/Node.h"
 
 namespace Deep8 {
 
-//class VariableBase : public Node {
-//protected:
-//	explicit VariableBase();
-//	explicit VariableBase(Node* input);
-//	explicit VariableBase(std::vector<Node*> &inputs);
-//
-//public:
-//	/**
-//	 * @brief the Variable do nothing in forward and backward process
-//	 */
-//	void forward() override;
-//	void backward() override;
-//
-//	/**
-//	 * set the Gradient to be 0
-//	 */
-//	virtual void zeroGradient() = 0;
-//
-//	/**release the gradient*/
-//	virtual void releaseGradient() = 0;
-//
-//	/**
-//	 * get the device type
-//	 */
-//	virtual DeviceType deviceType() = 0;
-//
-//    /**
-//     * set the gradient be 1 for backward process
-//     */
-//	virtual void setGradientOne() = 0;
-//
-//	/**if the Variable is a Scalar*/
-//	virtual bool isScalar() = 0;
-//
-//	/**feed data to value*/
-//	virtual void feed(const void *) = 0;
-//
-//	/**fetch data from value*/
-//	virtual void fetch(void *) = 0;
-//};
-
-/**
- * @brief the  Variable Node is a Data Node for store the calculate result or the user input data
- * it include 2 property, the Value store the user input or Function result,
- * the gradient store the backward gradient.
- *
- * the Variable have some sub-class like Parameter, InputParameter or ConstantParameter
- * updateGradient means this Variable should be calculate the gradient.
- * some Variable like Function output, weight Parameter need updateGradient be true,
- * but some InputParameter or ConstantParameter needs updateGradient be false.
- *
- * needTrained means this Variable should be trained when after backward, some parameter should be trained like weight Parameter
- * some not like Function output Variable, InputParameter or ConstantParameter
- * some Variable Node can be trained like Parameter but some not like InputParameter ConstantParameter
- */
 class Variable: public Node {
 public:
 	Tensor value;
 	Tensor gradient;
 
+    /**if update the gradient of this Variable*/
+    bool updateGradient;
+
 protected:
-    explicit Variable();
+    explicit Variable(int64_t id, std::string name, Executor *exe);
 
 public:
-    explicit Variable(Tensor &v);
-    explicit Variable(Tensor &v, Tensor &g);
+    explicit Variable(int64_t id, std::string name, Executor *exe, Tensor &v);
+    explicit Variable(int64_t id, std::string name, Executor *exe, Tensor &v, Tensor &g);
 
-	explicit Variable(Node *input, Shape &shape);
-	explicit Variable(Node *input, Tensor &v);
-    explicit Variable(Node *input, Tensor &v, Tensor &g);
-
+    explicit Variable(int64_t id, std::string name, Executor *exe, Node *input);
+	explicit Variable(int64_t id, std::string name, Executor *exe, Node *input, Tensor &v);
+    explicit Variable(int64_t id, std::string name, Executor *exe, Node *input, Tensor &v, Tensor &g);
 
 public:
 
-	/**
-	 * set the Gradient to be 0
-	 */
+    /**get the Variable shape*/
+    Shape shape();
+
+    /**get the element type*/
+    ElementType elementType();
+
+    /**get the device type*/
+    DeviceType deviceType();
+    
+    /**if this is a scalar*/
+    bool isScalar();
+
+    /**set the Gradient to be 0*/
 	void zeroGradient();
 
+    /**set gradient to one*/
+    void oneGradient();
+
 	/**release the gradient*/
-	void releaseGradient();
+	void removeGradient();
 
-	/**
-	 * get the device type
-	 */
-	DeviceType deviceType();
-
-	/**
-	 * set the gradient be 1 for backward process
-	 */
-	void setGradientOne();
-
-	/**
-	 * if this is a scalar
-	 */
-	bool isScalar();
-
-	/**feed data to value*/
-	void feed(const void *);
-
-	/**fetch data from value*/
-	void fetch(void *);
-
-	/**
-	 * @brief the Variable do nothing in forward and backward process
-	 */
+	/** the Variable do nothing in forward and backward process*/
 	void forward() override;
 	void backward() override;
 
+    /****************************************************************************/
+    /**function for build computer graph*/
+    /****************************************************************************/
+    
+    /**return a string for print value*/
+    std::string valueStr();
+
+    /**feed data to value from CPU memory*/
+    Variable& feed(const void*);
+
+    /**copy memory from value to CPU memory*/
+    Variable& fetch(void*);
+
+	Variable& constant(float scalar = 0);
+	Variable& zero();
+	Variable& one();
+	Variable& gaussian(float mean = 0.0, float stddev = 0.01);
+	Variable& positiveUnitball();
+	Variable& random(float lower = 0.0, float upper = 1.0);
+	Variable& uniform(float left = 0.0, float right = 1.0);
+	Variable& assign(Variable& v);
+
+    Variable& add(Variable &y);
+    Variable& minus(Variable &y);
+    Variable& multiply(Variable &y);
+    Variable& divide(Variable &y);
+
+    Variable& addConstant(float c);
+    Variable& minusConstant(float c);
+    Variable& multiplyConstant(float c);
+    Variable& divideConstant(float c);
+
+    Variable& abs();
+
+    Variable& avgPooling2d(bool covered = true, 
+                           int filterHeight = 1, 
+                           int filterWidth = 1, 
+                           int strideY = 1, 
+                           int strideX = 1);
+    
+    Variable& conv2d(Variable &filter,
+                    bool covered = true, 
+                    int strideY = 1, 
+                    int strideX = 1, 
+                    int dilationY = 1, 
+                    int dilationX = 1);
+
+    Variable& crossEntropy(Variable &y);
+
+    Variable& deConv2d( Variable &filter,
+                        bool covered = false, 
+                        int strideY = 1, 
+                        int strideX = 1);
+
+    Variable& dot(Variable &y);
+    Variable& exp();
+    Variable& l1Distance(Variable &y);
+    Variable& l1Norm();
+    Variable& l2Distance(Variable &y);
+    Variable& l2Norm();
+    Variable& linear(float a = 1, float b = 0);
+    Variable& log();
+    Variable& logSoftmax(int axis = -1);
+    Variable& lRelu(float a);
+
+    Variable& matrixMultiply(Variable &y);
+
+    Variable& maxPooling2d( bool covered = false, 
+                            int filterHeight = 1, 
+                            int filterWidth = 1, 
+                            int strideY = 1, 
+                            int strideX = 1);
+
+    Variable& maxPooling2dWithIndex(Variable& index,
+                                    bool covered = false, 
+                                    int filterHeight = 1, 
+                                    int filterWidth = 1, 
+                                    int strideY = 1, 
+                                    int strideX = 1);
+    
+    Variable& maxUnPooling2d(Variable& index,
+                            bool covered = false, 
+                            int filterHeight = 1, 
+                            int filterWidth = 1, 
+                            int strideY = 1, 
+                            int strideX = 1);
+    
+    Variable& pRelu(Variable &p);
+
+    Variable& reduceMean(std::vector<int> axis = {-1}, bool keepDims = true);
+    Variable& reduceSum(std::vector<int> axis = {-1}, bool keepDims = true);
+    Variable& relu();
+    Variable& reShape(Shape &shape);
+    Variable& reShape(std::vector<size_t> list);
+    Variable& sigmoid();
+    Variable& softmax(int axis = -1);
+    Variable& square();
+    Variable& tanh();
+
+    Variable& l1Loss(Variable &y);
+    Variable& l1NormLoss();
+    Variable& l2Loss(Variable &y);
+    Variable& l2NormLoss();
+    Variable& softmaxCrossEntropyLoss(Variable &y);
 };
 
 }

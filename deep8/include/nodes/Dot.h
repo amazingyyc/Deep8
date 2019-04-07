@@ -9,9 +9,10 @@ class Dot : public Function {
 public:
     explicit Dot(std::vector<Node *> &inputs);
 
-    void check() override;
+	Shape checkShape(std::vector<Shape> &inputShapes) override;
 
-protected:
+	ElementType checkElementType(std::vector<ElementType> &inputTypes) override;
+
     void forward(const std::vector<const Tensor*> &inputs, Tensor *output) override;
 	void backward(const std::vector<const Tensor*> &inputs, 
 				  const Tensor *output, 

@@ -4,21 +4,22 @@
 namespace Deep8 {
 
 Add::Add(std::vector<Node *> &inputs) : Function(inputs) {
-    check();
+    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the Add Function needs 2 input");
 }
 
-void Add::check() {
-    Function::check();
-
-    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the inputs size must be 2 in Add Function");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType ==this->inputs[1]->elementType, "the inputs elementtype must be same");
+Shape Add::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "the input count must be 2");
 
     /**
      * the Add Function apply to Broadcasting rule: https://docs.scipy.org/doc/numpy-1.13.0/user/basics.broadcasting.html
      */
-    this->shape       = broadcastShape(this->inputs[0]->shape, this->inputs[1]->shape);
+    return broadcastShape(inputShapes[0], inputShapes[1]);
+}
 
-    this->elementType = this->inputs[0]->elementType;
+ElementType Add::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputTypes.size(), "the input count must be 2");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void Add::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

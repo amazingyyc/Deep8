@@ -4,19 +4,21 @@
 namespace Deep8 {
 
 CrossEntropy::CrossEntropy(std::vector<Node *> &inputs) : Function(inputs) {
-    check();
+    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the CrossEntropy Function needs 2 input");
 }
 
-void CrossEntropy::check() {
-    Function::check();
+Shape CrossEntropy::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputShapes.size(), "the CrossEntropy Function needs only 2 input");
+    DEEP8_ARGUMENT_CHECK(inputShapes[0].size() == inputShapes[1].size(), "inputs's shape size must be equal");
+    DEEP8_ARGUMENT_CHECK(inputShapes[0].batch == inputShapes[1].batch, "inputs's batch must be equal");
 
-    DEEP8_ARGUMENT_CHECK(2 == this->inputs.size(), "the CrossEntropy Function needs only 2 input");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->elementType == this->inputs[1]->elementType, "the inputs elementtype must be same");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.size() == this->inputs[1]->shape.size(), "inputs's shape size must be equal");
-    DEEP8_ARGUMENT_CHECK(this->inputs[0]->shape.batch == this->inputs[1]->shape.batch, "inputs's batch must be equal");
+    return Shape(inputShapes[0].batch, { 1 });
+}
 
-    this->shape       = Shape(this->inputs[0]->shape.batch, { 1 });
-    this->elementType = this->inputs[0]->elementType;
+ElementType CrossEntropy::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(2 == inputTypes.size(), "the input count must be 2");
+
+    return Function::checkElementType(inputTypes);
 }
 
 void CrossEntropy::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {

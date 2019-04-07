@@ -4,27 +4,29 @@
 namespace Deep8 {
 
 LogSoftmax::LogSoftmax(std::vector<Node *> &inputs, int a): Function(inputs), axis(a) {
-    check();
+    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the LogSoftmax Function needs 1 input");
 }
 
-void LogSoftmax::check() {
-    Function::check();
+Shape LogSoftmax::checkShape(std::vector<Shape> &inputShapes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputShapes.size(), "the input count must be 1");
+    DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int)inputShapes[0].nDims, "the axis is error");
 
-    DEEP8_ARGUMENT_CHECK(1 == this->inputs.size(), "the LogSoftmax Function needs only 1 input");
+    return inputShapes[0];
+}
 
-    auto inputShape = this->inputs[0]->shape;
+ElementType LogSoftmax::checkElementType(std::vector<ElementType> &inputTypes) {
+    DEEP8_ARGUMENT_CHECK(1 == inputTypes.size(), "the input count must be 1");
 
-    if (-1 == axis) {
-        axis = (int)inputShape.nDims - 1;
-    }
-
-    DEEP8_ARGUMENT_CHECK(0 <= axis && axis < (int)inputShape.nDims, "the axis is error");
-
-    this->shape = inputShape;
-    this->elementType = this->inputs[0]->elementType;
+    return Function::checkElementType(inputTypes);
 }
 
 void LogSoftmax::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
+    DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int)inputs[0]->shape.nDims, "the axis is error");
+    
+    if (-1 == axis) {
+        axis = (int)inputs[0]->shape.nDims - 1;
+    }
+
     auto device = output->device();
 
     auto shape = inputs[0]->shape;
@@ -57,6 +59,11 @@ void LogSoftmax::backward(const std::vector<const Tensor*> &inputs,
                         size_t index, 
                         Tensor *iGradient) {
     DEEP8_ARGUMENT_CHECK(0 == index, "the index of LogSoftmax backward is error");
+    DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int)inputs[0]->shape.nDims, "the axis is error");
+    
+    if (-1 == axis) {
+        axis = (int)inputs[0]->shape.nDims - 1;
+    }
 
     auto device = iGradient->device();
 

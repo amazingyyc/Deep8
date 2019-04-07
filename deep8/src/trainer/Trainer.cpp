@@ -14,7 +14,7 @@ void Trainer::train(Executor *executor, std::vector<Variable*> parameters) {
 		return;
 	}
 
-    float lr = learningRate->nextLearningRate(steps);
+    float lr = learningRate->next(steps);
 
     for (auto parameter : parameters) {
         if (!parameter->updateGradient) {

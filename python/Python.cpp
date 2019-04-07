@@ -2,12 +2,14 @@
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
 
+#include "nodes/Node.h"
+#include "nodes/Variable.h"
 #include "model/Shape.h"
 #include "model/Device.h"
 #include "model/Executor.h"
 #include "model/EagerExecutor.h"
-#include "model/Expression.h"
 #include "model/Tensor.h"
+#include "model/Net.h"
 #include "trainer/ConstantLearningRateIterator.h"
 #include "trainer/LinearDecayLearningRateIterator.h"
 #include "trainer/Trainer.h"
@@ -66,13 +68,6 @@ void declareElementType(py::module &m) {
 }
 
 /**
- * Node
- */
-void declareNode(py::module &m) {
-    py::class_<Node>(m, "Node");
-}
-
-/**
  * Shape
  */
 void declareShape(py::module &m) {
@@ -104,165 +99,365 @@ void declareTensor(py::module &m) {
 }
 
 /**
+ * Node
+ */
+void declareNode(py::module &m) {
+    py::class_<Node>(m, "Node");
+}
+
+/**
  * Variable
  */
 void declareVariable(py::module &m) {
     py::class_<Variable, Node>(m, "Variable")
             .def_readonly("updateGradient", &Variable::updateGradient)
-            .def_readonly("value", &Variable::value)
-            .def_readonly("gradient", &Variable::gradient);
-}
+            .def_readonly("value",      &Variable::value)
+            .def_readonly("gradient",   &Variable::gradient)
+            .def("shape",           &Variable::shape)
+            .def("elementType",     &Variable::elementType)
+            .def("deviceType",      &Variable::deviceType)
+            .def("isScalar",        &Variable::isScalar)
+            .def("isScalar",        &Variable::isScalar)
+            .def("zeroGradient",    &Variable::zeroGradient)
+            .def("oneGradient",     &Variable::oneGradient)
+            .def("removeGradient",  &Variable::removeGradient)
+            .def("valueStr",        &Variable::valueStr)
+            .def("constant",    &Variable::constant, py::arg("scalar") = 0, pybind11::return_value_policy::reference)
+            .def("zero",        &Variable::zero, pybind11::return_value_policy::reference)
+            .def("one",         &Variable::one, pybind11::return_value_policy::reference)
+            .def("gaussian",    &Variable::gaussian, 
+                                py::arg("mean") = 0.0, 
+                                py::arg("stddev") = 0.01, 
+                                pybind11::return_value_policy::reference)
+            .def("positiveUnitball",    &Variable::positiveUnitball, pybind11::return_value_policy::reference)
+            .def("random",    &Variable::random, 
+                            py::arg("lower") = 0.0, 
+                            py::arg("upper") = 1.0, 
+                            pybind11::return_value_policy::reference)
+            .def("uniform",   &Variable::uniform, 
+                            py::arg("left") = 0.0, 
+                            py::arg("right") = 1.0, 
+                            pybind11::return_value_policy::reference)
+            .def("assign", &Variable::assign, pybind11::return_value_policy::reference)
+            .def("feed", [](Variable &v, py::buffer buffer) -> Variable& {
+                py::buffer_info info = buffer.request();
 
-/**
- * Expression
- */
-void declareExpression(py::module &m) {
-    py::class_<Expression>(m, "Expression")
-            .def(py::init())
-            .def(py::init<Executor*, Node*>())
-            .def("forward",     &Expression::forward)
-            .def("backward",    &Expression::backward)
-            .def("valueStr",    &Expression::valueStr)
-            .def("constant",    &Expression::constant,
-                                py::arg("scalar") = 0)
-            .def("zero", &Expression::zero)
-            .def("one", &Expression::one)
-            .def("gaussian", &Expression::gaussian, 
-                                py::arg("mean") = 0.0,
-                                py::arg("stddev") = 0.01)
-            .def("positiveUnitball", &Expression::positiveUnitball)
-            .def("random", &Expression::random, 
-                                py::arg("lower") = 0.0, 
-                                py::arg("upper") = 1.0)
-            .def("uniform", &Expression::uniform, 
-                                py::arg("left") = 0.0, 
-                                py::arg("right") = 1.0)
-            .def(py::self + py::self)
-            .def(py::self - py::self)
-            .def(py::self * py::self)
-            .def(py::self / py::self)
-            .def(py::self + float())
-            .def(py::self - float())
-            .def(py::self * float())
-            .def(py::self / float())
-            .def("add",         &Expression::add)
-            .def("minus",       &Expression::minus)
-            .def("multiply",    &Expression::multiply)
-            .def("divide",      &Expression::divide)
-            .def("addConstant",      &Expression::addConstant)
-            .def("minusConstant",    &Expression::minusConstant)
-            .def("multiplyConstant", &Expression::multiplyConstant)
-            .def("divideConstant",   &Expression::divideConstant)
-            .def("dot",         &Expression::dot)
-            .def("abs",         &Expression::abs)
-            .def("avgPooling2d", &Expression::avgPooling2d,
-                            py::arg("covered") = false, 
+                return v.feed(info.ptr);                 
+            }, pybind11::return_value_policy::reference)
+            .def("fetch", [](Variable &v, py::buffer buffer) -> Variable& {
+                py::buffer_info info = buffer.request();
+
+                return v.fetch(info.ptr);
+            }, pybind11::return_value_policy::reference)
+            .def("__add__", [](Variable &x, Variable &y) -> Variable& {
+                return x - y;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__sub__", [](Variable &x, Variable &y) -> Variable& {
+                return x - y;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__mul__", [](Variable &x, Variable &y) -> Variable& {
+                return x * y;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__div__", [](Variable &x, Variable &y) -> Variable& {
+                return x / y;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__add__", [](Variable &x, float c) -> Variable& {
+                return x + c;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__sub__", [](Variable &x, float c) -> Variable& {
+                return x - c;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__mul__", [](Variable &x, float c) -> Variable& {
+                return x * c;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__div__", [](Variable &x, float c) -> Variable& {
+                return x / c;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__iaddr__", [](Variable &x, Variable &y) -> Variable& {
+                return x + y;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__isub__", [](Variable &x, Variable &y) -> Variable& {
+                return x - y;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__imul__", [](Variable &x, Variable &y) -> Variable& {
+                return x * y;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("__idiv__", [](Variable &x, Variable &y) -> Variable& {
+                return x / y;
+            }, py::is_operator(), pybind11::return_value_policy::reference)
+            .def("add",      &Variable::add,      pybind11::return_value_policy::reference)
+            .def("minus",    &Variable::minus,    pybind11::return_value_policy::reference)
+            .def("multiply", &Variable::multiply, pybind11::return_value_policy::reference)
+            .def("divide",   &Variable::divide,   pybind11::return_value_policy::reference)
+            .def("addConstant",         &Variable::addConstant, pybind11::return_value_policy::reference)
+            .def("minusConstant",       &Variable::minusConstant, pybind11::return_value_policy::reference)
+            .def("multiplyConstant",    &Variable::multiplyConstant, pybind11::return_value_policy::reference)
+            .def("divideConstant",      &Variable::divideConstant, pybind11::return_value_policy::reference)
+            .def("abs",      &Variable::abs, pybind11::return_value_policy::reference)
+            .def("avgPooling2d", &Variable::avgPooling2d,
+                            py::arg("covered") = true, 
                             py::arg("filterHeight") = 1, 
                             py::arg("filterWidth") = 1, 
                             py::arg("strideY") = 1, 
-                            py::arg("strideX") = 1)
-            .def("conv2d", &Expression::conv2d, 
+                            py::arg("strideY") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("conv2d", &Variable::conv2d,
                             py::arg("filter"),
-                            py::arg("covered") = false, 
+                            py::arg("covered") = true, 
                             py::arg("strideY") = 1, 
                             py::arg("strideX") = 1, 
                             py::arg("dilationY") = 1, 
-                            py::arg("dilationX") = 1)
-            .def("crossEntropy", &Expression::crossEntropy)
-            .def("deConv2d", &Expression::deConv2d, 
+                            py::arg("dilationX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("crossEntropy", &Variable::crossEntropy, pybind11::return_value_policy::reference)
+            .def("deConv2d", &Variable::deConv2d,
                             py::arg("filter"),
-                            py::arg("covered") = false, 
+                            py::arg("covered") = true, 
                             py::arg("strideY") = 1, 
-                            py::arg("strideX") = 1)
-            .def("exp",             &Expression::exp)
-            .def("l1Distance",      &Expression::l1Distance)
-            .def("l1Norm",          &Expression::l1Norm)
-            .def("l2Distance",      &Expression::l2Distance)
-            .def("l2Norm",          &Expression::l2Norm)
-            .def("linear",          &Expression::linear)
-            .def("log",             &Expression::log)
-            .def("logSoftmax",      &Expression::logSoftmax, 
-                                py::arg("axis") = -1)
-            .def("lRelu", &Expression::lRelu)
-            .def("matrixMultiply",  &Expression::matrixMultiply)
-            .def("maxPooling2d",    &Expression::maxPooling2d, 
-                            py::arg("covered") = false, 
+                            py::arg("strideX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("dot",         &Variable::dot,         pybind11::return_value_policy::reference)
+            .def("exp",         &Variable::exp,         pybind11::return_value_policy::reference)
+            .def("l1Distance",  &Variable::l1Distance,  pybind11::return_value_policy::reference)
+            .def("l1Norm",      &Variable::l1Norm,      pybind11::return_value_policy::reference)
+            .def("l2Distance",  &Variable::l2Distance,  pybind11::return_value_policy::reference)
+            .def("l2Norm",      &Variable::l2Norm,      pybind11::return_value_policy::reference)
+            .def("linear",      &Variable::linear,      pybind11::return_value_policy::reference)
+            .def("log",         &Variable::log,         pybind11::return_value_policy::reference)
+            .def("logSoftmax",  &Variable::logSoftmax, py::arg("axis") = -1, pybind11::return_value_policy::reference)
+            .def("lRelu",       &Variable::lRelu,       pybind11::return_value_policy::reference)
+            .def("matrixMultiply", &Variable::matrixMultiply, pybind11::return_value_policy::reference)
+            .def("maxPooling2d", &Variable::maxPooling2d,
+                            py::arg("covered") = true, 
                             py::arg("filterHeight") = 1, 
                             py::arg("filterWidth") = 1, 
                             py::arg("strideY") = 1, 
-                            py::arg("strideX") = 1)
-            .def("pRelu",       &Expression::pRelu)
-            .def("reduceMean",  &Expression::reduceMean,
-                            py::arg("axis") =  -1,
-                            py::arg("keep") =  false)
-            .def("reduceSum", &Expression::reduceSum,
-                            py::arg("axis") =  -1,
-                            py::arg("keep") =  false)
-            .def("relu", &Expression::relu)
-            .def("reShape", (Expression (Expression::*)(Shape&)) &Expression::reShape)
-            .def("reShape", (Expression (Expression::*)(std::vector<size_t>)) &Expression::reShape)
-            .def("sigmoid", &Expression::sigmoid)
-            .def("softmax", &Expression::softmax, py::arg("axis") = -1)
-            .def("square",  &Expression::square)
-            .def("tanh",    &Expression::tanh)
-            .def("feed", [](Expression* express, py::buffer buffer) -> Expression {
-                /**Request a buffer descriptor from Python*/
-                py::buffer_info info = buffer.request();
-
-                return express->feed(info.ptr);                 
-            })
-            .def("fetch", [](Expression* express, py::buffer buffer) -> Expression {
-                /**Request a buffer descriptor from Python*/
-                py::buffer_info info = buffer.request();
-
-                return express->fetch(info.ptr);
-            })
-            .def("l1Loss",  &Expression::l1Loss)
-            .def("l1NormLoss",      &Expression::l1NormLoss)
-            .def("l2Loss",  &Expression::l2Loss)
-            .def("l2NormLoss",      &Expression::l2NormLoss)
-            .def("softmaxCrossEntropyLoss", &Expression::softmaxCrossEntropyLoss);
+                            py::arg("strideX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("maxPooling2dWithIndex", &Variable::maxPooling2dWithIndex,
+                            py::arg("index"), 
+                            py::arg("covered") = true, 
+                            py::arg("filterHeight") = 1, 
+                            py::arg("filterWidth") = 1, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("maxUnPooling2d", &Variable::maxUnPooling2d,
+                            py::arg("index"), 
+                            py::arg("covered") = true, 
+                            py::arg("filterHeight") = 1, 
+                            py::arg("filterWidth") = 1, 
+                            py::arg("strideY") = 1, 
+                            py::arg("strideX") = 1,
+                            pybind11::return_value_policy::reference)
+            .def("pRelu", &Variable::pRelu, pybind11::return_value_policy::reference)
+            .def("reduceMean", &Variable::reduceMean,
+                                    py::arg("axis") = std::vector<int>({-1}),  
+                                    py::arg("keepDims") = true, 
+                                    pybind11::return_value_policy::reference)
+            .def("reduceSum",  &Variable::reduceSum, 
+                                    py::arg("axis") = std::vector<int>({-1}),  
+                                    py::arg("keepDims") = true,
+                                    pybind11::return_value_policy::reference)
+            .def("relu", &Variable::relu, pybind11::return_value_policy::reference)
+            .def("reShape", (Variable& (Variable::*)(Shape&)) &Variable::reShape, pybind11::return_value_policy::reference)
+            .def("reShape", (Variable& (Variable::*)(std::vector<size_t>)) &Variable::reShape, pybind11::return_value_policy::reference)
+            .def("sigmoid", &Variable::sigmoid, pybind11::return_value_policy::reference)
+            .def("softmax", &Variable::softmax, py::arg("axis") = -1, pybind11::return_value_policy::reference)
+            .def("square",          &Variable::square,      pybind11::return_value_policy::reference)
+            .def("tanh",            &Variable::tanh,        pybind11::return_value_policy::reference)
+            .def("l1Loss",          &Variable::l1Loss,      pybind11::return_value_policy::reference)
+            .def("l1NormLoss",      &Variable::l1NormLoss,  pybind11::return_value_policy::reference)
+            .def("l2Loss",          &Variable::l2Loss,      pybind11::return_value_policy::reference)
+            .def("l2NormLoss",      &Variable::l2NormLoss,  pybind11::return_value_policy::reference)
+            .def("softmaxCrossEntropyLoss", &Variable::softmaxCrossEntropyLoss, pybind11::return_value_policy::reference);
 }
 
-/**
- * declare Expression Function
- */
-void declareExpressionFunction(py::module &m) {
-    /**parameter*/
-    m.def("parameter", (Expression (*)(Executor*, std::vector<size_t>, bool, DType)) &parameter,
+/**Net*/
+void declareNet(py::module &m) {
+    m.def("backward", (void (*)(Variable&, bool)) &backward,
+                        py::arg("variable"),
+                        py::arg("clearInterim") = true);
+
+    m.def("parameter", (Variable& (*)(Executor*, std::vector<size_t>, bool, DType)) &parameter,
                         py::arg("executor"),
                         py::arg("list"),
-                        py::arg("updateGradient") = true, 
-                        py::arg("type") = DType::Float32);
-
-    m.def("parameter", (Expression (*)(Executor*, size_t, std::vector<size_t>, bool, DType)) &parameter, 
+                        py::arg("updateGradient") = true,
+                        py::arg("type") = DType::Float32,
+                        pybind11::return_value_policy::reference);
+    
+    m.def("parameter", (Variable& (*)(Executor*, size_t, std::vector<size_t>, bool, DType)) &parameter,
                     py::arg("executor"),
                     py::arg("batch"),
                     py::arg("list"),
-                    py::arg("updateGradient") = true, 
-                    py::arg("type") = DType::Float32);
+                    py::arg("updateGradient") = true,
+                    py::arg("type") = DType::Float32,
+                    pybind11::return_value_policy::reference);
 
-    m.def("parameter", (Expression (*)(Executor*, Shape&, bool, DType)) &parameter, 
-                    py::arg("executor"),
-                    py::arg("shape"),
-                    py::arg("updateGradient") = true, 
-                    py::arg("type") = DType::Float32);
-
-    m.def("inputParameter", (Expression (*)(Executor*, std::vector<size_t>, DType)) &inputParameter,
-                        py::arg("executor"),
-                        py::arg("list"),
-                        py::arg("type") = DType::Float32);
-    
-    m.def("inputParameter", (Expression (*)(Executor*, size_t, std::vector<size_t>, DType)) &inputParameter,
-                        py::arg("executor"),
-                        py::arg("batch"),
-                        py::arg("list"),
-                        py::arg("type") = DType::Float32);
-
-    m.def("inputParameter", (Expression (*)(Executor*, Shape&, DType)) &inputParameter,
+    m.def("parameter", (Variable& (*)(Executor*, Shape&, bool, DType)) &parameter,
                         py::arg("executor"),
                         py::arg("shape"),
-                        py::arg("type") = DType::Float32);
+                        py::arg("updateGradient") = true,
+                        py::arg("type") = DType::Float32,
+                        pybind11::return_value_policy::reference);
+
+    m.def("inputParameter", (Variable& (*)(Executor*, std::vector<size_t>, DType)) &inputParameter,
+                        py::arg("executor"),
+                        py::arg("list"),
+                        py::arg("type") = DType::Float32,
+                        pybind11::return_value_policy::reference);
+
+    m.def("inputParameter", (Variable& (*)(Executor*, size_t, std::vector<size_t>, DType)) &inputParameter,
+                py::arg("executor"),
+                py::arg("batch"),
+                py::arg("list"),
+                py::arg("type") = DType::Float32,
+                pybind11::return_value_policy::reference);
+
+    m.def("inputParameter", (Variable& (*)(Executor*, Shape&, DType)) &inputParameter,
+                        py::arg("executor"),
+                        py::arg("shape"),
+                        py::arg("type") = DType::Float32,
+                        pybind11::return_value_policy::reference);
+
+    m.def("add", &add, pybind11::return_value_policy::reference);
+    m.def("minus", &minus, pybind11::return_value_policy::reference);
+    m.def("multiply", &multiply, pybind11::return_value_policy::reference);
+    m.def("divide", &divide, pybind11::return_value_policy::reference);
+
+    m.def("addConstant", &addConstant, pybind11::return_value_policy::reference);
+    m.def("minusConstant", &minusConstant, pybind11::return_value_policy::reference);
+    m.def("multiplyConstant", &multiplyConstant, pybind11::return_value_policy::reference);
+    m.def("divideConstant", &divideConstant, pybind11::return_value_policy::reference);
+    
+    m.def("abs", &abs, pybind11::return_value_policy::reference);
+
+    m.def("avgPooling2d", &avgPooling2d,
+                py::arg("variable"),
+                py::arg("covered") = true, 
+                py::arg("filterHeight") = 1, 
+                py::arg("filterWidth") = 1, 
+                py::arg("strideY") = 1, 
+                py::arg("strideX") = 1,
+                pybind11::return_value_policy::reference);
+    
+    m.def("conv2d", &conv2d,
+                py::arg("variable"),
+                py::arg("filter"),
+                py::arg("covered") = true, 
+                py::arg("strideY") = 1, 
+                py::arg("strideX") = 1, 
+                py::arg("dilationY") = 1, 
+                py::arg("dilationX") = 1,
+                pybind11::return_value_policy::reference);
+
+    m.def("crossEntropy", &crossEntropy, pybind11::return_value_policy::reference);
+
+    m.def("deConv2d", &deConv2d,
+            py::arg("variable"),
+            py::arg("filter"),
+            py::arg("covered") = true, 
+            py::arg("strideY") = 1, 
+            py::arg("strideX") = 1, 
+            pybind11::return_value_policy::reference);
+
+    m.def("dot", &dot, pybind11::return_value_policy::reference);
+    m.def("exp", &exp, pybind11::return_value_policy::reference);
+    m.def("l1Distance", &l1Distance, pybind11::return_value_policy::reference);
+    m.def("l1Norm", &l1Norm, pybind11::return_value_policy::reference);
+    m.def("l2Distance", &l2Distance, pybind11::return_value_policy::reference);
+    m.def("l2Norm", &l2Norm, pybind11::return_value_policy::reference);
+
+    m.def("linear", &linear,
+            py::arg("variable"), 
+            py::arg("a") = 1.0, 
+            py::arg("b") = 0.0,
+            pybind11::return_value_policy::reference);
+
+    m.def("log", &log, pybind11::return_value_policy::reference);
+
+    m.def("logSoftmax", &logSoftmax,
+                py::arg("variable"), 
+                py::arg("axis") = -1, 
+                pybind11::return_value_policy::reference);
+
+    m.def("lRelu", &lRelu,
+            py::arg("variable"), 
+            py::arg("a") = 0.0, 
+            pybind11::return_value_policy::reference);
+
+    m.def("matrixMultiply", &matrixMultiply, pybind11::return_value_policy::reference);
+
+    m.def("maxPooling2d", &maxPooling2d,
+                py::arg("variable"),
+                py::arg("covered") = true, 
+                py::arg("filterHeight") = 1, 
+                py::arg("filterWidth") = 1, 
+                py::arg("strideY") = 1, 
+                py::arg("strideX") = 1,
+                pybind11::return_value_policy::reference);
+
+    m.def("maxPooling2dWithIndex", &maxPooling2dWithIndex,
+            py::arg("variable"),
+            py::arg("index"),
+            py::arg("covered") = true, 
+            py::arg("filterHeight") = 1, 
+            py::arg("filterWidth") = 1, 
+            py::arg("strideY") = 1, 
+            py::arg("strideX") = 1,
+            pybind11::return_value_policy::reference);
+
+    m.def("maxUnPooling2d", &maxUnPooling2d,
+            py::arg("variable"),
+            py::arg("index"),
+            py::arg("covered") = true, 
+            py::arg("filterHeight") = 1, 
+            py::arg("filterWidth") = 1, 
+            py::arg("strideY") = 1, 
+            py::arg("strideX") = 1,
+            pybind11::return_value_policy::reference);
+
+    m.def("pRelu", &pRelu, pybind11::return_value_policy::reference);
+
+    m.def("reduceMean", &reduceMean,
+                py::arg("variable"), 
+                py::arg("axis") = std::vector<int>({-1}),  
+                py::arg("keepDims") = true,
+                pybind11::return_value_policy::reference);
+
+    m.def("reduceSum", &reduceSum, 
+                py::arg("variable"),
+                py::arg("axis") = std::vector<int>({-1}),  
+                py::arg("keepDims") = true,
+                pybind11::return_value_policy::reference);
+
+    m.def("relu", &relu, pybind11::return_value_policy::reference);
+
+    m.def("reShape", (Variable& (*)(Variable&, Shape&)) &reShape, 
+                py::arg("variable"),
+                py::arg("shape"),
+                pybind11::return_value_policy::reference);
+
+    m.def("reShape", (Variable& (*)(Variable&, std::vector<size_t>)) &reShape, 
+            py::arg("variable"),
+            py::arg("shape"),
+            pybind11::return_value_policy::reference);
+
+    m.def("sigmoid", &sigmoid, pybind11::return_value_policy::reference);
+
+    m.def("softmax", &softmax,
+                    py::arg("variable"), 
+                    py::arg("axis") = -1,  
+                    pybind11::return_value_policy::reference);
+
+    m.def("square", &square, pybind11::return_value_policy::reference);
+    m.def("tanh", &tanh, pybind11::return_value_policy::reference);
+
+    m.def("l1Loss", &l1Loss, pybind11::return_value_policy::reference);
+    m.def("l1NormLoss", &l1NormLoss, pybind11::return_value_policy::reference);
+    m.def("l2Loss", &l2Loss, pybind11::return_value_policy::reference);
+    m.def("l2NormLoss", &l2NormLoss, pybind11::return_value_policy::reference);
+    m.def("softmaxCrossEntropyLoss", &softmaxCrossEntropyLoss, pybind11::return_value_policy::reference);
 }
 
 /**
@@ -332,12 +527,10 @@ void declareTrainer(py::module &m) {
  */
 void declareExecutor(py::module &m) {
     py::class_<Executor>(m, "Executor");
-        //.def("trainableParameters", &Executor::trainableParameters, pybind11::return_value_policy::reference);
 
     py::class_<EagerExecutor, Executor>(m, "EagerExecutor")
-        .def(py::init<DeviceType, bool>(), 
-            py::arg("deviceType") = DeviceType::CPU, 
-            py::arg("flag") = true)
+        .def(py::init<DeviceType>(), 
+            py::arg("deviceType") = DeviceType::CPU)
         .def("clearInterimNodes", &EagerExecutor::clearInterimNodes);
 }
 
@@ -350,9 +543,9 @@ PYBIND11_MODULE(deep8, m) {
 
     declareTensor(m);
     declareVariable(m);
-    declareExpression(m);
-    declareExpressionFunction(m);
     declareLearningRateIterator(m);
+
+    declareNet(m);
 
     declareTrainer(m);
     declareExecutor(m);

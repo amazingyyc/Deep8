@@ -13,16 +13,16 @@ TEST(LinearRegression, test) {
 	float y[2] = { 10, 8 };
 
 	EagerExecutor executor;
-	LinearDecayLearningRateIterator learningRate(1000);
+	LinearDecayLearningRateIterator learningRate(10000);
 	AdamTrainer trainer(&learningRate);
 
-	auto w = parameter(&executor, { 2 }).gaussian();
+	auto& w = parameter(&executor, { 2 }).gaussian();
 
-	auto input  = parameter(&executor, { 2, 2 }, false).feed(x);
-	auto output = parameter(&executor, { 2 }, false).feed(y);
+    auto& input  = parameter(&executor, { 2, 2 }, false).feed(x);
+    auto& output = parameter(&executor, { 2 }, false).feed(y);
 
-    for (int i = 0; i < 1000; ++i) {
-		(input * w).l2DistanceLoss(output).backward();
+    for (int i = 0; i < 10000; ++i) {
+		backward((input * w).l2Loss(output));
 
 		trainer.train(&executor, executor.trainableParameters());
 

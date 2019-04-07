@@ -2,26 +2,32 @@
 
 namespace Deep8 {
 
-Function::Function(): Node(), isShared(false) {
+Function::Function(std::vector<Node*> &inputs): Node(inputs) {
 	this->type = NodeType::Function;
 }
 
-Function::Function(std::vector<Node*> &inputs): Node(inputs), isShared(false) {
-	this->type = NodeType::Function;
+/**is the function output shared memory with input*/
+bool Function::isShared() {
+	return false;
 }
 
-void Function::check() {
-    bool anyUpdateGradient = false;
+/**return the shape and elementtype by the input's*/
+Shape Function::checkShape(std::vector<Shape> &inputShapes) {
+    return Shape();
+}
 
-    for (auto item : this->inputs) {
-        if (item->updateGradient) {
-            anyUpdateGradient = true;
+ElementType Function::checkElementType(std::vector<ElementType> &inputTypes) {
+	if (inputTypes.empty()) {
+		return ElementType::unknown();
+	}
 
-            break;
-        }
-    }
+	auto elementType = inputTypes[0];
 
-    this->updateGradient = anyUpdateGradient;
+	for (int i = 1; i < inputTypes.size(); ++i) {
+		DEEP8_ARGUMENT_CHECK(elementType == inputTypes[i], "the input's ElementType must be same");
+	}
+
+    return elementType;
 }
 
 void Function::forward(const std::vector<const Tensor*> &inputs, Tensor *output) {
@@ -40,21 +46,20 @@ void Function::forward() {
 
 	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be a Variable type");
-	DEEP8_ARGUMENT_CHECK(this->shape  == this->outputs.first()->shape, "the output shape is error");
 
-	auto outputVariable = (Variable*)this->outputs.first();
+	auto outputVar = (Variable*)this->outputs.first();
 
-	auto outputValue = &(outputVariable->value);
-	auto deviceType  = outputVariable->deviceType();
+	auto outputValue = &(outputVar->value);
+	auto deviceType  = outputVar->deviceType();
 
 	std::vector<const Tensor*> inputValues;
 
 	for (auto item : inputs) {
-		auto inputVariable = (Variable*)(item);
+		auto inputVar = (Variable*)(item);
 
-		DEEP8_ARGUMENT_CHECK(deviceType == inputVariable->deviceType(), "the device of input must be same with output");
+		DEEP8_ARGUMENT_CHECK(deviceType == inputVar->deviceType(), "the device of input must be same with output");
 
-		inputValues.emplace_back(&(inputVariable->value));
+		inputValues.emplace_back(&(inputVar->value));
 	}
 
 	/**calculate the output*/
@@ -70,28 +75,28 @@ void Function::backward() {
 	DEEP8_ARGUMENT_CHECK(1 == outputs.size(), "the output size must be 1");
 	DEEP8_ARGUMENT_CHECK(NodeType::Variable == this->outputs.first()->type, "the output must be Variable type");
 
-	auto outputVarialbe = (Variable*)(this->outputs.first());
+	auto outputVar = (Variable*)(this->outputs.first());
 
-	auto outputValue    = &(outputVarialbe->value);
-	auto outputGradient = &(outputVarialbe->gradient);
+	auto outputValue    = &(outputVar->value);
+	auto outputGradient = &(outputVar->gradient);
 
-	auto deviceType = outputVarialbe->deviceType();
+	auto deviceType = outputVar->deviceType();
 
 	std::vector<const Tensor*> inputValues;
 
 	for (auto item : inputs) {
-		auto inputVariable = (Variable*)(item);
+		auto inputVar = (Variable*)(item);
 
-		DEEP8_ARGUMENT_CHECK(deviceType == inputVariable->deviceType(), "the device of the input and output must have same device type");
+		DEEP8_ARGUMENT_CHECK(deviceType == inputVar->deviceType(), "the device of the input and output must have same device type");
 
-		inputValues.emplace_back(&(inputVariable->value));
+		inputValues.emplace_back(&(inputVar->value));
 	}
 
 	for (size_t i = 0; i < inputs.size(); ++i) {
-		auto inputVariable = (Variable*)(inputs[i]);
+		auto inputVar = (Variable*)(inputs[i]);
 
-		if (inputVariable->updateGradient) {
-			this->backward(inputValues, outputValue, outputGradient, i, &(inputVariable->gradient));
+		if (inputVar->updateGradient) {
+			this->backward(inputValues, outputValue, outputGradient, i, &(inputVar->gradient));
 		}
 	}
 }
