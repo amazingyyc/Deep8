@@ -1,3 +1,7 @@
+#include "basic/GPUBasic.h"
+#include "model/GPUDevice.h"
+#include "math/GPUMath.h"
+#include "math/GPUUnaryElementWise.h"
 #include "math/MaxIndex2D.h"
 
 namespace Deep8 {

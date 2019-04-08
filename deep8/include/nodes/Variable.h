@@ -155,7 +155,7 @@ public:
     Variable& l1NormLoss();
     Variable& l2Loss(Variable &y);
     Variable& l2NormLoss();
-    Variable& softmaxCrossEntropyLoss(Variable &y);
+    Variable& softmaxCrossEntropyLoss(Variable &y, int axis = -1);
 };
 
 }

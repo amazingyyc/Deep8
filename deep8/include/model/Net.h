@@ -164,7 +164,7 @@ Variable& l1Loss(Variable &x, Variable &y);
 Variable& l1NormLoss(Variable &x);
 Variable& l2Loss(Variable &x, Variable &y);
 Variable& l2NormLoss(Variable &x);
-Variable& softmaxCrossEntropyLoss(Variable &x, Variable &y);
+Variable& softmaxCrossEntropyLoss(Variable &x, Variable &y, int axis = -1);
 
 }
 
