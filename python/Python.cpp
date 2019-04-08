@@ -270,7 +270,10 @@ void declareVariable(py::module &m) {
             .def("l1NormLoss",      &Variable::l1NormLoss,  pybind11::return_value_policy::reference)
             .def("l2Loss",          &Variable::l2Loss,      pybind11::return_value_policy::reference)
             .def("l2NormLoss",      &Variable::l2NormLoss,  pybind11::return_value_policy::reference)
-            .def("softmaxCrossEntropyLoss", &Variable::softmaxCrossEntropyLoss, pybind11::return_value_policy::reference);
+            .def("softmaxCrossEntropyLoss", &Variable::softmaxCrossEntropyLoss,
+									py::arg("target"), 
+									py::arg("axis") = -1, 
+									pybind11::return_value_policy::reference);
 }
 
 /**Net*/
@@ -457,7 +460,11 @@ void declareNet(py::module &m) {
     m.def("l1NormLoss", &l1NormLoss, pybind11::return_value_policy::reference);
     m.def("l2Loss", &l2Loss, pybind11::return_value_policy::reference);
     m.def("l2NormLoss", &l2NormLoss, pybind11::return_value_policy::reference);
-    m.def("softmaxCrossEntropyLoss", &softmaxCrossEntropyLoss, pybind11::return_value_policy::reference);
+    m.def("softmaxCrossEntropyLoss", &softmaxCrossEntropyLoss, 
+									py::arg("pred"),
+									py::arg("target"),
+									py::arg("axis") = -1,
+									pybind11::return_value_policy::reference);
 }
 
 /**

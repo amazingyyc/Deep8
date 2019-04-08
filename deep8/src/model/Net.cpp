@@ -427,16 +427,25 @@ Variable& l2NormLoss(Variable &x) {
     return reduceMean(l2Norm(x), {}, false);
 }
 
-Variable& softmaxCrossEntropyLoss(Variable &x, Variable &y) {
+Variable& softmaxCrossEntropyLoss(Variable &x, Variable &y, int axis) {
     auto xshape = x.shape();
     auto yshape = y.shape();
 
     DEEP8_ARGUMENT_CHECK(xshape == yshape, "the shape of SoftmaxCrossEntropyLoss must be same");
-    DEEP8_ARGUMENT_CHECK(1 == xshape.nDims, "the shape's ndims must be 1");
+	DEEP8_ARGUMENT_CHECK(-1 <= axis && axis < (int)xshape.nDims, "the axis is error");
 
-    auto pred = logSoftmax(x);
+	Variable& pred = logSoftmax(x, axis);
+	Variable& mult = multiply(linear(y, -1, 0), pred);
 
-    return reduceMean(dot(linear(y, -1, 0), pred), {}, false);
+	int sumAxis = axis;
+
+	if (-1 != sumAxis) {
+		sumAxis += 1;
+	}
+
+	Variable& sum = reduceSum(mult, { sumAxis }, false);
+
+	return reduceMean(sum, {}, false);
 }
 
 }
